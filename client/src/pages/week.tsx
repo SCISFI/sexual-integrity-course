@@ -356,11 +356,37 @@ export default function WeekPage() {
                               {section.id === "addiction-cycle" && (
                                 <AddictionCycleDiagram />
                               )}
-                              {section.content.map((paragraph, idx) => (
-                                <p key={idx} className="text-sm text-muted-foreground">
-                                  {paragraph}
-                                </p>
-                              ))}
+                              {section.id === "healthy-vs-csbd" ? (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-sm border-collapse">
+                                    <thead>
+                                      <tr className="border-b">
+                                        <th className="text-left p-3 font-semibold bg-muted/50">Healthy Sexuality</th>
+                                        <th className="text-left p-3 font-semibold bg-muted/50">CSBD</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {section.content.map((row, idx) => {
+                                        const parts = row.split(" | ");
+                                        const healthy = parts[0]?.replace("Healthy Sexuality: ", "") || "";
+                                        const csbd = parts[1]?.replace("CSBD: ", "") || "";
+                                        return (
+                                          <tr key={idx} className="border-b last:border-b-0">
+                                            <td className="p-3 text-muted-foreground">{healthy}</td>
+                                            <td className="p-3 text-muted-foreground">{csbd}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                section.content.map((paragraph, idx) => (
+                                  <p key={idx} className="text-sm text-muted-foreground">
+                                    {paragraph}
+                                  </p>
+                                ))
+                              )}
                             </div>
                           )}
                         </div>
