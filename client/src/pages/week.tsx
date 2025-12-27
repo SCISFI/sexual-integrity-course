@@ -11,7 +11,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, ChevronDown, ChevronUp, CheckCircle2, Circle, BookOpen, MessageSquare, PenLine, ClipboardList, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, CheckCircle2, Circle, BookOpen, MessageSquare, PenLine, ClipboardList, AlertTriangle, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import headerImage from "@assets/generated_images/calming_therapy_header_image.png";
@@ -66,6 +66,45 @@ export default function WeekPage() {
   const isWeekCompleted = completedWeeks.includes(weekNumber);
 
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [manualHomeworkChecks, setManualHomeworkChecks] = useState<Set<number>>(() => {
+    const saved = localStorage.getItem(`si_homework_checks_${weekNumber}`);
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
+  const homeworkCompletion = useMemo(() => {
+    if (!weekContent) return [];
+    
+    const teachingSectionIds = weekContent.teaching.map(s => s.id);
+    const allTeachingRead = teachingSectionIds.every(id => expandedSections.has(id));
+    const allReflectionsComplete = reflection.q1.trim() && reflection.q2.trim() && reflection.q3.trim() && reflection.q4.trim();
+    const commitmentComplete = commitment.trim().length > 10;
+    
+    return weekContent.homeworkChecklist.map((item, idx) => {
+      if (item.toLowerCase().includes("read all week")) {
+        return allTeachingRead;
+      }
+      if (item.toLowerCase().includes("reflection questions")) {
+        return !!allReflectionsComplete;
+      }
+      if (item.toLowerCase().includes("my story in brief") || item.toLowerCase().includes("sexual integrity means")) {
+        return commitmentComplete;
+      }
+      return manualHomeworkChecks.has(idx);
+    });
+  }, [weekContent, expandedSections, reflection, commitment, manualHomeworkChecks]);
+
+  const toggleManualHomework = (idx: number) => {
+    setManualHomeworkChecks(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) {
+        next.delete(idx);
+      } else {
+        next.add(idx);
+      }
+      localStorage.setItem(`si_homework_checks_${weekNumber}`, JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
 
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => {
@@ -503,12 +542,33 @@ export default function WeekPage() {
                         Complete these items before moving to the next week:
                       </p>
                       <ul className="space-y-2">
-                        {weekContent.homeworkChecklist.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm">
-                            <Circle className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
+                        {weekContent.homeworkChecklist.map((item, idx) => {
+                          const isComplete = homeworkCompletion[idx];
+                          const isAutoTracked = item.toLowerCase().includes("read all week") || 
+                                                item.toLowerCase().includes("reflection questions") ||
+                                                item.toLowerCase().includes("my story in brief") ||
+                                                item.toLowerCase().includes("sexual integrity means");
+                          return (
+                            <li 
+                              key={idx} 
+                              className={`flex items-start gap-2 text-sm ${!isAutoTracked ? 'cursor-pointer hover-elevate rounded p-1 -m-1' : ''}`}
+                              onClick={!isAutoTracked ? () => toggleManualHomework(idx) : undefined}
+                              data-testid={`homework-item-${idx}`}
+                            >
+                              {isComplete ? (
+                                <div className="h-4 w-4 mt-0.5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                  <Check className="h-3 w-3 text-white" />
+                                </div>
+                              ) : (
+                                <Circle className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                              )}
+                              <span className={isComplete ? 'text-muted-foreground line-through' : ''}>{item}</span>
+                              {!isAutoTracked && (
+                                <span className="text-xs text-muted-foreground ml-auto">(click to toggle)</span>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
