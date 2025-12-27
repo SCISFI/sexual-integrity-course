@@ -14,7 +14,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ArrowLeft, ChevronDown, ChevronUp, CheckCircle2, Circle, BookOpen, MessageSquare, PenLine, ClipboardList, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
-import addictionCycleImage from "@assets/generated_images/4-stage_addiction_cycle_diagram.png";
+import addictionCycleImage from "@assets/generated_images/4-stage_cycle_diagram_no_text.png";
 import headerImage from "@assets/generated_images/calming_therapy_header_image.png";
 
 const STORAGE_LAST_WEEK = "si_last_week";
@@ -337,20 +337,6 @@ export default function WeekPage() {
                         <h3 className="text-lg font-semibold">Teaching</h3>
                       </div>
                       
-                      {weekNumber === 1 && (
-                        <div className="rounded-lg border p-4 bg-muted/30">
-                          <p className="text-sm text-muted-foreground mb-3">The 4-Stage Addiction Cycle</p>
-                          <img 
-                            src={addictionCycleImage} 
-                            alt="4-Stage Addiction Cycle: Preoccupation, Ritualization, Acting Out, Despair" 
-                            className="w-full max-w-xs mx-auto rounded-md"
-                          />
-                          <p className="text-xs text-muted-foreground mt-2 text-center">
-                            Preoccupation → Ritualization → Acting Out → Despair
-                          </p>
-                        </div>
-                      )}
-                      
                       {weekContent.teaching.map((section) => (
                         <div key={section.id} className="border rounded-md">
                           <button
@@ -367,6 +353,22 @@ export default function WeekPage() {
                           </button>
                           {expandedSections.has(section.id) && (
                             <div className="px-4 pb-4 space-y-3">
+                              {section.id === "addiction-cycle" && (
+                                <div className="rounded-lg border p-4 bg-muted/30 my-3">
+                                  <p className="text-sm font-medium text-center mb-3">The 4-Stage Addiction Cycle</p>
+                                  <img 
+                                    src={addictionCycleImage} 
+                                    alt="4-Stage Addiction Cycle diagram" 
+                                    className="w-full max-w-xs mx-auto rounded-md"
+                                  />
+                                  <div className="flex justify-center gap-2 mt-3 text-xs text-muted-foreground">
+                                    <span className="px-2 py-1 bg-background rounded">1. Preoccupation</span>
+                                    <span className="px-2 py-1 bg-background rounded">2. Ritualization</span>
+                                    <span className="px-2 py-1 bg-background rounded">3. Acting Out</span>
+                                    <span className="px-2 py-1 bg-background rounded">4. Despair</span>
+                                  </div>
+                                </div>
+                              )}
                               {section.content.map((paragraph, idx) => (
                                 <p key={idx} className="text-sm text-muted-foreground">
                                   {paragraph}
