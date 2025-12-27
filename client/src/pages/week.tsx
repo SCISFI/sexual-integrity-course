@@ -11,9 +11,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ArrowLeft, ChevronDown, ChevronUp, CheckCircle2, Circle } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, CheckCircle2, Circle, BookOpen, MessageSquare, PenLine, ClipboardList, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
+import addictionCycleImage from "@assets/generated_images/4-stage_addiction_cycle_diagram.png";
+import headerImage from "@assets/generated_images/calming_therapy_header_image.png";
 
 const STORAGE_LAST_WEEK = "si_last_week";
 const STORAGE_LAST_SECTION = "si_last_section";
@@ -262,11 +264,22 @@ export default function WeekPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8">
+        <div className="relative rounded-lg overflow-hidden mb-6">
+          <img 
+            src={headerImage} 
+            alt="Calming nature background" 
+            className="w-full h-32 object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30 flex items-center px-6">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Week {weekNumber}: {title}</h1>
+              <p className="text-white/80 text-sm mt-1">Phase {phase}: {phaseInfo.name}</p>
+            </div>
+          </div>
+        </div>
+
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">
-              Week {weekNumber}: {title}
-            </CardTitle>
             <CardDescription>
               {weekContent?.overview || "Choose your format. We'll remember where you left off."}
             </CardDescription>
@@ -277,18 +290,23 @@ export default function WeekPage() {
 
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => scrollToSection("teaching")} data-testid="button-nav-teaching">
+                <BookOpen className="h-4 w-4 mr-2" />
                 Teaching
               </Button>
               <Button variant="outline" onClick={() => scrollToSection("reflection")} data-testid="button-nav-reflection">
+                <MessageSquare className="h-4 w-4 mr-2" />
                 Reflection
               </Button>
               <Button variant="outline" onClick={() => scrollToSection("exercise")} data-testid="button-nav-exercise">
+                <PenLine className="h-4 w-4 mr-2" />
                 Exercise
               </Button>
               <Button variant="outline" onClick={() => scrollToSection("homework")} data-testid="button-nav-homework">
+                <ClipboardList className="h-4 w-4 mr-2" />
                 Homework
               </Button>
               <Button variant="outline" onClick={() => scrollToSection("relapse")} data-testid="button-nav-relapse">
+                <AlertTriangle className="h-4 w-4 mr-2" />
                 Relapse Plan
               </Button>
             </div>
@@ -314,7 +332,24 @@ export default function WeekPage() {
                       ref={(el) => (sectionRefs.current.teaching = el)}
                       className="rounded-lg border p-5 space-y-4"
                     >
-                      <h3 className="text-lg font-semibold">Teaching</h3>
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold">Teaching</h3>
+                      </div>
+                      
+                      {weekNumber === 1 && (
+                        <div className="rounded-lg border p-4 bg-muted/30">
+                          <p className="text-sm text-muted-foreground mb-3">The 4-Stage Addiction Cycle</p>
+                          <img 
+                            src={addictionCycleImage} 
+                            alt="4-Stage Addiction Cycle: Preoccupation, Ritualization, Acting Out, Despair" 
+                            className="w-full max-w-xs mx-auto rounded-md"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2 text-center">
+                            Preoccupation → Ritualization → Acting Out → Despair
+                          </p>
+                        </div>
+                      )}
                       
                       {weekContent.teaching.map((section) => (
                         <div key={section.id} className="border rounded-md">
@@ -349,7 +384,10 @@ export default function WeekPage() {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <h3 className="text-lg font-semibold">Reflection Questions</h3>
+                          <div className="flex items-center gap-2">
+                            <MessageSquare className="h-5 w-5 text-primary" />
+                            <h3 className="text-lg font-semibold">Reflection Questions</h3>
+                          </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             Take time to answer honestly. Your answers autosave as you type.
                           </p>
@@ -381,7 +419,10 @@ export default function WeekPage() {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <h3 className="text-lg font-semibold">Exercises</h3>
+                          <div className="flex items-center gap-2">
+                            <PenLine className="h-5 w-5 text-primary" />
+                            <h3 className="text-lg font-semibold">Exercises</h3>
+                          </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             Complete these exercises to deepen your understanding.
                           </p>
@@ -435,7 +476,10 @@ export default function WeekPage() {
                       ref={(el) => (sectionRefs.current.homework = el)}
                       className="rounded-lg border p-5 space-y-3"
                     >
-                      <h3 className="text-lg font-semibold">Week {weekNumber} Homework Checklist</h3>
+                      <div className="flex items-center gap-2">
+                        <ClipboardList className="h-5 w-5 text-primary" />
+                        <h3 className="text-lg font-semibold">Week {weekNumber} Homework Checklist</h3>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         Complete these items before moving to the next week:
                       </p>
@@ -453,9 +497,12 @@ export default function WeekPage() {
                       ref={(el) => (sectionRefs.current.relapse = el)}
                       className="rounded-lg border border-red-300 bg-red-50 dark:bg-red-950/20 p-5 space-y-2"
                     >
-                      <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
-                        If a Relapse Occurs
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        <h3 className="text-lg font-semibold text-red-700 dark:text-red-400">
+                          If a Relapse Occurs
+                        </h3>
+                      </div>
                       <p className="text-sm text-red-700 dark:text-red-400">
                         A relapse does NOT remove you from the program. Continuing requires completion
                         of a <strong>Relapse Analysis Exercise</strong>.
