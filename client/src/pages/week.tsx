@@ -16,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import headerImage from "@assets/generated_images/calming_therapy_header_image.png";
 import { AddictionCycleDiagram } from "@/components/addiction-cycle-diagram";
+import { BrainDiagram } from "@/components/brain-diagram";
 
 const STORAGE_LAST_WEEK = "si_last_week";
 const STORAGE_LAST_SECTION = "si_last_section";
@@ -355,6 +356,9 @@ export default function WeekPage() {
                             <div className="px-4 pb-4 space-y-3">
                               {section.id === "addiction-cycle" && (
                                 <AddictionCycleDiagram />
+                              )}
+                              {section.id === "brain-science" && (
+                                <BrainDiagram />
                               )}
                               {section.id === "healthy-vs-csbd" ? (
                                 <div className="overflow-x-auto">
