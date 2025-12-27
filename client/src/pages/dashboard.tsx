@@ -11,30 +11,17 @@ import {
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Calendar, Lock, LogOut, Mail, User } from "lucide-react";
+import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 
 type WeekItem = {
   week: number;
   title: string;
 };
 
-const WEEKS: WeekItem[] = [
-  { week: 1, title: "Foundations of Sexual Integrity" },
-  { week: 2, title: "Understanding Your Patterns" },
-  { week: 3, title: "Triggers & High-Risk Situations" },
-  { week: 4, title: "Building a Recovery Plan" },
-  { week: 5, title: "Accountability That Works" },
-  { week: 6, title: "Managing Urges & Cravings" },
-  { week: 7, title: "Shame Resilience & Self-Compassion" },
-  { week: 8, title: "Healthy Sexuality & Values" },
-  { week: 9, title: "Emotional Regulation Skills" },
-  { week: 10, title: "Repairing Trust in Relationships" },
-  { week: 11, title: "Boundaries & Technology Safety" },
-  { week: 12, title: "Relapse Prevention Plan" },
-  { week: 13, title: "Relapse Analysis (If It Happens)" },
-  { week: 14, title: "Identity, Purpose, and Growth" },
-  { week: 15, title: "Sustaining Momentum" },
-  { week: 16, title: "Long-Term Maintenance Plan" },
-];
+const WEEKS: WeekItem[] = Array.from({ length: 16 }, (_, i) => ({
+  week: i + 1,
+  title: WEEK_TITLES[i + 1] || `Week ${i + 1}`,
+}));
 
 export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
@@ -187,29 +174,24 @@ export default function Dashboard() {
               >
                 <div>
                   <h2 className="text-2xl font-semibold">
-                    Week 1: Foundations of Sexual Integrity
+                    Week 1: {WEEK_TITLES[1]}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Estimated time: 60 minutes • In progress
+                    Phase 1: {PHASE_INFO[1].name} • Estimated time: 60 minutes
                   </p>
                 </div>
 
                 {/* Teaching */}
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Teaching</h3>
+                  <h3 className="text-lg font-medium">Teaching Preview</h3>
                   <p className="text-sm">
-                    Sexual integrity is not simply about stopping a behavior —
-                    it is about aligning your actions with your values,
-                    identity, and long-term goals. Compulsive sexual behavior
-                    thrives in secrecy, emotional avoidance, and unexamined
-                    patterns.
+                    This week covers what Compulsive Sexual Behavior Disorder (CSBD) actually is, 
+                    the four-stage addiction cycle (Preoccupation, Ritualization, Acting Out, Despair), 
+                    and the brain science behind why this happens.
                   </p>
                   <p className="text-sm">
-                    This program begins by slowing things down. Before focusing
-                    on change, you must understand <strong>why</strong> you want
-                    change, <strong>what</strong> has kept the behavior going,
-                    and <strong>how</strong> you will stay engaged when
-                    motivation fades.
+                    You'll learn the difference between shame and guilt, understand how CSBD differs 
+                    from healthy sexuality, and begin clarifying your personal motivation for change.
                   </p>
                   <p className="text-sm">
                     Progress in this program is not measured by perfection, but
