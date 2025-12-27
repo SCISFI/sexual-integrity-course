@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, LogOut, Mail, User } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User } from "lucide-react";
 
 type WeekItem = {
   week: number;
@@ -40,8 +40,14 @@ export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
   const [, setLocation] = useLocation();
 
-  // For now: Week 1 is available to view. We’ll later add real unlock rules.
-  const [openWeek, setOpenWeek] = useState<number | null>(1);
+  // For now: only Week 1 is available. Later we’ll unlock Week 2–16.
+  const unlockedWeek = 1;
+
+  // Keep Week 1 expanded. (Feels like “in progress”, not hidden.)
+  const [showWeek1, setShowWeek1] = useState(true);
+
+  // Used to scroll directly to Week 1 when user clicks Resume/Continue
+  const week1Ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticating && !user) {
@@ -59,6 +65,13 @@ export default function Dashboard() {
   const handleLogout = async () => {
     await logout();
     setLocation("/");
+  };
+
+  const resumeWeek1 = () => {
+    const lastWeek = Number(localStorage.getItem("si_last_week") || "1");
+    setLocation(
+      `/week/${Number.isFinite(lastWeek) && lastWeek > 0 ? lastWeek : 1}`,
+    );
   };
 
   if (isLoading || isAuthenticating) {
@@ -106,11 +119,18 @@ export default function Dashboard() {
       <main className="mx-auto max-w-4xl px-4 py-6 space-y-6">
         {/* My Program */}
         <Card>
-          <CardHeader>
-            <CardTitle>My Program</CardTitle>
-            <CardDescription>
-              Your weekly modules, daily practices, and progress live here.
-            </CardDescription>
+          <CardHeader className="gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle>My Program</CardTitle>
+                <CardDescription>
+                  Your weekly modules, daily practices, and progress live here.
+                </CardDescription>
+              </div>
+
+              {/* Resume button */}
+              <Button onClick={resumeWeek1}>Resume Week 1</Button>
+            </div>
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -118,47 +138,59 @@ export default function Dashboard() {
             <div className="space-y-2">
               <h2 className="text-xl font-semibold">Your 16-Week Program</h2>
               <p className="text-sm text-muted-foreground">
-                Each week unlocks on a weekly schedule. Start where you are,
-                stay consistent, and complete your daily check-ins.
+                Weeks unlock weekly. Right now Week 1 is available. As you
+                progress, new weeks will unlock automatically.
               </p>
             </div>
 
             <div className="grid gap-3">
-              {WEEKS.map((w) => (
-                <div
-                  key={w.week}
-                  className="rounded-lg border p-4 flex items-center justify-between"
-                >
-                  <div>
-                    <div className="font-medium">
-                      Week {w.week}: {w.title}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Unlocks weekly • ~60 minutes
-                    </div>
-                  </div>
+              {WEEKS.map((w) => {
+                const isUnlocked = w.week <= unlockedWeek;
+                const isCurrent = w.week === 1;
 
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      setOpenWeek(openWeek === w.week ? null : w.week)
-                    }
+                return (
+                  <div
+                    key={w.week}
+                    className="rounded-lg border p-4 flex items-center justify-between"
                   >
-                    {openWeek === w.week ? "Close" : "Open"}
-                  </Button>
-                </div>
-              ))}
+                    <div>
+                      <div className="font-medium">
+                        Week {w.week}: {w.title}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {isUnlocked
+                          ? "Available • ~60 minutes"
+                          : "Locked • Unlocks weekly"}
+                      </div>
+                    </div>
+
+                    {isCurrent ? (
+                      <Button variant="outline" onClick={resumeWeek1}>
+                        Continue
+                      </Button>
+                    ) : (
+                      <Button variant="outline" disabled className="gap-2">
+                        <Lock className="h-4 w-4" />
+                        Locked
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Week 1 module (visible when openWeek === 1) */}
-            {openWeek === 1 && (
-              <div className="mt-2 rounded-lg border p-6 space-y-6">
+            {/* Week 1 module (always accessible) */}
+            {showWeek1 && (
+              <div
+                ref={week1Ref}
+                className="mt-2 rounded-lg border p-6 space-y-6"
+              >
                 <div>
                   <h2 className="text-2xl font-semibold">
                     Week 1: Foundations of Sexual Integrity
                   </h2>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Estimated time: 60 minutes • Required to continue
+                    Estimated time: 60 minutes • In progress
                   </p>
                 </div>
 
@@ -253,11 +285,14 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-                {/* Completion (placeholder) */}
-                <div className="pt-2">
+                {/* Completion (placeholder for later) */}
+                <div className="pt-2 flex items-center gap-3">
                   <Button disabled>
                     Mark Week 1 Complete (unlocks Week 2)
                   </Button>
+                  <span className="text-xs text-muted-foreground">
+                    (Next: we’ll make this button real and save progress.)
+                  </span>
                 </div>
               </div>
             )}
