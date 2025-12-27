@@ -298,13 +298,18 @@ export default function Dashboard() {
             )}
 
             {/* Daily Check-ins (always visible) */}
-            <div className="rounded-lg border p-4">
-              <h3 className="font-medium">Daily Check-Ins</h3>
-              <p className="text-sm mt-2 text-muted-foreground">
-                Daily check-ins will be required to keep moving forward and
-                qualify for the guarantee. We’ll build the check-in tool next.
-              </p>
-            </div>
+              <div className="rounded-lg border p-4">
+                <h3 className="font-medium">Daily Check-Ins</h3>
+                <p className="text-sm mt-2 text-muted-foreground">
+                  Daily check-ins will be required to keep moving forward and qualify for the guarantee.
+                </p>
+
+                <div className="mt-4">
+                  <Button onClick={() => setLocation("/checkin")}>
+                    Start Daily Check-In
+                  </Button>
+                </div>
+              </div>
           </CardContent>
         </Card>
 
