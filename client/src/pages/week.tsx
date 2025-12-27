@@ -14,8 +14,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { ArrowLeft, ChevronDown, ChevronUp, CheckCircle2, Circle, BookOpen, MessageSquare, PenLine, ClipboardList, AlertTriangle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
-import addictionCycleImage from "@assets/generated_images/4-stage_cycle_diagram_no_text.png";
 import headerImage from "@assets/generated_images/calming_therapy_header_image.png";
+import { AddictionCycleDiagram } from "@/components/addiction-cycle-diagram";
 
 const STORAGE_LAST_WEEK = "si_last_week";
 const STORAGE_LAST_SECTION = "si_last_section";
@@ -354,20 +354,7 @@ export default function WeekPage() {
                           {expandedSections.has(section.id) && (
                             <div className="px-4 pb-4 space-y-3">
                               {section.id === "addiction-cycle" && (
-                                <div className="rounded-lg border p-4 bg-muted/30 my-3">
-                                  <p className="text-sm font-medium text-center mb-3">The 4-Stage Addiction Cycle</p>
-                                  <img 
-                                    src={addictionCycleImage} 
-                                    alt="4-Stage Addiction Cycle diagram" 
-                                    className="w-full max-w-xs mx-auto rounded-md"
-                                  />
-                                  <div className="flex justify-center gap-2 mt-3 text-xs text-muted-foreground">
-                                    <span className="px-2 py-1 bg-background rounded">1. Preoccupation</span>
-                                    <span className="px-2 py-1 bg-background rounded">2. Ritualization</span>
-                                    <span className="px-2 py-1 bg-background rounded">3. Acting Out</span>
-                                    <span className="px-2 py-1 bg-background rounded">4. Despair</span>
-                                  </div>
-                                </div>
+                                <AddictionCycleDiagram />
                               )}
                               {section.content.map((paragraph, idx) => (
                                 <p key={idx} className="text-sm text-muted-foreground">
