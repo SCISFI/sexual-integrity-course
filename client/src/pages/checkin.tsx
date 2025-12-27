@@ -32,7 +32,7 @@ export default function DailyCheckInPage() {
   const dateKey = useMemo(() => formatDateKey(new Date()), []);
   const storageKey = useMemo(() => `${STORAGE_PREFIX}${dateKey}`, [dateKey]);
 
-  const [mood, setMood] = useState<string>("7");
+  const [mood, setMood] = useState<string>("");
   const [triggers, setTriggers] = useState("");
   const [wins, setWins] = useState("");
   const [tomorrow, setTomorrow] = useState("");
@@ -46,7 +46,7 @@ export default function DailyCheckInPage() {
       if (!raw) return;
       const parsed = JSON.parse(raw) as CheckIn;
 
-      setMood(String(parsed.mood ?? "7"));
+      setMood(String(parsed.mood ?? ""));
       setTriggers(parsed.triggers ?? "");
       setWins(parsed.wins ?? "");
       setTomorrow(parsed.tomorrow ?? "");
@@ -57,7 +57,7 @@ export default function DailyCheckInPage() {
   }, [storageKey]);
 
   function clampMood(n: number) {
-    if (Number.isNaN(n)) return 7;
+    if (Number.isNaN(n)) return 5;
     return Math.max(1, Math.min(10, n));
   }
 
