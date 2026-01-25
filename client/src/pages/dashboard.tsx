@@ -94,6 +94,11 @@ export default function Dashboard() {
 
           <div className="flex items-center gap-3">
             <ThemeToggle />
+
+            <Link href="/therapist-home">
+              <Button variant="outline">Therapist Home (MVP)</Button>
+            </Link>
+
             <Button variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />
               Log out
@@ -185,13 +190,15 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <h3 className="text-lg font-medium">Teaching Preview</h3>
                   <p className="text-sm">
-                    This week covers what Compulsive Sexual Behavior Disorder (CSBD) actually is, 
-                    the four-stage addiction cycle (Preoccupation, Ritualization, Acting Out, Despair), 
-                    and the brain science behind why this happens.
+                    This week covers what Compulsive Sexual Behavior Disorder
+                    (CSBD) actually is, the four-stage addiction cycle
+                    (Preoccupation, Ritualization, Acting Out, Despair), and the
+                    brain science behind why this happens.
                   </p>
                   <p className="text-sm">
-                    You'll learn the difference between shame and guilt, understand how CSBD differs 
-                    from healthy sexuality, and begin clarifying your personal motivation for change.
+                    You'll learn the difference between shame and guilt,
+                    understand how CSBD differs from healthy sexuality, and
+                    begin clarifying your personal motivation for change.
                   </p>
                   <p className="text-sm">
                     Progress in this program is not measured by perfection, but
@@ -280,18 +287,19 @@ export default function Dashboard() {
             )}
 
             {/* Daily Check-ins (always visible) */}
-              <div className="rounded-lg border p-4">
-                <h3 className="font-medium">Daily Check-Ins</h3>
-                <p className="text-sm mt-2 text-muted-foreground">
-                  Daily check-ins will be required to keep moving forward and qualify for the guarantee.
-                </p>
+            <div className="rounded-lg border p-4">
+              <h3 className="font-medium">Daily Check-Ins</h3>
+              <p className="text-sm mt-2 text-muted-foreground">
+                Daily check-ins will be required to keep moving forward and
+                qualify for the guarantee.
+              </p>
 
-                <div className="mt-4">
-                  <Button onClick={() => setLocation("/checkin")}>
-                    Start Daily Check-In
-                  </Button>
-                </div>
+              <div className="mt-4">
+                <Button onClick={() => setLocation("/checkin")}>
+                  Start Daily Check-In
+                </Button>
               </div>
+            </div>
           </CardContent>
         </Card>
 
