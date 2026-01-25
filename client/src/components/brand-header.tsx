@@ -1,26 +1,39 @@
-import { ThemeToggle } from "@/components/theme-toggle";
+import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
 
-export function BrandHeader({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle?: string;
-}) {
+export function BrandHeader() {
+  const [, setLocation] = useLocation();
+
   return (
-    <header className="flex items-center justify-between border-b px-6 py-4">
-      <div>
-        <div className="text-xl font-semibold tracking-tight">
-          {title}
+    <header className="border-b bg-background">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+        {/* Left: Brand */}
+        <div className="flex flex-col leading-tight">
+          <span className="text-sm font-semibold">Sexual Integrity</span>
+          <span className="text-xs text-muted-foreground">
+            16-Week Structured Recovery Program
+          </span>
         </div>
-        {subtitle && (
-          <div className="text-sm text-muted-foreground mt-0.5">
-            {subtitle}
-          </div>
-        )}
-      </div>
 
-      <ThemeToggle />
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation("/dashboard")}
+          >
+            Dashboard
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation("/login")}
+          >
+            Log out
+          </Button>
+        </div>
+      </div>
     </header>
   );
 }

@@ -1,6 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { BrandHeader } from "@/components/brand-header";
+import { Badge } from "@/components/ui/badge";
+
 type ClientStatus = "Active" | "Needs Attention" | "Paused";
 
 type TherapistClient = {
@@ -53,7 +56,9 @@ export default function TherapistHome() {
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Therapist Home</h1>
-          <p className="text-muted-foreground">Assigned clients and clinical oversight</p>
+          <p className="text-muted-foreground">
+            Assigned clients and clinical oversight
+          </p>
         </div>
 
         <div className="flex justify-end">
@@ -89,7 +94,22 @@ export default function TherapistHome() {
                       <td className="p-3 font-medium">{client.fullName}</td>
                       <td className="p-3">{client.role}</td>
                       <td className="p-3">Week {client.currentWeek}</td>
-                      <td className="p-3">{client.status}</td>
+
+                      <td className="p-3">
+                        <Badge
+                          variant="outline"
+                          className={
+                            client.status === "Needs Attention"
+                              ? "border-amber-300 text-amber-700 bg-amber-50"
+                              : client.status === "Active"
+                                ? "border-green-300 text-green-700 bg-green-50"
+                                : "border-muted text-muted-foreground bg-muted/40"
+                          }
+                        >
+                          {client.status}
+                        </Badge>
+                      </td>
+
                       <td className="p-3 text-muted-foreground">
                         {client.lastActivity}
                       </td>

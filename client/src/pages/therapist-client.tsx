@@ -2,10 +2,60 @@ import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+const mockClientProgress = {
+  currentWeek: 3,
+
+  weeklyProgress: [
+    {
+      week: 1,
+      reflectionSubmitted: true,
+      therapistReview: "pending",
+      notes: [
+        "Onboarding reflection completed",
+        "Safety plan introduced"
+      ],
+      flagged: false
+    },
+    {
+      week: 2,
+      reflectionSubmitted: true,
+      therapistReview: "completed",
+      notes: [
+        "Trigger awareness emerging",
+        "Accountability contact confirmed"
+      ],
+      flagged: false
+    },
+    {
+      week: 3,
+      reflectionSubmitted: false,
+      therapistReview: "not_started",
+      notes: [
+        "Reflection overdue"
+      ],
+      flagged: true
+    }
+  ],
+
+  mostRecentReflection: {
+    week: 2,
+    submittedAt: "2026-01-18",
+    content: `This week I noticed how quickly I shut down when stress builds.
+I didn’t act out, but I did avoid connection and stayed isolated longer than I should have.
+I’m beginning to see how loneliness shows up before urges do.`
+  },
+
+  clinicalSignals: [
+    "Missed reflection this week",
+    "Increased avoidance language (self-reported)",
+    "Accountability contact not confirmed"
+  ]
+};
 
 export default function TherapistClient() {
   const [, params] = useRoute("/therapist/clients/:id");
   const [, setLocation] = useLocation();
+  const progress = mockClientProgress;
 
   const clientId = params?.id ?? "unknown";
 
