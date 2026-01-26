@@ -1,113 +1,55 @@
-import { useRoute, useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const mockClientProgress = {
-  currentWeek: 3,
-
-  weeklyProgress: [
-    {
-      week: 1,
-      reflectionSubmitted: true,
-      therapistReview: "pending",
-      notes: ["Onboarding reflection completed", "Safety plan introduced"],
-      flagged: false,
-    },
-    {
-      week: 2,
-      reflectionSubmitted: true,
-      therapistReview: "completed",
-      notes: ["Trigger awareness emerging", "Accountability contact confirmed"],
-      flagged: false,
-    },
-    {
-      week: 3,
-      reflectionSubmitted: false,
-      therapistReview: "not_started",
-      notes: ["Reflection overdue"],
-      flagged: true,
-    },
-  ],
-
-  mostRecentReflection: {
-    week: 2,
-    submittedAt: "2026-01-18",
-    content: `This week I noticed how quickly I shut down when stress builds.
-I did not act out, but I did avoid connection and stayed isolated longer than I should have.
-I am beginning to see how loneliness shows up before urges do.`,
-  },
-
-  clinicalSignals: [
-    "Missed reflection this week",
-    "Increased avoidance language (self-reported)",
-    "Accountability contact not confirmed",
-  ],
-};
+import { useLocation } from "wouter";
 
 export default function TherapistClient() {
-  const [, params] = useRoute("/therapist/clients/:id");
   const [, setLocation] = useLocation();
 
-  const clientId = params?.id ?? "unknown";
-
   return (
-    <div className="min-h-screen bg-background px-6 py-8">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Client Detail - ID {clientId}</h1>
-          <Button
-            variant="outline"
-            onClick={() => setLocation("/therapist-home")}
-          >
-            Back to Therapist Home
-          </Button>
+    <div style={{ padding: 32, maxWidth: 800, margin: "0 auto" }}>
+      <h1 style={{ marginBottom: 8 }}>Client Detail</h1>
+
+      <button
+        onClick={() => setLocation("/therapist-home")}
+        style={{
+          marginBottom: 24,
+          padding: "8px 14px",
+          borderRadius: 6,
+          border: "1px solid #ccc",
+          background: "#f5f5f5",
+          cursor: "pointer",
+          fontWeight: 500,
+        }}
+      >
+        Back to Therapist Home
+      </button>
+
+      <section style={{ marginTop: 24 }}>
+        <h2>Progress</h2>
+        {["Submitted", "Submitted", "Not submitted"].map((status, index) => (
+          <div key={index} style={{ marginBottom: 8 }}>
+            Week {index + 1} - {status}
+            {index === 2 && (
+              <span style={{ marginLeft: 8, fontStyle: "italic" }}>
+                (Needs attention)
+              </span>
+            )}
+          </div>
+        ))}
+      </section>
+
+      <section style={{ marginTop: 24 }}>
+        <h2>Therapist Notes</h2>
+        <div style={{ fontStyle: "italic" }}>
+          Private notes (not visible to client).
         </div>
+        <div style={{ marginTop: 8 }}>
+          Initial resistance noted. Monitor avoidance and isolation patterns.
+        </div>
+      </section>
 
-        <Tabs defaultValue="progress">
-          <TabsList>
-            <TabsTrigger value="progress">Progress</TabsTrigger>
-            <TabsTrigger value="notes">Therapist Notes</TabsTrigger>
-            <TabsTrigger value="flags">Flags</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="progress">
-            <Card>
-              <CardHeader>
-                <CardTitle>Client Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <h2>Weekly Progress (Temporary)</h2>
-                <div>Week 1 - Submitted</div>
-                <div>Week 2 - Submitted</div>
-                <div>Week 3 - Not submitted</div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Private Therapist Notes</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                Your private notes will appear here.
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="flags">
-            <Card>
-              <CardHeader>
-                <CardTitle>Needs Attention</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                Therapist-only attention flags live here.
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+      <section style={{ marginTop: 24 }}>
+        <h2>Flags</h2>
+        <div>Missed reflection in Week 3</div>
+      </section>
     </div>
   );
 }
