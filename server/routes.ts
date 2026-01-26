@@ -633,5 +633,227 @@ export async function registerRoutes(
     }
   });
 
+  // =======================================
+  // Payment API endpoints
+  // =======================================
+
+  // Get Stripe publishable key
+  app.get("/api/payments/config", async (req, res) => {
+    try {
+      const { getStripePublishableKey } = await import("./stripeClient");
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error) {
+      console.error("Get Stripe config error:", error);
+      res.status(500).json({ message: "Failed to get payment config" });
+    }
+  });
+
+  // List available products and prices
+  app.get("/api/payments/products", async (req, res) => {
+    try {
+      const { stripeService } = await import("./stripeService");
+      const rows = await stripeService.listProductsWithPrices();
+      
+      const productsMap = new Map();
+      for (const row of rows as any[]) {
+        if (!productsMap.has(row.product_id)) {
+          productsMap.set(row.product_id, {
+            id: row.product_id,
+            name: row.product_name,
+            description: row.product_description,
+            active: row.product_active,
+            metadata: row.product_metadata,
+            prices: []
+          });
+        }
+        if (row.price_id) {
+          productsMap.get(row.product_id).prices.push({
+            id: row.price_id,
+            unit_amount: row.unit_amount,
+            currency: row.currency,
+            recurring: row.recurring,
+            active: row.price_active,
+          });
+        }
+      }
+      
+      res.json({ products: Array.from(productsMap.values()) });
+    } catch (error) {
+      console.error("List products error:", error);
+      res.status(500).json({ message: "Failed to list products" });
+    }
+  });
+
+  // Create checkout session for therapist subscription
+  app.post("/api/payments/checkout/subscription", requireRole("therapist"), async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { priceId } = req.body;
+      
+      if (!priceId) {
+        return res.status(400).json({ message: "Price ID is required" });
+      }
+      
+      const { stripeService } = await import("./stripeService");
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+      
+      // Create or get customer
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.name,
+          metadata: { userId: user.id, role: user.role },
+        });
+        await storage.updateUser(user.id, { stripeCustomerId: customer.id });
+        customerId = customer.id;
+      }
+      
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const session = await stripeService.createTherapistSubscriptionCheckout(
+        customerId,
+        priceId,
+        `${baseUrl}/therapist?payment=success`,
+        `${baseUrl}/therapist?payment=cancelled`
+      );
+      
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Create subscription checkout error:", error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  // Create checkout session for client week payment
+  app.post("/api/payments/checkout/week", requireRole("client"), async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { priceId, weekNumber } = req.body;
+      
+      if (!priceId || !weekNumber) {
+        return res.status(400).json({ message: "Price ID and week number are required" });
+      }
+      
+      // Check if week fee is waived
+      const waivedWeeks = await storage.getWaivedWeeks(user.id);
+      if (waivedWeeks.includes(weekNumber) || user.allFeesWaived) {
+        return res.json({ waived: true, message: "This week's fee has been waived" });
+      }
+      
+      // Check if already paid
+      const hasPaid = await storage.hasWeekPayment(user.id, weekNumber);
+      if (hasPaid) {
+        return res.json({ alreadyPaid: true, message: "This week has already been paid for" });
+      }
+      
+      const { stripeService } = await import("./stripeService");
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+      
+      // Create or get customer
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.name,
+          metadata: { userId: user.id, role: user.role },
+        });
+        await storage.updateUser(user.id, { stripeCustomerId: customer.id });
+        customerId = customer.id;
+      }
+      
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const session = await stripeService.createWeekPaymentCheckout(
+        customerId,
+        priceId,
+        weekNumber,
+        `${baseUrl}/week/${weekNumber}?payment=success`,
+        `${baseUrl}/week/${weekNumber}?payment=cancelled`
+      );
+      
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Create week payment checkout error:", error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  // Get subscription status for current user
+  app.get("/api/payments/subscription", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (!user.stripeSubscriptionId) {
+        return res.json({ subscription: null });
+      }
+      
+      const { stripeService } = await import("./stripeService");
+      const subscription = await stripeService.getSubscription(user.stripeSubscriptionId);
+      res.json({ subscription });
+    } catch (error) {
+      console.error("Get subscription error:", error);
+      res.status(500).json({ message: "Failed to get subscription" });
+    }
+  });
+
+  // Create customer portal session
+  app.post("/api/payments/portal", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (!user.stripeCustomerId) {
+        return res.status(400).json({ message: "No payment profile found" });
+      }
+      
+      const { stripeService } = await import("./stripeService");
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const session = await stripeService.createCustomerPortalSession(
+        user.stripeCustomerId,
+        `${baseUrl}/dashboard`
+      );
+      
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error("Create portal session error:", error);
+      res.status(500).json({ message: "Failed to create portal session" });
+    }
+  });
+
+  // Check if client needs to pay for a specific week
+  app.get("/api/payments/week/:weekNumber/status", requireRole("client"), async (req, res) => {
+    try {
+      const user = req.user as any;
+      const weekNumber = parseInt(req.params.weekNumber);
+      
+      if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 16) {
+        return res.status(400).json({ message: "Invalid week number" });
+      }
+      
+      // Check if all fees are waived
+      if (user.allFeesWaived) {
+        return res.json({ needsPayment: false, reason: "all_fees_waived" });
+      }
+      
+      // Check if this week's fee is waived
+      const waivedWeeks = await storage.getWaivedWeeks(user.id);
+      if (waivedWeeks.includes(weekNumber)) {
+        return res.json({ needsPayment: false, reason: "week_fee_waived" });
+      }
+      
+      // Check if already paid
+      const hasPaid = await storage.hasWeekPayment(user.id, weekNumber);
+      if (hasPaid) {
+        return res.json({ needsPayment: false, reason: "already_paid" });
+      }
+      
+      res.json({ needsPayment: true });
+    } catch (error) {
+      console.error("Check week payment status error:", error);
+      res.status(500).json({ message: "Failed to check payment status" });
+    }
+  });
+
   return httpServer;
 }

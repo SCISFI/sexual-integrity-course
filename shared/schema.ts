@@ -21,6 +21,10 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").default("active"), // active, paused, cancelled
   allFeesWaived: boolean("all_fees_waived").default(false), // Admin can waive all fees
   
+  // Stripe integration
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 
