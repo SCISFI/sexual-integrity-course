@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { passport, hashPassword } from "./auth";
-import { registerSchema, loginSchema } from "@shared/schema";
+import { registerSchema, loginSchema, registerTherapistSchema, registerClientSchema, type UserRole } from "@shared/schema";
 import { z } from "zod";
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -12,14 +12,67 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   res.status(401).json({ message: "Authentication required" });
 }
 
+function requireRole(...roles: UserRole[]) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    if (!roles.includes(req.user.role as UserRole)) {
+      return res.status(403).json({ message: "Insufficient permissions" });
+    }
+    next();
+  };
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
+  // Legacy register endpoint (defaults to client)
   app.post("/api/auth/register", async (req, res) => {
     try {
       const parsed = registerSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: parsed.error.errors[0]?.message || "Invalid input" 
+        });
+      }
+
+      const { email, password, name } = parsed.data;
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const today = new Date().toISOString().split('T')[0];
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        name,
+        role: "client",
+        startDate: today,
+      });
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Login failed after registration" });
+        }
+        const { password: _, ...safeUser } = user;
+        return res.status(201).json({ user: safeUser });
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  // Register as therapist
+  app.post("/api/auth/register/therapist", async (req, res) => {
+    try {
+      const parsed = registerTherapistSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ 
           message: parsed.error.errors[0]?.message || "Invalid input" 
@@ -38,6 +91,7 @@ export async function registerRoutes(
         email,
         password: hashedPassword,
         name,
+        role: "therapist",
       });
 
       req.login(user, (err) => {
@@ -48,7 +102,47 @@ export async function registerRoutes(
         return res.status(201).json({ user: safeUser });
       });
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error("Therapist registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  // Register as client
+  app.post("/api/auth/register/client", async (req, res) => {
+    try {
+      const parsed = registerClientSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: parsed.error.errors[0]?.message || "Invalid input" 
+        });
+      }
+
+      const { email, password, name } = parsed.data;
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const today = new Date().toISOString().split('T')[0];
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        name,
+        role: "client",
+        startDate: today,
+      });
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Login failed after registration" });
+        }
+        const { password: _, ...safeUser } = user;
+        return res.status(201).json({ user: safeUser });
+      });
+    } catch (error) {
+      console.error("Client registration error:", error);
       res.status(500).json({ message: "Registration failed" });
     }
   });
@@ -249,6 +343,278 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Mark complete error:", error);
       res.status(500).json({ message: "Failed to mark week complete" });
+    }
+  });
+
+  // =======================================
+  // Admin API endpoints
+  // =======================================
+
+  // Get all therapists
+  app.get("/api/admin/therapists", requireRole("admin"), async (req, res) => {
+    try {
+      const therapists = await storage.getUsersByRole("therapist");
+      const safeTherapists = therapists.map(t => {
+        const { password: _, ...safe } = t;
+        return safe;
+      });
+      res.json({ therapists: safeTherapists });
+    } catch (error) {
+      console.error("Get therapists error:", error);
+      res.status(500).json({ message: "Failed to get therapists" });
+    }
+  });
+
+  // Get all clients
+  app.get("/api/admin/clients", requireRole("admin"), async (req, res) => {
+    try {
+      const clients = await storage.getUsersByRole("client");
+      const safeClients = await Promise.all(clients.map(async c => {
+        const { password: _, ...safe } = c;
+        const therapists = await storage.getTherapistsForClient(c.id);
+        const waivedWeeks = await storage.getWaivedWeeks(c.id);
+        return { ...safe, therapists: therapists.map(t => ({ id: t.id, name: t.name, email: t.email })), waivedWeeks };
+      }));
+      res.json({ clients: safeClients });
+    } catch (error) {
+      console.error("Get clients error:", error);
+      res.status(500).json({ message: "Failed to get clients" });
+    }
+  });
+
+  // Create therapist (admin can create therapist accounts)
+  app.post("/api/admin/therapists", requireRole("admin"), async (req, res) => {
+    try {
+      const { email, password, name } = req.body;
+      if (!email || !password || !name) {
+        return res.status(400).json({ message: "Email, password, and name are required" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        name,
+        role: "therapist",
+      });
+
+      const { password: _, ...safeUser } = user;
+      res.status(201).json({ therapist: safeUser });
+    } catch (error) {
+      console.error("Create therapist error:", error);
+      res.status(500).json({ message: "Failed to create therapist" });
+    }
+  });
+
+  // Create client (admin can create client accounts)
+  app.post("/api/admin/clients", requireRole("admin"), async (req, res) => {
+    try {
+      const { email, password, name, startDate, therapistId } = req.body;
+      if (!email || !password || !name) {
+        return res.status(400).json({ message: "Email, password, and name are required" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already registered" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const clientStartDate = startDate || new Date().toISOString().split('T')[0];
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        name,
+        role: "client",
+        startDate: clientStartDate,
+      });
+
+      // Assign therapist if provided
+      if (therapistId) {
+        await storage.assignTherapistToClient(therapistId, user.id);
+      }
+
+      const { password: _, ...safeUser } = user;
+      res.status(201).json({ client: safeUser });
+    } catch (error) {
+      console.error("Create client error:", error);
+      res.status(500).json({ message: "Failed to create client" });
+    }
+  });
+
+  // Update client (start date, fees waived, etc.)
+  app.patch("/api/admin/clients/:clientId", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const { startDate, allFeesWaived, subscriptionStatus, name } = req.body;
+      
+      const updateData: any = {};
+      if (startDate !== undefined) updateData.startDate = startDate;
+      if (allFeesWaived !== undefined) updateData.allFeesWaived = allFeesWaived;
+      if (subscriptionStatus !== undefined) updateData.subscriptionStatus = subscriptionStatus;
+      if (name !== undefined) updateData.name = name;
+
+      const user = await storage.updateUser(clientId, updateData);
+      if (!user) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      const { password: _, ...safeUser } = user;
+      res.json({ client: safeUser });
+    } catch (error) {
+      console.error("Update client error:", error);
+      res.status(500).json({ message: "Failed to update client" });
+    }
+  });
+
+  // Assign therapist to client
+  app.post("/api/admin/assignments", requireRole("admin"), async (req, res) => {
+    try {
+      const { therapistId, clientId } = req.body;
+      if (!therapistId || !clientId) {
+        return res.status(400).json({ message: "Both therapistId and clientId are required" });
+      }
+
+      const assignment = await storage.assignTherapistToClient(therapistId, clientId);
+      res.status(201).json({ assignment });
+    } catch (error) {
+      console.error("Assign therapist error:", error);
+      res.status(500).json({ message: "Failed to assign therapist" });
+    }
+  });
+
+  // Remove therapist from client
+  app.delete("/api/admin/assignments", requireRole("admin"), async (req, res) => {
+    try {
+      const { therapistId, clientId } = req.body;
+      if (!therapistId || !clientId) {
+        return res.status(400).json({ message: "Both therapistId and clientId are required" });
+      }
+
+      await storage.removeTherapistFromClient(therapistId, clientId);
+      res.json({ message: "Assignment removed" });
+    } catch (error) {
+      console.error("Remove assignment error:", error);
+      res.status(500).json({ message: "Failed to remove assignment" });
+    }
+  });
+
+  // Waive week fee for client
+  app.post("/api/admin/waivers", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId, weekNumber } = req.body;
+      if (!clientId || weekNumber === undefined) {
+        return res.status(400).json({ message: "clientId and weekNumber are required" });
+      }
+
+      const adminId = (req.user as any).id;
+      const waiver = await storage.waiveWeekFee(clientId, weekNumber, adminId);
+      res.status(201).json({ waiver });
+    } catch (error) {
+      console.error("Waive fee error:", error);
+      res.status(500).json({ message: "Failed to waive fee" });
+    }
+  });
+
+  // Remove week waiver
+  app.delete("/api/admin/waivers", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId, weekNumber } = req.body;
+      if (!clientId || weekNumber === undefined) {
+        return res.status(400).json({ message: "clientId and weekNumber are required" });
+      }
+
+      await storage.removeWeekWaiver(clientId, weekNumber);
+      res.json({ message: "Waiver removed" });
+    } catch (error) {
+      console.error("Remove waiver error:", error);
+      res.status(500).json({ message: "Failed to remove waiver" });
+    }
+  });
+
+  // =======================================
+  // Therapist API endpoints
+  // =======================================
+
+  // Get assigned clients for therapist
+  app.get("/api/therapist/clients", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const clients = await storage.getClientsForTherapist(therapistId);
+      const safeClients = clients.map(c => {
+        const { password: _, ...safe } = c;
+        return safe;
+      });
+      res.json({ clients: safeClients });
+    } catch (error) {
+      console.error("Get therapist clients error:", error);
+      res.status(500).json({ message: "Failed to get clients" });
+    }
+  });
+
+  // Get client progress (for therapist viewing their assigned clients)
+  app.get("/api/therapist/clients/:clientId/progress", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const { clientId } = req.params;
+
+      // Verify therapist is assigned to this client
+      const clients = await storage.getClientsForTherapist(therapistId);
+      const isAssigned = clients.some(c => c.id === clientId);
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Not authorized to view this client" });
+      }
+
+      const completedWeeks = await storage.getCompletedWeeks(clientId);
+      const checkins = await storage.getUserCheckinHistory(clientId, 30);
+      
+      res.json({ completedWeeks, checkins });
+    } catch (error) {
+      console.error("Get client progress error:", error);
+      res.status(500).json({ message: "Failed to get client progress" });
+    }
+  });
+
+  // =======================================
+  // Week access API (for time-based unlocking)
+  // =======================================
+
+  // Get unlocked weeks for current user
+  app.get("/api/progress/unlocked-weeks", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (user.role !== "client") {
+        // Non-clients can access all weeks
+        return res.json({ unlockedWeeks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] });
+      }
+
+      if (!user.startDate) {
+        // No start date set, only week 1 available
+        return res.json({ unlockedWeeks: [1] });
+      }
+
+      const startDate = new Date(user.startDate);
+      const today = new Date();
+      const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Calculate which weeks are unlocked (week N unlocks after (N-1) * 7 days)
+      const unlockedWeeks: number[] = [];
+      for (let week = 1; week <= 16; week++) {
+        const daysRequired = (week - 1) * 7;
+        if (daysSinceStart >= daysRequired) {
+          unlockedWeeks.push(week);
+        }
+      }
+
+      res.json({ unlockedWeeks });
+    } catch (error) {
+      console.error("Get unlocked weeks error:", error);
+      res.status(500).json({ message: "Failed to get unlocked weeks" });
     }
   });
 

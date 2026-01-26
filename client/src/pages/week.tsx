@@ -193,6 +193,11 @@ export default function WeekPage() {
     queryKey: ['/api/progress/completions'],
   });
 
+  // Fetch unlocked weeks based on start date
+  const { data: unlockedWeeksData } = useQuery<{ unlockedWeeks: number[] }>({
+    queryKey: ['/api/progress/unlocked-weeks'],
+  });
+
   // Fetch saved reflections for this week
   const { data: reflectionData, isLoading: loadingReflections } = useQuery<{ reflection: any }>({
     queryKey: ['/api/progress/reflection', weekNumber],
@@ -200,6 +205,13 @@ export default function WeekPage() {
 
   // Check if this week is already completed (locked)
   const weekIsLocked = completionsData?.completedWeeks?.includes(weekNumber) || false;
+  
+  // Check if this week is time-locked (not yet unlocked based on start date)
+  const unlockedWeeks = unlockedWeeksData?.unlockedWeeks || [];
+  const isTimeLocked = unlockedWeeks.length > 0 && !unlockedWeeks.includes(weekNumber);
+  
+  // Check if next week is unlocked
+  const nextWeekUnlocked = weekNumber < 16 && unlockedWeeks.includes(weekNumber + 1);
 
   // Sync isWeekCompleted with weekIsLocked on initial load
   useEffect(() => {
@@ -374,6 +386,29 @@ export default function WeekPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {/* Show time-locked message if week is not yet accessible */}
+            {isTimeLocked && (
+              <div className="flex flex-col items-center justify-center py-12 text-center" data-testid="week-time-locked">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                  <Lock className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">Week Not Yet Available</h3>
+                <p className="max-w-md text-muted-foreground">
+                  This week will unlock {weekNumber > 1 ? `${(weekNumber - 1) * 7} days` : ""} after your program start date.
+                  {unlockedWeeks.length > 0 && ` You currently have access to Week${unlockedWeeks.length > 1 ? "s" : ""} ${unlockedWeeks.join(", ")}.`}
+                </p>
+                <Button
+                  className="mt-6"
+                  onClick={() => setLocation("/dashboard")}
+                  data-testid="button-go-dashboard"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Return to Dashboard
+                </Button>
+              </div>
+            )}
+
+            {!isTimeLocked && (
             <Tabs defaultValue="read">
               <TabsList>
                 <TabsTrigger value="read" data-testid="tab-read">Read</TabsTrigger>
@@ -635,6 +670,7 @@ export default function WeekPage() {
                 </div>
               </TabsContent>
             </Tabs>
+            )}
           </CardContent>
         </Card>
       </main>
@@ -700,7 +736,9 @@ export default function WeekPage() {
               <p className="text-sm text-muted-foreground">
                 {weekNumber === 16 
                   ? "Remember: recovery is a journey, not a destination. Continue practicing the skills you've learned, stay connected to your support network, and be compassionate with yourself. You've done remarkable work."
-                  : `Week ${weekNumber + 1} is now unlocked. Take some time to let this week's lessons settle before moving on. Remember to practice what you've learned and complete any homework assignments.`
+                  : nextWeekUnlocked 
+                    ? `Week ${weekNumber + 1} is available. Take some time to let this week's lessons settle before moving on. Remember to practice what you've learned and complete any homework assignments.`
+                    : `Great work! Week ${weekNumber + 1} will unlock ${weekNumber * 7} days after your program start date. In the meantime, continue practicing what you've learned and complete any homework assignments.`
                 }
               </p>
             </div>
@@ -715,7 +753,7 @@ export default function WeekPage() {
                 Return to Dashboard
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              {weekNumber < 16 && (
+              {weekNumber < 16 && nextWeekUnlocked && (
                 <Button 
                   variant="outline"
                   onClick={() => {
@@ -727,6 +765,12 @@ export default function WeekPage() {
                 >
                   Continue to Week {weekNumber + 1}
                 </Button>
+              )}
+              {weekNumber < 16 && !nextWeekUnlocked && (
+                <div className="flex items-center justify-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                  <Lock className="h-4 w-4" />
+                  <span>Week {weekNumber + 1} will unlock based on your program schedule</span>
+                </div>
               )}
             </div>
           </div>

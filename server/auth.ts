@@ -11,6 +11,10 @@ declare global {
       email: string;
       password: string;
       name: string | null;
+      role: string;
+      startDate: string | null;
+      subscriptionStatus: string | null;
+      allFeesWaived: boolean | null;
       createdAt: Date | null;
     }
   }

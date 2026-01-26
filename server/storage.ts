@@ -4,20 +4,46 @@ import {
   commitments,
   dailyCheckins,
   weekCompletions,
+  therapistClients,
+  payments,
+  weekFeeWaivers,
   type User,
   type InsertUser,
   type WeekReflection,
   type Commitment,
   type DailyCheckin,
   type WeekCompletion,
+  type TherapistClient,
+  type Payment,
+  type WeekFeeWaiver,
+  type UserRole,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  createUser(user: InsertUser & { role?: UserRole; startDate?: string }): Promise<User>;
+  updateUser(id: string, data: Partial<{ name: string; startDate: string; allFeesWaived: boolean; subscriptionStatus: string }>): Promise<User | undefined>;
+  getUsersByRole(role: UserRole): Promise<User[]>;
+
+  // Therapist-Client assignments
+  assignTherapistToClient(therapistId: string, clientId: string): Promise<TherapistClient>;
+  removeTherapistFromClient(therapistId: string, clientId: string): Promise<void>;
+  getClientsForTherapist(therapistId: string): Promise<User[]>;
+  getTherapistsForClient(clientId: string): Promise<User[]>;
+
+  // Week fee waivers
+  waiveWeekFee(clientId: string, weekNumber: number, waivedBy: string): Promise<WeekFeeWaiver>;
+  getWaivedWeeks(clientId: string): Promise<number[]>;
+  removeWeekWaiver(clientId: string, weekNumber: number): Promise<void>;
+
+  // Payments
+  createPayment(data: { userId: string; type: string; weekNumber?: number; amount: number; status?: string; stripePaymentId?: string }): Promise<Payment>;
+  getPaymentsForUser(userId: string): Promise<Payment[]>;
+  updatePaymentStatus(id: string, status: string, stripePaymentId?: string): Promise<Payment | undefined>;
+  hasWeekPayment(userId: string, weekNumber: number): Promise<boolean>;
 
   // Week reflections
   getWeekReflection(userId: string, weekNumber: number): Promise<WeekReflection | undefined>;
@@ -55,12 +81,141 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: InsertUser & { role?: UserRole; startDate?: string }): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        ...insertUser,
+        role: insertUser.role || "client",
+        startDate: insertUser.startDate || null,
+      })
       .returning();
     return user;
+  }
+
+  async updateUser(id: string, data: Partial<{ name: string; startDate: string; allFeesWaived: boolean; subscriptionStatus: string }>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  async getUsersByRole(role: UserRole): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
+  }
+
+  // Therapist-Client assignments
+  async assignTherapistToClient(therapistId: string, clientId: string): Promise<TherapistClient> {
+    const [assignment] = await db
+      .insert(therapistClients)
+      .values({ therapistId, clientId })
+      .returning();
+    return assignment;
+  }
+
+  async removeTherapistFromClient(therapistId: string, clientId: string): Promise<void> {
+    await db
+      .delete(therapistClients)
+      .where(and(eq(therapistClients.therapistId, therapistId), eq(therapistClients.clientId, clientId)));
+  }
+
+  async getClientsForTherapist(therapistId: string): Promise<User[]> {
+    const assignments = await db
+      .select({ clientId: therapistClients.clientId })
+      .from(therapistClients)
+      .where(eq(therapistClients.therapistId, therapistId));
+    
+    if (assignments.length === 0) return [];
+    
+    const clientIds = assignments.map(a => a.clientId);
+    const clients = await Promise.all(clientIds.map(id => this.getUser(id)));
+    return clients.filter((c): c is User => c !== undefined);
+  }
+
+  async getTherapistsForClient(clientId: string): Promise<User[]> {
+    const assignments = await db
+      .select({ therapistId: therapistClients.therapistId })
+      .from(therapistClients)
+      .where(eq(therapistClients.clientId, clientId));
+    
+    if (assignments.length === 0) return [];
+    
+    const therapistIds = assignments.map(a => a.therapistId);
+    const therapists = await Promise.all(therapistIds.map(id => this.getUser(id)));
+    return therapists.filter((t): t is User => t !== undefined);
+  }
+
+  // Week fee waivers
+  async waiveWeekFee(clientId: string, weekNumber: number, waivedBy: string): Promise<WeekFeeWaiver> {
+    const [waiver] = await db
+      .insert(weekFeeWaivers)
+      .values({ clientId, weekNumber, waivedBy })
+      .returning();
+    return waiver;
+  }
+
+  async getWaivedWeeks(clientId: string): Promise<number[]> {
+    const waivers = await db
+      .select({ weekNumber: weekFeeWaivers.weekNumber })
+      .from(weekFeeWaivers)
+      .where(eq(weekFeeWaivers.clientId, clientId));
+    return waivers.map(w => w.weekNumber);
+  }
+
+  async removeWeekWaiver(clientId: string, weekNumber: number): Promise<void> {
+    await db
+      .delete(weekFeeWaivers)
+      .where(and(eq(weekFeeWaivers.clientId, clientId), eq(weekFeeWaivers.weekNumber, weekNumber)));
+  }
+
+  // Payments
+  async createPayment(data: { userId: string; type: string; weekNumber?: number; amount: number; status?: string; stripePaymentId?: string }): Promise<Payment> {
+    const [payment] = await db
+      .insert(payments)
+      .values({
+        userId: data.userId,
+        type: data.type,
+        weekNumber: data.weekNumber || null,
+        amount: data.amount,
+        status: data.status || "pending",
+        stripePaymentId: data.stripePaymentId || null,
+      })
+      .returning();
+    return payment;
+  }
+
+  async getPaymentsForUser(userId: string): Promise<Payment[]> {
+    return await db
+      .select()
+      .from(payments)
+      .where(eq(payments.userId, userId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async updatePaymentStatus(id: string, status: string, stripePaymentId?: string): Promise<Payment | undefined> {
+    const updateData: { status: string; stripePaymentId?: string } = { status };
+    if (stripePaymentId) updateData.stripePaymentId = stripePaymentId;
+    
+    const [payment] = await db
+      .update(payments)
+      .set(updateData)
+      .where(eq(payments.id, id))
+      .returning();
+    return payment || undefined;
+  }
+
+  async hasWeekPayment(userId: string, weekNumber: number): Promise<boolean> {
+    const [payment] = await db
+      .select()
+      .from(payments)
+      .where(and(
+        eq(payments.userId, userId),
+        eq(payments.weekNumber, weekNumber),
+        eq(payments.status, "completed")
+      ));
+    return !!payment;
   }
 
   // Week reflections

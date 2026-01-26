@@ -1,15 +1,61 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, date, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, date, unique, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// User roles enum
+export const userRoles = ["admin", "therapist", "client"] as const;
+export type UserRole = typeof userRoles[number];
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name"),
+  role: text("role").notNull().default("client"), // admin, therapist, client
+  
+  // Client-specific fields
+  startDate: date("start_date"), // When client's 16-week program starts
+  
+  // Subscription/payment status
+  subscriptionStatus: text("subscription_status").default("active"), // active, paused, cancelled
+  allFeesWaived: boolean("all_fees_waived").default(false), // Admin can waive all fees
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Therapist-Client assignments (many-to-many)
+export const therapistClients = pgTable("therapist_clients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  therapistId: varchar("therapist_id").notNull().references(() => users.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+}, (table) => [
+  unique("therapist_client_unique").on(table.therapistId, table.clientId),
+]);
+
+// Payment records for tracking fees
+export const payments = pgTable("payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: text("type").notNull(), // "subscription" for therapists, "week_fee" for clients
+  weekNumber: integer("week_number"), // For client week fees
+  amount: integer("amount").notNull(), // In cents
+  status: text("status").notNull().default("pending"), // pending, completed, waived, failed
+  stripePaymentId: text("stripe_payment_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Week fee waivers (admin can waive specific week fees for clients)
+export const weekFeeWaivers = pgTable("week_fee_waivers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  weekNumber: integer("week_number").notNull(),
+  waivedAt: timestamp("waived_at").defaultNow(),
+  waivedBy: varchar("waived_by").references(() => users.id), // Admin who waived
+}, (table) => [
+  unique("week_waiver_unique").on(table.clientId, table.weekNumber),
+]);
 
 export const sessions = pgTable("sessions", {
   sid: varchar("sid").primaryKey(),
@@ -34,10 +80,50 @@ export const registerSchema = z.object({
   name: z.string().min(1, "Name is required"),
 });
 
+// Role-specific registration schemas
+export const registerTherapistSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(1, "Name is required"),
+});
+
+export const registerClientSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(1, "Name is required"),
+});
+
+// Insert schemas for new tables
+export const insertTherapistClientSchema = createInsertSchema(therapistClients).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export const insertPaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertWeekFeeWaiverSchema = createInsertSchema(weekFeeWaivers).omit({
+  id: true,
+  waivedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type RegisterTherapistInput = z.infer<typeof registerTherapistSchema>;
+export type RegisterClientInput = z.infer<typeof registerClientSchema>;
+
+export type TherapistClient = typeof therapistClients.$inferSelect;
+export type InsertTherapistClient = z.infer<typeof insertTherapistClientSchema>;
+
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+
+export type WeekFeeWaiver = typeof weekFeeWaivers.$inferSelect;
+export type InsertWeekFeeWaiver = z.infer<typeof insertWeekFeeWaiverSchema>;
 
 // Week reflections - stores answers to the 4 reflection questions per week
 export const weekReflections = pgTable("week_reflections", {

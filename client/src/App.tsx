@@ -8,10 +8,11 @@ import { AuthProvider } from "@/lib/auth";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import RegisterTherapist from "@/pages/register-therapist";
+import RegisterClient from "@/pages/register-client";
+import AdminPage from "@/pages/admin";
 import Dashboard from "@/pages/dashboard";
 import TherapistClient from "@/pages/therapist-client";
-<Route path="/therapist-home" component={TherapistHome} />;
-
 import TherapistHome from "@/pages/therapist-home";
 import WeekPage from "@/pages/week";
 import DailyCheckinPage from "@/pages/daily-checkin";
@@ -26,7 +27,11 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/register/therapist" component={RegisterTherapist} />
+      <Route path="/register/client" component={RegisterClient} />
+      <Route path="/admin" component={AdminPage} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/therapist" component={TherapistHome} />
       <Route path="/therapist-home" component={TherapistHome} />
       <Route path="/week/:weekNumber" component={WeekPage} />
       <Route path="/daily-checkin" component={DailyCheckinPage} />
