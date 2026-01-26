@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,7 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Moon, Sun } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Moon, Sun, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface DailyCheckItem {
   id: string;
@@ -50,6 +53,7 @@ const HALT_ITEMS = [
 
 export default function DailyCheckinPage() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [morningChecks, setMorningChecks] = useState<Record<string, boolean>>({});
   const [eveningChecks, setEveningChecks] = useState<Record<string, boolean>>({});
   const [haltChecks, setHaltChecks] = useState<Record<string, boolean>>({});
@@ -57,12 +61,54 @@ export default function DailyCheckinPage() {
   const [moodLevel, setMoodLevel] = useState([0]);
   const [journalEntry, setJournalEntry] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const today = new Date().toLocaleDateString('en-US', { 
+  const todayDate = new Date();
+  const dateKey = todayDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+  
+  const today = todayDate.toLocaleDateString('en-US', { 
     weekday: 'long', 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric' 
+  });
+
+  // Fetch existing check-in data for today
+  const { data: checkinData, isLoading } = useQuery<{ checkin: any }>({
+    queryKey: ['/api/progress/checkin', dateKey],
+  });
+
+  // Load existing data when fetched
+  useEffect(() => {
+    if (checkinData?.checkin && !dataLoaded) {
+      const c = checkinData.checkin;
+      try {
+        const morning = c.morningChecks ? JSON.parse(c.morningChecks) : [];
+        const halt = c.haltChecks ? JSON.parse(c.haltChecks) : [];
+        const evening = c.eveningChecks ? JSON.parse(c.eveningChecks) : [];
+        
+        setMorningChecks(morning.reduce((acc: Record<string, boolean>, id: string) => ({ ...acc, [id]: true }), {}));
+        setHaltChecks(halt.reduce((acc: Record<string, boolean>, id: string) => ({ ...acc, [id]: true }), {}));
+        setEveningChecks(evening.reduce((acc: Record<string, boolean>, id: string) => ({ ...acc, [id]: true }), {}));
+        setUrgeLevel([c.urgeLevel ?? 0]);
+        setMoodLevel([c.moodLevel ?? 0]);
+        setJournalEntry(c.journalEntry || "");
+      } catch (e) {
+        console.error("Error parsing check-in data:", e);
+      }
+      setDataLoaded(true);
+    }
+  }, [checkinData, dataLoaded]);
+
+  // Mutation to save check-in data
+  const saveCheckinMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("PUT", `/api/progress/checkin/${dateKey}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/progress/checkin', dateKey] });
+    },
   });
 
   const toggleMorningCheck = (id: string) => {
@@ -77,9 +123,32 @@ export default function DailyCheckinPage() {
     setHaltChecks(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    // In a real app, this would save to the backend
+  const handleSubmit = async () => {
+    const morningCheckIds = Object.entries(morningChecks).filter(([, v]) => v).map(([k]) => k);
+    const haltCheckIds = Object.entries(haltChecks).filter(([, v]) => v).map(([k]) => k);
+    const eveningCheckIds = Object.entries(eveningChecks).filter(([, v]) => v).map(([k]) => k);
+    
+    try {
+      await saveCheckinMutation.mutateAsync({
+        morningChecks: morningCheckIds,
+        haltChecks: haltCheckIds,
+        urgeLevel: urgeLevel[0],
+        moodLevel: moodLevel[0],
+        eveningChecks: eveningCheckIds,
+        journalEntry,
+      });
+      setSubmitted(true);
+      toast({
+        title: "Check-in saved!",
+        description: "Your daily check-in has been recorded.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save check-in. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getUrgeLabel = (level: number) => {
@@ -140,16 +209,10 @@ export default function DailyCheckinPage() {
                   variant="outline" 
                   onClick={() => {
                     setSubmitted(false);
-                    setMorningChecks({});
-                    setEveningChecks({});
-                    setHaltChecks({});
-                    setUrgeLevel([0]);
-                    setMoodLevel([0]);
-                    setJournalEntry("");
                   }}
                   data-testid="button-new-checkin"
                 >
-                  Start New Check-in
+                  Edit Today's Check-in
                 </Button>
               </div>
             </CardContent>
@@ -377,10 +440,15 @@ export default function DailyCheckinPage() {
                   className="w-full" 
                   size="lg" 
                   onClick={handleSubmit}
+                  disabled={saveCheckinMutation.isPending}
                   data-testid="button-submit-checkin"
                 >
-                  <CheckCircle2 className="h-5 w-5 mr-2" />
-                  Complete Today's Check-in
+                  {saveCheckinMutation.isPending ? (
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-5 w-5 mr-2" />
+                  )}
+                  {saveCheckinMutation.isPending ? "Saving..." : "Complete Today's Check-in"}
                 </Button>
               </CardContent>
             </Card>

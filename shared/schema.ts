@@ -64,15 +64,28 @@ export const commitments = pgTable("commitments", {
   unique("commitments_user_week_unique").on(table.userId, table.weekNumber),
 ]);
 
-// Daily check-ins
+// Daily check-ins - comprehensive self-monitoring
 export const dailyCheckins = pgTable("daily_checkins", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   dateKey: varchar("date_key", { length: 10 }).notNull(), // YYYY-MM-DD
-  mood: integer("mood"), // 1-10
-  triggers: text("triggers").default(""),
-  wins: text("wins").default(""),
-  tomorrow: text("tomorrow").default(""),
+  
+  // Morning check-in items (JSON array of checked item IDs)
+  morningChecks: text("morning_checks").default("[]"),
+  
+  // HALT check items (JSON array of checked item IDs)
+  haltChecks: text("halt_checks").default("[]"),
+  
+  // Current state levels
+  urgeLevel: integer("urge_level").default(0), // 0-10
+  moodLevel: integer("mood_level").default(0), // 0-10
+  
+  // Evening reflection items (JSON array of checked item IDs)
+  eveningChecks: text("evening_checks").default("[]"),
+  
+  // Journal entry
+  journalEntry: text("journal_entry").default(""),
+  
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   unique("daily_checkins_user_date_unique").on(table.userId, table.dateKey),

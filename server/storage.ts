@@ -29,7 +29,15 @@ export interface IStorage {
 
   // Daily check-ins
   getDailyCheckin(userId: string, dateKey: string): Promise<DailyCheckin | undefined>;
-  upsertDailyCheckin(userId: string, dateKey: string, data: { mood?: number; triggers?: string; wins?: string; tomorrow?: string }): Promise<DailyCheckin>;
+  upsertDailyCheckin(userId: string, dateKey: string, data: { 
+    morningChecks?: string; 
+    haltChecks?: string; 
+    urgeLevel?: number; 
+    moodLevel?: number; 
+    eveningChecks?: string; 
+    journalEntry?: string;
+  }): Promise<DailyCheckin>;
+  getUserCheckinHistory(userId: string, limit?: number): Promise<DailyCheckin[]>;
 
   // Week completions
   getCompletedWeeks(userId: string): Promise<number[]>;
@@ -125,7 +133,14 @@ export class DatabaseStorage implements IStorage {
   async upsertDailyCheckin(
     userId: string,
     dateKey: string,
-    data: { mood?: number; triggers?: string; wins?: string; tomorrow?: string }
+    data: { 
+      morningChecks?: string; 
+      haltChecks?: string; 
+      urgeLevel?: number; 
+      moodLevel?: number; 
+      eveningChecks?: string; 
+      journalEntry?: string;
+    }
   ): Promise<DailyCheckin> {
     const existing = await this.getDailyCheckin(userId, dateKey);
     if (existing) {
@@ -142,6 +157,16 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async getUserCheckinHistory(userId: string, limit: number = 30): Promise<DailyCheckin[]> {
+    const results = await db
+      .select()
+      .from(dailyCheckins)
+      .where(eq(dailyCheckins.userId, userId))
+      .orderBy(dailyCheckins.dateKey)
+      .limit(limit);
+    return results;
   }
 
   // Week completions

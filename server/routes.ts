@@ -196,17 +196,32 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid date format (use YYYY-MM-DD)" });
       }
       const userId = (req.user as any).id;
-      const { mood, triggers, wins, tomorrow } = req.body;
+      const { morningChecks, haltChecks, urgeLevel, moodLevel, eveningChecks, journalEntry } = req.body;
       const checkin = await storage.upsertDailyCheckin(userId, dateKey, {
-        mood: mood !== undefined ? parseInt(mood, 10) : undefined,
-        triggers,
-        wins,
-        tomorrow,
+        morningChecks: morningChecks !== undefined ? JSON.stringify(morningChecks) : undefined,
+        haltChecks: haltChecks !== undefined ? JSON.stringify(haltChecks) : undefined,
+        urgeLevel: urgeLevel !== undefined ? parseInt(urgeLevel, 10) : undefined,
+        moodLevel: moodLevel !== undefined ? parseInt(moodLevel, 10) : undefined,
+        eveningChecks: eveningChecks !== undefined ? JSON.stringify(eveningChecks) : undefined,
+        journalEntry,
       });
       res.json({ checkin });
     } catch (error) {
       console.error("Save checkin error:", error);
       res.status(500).json({ message: "Failed to save check-in" });
+    }
+  });
+
+  // Get check-in history for therapist analysis
+  app.get("/api/progress/checkin-history", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 30;
+      const checkins = await storage.getUserCheckinHistory(userId, limit);
+      res.json({ checkins });
+    } catch (error) {
+      console.error("Get checkin history error:", error);
+      res.status(500).json({ message: "Failed to get check-in history" });
     }
   });
 
