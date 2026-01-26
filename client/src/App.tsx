@@ -14,6 +14,7 @@ import TherapistClient from "@/pages/therapist-client";
 
 import TherapistHome from "@/pages/therapist-home";
 import WeekPage from "@/pages/week";
+import DailyCheckinPage from "@/pages/daily-checkin";
 import Checkin from "@/pages/checkin";
 import Protected from "@/pages/protected";
 import RelapseAutopsyPage from "@/pages/relapse-autopsy";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/therapist-home" component={TherapistHome} />
       <Route path="/week/:weekNumber" component={WeekPage} />
+      <Route path="/daily-checkin" component={DailyCheckinPage} />
       <Route path="/therapist/clients/:id" component={TherapistClient} />
       <Route path="/checkin" component={Checkin} />
       <Route path="/protected" component={Protected} />

@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 
 type WeekItem = {
@@ -75,7 +75,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between gap-3">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer">
               <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -99,7 +99,7 @@ export default function Dashboard() {
               <Button variant="outline">Therapist Home (MVP)</Button>
             </Link>
 
-            <Button variant="outline" onClick={handleLogout}>
+            <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
               <LogOut className="h-4 w-4 mr-2" />
               Log out
             </Button>
@@ -120,8 +120,17 @@ export default function Dashboard() {
                 </CardDescription>
               </div>
 
-              {/* Resume button */}
-              <Button onClick={resumeWeek1}>Resume Week 1</Button>
+              <div className="flex flex-wrap gap-2">
+                {/* Daily Check-in button */}
+                <Link href="/daily-checkin">
+                  <Button variant="outline" data-testid="button-daily-checkin">
+                    <ClipboardCheck className="h-4 w-4 mr-2" />
+                    Daily Check-in
+                  </Button>
+                </Link>
+                {/* Resume button */}
+                <Button onClick={resumeWeek1} data-testid="button-resume-week">Resume Week 1</Button>
+              </div>
             </div>
           </CardHeader>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useRoute } from "wouter";
+import { useLocation, useRoute, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,13 +19,151 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 
 function safeNumber(v: unknown, fallback: number) {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
+
+const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> = {
+  1: {
+    congrats: "You've taken an incredibly brave first step by completing Week 1. Beginning this journey takes real courage, and you should be proud of yourself.",
+    learnings: [
+      "You learned what Compulsive Sexual Behavior Disorder (CSBD) actually is - a recognized clinical condition, not a moral failure",
+      "You understood the addiction cycle: preoccupation → ritualization → acting out → despair",
+      "You began clarifying your personal motivation for change and recovery"
+    ]
+  },
+  2: {
+    congrats: "Great work completing Week 2! Understanding your triggers is a crucial skill for lasting change.",
+    learnings: [
+      "You identified the difference between internal triggers (emotions, thoughts) and external triggers (situations, people, places)",
+      "You created your personal trigger inventory",
+      "You learned strategies for managing high-risk situations"
+    ]
+  },
+  3: {
+    congrats: "Week 3 complete! You're building powerful skills for changing unhelpful thought patterns.",
+    learnings: [
+      "You learned cognitive restructuring techniques to identify and challenge distorted thinking",
+      "You practiced recognizing cognitive distortions in your own thoughts",
+      "You developed alternative, more balanced ways of thinking"
+    ]
+  },
+  4: {
+    congrats: "Excellent progress on Week 4! Self-regulation is a cornerstone of recovery.",
+    learnings: [
+      "You learned practical self-regulation skills for managing urges and emotions",
+      "You practiced techniques for calming your nervous system",
+      "You developed a personal toolkit for emotional regulation"
+    ]
+  },
+  5: {
+    congrats: "Week 5 complete! Understanding shame versus guilt is transformative for recovery.",
+    learnings: [
+      "You learned the crucial difference between shame (I am bad) and guilt (I did something bad)",
+      "You understood how shame fuels the addiction cycle",
+      "You began developing self-compassion practices"
+    ]
+  },
+  6: {
+    congrats: "Great work on Week 6! Healthy relationships are vital for lasting recovery.",
+    learnings: [
+      "You explored how CSBD has impacted your relationships",
+      "You learned about healthy boundaries and intimacy",
+      "You began developing strategies for rebuilding trust"
+    ]
+  },
+  7: {
+    congrats: "Week 7 complete! Communication skills will serve you well beyond recovery.",
+    learnings: [
+      "You learned assertive communication techniques",
+      "You practiced expressing needs and boundaries clearly",
+      "You developed skills for difficult conversations"
+    ]
+  },
+  8: {
+    congrats: "Congratulations on completing Phase 1! You've built a strong foundation for recovery.",
+    learnings: [
+      "You developed your initial relapse prevention plan",
+      "You reviewed and consolidated all the CBT skills from Phase 1",
+      "You're now prepared to begin the deeper work of Phase 2"
+    ]
+  },
+  9: {
+    congrats: "Welcome to Phase 2! Week 9 introduces powerful new approaches to lasting change.",
+    learnings: [
+      "You were introduced to Acceptance and Commitment Therapy (ACT)",
+      "You learned about psychological flexibility",
+      "You began understanding how acceptance differs from giving up"
+    ]
+  },
+  10: {
+    congrats: "Week 10 complete! Cognitive defusion is a game-changing skill.",
+    learnings: [
+      "You learned to observe thoughts without being controlled by them",
+      "You practiced defusion techniques to create distance from unhelpful thoughts",
+      "You understood that thoughts are not facts or commands"
+    ]
+  },
+  11: {
+    congrats: "Great work on Week 11! Your values will guide you toward the life you truly want.",
+    learnings: [
+      "You clarified your core personal values",
+      "You explored what truly matters to you across different life domains",
+      "You began connecting your values to daily actions"
+    ]
+  },
+  12: {
+    congrats: "Week 12 complete! Acceptance and mindfulness are powerful allies in recovery.",
+    learnings: [
+      "You deepened your understanding of acceptance - making room for difficult experiences",
+      "You practiced mindfulness techniques",
+      "You learned to be present rather than escaping into compulsive behavior"
+    ]
+  },
+  13: {
+    congrats: "Excellent work on Week 13! Committed action turns values into reality.",
+    learnings: [
+      "You learned about committed action - values-guided behavior even when it's difficult",
+      "You practiced setting values-aligned goals",
+      "You developed strategies for taking action despite discomfort"
+    ]
+  },
+  14: {
+    congrats: "Week 14 complete! Self-as-context provides a stable foundation for change.",
+    learnings: [
+      "You explored the observing self - the part of you that notices all experiences",
+      "You practiced dis-identifying from thoughts, feelings, and roles",
+      "You developed a more flexible sense of identity"
+    ]
+  },
+  15: {
+    congrats: "Great progress on Week 15! Your comprehensive relapse prevention plan is taking shape.",
+    learnings: [
+      "You developed a detailed, personalized relapse prevention plan",
+      "You identified early warning signs and intervention strategies",
+      "You built a support network and accountability system"
+    ]
+  },
+  16: {
+    congrats: "Congratulations on completing the entire 16-week Sexual Integrity Program! This is a remarkable achievement. The work you've done takes tremendous courage and commitment.",
+    learnings: [
+      "You've integrated all the skills and insights from both phases",
+      "You've created a vision for your continued growth and recovery",
+      "You've written a letter to your future self as a reminder of your journey"
+    ]
+  }
+};
 
 export default function WeekPage() {
   const [, setLocation] = useLocation();
@@ -41,14 +179,20 @@ export default function WeekPage() {
   const [isWeekCompleted, setIsWeekCompleted] = useState(false);
   const [affirmComplete, setAffirmComplete] = useState(false);
   const [homeworkCompleted, setHomeworkCompleted] = useState<Record<number, boolean>>({});
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setAffirmComplete(false);
     setHomeworkCompleted({});
+    setReflectionAnswers({});
+    setIsWeekCompleted(false);
+    setShowCompletionDialog(false);
   }, [weekNumber]);
 
   const markWeekComplete = () => {
     setIsWeekCompleted(true);
+    setShowCompletionDialog(true);
   };
 
   const toggleHomework = (index: number) => {
@@ -58,9 +202,23 @@ export default function WeekPage() {
     }));
   };
 
+  const handleReflectionChange = (questionId: string, value: string) => {
+    setReflectionAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
+  const weekSummary = WEEK_SUMMARIES[weekNumber] || {
+    congrats: "Congratulations on completing this week! Your dedication to growth is inspiring.",
+    learnings: ["You've taken another important step in your recovery journey."]
+  };
+
+  const hasReflectionAnswers = Object.values(reflectionAnswers).some(answer => answer.trim().length > 0);
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b px-4 py-3">
+      <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -154,6 +312,8 @@ export default function WeekPage() {
                                 id={`reflection-${q.id}`}
                                 placeholder="Write your reflection here..."
                                 className="min-h-[100px]"
+                                value={reflectionAnswers[q.id] || ""}
+                                onChange={(e) => handleReflectionChange(q.id, e.target.value)}
                                 data-testid={`input-reflection-${idx}`}
                               />
                             </div>
@@ -334,6 +494,100 @@ export default function WeekPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* Completion Dialog */}
+      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <PartyPopper className="h-6 w-6 text-primary" />
+              Week {weekNumber} Complete!
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Congratulations on completing Week {weekNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Congratulations Message */}
+            <div className="rounded-lg bg-primary/10 p-4">
+              <p className="text-sm leading-relaxed">
+                {weekSummary.congrats}
+              </p>
+            </div>
+
+            {/* What You Learned */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">What You Learned This Week:</h3>
+              <ul className="space-y-2">
+                {weekSummary.learnings.map((learning, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-600 flex-shrink-0" />
+                    <span>{learning}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Personal Insights from Reflections */}
+            {hasReflectionAnswers && (
+              <div className="space-y-3">
+                <h3 className="font-semibold">Your Personal Insights:</h3>
+                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                  {weekContent?.reflectionQuestions?.map((q) => {
+                    const answer = reflectionAnswers[q.id];
+                    if (!answer?.trim()) return null;
+                    return (
+                      <div key={q.id} className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">{q.question}</p>
+                        <p className="text-sm italic">"{answer.substring(0, 150)}{answer.length > 150 ? '...' : ''}"</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Next Steps */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">
+                {weekNumber === 16 ? "Your Continuing Journey:" : "Next Steps:"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {weekNumber === 16 
+                  ? "Remember: recovery is a journey, not a destination. Continue practicing the skills you've learned, stay connected to your support network, and be compassionate with yourself. You've done remarkable work."
+                  : `Week ${weekNumber + 1} is now unlocked. Take some time to let this week's lessons settle before moving on. Remember to practice what you've learned and complete any homework assignments.`
+                }
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2 pt-4">
+              <Button 
+                onClick={() => setLocation("/dashboard")}
+                className="w-full"
+                data-testid="button-go-dashboard"
+              >
+                Return to Dashboard
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              {weekNumber < 16 && (
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowCompletionDialog(false);
+                    setLocation(`/week/${weekNumber + 1}`);
+                  }}
+                  className="w-full"
+                  data-testid="button-next-week"
+                >
+                  Continue to Week {weekNumber + 1}
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
