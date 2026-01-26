@@ -667,6 +667,51 @@ export async function registerRoutes(
   });
 
   // =======================================
+  // AI Encouragement API
+  // =======================================
+
+  // Get AI encouragement for current week
+  app.get("/api/ai/encouragement", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const weekNumber = parseInt(req.query.week as string) || 1;
+      
+      // Get user's current check-in data for context
+      const today = new Date().toISOString().split('T')[0];
+      const checkin = await storage.getDailyCheckin(user.id, today);
+      const completedWeeks = await storage.getCompletedWeeks(user.id);
+      
+      const { getAIEncouragement } = await import("./aiService");
+      const encouragement = await getAIEncouragement(weekNumber, {
+        mood: checkin?.moodLevel ?? undefined,
+        urgeLevel: checkin?.urgeLevel ?? undefined,
+        completedWeeks: completedWeeks,
+      });
+      
+      res.json({ encouragement, weekNumber });
+    } catch (error) {
+      console.error("AI encouragement error:", error);
+      res.status(500).json({ message: "Failed to get AI encouragement" });
+    }
+  });
+
+  // Get AI technique reminder
+  app.get("/api/ai/technique", requireAuth, async (req, res) => {
+    try {
+      const weekNumber = parseInt(req.query.week as string) || 1;
+      const techniqueName = req.query.technique as string | undefined;
+      
+      const { getAITechniqueReminder } = await import("./aiService");
+      const reminder = await getAITechniqueReminder(weekNumber, techniqueName);
+      
+      res.json({ reminder, weekNumber });
+    } catch (error) {
+      console.error("AI technique reminder error:", error);
+      res.status(500).json({ message: "Failed to get technique reminder" });
+    }
+  });
+
+  // =======================================
   // Week access API (for time-based unlocking)
   // =======================================
 

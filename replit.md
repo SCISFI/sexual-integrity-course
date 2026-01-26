@@ -14,8 +14,10 @@ Preferred communication style: Simple, everyday language.
   - Role-based registration (Therapist/Client separation)
   - Stripe integration for subscriptions and per-week payments
   - Admin panel with user management, fee waivers, and therapist-client assignments
-  - Therapist dashboard with client progress monitoring
+  - Therapist dashboard with client progress monitoring, feedback system with tabs for progress/check-ins/reflections/feedback
   - Time-based week unlocking (7-day intervals from client start date)
+  - AI-powered encouragement and technique reminders (uses Replit AI Integrations - no API key needed, charges billed to credits)
+  - Therapist feedback system for clients (general, week-specific, or check-in feedback)
 
 ## System Architecture
 
@@ -56,14 +58,17 @@ Server Modules:
 - `server/stripeClient.ts` - Stripe client and sync setup
 - `server/stripeService.ts` - Stripe operations (checkout sessions)
 - `server/webhookHandlers.ts` - Stripe webhook processing
+- `server/aiService.ts` - AI-powered encouragement and technique reminders
 
 ### Database Schema
 
 Core Tables:
 - `users`: id, email, password, name, role, startDate, therapistId, accessCode, allFeesWaived, stripeCustomerId, stripeSubscriptionId
 - `week_completions`: id, userId, weekNumber, completedAt
-- `check_ins`: id, userId, weekNumber, data, createdAt
+- `daily_checkins`: id, userId, dateKey, morningChecks, haltChecks, urgeLevel, moodLevel, eveningChecks, journalEntry
+- `week_reflections`: id, userId, weekNumber, q1-q4, updatedAt
 - `therapist_clients`: therapistId, clientId, createdAt
+- `therapist_feedback`: id, therapistId, clientId, weekNumber, feedbackType, content, createdAt
 - `week_fee_waivers`: id, clientId, weekNumber, adminId, createdAt
 
 Stripe Schema (managed by stripe-replit-sync):
@@ -84,6 +89,22 @@ API Endpoints:
 - `POST /api/payments/checkout/subscription` - Create therapist subscription checkout
 - `POST /api/payments/checkout/week` - Create client week payment checkout
 - `POST /api/stripe/webhook` - Stripe webhook handler (registered before express.json)
+
+### AI Encouragement
+
+The AI encouragement system uses Replit AI Integrations (OpenAI-compatible API) without requiring a separate API key. Charges are billed to Replit credits.
+
+Features:
+- **Encouragement messages**: Personalized motivational messages based on current week and user progress
+- **Technique reminders**: Brief explanations of CBT/ACT techniques for the current week
+- **Strict boundaries**: AI is limited to encouragement only - will not engage with crisis situations, provide medical advice, or discuss specific behaviors
+
+API Endpoints:
+- `GET /api/ai/encouragement?week=N` - Get AI encouragement for specified week
+- `GET /api/ai/technique?week=N&technique=name` - Get technique reminder
+
+Components:
+- `client/src/components/AIEncouragement.tsx` - Displays encouragement and technique reminders on week pages
 
 ### Week Unlocking Logic
 

@@ -237,3 +237,6 @@ export type InsertDailyCheckin = z.infer<typeof insertDailyCheckinSchema>;
 
 export type WeekCompletion = typeof weekCompletions.$inferSelect;
 export type InsertWeekCompletion = z.infer<typeof insertWeekCompletionSchema>;
+
+// Export chat models
+export * from "./models/chat";

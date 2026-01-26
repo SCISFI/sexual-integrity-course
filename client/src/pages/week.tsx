@@ -31,6 +31,7 @@ import {
 import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
+import { AIEncouragement } from "@/components/AIEncouragement";
 
 function safeNumber(v: unknown, fallback: number) {
   const n = Number(v);
@@ -386,6 +387,11 @@ export default function WeekPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {/* AI Encouragement section - only show if week is accessible */}
+            {!isTimeLocked && (
+              <AIEncouragement weekNumber={weekNumber} />
+            )}
+
             {/* Show time-locked message if week is not yet accessible */}
             {isTimeLocked && (
               <div className="flex flex-col items-center justify-center py-12 text-center" data-testid="week-time-locked">
