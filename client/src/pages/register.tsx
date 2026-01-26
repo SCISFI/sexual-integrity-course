@@ -34,7 +34,7 @@ export default function Register() {
 
   useEffect(() => {
     if (shouldRedirect && user) {
-      // setLocation("/dashboard");
+      setLocation("/dashboard");
     }
   }, [shouldRedirect, user, setLocation]);
 

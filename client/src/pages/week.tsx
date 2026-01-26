@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useLocation, useRoute, Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,8 +28,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight } from "lucide-react";
+import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
+import { useToast } from "@/hooks/use-toast";
 
 function safeNumber(v: unknown, fallback: number) {
   const n = Number(v);
@@ -176,23 +179,140 @@ export default function WeekPage() {
   const phase = weekNumber <= 8 ? 1 : 2;
   const phaseInfo = PHASE_INFO[phase];
 
+  const { toast } = useToast();
   const [isWeekCompleted, setIsWeekCompleted] = useState(false);
   const [affirmComplete, setAffirmComplete] = useState(false);
   const [homeworkCompleted, setHomeworkCompleted] = useState<Record<number, boolean>>({});
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
+  const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch completed weeks to check if this week is already done
+  const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
+    queryKey: ['/api/progress/completions'],
+  });
+
+  // Fetch saved reflections for this week
+  const { data: reflectionData, isLoading: loadingReflections } = useQuery<{ reflection: any }>({
+    queryKey: ['/api/progress/reflection', weekNumber],
+  });
+
+  // Check if this week is already completed (locked)
+  const weekIsLocked = completionsData?.completedWeeks?.includes(weekNumber) || false;
+
+  // Sync isWeekCompleted with weekIsLocked on initial load
+  useEffect(() => {
+    if (weekIsLocked && !isWeekCompleted) {
+      setIsWeekCompleted(true);
+    }
+  }, [weekIsLocked]);
+
+  // Load reflections when data arrives
+  useEffect(() => {
+    if (reflectionData?.reflection && !reflectionsLoaded) {
+      const r = reflectionData.reflection;
+      setReflectionAnswers({
+        q1: r.q1 || "",
+        q2: r.q2 || "",
+        q3: r.q3 || "",
+        q4: r.q4 || "",
+      });
+      setReflectionsLoaded(true);
+    }
+  }, [reflectionData, reflectionsLoaded]);
+
+  // Mutation to save reflections
+  const saveReflectionMutation = useMutation({
+    mutationFn: async (data: { q1?: string; q2?: string; q3?: string; q4?: string }) => {
+      const res = await apiRequest("PUT", `/api/progress/reflection/${weekNumber}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/progress/reflection', weekNumber] });
+    },
+    onError: () => {
+      toast({
+        title: "Auto-save failed",
+        description: "Your reflection answers couldn't be saved. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation to mark week complete
+  const markCompleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/progress/completions/${weekNumber}`, {});
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/progress/completions'] });
+      setIsWeekCompleted(true);
+      setShowCompletionDialog(true);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to mark week complete. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     setAffirmComplete(false);
     setHomeworkCompleted({});
     setReflectionAnswers({});
+    setReflectionsLoaded(false);
     setIsWeekCompleted(false);
     setShowCompletionDialog(false);
   }, [weekNumber]);
 
-  const markWeekComplete = () => {
-    setIsWeekCompleted(true);
-    setShowCompletionDialog(true);
+  // Debounced save for reflections
+  const debouncedSaveReflections = useCallback((answers: Record<string, string>) => {
+    if (weekIsLocked || loadingReflections) return; // Don't save if week is locked or still loading
+    
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveReflectionMutation.mutate({
+        q1: answers.q1 ?? "",
+        q2: answers.q2 ?? "",
+        q3: answers.q3 ?? "",
+        q4: answers.q4 ?? "",
+      });
+    }, 1000); // Save after 1 second of inactivity
+  }, [weekNumber, weekIsLocked, loadingReflections]);
+
+  // Cleanup debounced save on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const markWeekComplete = async () => {
+    try {
+      // First save reflections immediately
+      await saveReflectionMutation.mutateAsync({
+        q1: reflectionAnswers.q1 ?? "",
+        q2: reflectionAnswers.q2 ?? "",
+        q3: reflectionAnswers.q3 ?? "",
+        q4: reflectionAnswers.q4 ?? "",
+      });
+      // Then mark the week complete
+      markCompleteMutation.mutate();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save reflections. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const toggleHomework = (index: number) => {
@@ -203,10 +323,14 @@ export default function WeekPage() {
   };
 
   const handleReflectionChange = (questionId: string, value: string) => {
-    setReflectionAnswers(prev => ({
-      ...prev,
+    if (weekIsLocked) return; // Don't allow changes if week is locked
+    
+    const newAnswers = {
+      ...reflectionAnswers,
       [questionId]: value
-    }));
+    };
+    setReflectionAnswers(newAnswers);
+    debouncedSaveReflections(newAnswers);
   };
 
   const weekSummary = WEEK_SUMMARIES[weekNumber] || {
@@ -310,10 +434,11 @@ export default function WeekPage() {
                               </Label>
                               <Textarea
                                 id={`reflection-${q.id}`}
-                                placeholder="Write your reflection here..."
-                                className="min-h-[100px]"
+                                placeholder={weekIsLocked ? "This week has been completed. Your answers are saved." : "Write your reflection here..."}
+                                className={`min-h-[100px] ${weekIsLocked ? 'bg-muted cursor-not-allowed' : ''}`}
                                 value={reflectionAnswers[q.id] || ""}
                                 onChange={(e) => handleReflectionChange(q.id, e.target.value)}
+                                disabled={weekIsLocked}
                                 data-testid={`input-reflection-${idx}`}
                               />
                             </div>
@@ -432,51 +557,70 @@ export default function WeekPage() {
                 )}
 
                 {/* Week Completion */}
-                <div className="rounded-lg border bg-muted/40 p-4 space-y-2">
-                  <label className="flex items-start gap-2 text-sm cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="mt-1"
-                      checked={affirmComplete}
-                      onChange={(e) => setAffirmComplete(e.target.checked)}
-                      data-testid="checkbox-affirm-complete"
-                    />
-                    <span>
-                      By marking this week complete, I affirm that I have
-                      completed all required readings, reflections, and
-                      exercises <strong>honestly and in full</strong>. I
-                      understand that partial completion or skipping undermines
-                      the purpose of this program.
-                    </span>
-                  </label>
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {isWeekCompleted
-                      ? weekNumber === 16 
-                        ? "Congratulations! You have completed the program!"
-                        : `Week ${weekNumber} completed! Week ${weekNumber + 1} is now unlocked.`
-                      : weekNumber === 16
-                        ? "Complete all exercises to finish the program."
-                        : `Complete all exercises to unlock Week ${weekNumber + 1}.`}
+                {weekIsLocked ? (
+                  <div className="rounded-lg border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="font-medium">Week {weekNumber} Completed</span>
+                    </div>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      You completed this week. Your reflection answers are saved and viewable above.
+                    </p>
                   </div>
+                ) : (
+                  <>
+                    <div className="rounded-lg border bg-muted/40 p-4 space-y-2">
+                      <label className="flex items-start gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={affirmComplete}
+                          onChange={(e) => setAffirmComplete(e.target.checked)}
+                          data-testid="checkbox-affirm-complete"
+                        />
+                        <span>
+                          By marking this week complete, I affirm that I have
+                          completed all required readings, reflections, and
+                          exercises <strong>honestly and in full</strong>. I
+                          understand that partial completion or skipping undermines
+                          the purpose of this program.
+                        </span>
+                      </label>
+                    </div>
 
-                  <Button
-                    onClick={markWeekComplete}
-                    disabled={isWeekCompleted || !affirmComplete}
-                    data-testid="button-mark-complete"
-                  >
-                    {isWeekCompleted ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Week {weekNumber} Completed
-                      </>
-                    ) : (
-                      `Mark Week ${weekNumber} Complete`
-                    )}
-                  </Button>
-                </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-sm text-muted-foreground">
+                        {isWeekCompleted
+                          ? weekNumber === 16 
+                            ? "Congratulations! You have completed the program!"
+                            : `Week ${weekNumber} completed! Week ${weekNumber + 1} is now unlocked.`
+                          : weekNumber === 16
+                            ? "Complete all exercises to finish the program."
+                            : `Complete all exercises to unlock Week ${weekNumber + 1}.`}
+                      </div>
+
+                      <Button
+                        onClick={markWeekComplete}
+                        disabled={isWeekCompleted || !affirmComplete || markCompleteMutation.isPending}
+                        data-testid="button-mark-complete"
+                      >
+                        {markCompleteMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : isWeekCompleted ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Week {weekNumber} Completed
+                          </>
+                        ) : (
+                          `Mark Week ${weekNumber} Complete`
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </TabsContent>
 
               <TabsContent value="listen">
