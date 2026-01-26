@@ -53,8 +53,8 @@ export default function DailyCheckinPage() {
   const [morningChecks, setMorningChecks] = useState<Record<string, boolean>>({});
   const [eveningChecks, setEveningChecks] = useState<Record<string, boolean>>({});
   const [haltChecks, setHaltChecks] = useState<Record<string, boolean>>({});
-  const [urgeLevel, setUrgeLevel] = useState([3]);
-  const [moodLevel, setMoodLevel] = useState([5]);
+  const [urgeLevel, setUrgeLevel] = useState([0]);
+  const [moodLevel, setMoodLevel] = useState([0]);
   const [journalEntry, setJournalEntry] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -143,8 +143,8 @@ export default function DailyCheckinPage() {
                     setMorningChecks({});
                     setEveningChecks({});
                     setHaltChecks({});
-                    setUrgeLevel([3]);
-                    setMoodLevel([5]);
+                    setUrgeLevel([0]);
+                    setMoodLevel([0]);
                     setJournalEntry("");
                   }}
                   data-testid="button-new-checkin"
@@ -179,6 +179,7 @@ export default function DailyCheckinPage() {
                       id={`morning-${item.id}`}
                       checked={morningChecks[item.id] || false}
                       onCheckedChange={() => toggleMorningCheck(item.id)}
+                      onClick={(e) => e.stopPropagation()}
                       data-testid={`checkbox-morning-${item.id}`}
                     />
                     <div className="flex-1">
@@ -226,6 +227,7 @@ export default function DailyCheckinPage() {
                           id={`halt-${item.id}`}
                           checked={haltChecks[item.id] || false}
                           onCheckedChange={() => toggleHaltCheck(item.id)}
+                          onClick={(e) => e.stopPropagation()}
                           data-testid={`checkbox-halt-${item.id}`}
                         />
                         <div>
@@ -271,7 +273,7 @@ export default function DailyCheckinPage() {
                       value={urgeLevel}
                       onValueChange={setUrgeLevel}
                       max={10}
-                      min={1}
+                      min={0}
                       step={1}
                       className="py-2"
                       data-testid="slider-urge"
@@ -295,7 +297,7 @@ export default function DailyCheckinPage() {
                       value={moodLevel}
                       onValueChange={setMoodLevel}
                       max={10}
-                      min={1}
+                      min={0}
                       step={1}
                       className="py-2"
                       data-testid="slider-mood"
@@ -332,6 +334,7 @@ export default function DailyCheckinPage() {
                       id={`evening-${item.id}`}
                       checked={eveningChecks[item.id] || false}
                       onCheckedChange={() => toggleEveningCheck(item.id)}
+                      onClick={(e) => e.stopPropagation()}
                       data-testid={`checkbox-evening-${item.id}`}
                     />
                     <label
