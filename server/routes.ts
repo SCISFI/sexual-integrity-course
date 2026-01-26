@@ -685,6 +685,41 @@ export async function registerRoutes(
     }
   });
 
+  // Get Stripe price IDs for frontend
+  app.get("/api/stripe/config", async (_req, res) => {
+    try {
+      const { pool } = await import("./db");
+      
+      // Query for therapist subscription price
+      const therapistResult = await pool.query(`
+        SELECT p.id as price_id 
+        FROM stripe.prices p
+        JOIN stripe.products pr ON p.product = pr.id
+        WHERE pr.name = 'Therapist Monthly Subscription' 
+        AND p.active = true
+        LIMIT 1
+      `);
+      
+      // Query for client week price
+      const weekResult = await pool.query(`
+        SELECT p.id as price_id 
+        FROM stripe.prices p
+        JOIN stripe.products pr ON p.product = pr.id
+        WHERE pr.name = 'Weekly Lesson Access' 
+        AND p.active = true
+        LIMIT 1
+      `);
+      
+      const therapistPriceId = therapistResult.rows[0]?.price_id || null;
+      const weekPriceId = weekResult.rows[0]?.price_id || null;
+      
+      res.json({ therapistPriceId, weekPriceId });
+    } catch (error) {
+      console.error("Error fetching stripe config:", error);
+      res.status(500).json({ message: "Failed to fetch stripe configuration" });
+    }
+  });
+
   // Create checkout session for therapist subscription
   app.post("/api/payments/checkout/subscription", requireRole("therapist"), async (req, res) => {
     try {
