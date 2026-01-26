@@ -19,6 +19,7 @@ import DailyCheckinPage from "@/pages/daily-checkin";
 import Checkin from "@/pages/checkin";
 import Protected from "@/pages/protected";
 import RelapseAutopsyPage from "@/pages/relapse-autopsy";
+import PricingPage from "@/pages/pricing";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/checkin" component={Checkin} />
       <Route path="/protected" component={Protected} />
       <Route path="/relapse-autopsy" component={RelapseAutopsyPage} />
+      <Route path="/pricing" component={PricingPage} />
       <Route component={NotFound} />
     </Switch>
   );

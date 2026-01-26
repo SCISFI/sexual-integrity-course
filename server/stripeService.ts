@@ -23,6 +23,7 @@ export class StripeService {
       mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
+      allow_promotion_codes: true,
     });
   }
 
@@ -36,6 +37,7 @@ export class StripeService {
       mode: 'payment',
       success_url: successUrl,
       cancel_url: cancelUrl,
+      allow_promotion_codes: true,
       metadata: {
         weekNumber: weekNumber.toString(),
       },
