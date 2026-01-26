@@ -546,11 +546,26 @@ export async function registerRoutes(
     try {
       const therapistId = (req.user as any).id;
       const clients = await storage.getClientsForTherapist(therapistId);
-      const safeClients = clients.map(c => {
+      
+      const enrichedClients = await Promise.all(clients.map(async (c) => {
         const { password: _, ...safe } = c;
-        return safe;
-      });
-      res.json({ clients: safeClients });
+        const completedWeeks = await storage.getCompletedWeeks(c.id);
+        
+        // Calculate current week based on start date
+        let currentWeek = 1;
+        if (c.startDate) {
+          const daysSinceStart = Math.floor((Date.now() - new Date(c.startDate).getTime()) / (1000 * 60 * 60 * 24));
+          currentWeek = Math.min(16, Math.max(1, Math.floor(daysSinceStart / 7) + 1));
+        }
+        
+        return { 
+          ...safe, 
+          completedWeeks, 
+          currentWeek 
+        };
+      }));
+      
+      res.json({ clients: enrichedClients });
     } catch (error) {
       console.error("Get therapist clients error:", error);
       res.status(500).json({ message: "Failed to get clients" });
