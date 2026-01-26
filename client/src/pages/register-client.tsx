@@ -15,7 +15,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Shield, Loader2, AlertCircle, User } from "lucide-react";
+import { Shield, Loader2, AlertCircle, User, Check, CreditCard } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -94,6 +95,37 @@ export default function RegisterClient() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-6 rounded-lg border bg-muted/50 p-4" data-testid="card-pricing-info">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Weekly Access</span>
+                </div>
+                <Badge variant="secondary">Pay as you go</Badge>
+              </div>
+              <div className="mb-3">
+                <span className="text-3xl font-bold">$14.99</span>
+                <span className="text-muted-foreground">/week</span>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>16 weeks of structured content</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>CBT and ACT techniques</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Daily self-monitoring tools</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Therapist-guided progress</span>
+                </li>
+              </ul>
+            </div>
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}

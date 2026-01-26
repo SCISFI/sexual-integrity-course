@@ -191,6 +191,19 @@ export const weekCompletions = pgTable("week_completions", {
   unique("week_completions_user_week_unique").on(table.userId, table.weekNumber),
 ]);
 
+// Therapist feedback on client work
+export const therapistFeedback = pgTable("therapist_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  therapistId: varchar("therapist_id").notNull().references(() => users.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  weekNumber: integer("week_number"),
+  feedbackType: varchar("feedback_type", { length: 50 }).notNull(), // 'general', 'week', 'checkin'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type TherapistFeedback = typeof therapistFeedback.$inferSelect;
+
 // Insert schemas
 export const insertWeekReflectionSchema = createInsertSchema(weekReflections).omit({
   id: true,

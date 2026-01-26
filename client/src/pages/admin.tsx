@@ -38,8 +38,10 @@ import {
   LogOut,
   Loader2,
   Check,
-  X
+  X,
+  Eye
 } from "lucide-react";
+import { Link } from "wouter";
 
 interface Therapist {
   id: string;
@@ -337,20 +339,31 @@ export default function AdminPage() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingClient(client);
-                                setEditForm({
-                                  startDate: client.startDate || "",
-                                  allFeesWaived: client.allFeesWaived || false,
-                                });
-                              }}
-                              data-testid={`button-edit-client-${client.id}`}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Link href={`/admin/clients/${client.id}`}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  data-testid={`button-view-client-${client.id}`}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingClient(client);
+                                  setEditForm({
+                                    startDate: client.startDate || "",
+                                    allFeesWaived: client.allFeesWaived || false,
+                                  });
+                                }}
+                                data-testid={`button-edit-client-${client.id}`}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

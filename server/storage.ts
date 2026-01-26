@@ -7,6 +7,7 @@ import {
   therapistClients,
   payments,
   weekFeeWaivers,
+  therapistFeedback,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -17,6 +18,7 @@ import {
   type Payment,
   type WeekFeeWaiver,
   type UserRole,
+  type TherapistFeedback,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
@@ -47,6 +49,7 @@ export interface IStorage {
 
   // Week reflections
   getWeekReflection(userId: string, weekNumber: number): Promise<WeekReflection | undefined>;
+  getAllWeekReflections(userId: string): Promise<WeekReflection[]>;
   upsertWeekReflection(userId: string, weekNumber: number, data: { q1?: string; q2?: string; q3?: string; q4?: string }): Promise<WeekReflection>;
 
   // Commitments
@@ -68,6 +71,11 @@ export interface IStorage {
   // Week completions
   getCompletedWeeks(userId: string): Promise<number[]>;
   markWeekComplete(userId: string, weekNumber: number): Promise<WeekCompletion>;
+
+  // Therapist feedback
+  addTherapistFeedback(therapistId: string, clientId: string, feedbackType: string, content: string, weekNumber?: number): Promise<TherapistFeedback>;
+  getClientFeedback(clientId: string): Promise<TherapistFeedback[]>;
+  getFeedbackForTherapist(therapistId: string, clientId: string): Promise<TherapistFeedback[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -227,6 +235,15 @@ export class DatabaseStorage implements IStorage {
     return result || undefined;
   }
 
+  async getAllWeekReflections(userId: string): Promise<WeekReflection[]> {
+    const results = await db
+      .select()
+      .from(weekReflections)
+      .where(eq(weekReflections.userId, userId))
+      .orderBy(weekReflections.weekNumber);
+    return results;
+  }
+
   async upsertWeekReflection(
     userId: string,
     weekNumber: number,
@@ -349,6 +366,42 @@ export class DatabaseStorage implements IStorage {
       .values({ userId, weekNumber })
       .returning();
     return created;
+  }
+
+  // Therapist feedback
+  async addTherapistFeedback(
+    therapistId: string, 
+    clientId: string, 
+    feedbackType: string, 
+    content: string, 
+    weekNumber?: number
+  ): Promise<TherapistFeedback> {
+    const [created] = await db
+      .insert(therapistFeedback)
+      .values({ therapistId, clientId, feedbackType, content, weekNumber })
+      .returning();
+    return created;
+  }
+
+  async getClientFeedback(clientId: string): Promise<TherapistFeedback[]> {
+    const results = await db
+      .select()
+      .from(therapistFeedback)
+      .where(eq(therapistFeedback.clientId, clientId))
+      .orderBy(desc(therapistFeedback.createdAt));
+    return results;
+  }
+
+  async getFeedbackForTherapist(therapistId: string, clientId: string): Promise<TherapistFeedback[]> {
+    const results = await db
+      .select()
+      .from(therapistFeedback)
+      .where(and(
+        eq(therapistFeedback.therapistId, therapistId),
+        eq(therapistFeedback.clientId, clientId)
+      ))
+      .orderBy(desc(therapistFeedback.createdAt));
+    return results;
   }
 }
 

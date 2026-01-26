@@ -1,21 +1,40 @@
+import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type ClientProgress = {
   completedWeeks: number[];
   checkins: Array<{
+    id: string;
     dateKey: string;
     morningChecks: string | null;
-    eveningReflection: string | null;
-    triggers: string | null;
-    copingUsed: string | null;
-    mood: number | null;
+    eveningChecks: string | null;
+    journalEntry: string | null;
+    moodLevel: number | null;
     urgeLevel: number | null;
+  }>;
+  reflections: Array<{
+    weekNumber: number;
+    q1: string | null;
+    q2: string | null;
+    q3: string | null;
+    q4: string | null;
+  }>;
+  feedback: Array<{
+    id: string;
+    feedbackType: string;
+    content: string;
+    weekNumber: number | null;
+    createdAt: string;
   }>;
 };
 
@@ -31,6 +50,9 @@ type ClientInfo = {
 export default function TherapistClient() {
   const [, setLocation] = useLocation();
   const { id: clientId } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [newFeedback, setNewFeedback] = useState("");
+  const [feedbackWeek, setFeedbackWeek] = useState<number | null>(null);
 
   const { data: clientsData } = useQuery<{ clients: ClientInfo[] }>({
     queryKey: ['/api/therapist/clients'],
@@ -41,9 +63,28 @@ export default function TherapistClient() {
     enabled: !!clientId,
   });
 
+  const feedbackMutation = useMutation({
+    mutationFn: async (data: { feedbackType: string; content: string; weekNumber?: number }) => {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, data);
+      if (!res.ok) throw new Error("Failed to add feedback");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      setNewFeedback("");
+      setFeedbackWeek(null);
+      toast({ title: "Feedback added successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to add feedback", variant: "destructive" });
+    },
+  });
+
   const client = clientsData?.clients?.find(c => c.id === parseInt(clientId || "0"));
   const completedWeeks = progressData?.completedWeeks || [];
   const checkins = progressData?.checkins || [];
+  const reflections = progressData?.reflections || [];
+  const feedback = progressData?.feedback || [];
 
   const getWeekStatus = (weekNum: number) => {
     if (completedWeeks.includes(weekNum)) return "completed";
@@ -55,27 +96,26 @@ export default function TherapistClient() {
     return "locked";
   };
 
-  const recentCheckins = checkins.slice(0, 7);
-  const averageMood = checkins.length > 0 
-    ? checkins.filter(c => c.mood !== null).reduce((acc, c) => acc + (c.mood || 0), 0) / checkins.filter(c => c.mood !== null).length
-    : null;
-  const averageUrge = checkins.length > 0
-    ? checkins.filter(c => c.urgeLevel !== null).reduce((acc, c) => acc + (c.urgeLevel || 0), 0) / checkins.filter(c => c.urgeLevel !== null).length
-    : null;
+  const handleSubmitFeedback = () => {
+    if (!newFeedback.trim()) return;
+    feedbackMutation.mutate({
+      feedbackType: feedbackWeek ? 'week' : 'general',
+      content: newFeedback,
+      weekNumber: feedbackWeek || undefined,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation("/therapist")}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Clients
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          onClick={() => setLocation("/therapist")}
+          data-testid="button-back"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Clients
+        </Button>
 
         {!client ? (
           <Card>
@@ -89,15 +129,11 @@ export default function TherapistClient() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Client Details
+                  {client.name}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
-                    <p className="font-medium" data-testid="text-client-name">{client.name}</p>
-                  </div>
+                <div className="grid gap-4 md:grid-cols-3">
                   <div>
                     <p className="text-sm text-muted-foreground">Email</p>
                     <p className="font-medium">{client.email}</p>
@@ -105,149 +141,258 @@ export default function TherapistClient() {
                   <div>
                     <p className="text-sm text-muted-foreground">Start Date</p>
                     <p className="font-medium">
-                      {client.startDate 
-                        ? new Date(client.startDate).toLocaleDateString()
-                        : "Not set"
-                      }
+                      {client.startDate ? new Date(client.startDate).toLocaleDateString() : "Not set"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Current Week</p>
-                    <p className="font-medium">Week {client.currentWeek} of 16</p>
+                    <p className="text-sm text-muted-foreground">Progress</p>
+                    <p className="font-medium">{completedWeeks.length} / 16 Weeks</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Weekly Progress
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingProgress ? (
-                  <div className="space-y-2">
-                    {[1, 2, 3, 4].map(i => (
-                      <Skeleton key={i} className="h-10 w-full" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-                    {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
-                      const status = getWeekStatus(weekNum);
-                      return (
-                        <div
-                          key={weekNum}
-                          className={`flex flex-col items-center justify-center rounded-lg border p-3 ${
-                            status === "completed"
-                              ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
-                              : status === "available"
-                                ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950"
-                                : "border-muted bg-muted/30"
-                          }`}
-                          data-testid={`week-status-${weekNum}`}
-                        >
-                          <span className="text-xs text-muted-foreground">Week</span>
-                          <span className="font-bold">{weekNum}</span>
-                          {status === "completed" && (
-                            <CheckCircle2 className="mt-1 h-4 w-4 text-green-600 dark:text-green-400" />
-                          )}
-                          {status === "available" && (
-                            <Clock className="mt-1 h-4 w-4 text-amber-600 dark:text-amber-400" />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-green-500" />
-                    <span>Completed ({completedWeeks.length})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-amber-500" />
-                    <span>Available but not completed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full bg-muted" />
-                    <span>Locked</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <Tabs defaultValue="progress" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="progress">Progress</TabsTrigger>
+                <TabsTrigger value="checkins">Check-ins</TabsTrigger>
+                <TabsTrigger value="reflections">Reflections</TabsTrigger>
+                <TabsTrigger value="feedback">Feedback</TabsTrigger>
+              </TabsList>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Daily Check-in Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {checkins.length === 0 ? (
-                  <div className="py-4 text-center text-muted-foreground">
-                    No check-ins recorded yet.
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="rounded-lg border p-4">
-                        <p className="text-sm text-muted-foreground">Average Mood (last 30 days)</p>
-                        <p className="text-2xl font-bold">
-                          {averageMood !== null ? averageMood.toFixed(1) : "N/A"} / 10
-                        </p>
-                      </div>
-                      <div className="rounded-lg border p-4">
-                        <p className="text-sm text-muted-foreground">Average Urge Level (last 30 days)</p>
-                        <p className="text-2xl font-bold">
-                          {averageUrge !== null ? averageUrge.toFixed(1) : "N/A"} / 10
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="mb-2 font-medium">Recent Check-ins</h4>
-                      <div className="space-y-2">
-                        {recentCheckins.map((checkin) => (
-                          <div
-                            key={checkin.dateKey}
-                            className="flex items-center justify-between rounded-lg border p-3"
-                          >
-                            <div>
-                              <span className="font-medium">
-                                {new Date(checkin.dateKey).toLocaleDateString('en-US', { 
-                                  weekday: 'short', 
-                                  month: 'short', 
-                                  day: 'numeric' 
-                                })}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm">
-                              <div className="text-muted-foreground">
-                                Mood: <span className="font-medium text-foreground">{checkin.mood ?? "-"}</span>
-                              </div>
-                              <div className="text-muted-foreground">
-                                Urge: <span className="font-medium text-foreground">{checkin.urgeLevel ?? "-"}</span>
-                              </div>
-                              {checkin.morningChecks && (
-                                <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50 dark:border-green-600 dark:text-green-400 dark:bg-green-950">
-                                  AM
-                                </Badge>
+              <TabsContent value="progress" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Weekly Progress
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingProgress ? (
+                      <Skeleton className="h-32 w-full" />
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                        {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
+                          const status = getWeekStatus(weekNum);
+                          return (
+                            <div
+                              key={weekNum}
+                              className={`flex flex-col items-center justify-center rounded-lg border p-3 ${
+                                status === "completed"
+                                  ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
+                                  : status === "available"
+                                    ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950"
+                                    : "border-muted bg-muted/30"
+                              }`}
+                              data-testid={`week-status-${weekNum}`}
+                            >
+                              <span className="text-xs text-muted-foreground">Week</span>
+                              <span className="font-bold">{weekNum}</span>
+                              {status === "completed" && (
+                                <CheckCircle2 className="mt-1 h-4 w-4 text-green-600 dark:text-green-400" />
                               )}
-                              {checkin.eveningReflection && (
-                                <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50 dark:border-blue-600 dark:text-blue-400 dark:bg-blue-950">
-                                  PM
-                                </Badge>
+                              {status === "available" && (
+                                <Clock className="mt-1 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="checkins" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Daily Check-ins ({checkins.length} total)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {checkins.length === 0 ? (
+                      <p className="text-muted-foreground">No check-ins recorded yet.</p>
+                    ) : (
+                      <div className="space-y-4 max-h-96 overflow-y-auto">
+                        {checkins.slice(0, 30).map((checkin) => (
+                          <div
+                            key={checkin.id}
+                            className="rounded-lg border p-4"
+                            data-testid={`checkin-${checkin.dateKey}`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium">{checkin.dateKey}</span>
+                              <div className="flex gap-2">
+                                {checkin.moodLevel !== null && (
+                                  <Badge variant="outline">Mood: {checkin.moodLevel}/10</Badge>
+                                )}
+                                {checkin.urgeLevel !== null && (
+                                  <Badge variant="outline">Urge: {checkin.urgeLevel}/10</Badge>
+                                )}
+                              </div>
+                            </div>
+                            {checkin.morningChecks && (
+                              <div className="mt-2">
+                                <p className="text-xs text-muted-foreground">Morning</p>
+                                <p className="text-sm">{checkin.morningChecks}</p>
+                              </div>
+                            )}
+                            {checkin.eveningChecks && (
+                              <div className="mt-2">
+                                <p className="text-xs text-muted-foreground">Evening</p>
+                                <p className="text-sm">{checkin.eveningChecks}</p>
+                              </div>
+                            )}
+                            {checkin.journalEntry && (
+                              <div className="mt-2">
+                                <p className="text-xs text-muted-foreground">Journal</p>
+                                <p className="text-sm">{checkin.journalEntry}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="reflections" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Week Reflections
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {reflections.length === 0 ? (
+                      <p className="text-muted-foreground">No reflections recorded yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {reflections.map((reflection) => (
+                          <div
+                            key={reflection.weekNumber}
+                            className="rounded-lg border p-4"
+                            data-testid={`reflection-week-${reflection.weekNumber}`}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium">Week {reflection.weekNumber}</h4>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setFeedbackWeek(reflection.weekNumber);
+                                  document.querySelector('[data-value="feedback"]')?.dispatchEvent(new Event('click', { bubbles: true }));
+                                }}
+                              >
+                                Add Feedback
+                              </Button>
+                            </div>
+                            <div className="space-y-3">
+                              {reflection.q1 && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Key insight from this week</p>
+                                  <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q1}</p>
+                                </div>
+                              )}
+                              {reflection.q2 && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground">What went well</p>
+                                  <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q2}</p>
+                                </div>
+                              )}
+                              {reflection.q3 && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Challenges faced</p>
+                                  <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q3}</p>
+                                </div>
+                              )}
+                              {reflection.q4 && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Goals for next week</p>
+                                  <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q4}</p>
+                                </div>
                               )}
                             </div>
                           </div>
                         ))}
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="feedback" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5" />
+                      Add Feedback
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {feedbackWeek && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">For Week {feedbackWeek}</Badge>
+                          <Button variant="ghost" size="sm" onClick={() => setFeedbackWeek(null)}>
+                            Clear
+                          </Button>
+                        </div>
+                      )}
+                      <Textarea
+                        placeholder="Write your feedback, encouragement, or technique reminders here..."
+                        value={newFeedback}
+                        onChange={(e) => setNewFeedback(e.target.value)}
+                        className="min-h-24"
+                        data-testid="input-feedback"
+                      />
+                      <Button 
+                        onClick={handleSubmitFeedback}
+                        disabled={!newFeedback.trim() || feedbackMutation.isPending}
+                        data-testid="button-submit-feedback"
+                      >
+                        <Send className="mr-2 h-4 w-4" />
+                        {feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
+                      </Button>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Previous Feedback</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {feedback.length === 0 ? (
+                      <p className="text-muted-foreground">No feedback given yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {feedback.map((fb) => (
+                          <div
+                            key={fb.id}
+                            className="rounded-lg border p-4"
+                            data-testid={`feedback-${fb.id}`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                {fb.weekNumber && <Badge variant="outline">Week {fb.weekNumber}</Badge>}
+                                <Badge variant="secondary">{fb.feedbackType}</Badge>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(fb.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm">{fb.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </>
         )}
       </div>

@@ -504,6 +504,42 @@ export async function registerRoutes(
     }
   });
 
+  // Get client progress and work for admin
+  app.get("/api/admin/clients/:clientId/progress", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      
+      const user = await storage.getUser(clientId);
+      if (!user || user.role !== "client") {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      const completedWeeks = await storage.getCompletedWeeks(clientId);
+      const checkins = await storage.getUserCheckinHistory(clientId, 60);
+      const reflections = await storage.getAllWeekReflections(clientId);
+      
+      // Get therapist info
+      const therapists = await storage.getTherapistsForClient(clientId);
+      
+      res.json({ 
+        client: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          startDate: user.startDate,
+          allFeesWaived: user.allFeesWaived,
+        },
+        completedWeeks, 
+        checkins,
+        reflections,
+        therapists 
+      });
+    } catch (error) {
+      console.error("Get admin client progress error:", error);
+      res.status(500).json({ message: "Failed to get client progress" });
+    }
+  });
+
   // Waive week fee for client
   app.post("/api/admin/waivers", requireRole("admin"), async (req, res) => {
     try {
@@ -587,11 +623,46 @@ export async function registerRoutes(
 
       const completedWeeks = await storage.getCompletedWeeks(clientId);
       const checkins = await storage.getUserCheckinHistory(clientId, 30);
+      const reflections = await storage.getAllWeekReflections(clientId);
+      const feedback = await storage.getFeedbackForTherapist(therapistId, clientId);
       
-      res.json({ completedWeeks, checkins });
+      res.json({ completedWeeks, checkins, reflections, feedback });
     } catch (error) {
       console.error("Get client progress error:", error);
       res.status(500).json({ message: "Failed to get client progress" });
+    }
+  });
+
+  // Add therapist feedback for a client
+  app.post("/api/therapist/clients/:clientId/feedback", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const { clientId } = req.params;
+      const { feedbackType, content, weekNumber } = req.body;
+
+      if (!content || !feedbackType) {
+        return res.status(400).json({ message: "Feedback type and content are required" });
+      }
+
+      // Verify therapist is assigned to this client
+      const clients = await storage.getClientsForTherapist(therapistId);
+      const isAssigned = clients.some(c => c.id === clientId);
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Not authorized to provide feedback for this client" });
+      }
+
+      const feedback = await storage.addTherapistFeedback(
+        therapistId, 
+        clientId, 
+        feedbackType, 
+        content, 
+        weekNumber
+      );
+      
+      res.status(201).json({ feedback });
+    } catch (error) {
+      console.error("Add therapist feedback error:", error);
+      res.status(500).json({ message: "Failed to add feedback" });
     }
   });
 

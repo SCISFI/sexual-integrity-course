@@ -15,7 +15,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Shield, Loader2, AlertCircle, Stethoscope } from "lucide-react";
+import { Shield, Loader2, AlertCircle, Stethoscope, Check, CreditCard } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -94,6 +95,37 @@ export default function RegisterTherapist() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-6 rounded-lg border bg-muted/50 p-4" data-testid="card-pricing-info">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Therapist Subscription</span>
+                </div>
+                <Badge variant="secondary">Monthly</Badge>
+              </div>
+              <div className="mb-3">
+                <span className="text-3xl font-bold">$49</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Unlimited client management</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>View client progress and check-ins</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Provide feedback on client work</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <span>Cancel anytime</span>
+                </li>
+              </ul>
+            </div>
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}

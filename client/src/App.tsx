@@ -20,6 +20,7 @@ import Checkin from "@/pages/checkin";
 import Protected from "@/pages/protected";
 import RelapseAutopsyPage from "@/pages/relapse-autopsy";
 import PricingPage from "@/pages/pricing";
+import AdminClientPage from "@/pages/admin-client";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/register/therapist" component={RegisterTherapist} />
       <Route path="/register/client" component={RegisterClient} />
       <Route path="/admin" component={AdminPage} />
+      <Route path="/admin/clients/:clientId" component={AdminClientPage} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/therapist" component={TherapistHome} />
       <Route path="/therapist-home" component={TherapistHome} />
