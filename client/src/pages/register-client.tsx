@@ -233,19 +233,19 @@ export default function RegisterClient() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        Select Your Therapist
+                        Select Your Therapist (Optional)
                       </FormLabel>
                       {isLoadingTherapists ? (
                         <Skeleton className="h-10 w-full" />
                       ) : therapists.length === 0 ? (
                         <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
-                          No therapists available at this time. Please contact support.
+                          You will be assigned to the default therapist.
                         </div>
                       ) : (
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || ""}>
                           <FormControl>
                             <SelectTrigger data-testid="select-therapist">
-                              <SelectValue placeholder="Select a therapist" />
+                              <SelectValue placeholder="Use default therapist" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -265,7 +265,7 @@ export default function RegisterClient() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isLoading || isLoadingTherapists || therapists.length === 0}
+                  disabled={isLoading || isLoadingTherapists}
                   data-testid="button-sign-up"
                 >
                   {isLoading ? (

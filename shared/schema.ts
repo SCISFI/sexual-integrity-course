@@ -107,7 +107,7 @@ export const registerClientSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(1, "Name is required"),
-  therapistId: z.string().min(1, "Please select a therapist"),
+  therapistId: z.string().optional(), // Optional - defaults to primary therapist if not selected
 });
 
 // Insert schemas for new tables

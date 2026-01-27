@@ -111,6 +111,9 @@ export async function registerRoutes(
     }
   });
 
+  // Default therapist email - clients are assigned here if they don't select one
+  const DEFAULT_THERAPIST_EMAIL = "ken-therapist@scifsi.com";
+
   // Register as client
   app.post("/api/auth/register/client", async (req, res) => {
     try {
@@ -121,17 +124,29 @@ export async function registerRoutes(
         });
       }
 
-      const { email, password, name, therapistId } = parsed.data;
+      const { email, password, name, therapistId: selectedTherapistId } = parsed.data;
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "Email already registered" });
       }
 
-      // Verify the selected therapist exists and is a therapist
-      const therapist = await storage.getUser(therapistId);
+      // Use selected therapist or default to primary therapist
+      let therapistId = selectedTherapistId;
+      if (!therapistId) {
+        const defaultTherapist = await storage.getUserByEmail(DEFAULT_THERAPIST_EMAIL);
+        if (defaultTherapist && defaultTherapist.role === "therapist") {
+          therapistId = defaultTherapist.id;
+        }
+      }
+
+      // Verify the therapist exists and is a therapist
+      let therapist = null;
+      if (therapistId) {
+        therapist = await storage.getUser(therapistId);
+      }
       if (!therapist || therapist.role !== "therapist") {
-        return res.status(400).json({ message: "Invalid therapist selected" });
+        return res.status(400).json({ message: "No available therapist found" });
       }
 
       const hashedPassword = await hashPassword(password);
@@ -144,8 +159,8 @@ export async function registerRoutes(
         startDate: today,
       });
 
-      // Assign the client to the selected therapist
-      await storage.assignTherapistToClient(therapistId, user.id);
+      // Assign the client to the therapist (therapist is validated to exist above)
+      await storage.assignTherapistToClient(therapist.id, user.id);
 
       req.login(user, (err) => {
         if (err) {
