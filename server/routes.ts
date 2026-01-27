@@ -717,6 +717,7 @@ export async function registerRoutes(
     try {
       const { clientId, weekNumber } = req.params;
       const weekNum = parseInt(weekNumber, 10);
+      console.log(`Admin reset week request: clientId=${clientId}, week=${weekNum}`);
       
       if (isNaN(weekNum) || weekNum < 1 || weekNum > 16) {
         return res.status(400).json({ message: "Invalid week number" });
@@ -724,10 +725,13 @@ export async function registerRoutes(
 
       const user = await storage.getUser(clientId);
       if (!user || user.role !== "client") {
+        console.log(`Reset week failed: client not found or wrong role - ${user?.role}`);
         return res.status(404).json({ message: "Client not found" });
       }
 
+      console.log(`Resetting week ${weekNum} for client ${user.email} (${clientId})`);
       await storage.resetWeekCompletion(clientId, weekNum);
+      console.log(`Week ${weekNum} reset successfully for client ${user.email}`);
       res.json({ message: `Week ${weekNum} has been reset for the client` });
     } catch (error) {
       console.error("Reset week completion error:", error);

@@ -225,8 +225,11 @@ export default function WeekPage() {
   }, [weekNumber, toast]);
 
   // Fetch completed weeks to check if this week is already done
+  // Always fetch fresh data to handle admin resets
   const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
     queryKey: ['/api/progress/completions'],
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   // Fetch unlocked weeks based on start date
