@@ -69,6 +69,7 @@ async function seedAdminIfNeeded() {
   const adminName = "Ken (Admin)";
 
   if (!adminPassword) {
+    console.log("Admin seeding skipped: ADMIN_SEED_PASSWORD not set");
     return;
   }
 
