@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type ClientProgress = {
   client: {
@@ -38,10 +42,31 @@ type ClientProgress = {
 export default function AdminClientPage() {
   const [, setLocation] = useLocation();
   const { clientId } = useParams<{ clientId: string }>();
+  const { toast } = useToast();
+  const [resetWeekNumber, setResetWeekNumber] = useState<number | null>(null);
 
   const { data, isLoading, error } = useQuery<ClientProgress>({
     queryKey: ['/api/admin/clients', clientId, 'progress'],
     enabled: !!clientId,
+  });
+
+  const resetWeekMutation = useMutation({
+    mutationFn: async (weekNumber: number) => {
+      const res = await apiRequest("DELETE", `/api/admin/clients/${clientId}/completions/${weekNumber}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to reset week");
+      }
+      return res.json();
+    },
+    onSuccess: (_, weekNumber) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/clients', clientId, 'progress'] });
+      setResetWeekNumber(null);
+      toast({ title: `Week ${weekNumber} has been reset`, description: "The client can now redo this week." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
   });
 
   if (isLoading) {
@@ -141,7 +166,7 @@ export default function AdminClientPage() {
                     return (
                       <div
                         key={week}
-                        className={`flex h-12 w-12 items-center justify-center rounded-lg border-2 text-sm font-medium ${
+                        className={`relative flex h-12 w-12 items-center justify-center rounded-lg border-2 text-sm font-medium ${
                           isCompleted
                             ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
                             : "border-muted bg-muted/20 text-muted-foreground"
@@ -149,10 +174,28 @@ export default function AdminClientPage() {
                         data-testid={`week-status-${week}`}
                       >
                         {week}
+                        {isCompleted && (
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setResetWeekNumber(week);
+                            }}
+                            className="absolute -top-2 -right-2"
+                            title={`Reset Week ${week}`}
+                            data-testid={`button-reset-week-${week}`}
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
                 </div>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Click the reset button on a completed week to allow the client to redo it.
+                </p>
               </CardContent>
             </Card>
           </TabsContent>
@@ -268,6 +311,32 @@ export default function AdminClientPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Reset Week Confirmation Dialog */}
+      <Dialog open={resetWeekNumber !== null} onOpenChange={(open) => !open && setResetWeekNumber(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Week {resetWeekNumber}?</DialogTitle>
+            <DialogDescription>
+              This will remove the completion status for Week {resetWeekNumber}, allowing the client to redo this week. 
+              Their previous responses (reflections, homework) will be preserved but the week will no longer show as completed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetWeekNumber(null)} data-testid="button-cancel-reset-week">
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => resetWeekNumber && resetWeekMutation.mutate(resetWeekNumber)}
+              disabled={resetWeekMutation.isPending}
+              data-testid="button-confirm-reset-week"
+            >
+              {resetWeekMutation.isPending ? "Resetting..." : "Reset Week"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

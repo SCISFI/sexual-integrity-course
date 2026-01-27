@@ -712,6 +712,29 @@ export async function registerRoutes(
     }
   });
 
+  // Reset a completed week for a client (admin only)
+  app.delete("/api/admin/clients/:clientId/completions/:weekNumber", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId, weekNumber } = req.params;
+      const weekNum = parseInt(weekNumber, 10);
+      
+      if (isNaN(weekNum) || weekNum < 1 || weekNum > 16) {
+        return res.status(400).json({ message: "Invalid week number" });
+      }
+
+      const user = await storage.getUser(clientId);
+      if (!user || user.role !== "client") {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      await storage.resetWeekCompletion(clientId, weekNum);
+      res.json({ message: `Week ${weekNum} has been reset for the client` });
+    } catch (error) {
+      console.error("Reset week completion error:", error);
+      res.status(500).json({ message: "Failed to reset week completion" });
+    }
+  });
+
   // Waive week fee for client
   app.post("/api/admin/waivers", requireRole("admin"), async (req, res) => {
     try {

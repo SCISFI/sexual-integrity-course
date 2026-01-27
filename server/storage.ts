@@ -86,6 +86,7 @@ export interface IStorage {
   // Week completions
   getCompletedWeeks(userId: string): Promise<number[]>;
   markWeekComplete(userId: string, weekNumber: number): Promise<WeekCompletion>;
+  resetWeekCompletion(userId: string, weekNumber: number): Promise<void>;
 
   // Therapist feedback
   addTherapistFeedback(therapistId: string, clientId: string, feedbackType: string, content: string, weekNumber?: number): Promise<TherapistFeedback>;
@@ -444,6 +445,12 @@ export class DatabaseStorage implements IStorage {
       .values({ userId, weekNumber })
       .returning();
     return created;
+  }
+
+  async resetWeekCompletion(userId: string, weekNumber: number): Promise<void> {
+    await db
+      .delete(weekCompletions)
+      .where(and(eq(weekCompletions.userId, userId), eq(weekCompletions.weekNumber, weekNumber)));
   }
 
   // Therapist feedback
