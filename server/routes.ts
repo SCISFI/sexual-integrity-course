@@ -486,7 +486,26 @@ export async function registerRoutes(
   app.patch("/api/admin/clients/:clientId", requireRole("admin"), async (req, res) => {
     try {
       const { clientId } = req.params;
-      const { startDate, allFeesWaived, subscriptionStatus, name } = req.body;
+      const { startDate, allFeesWaived, subscriptionStatus, name, therapistId } = req.body;
+      
+      // Basic validation
+      if (startDate !== undefined && typeof startDate !== 'string') {
+        return res.status(400).json({ message: "Invalid startDate format" });
+      }
+      if (allFeesWaived !== undefined && typeof allFeesWaived !== 'boolean') {
+        return res.status(400).json({ message: "allFeesWaived must be a boolean" });
+      }
+      if (therapistId !== undefined && typeof therapistId !== 'string') {
+        return res.status(400).json({ message: "Invalid therapistId format" });
+      }
+
+      // Validate therapist if provided
+      if (therapistId !== undefined && therapistId !== '') {
+        const therapist = await storage.getUser(therapistId);
+        if (!therapist || (therapist.role !== 'therapist' && therapist.role !== 'admin')) {
+          return res.status(400).json({ message: "Invalid therapist selected" });
+        }
+      }
       
       const updateData: any = {};
       if (startDate !== undefined) updateData.startDate = startDate;
@@ -497,6 +516,15 @@ export async function registerRoutes(
       const user = await storage.updateUser(clientId, updateData);
       if (!user) {
         return res.status(404).json({ message: "Client not found" });
+      }
+
+      // Handle therapist assignment if provided
+      if (therapistId !== undefined) {
+        // Remove current therapist assignments and add the new one
+        await storage.removeAllTherapistsFromClient(clientId);
+        if (therapistId) {
+          await storage.assignTherapistToClient(therapistId, clientId);
+        }
       }
 
       const { password: _, ...safeUser } = user;
@@ -534,8 +562,50 @@ export async function registerRoutes(
       await storage.removeTherapistFromClient(therapistId, clientId);
       res.json({ message: "Assignment removed" });
     } catch (error) {
-      console.error("Remove assignment error:", error);
+      console.error("Remove therapist error:", error);
       res.status(500).json({ message: "Failed to remove assignment" });
+    }
+  });
+
+  // Therapist departure - reassign all clients to new therapist (or admin)
+  app.post("/api/admin/therapist-departure", requireRole("admin"), async (req, res) => {
+    try {
+      const { departingTherapistId, newTherapistId } = req.body;
+      if (!departingTherapistId || typeof departingTherapistId !== 'string') {
+        return res.status(400).json({ message: "Valid departingTherapistId is required" });
+      }
+      if (!newTherapistId || typeof newTherapistId !== 'string') {
+        return res.status(400).json({ message: "Valid newTherapistId is required" });
+      }
+
+      // Verify departing therapist exists and is a therapist
+      const departingTherapist = await storage.getUser(departingTherapistId);
+      if (!departingTherapist || departingTherapist.role !== "therapist") {
+        return res.status(400).json({ message: "Departing user is not a valid therapist" });
+      }
+
+      // Verify new therapist exists and is a therapist or admin
+      const newTherapist = await storage.getUser(newTherapistId);
+      if (!newTherapist || (newTherapist.role !== "therapist" && newTherapist.role !== "admin")) {
+        return res.status(400).json({ message: "New therapist must be a therapist or admin" });
+      }
+
+      // Get all clients for departing therapist
+      const clients = await storage.getClientsForTherapist(departingTherapistId);
+      
+      // Reassign each client to the new therapist
+      for (const client of clients) {
+        await storage.removeTherapistFromClient(departingTherapistId, client.id);
+        await storage.assignTherapistToClient(newTherapistId, client.id);
+      }
+
+      res.json({ 
+        message: `Successfully reassigned ${clients.length} clients to ${newTherapist.name || newTherapist.email}`,
+        reassignedCount: clients.length 
+      });
+    } catch (error) {
+      console.error("Therapist departure error:", error);
+      res.status(500).json({ message: "Failed to reassign clients" });
     }
   });
 
@@ -605,6 +675,17 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Remove waiver error:", error);
       res.status(500).json({ message: "Failed to remove waiver" });
+    }
+  });
+
+  // Get revenue by therapist (for kickback calculations)
+  app.get("/api/admin/revenue", requireRole("admin"), async (req, res) => {
+    try {
+      const revenueData = await storage.getRevenueByTherapist();
+      res.json({ revenue: revenueData });
+    } catch (error) {
+      console.error("Get revenue error:", error);
+      res.status(500).json({ message: "Failed to get revenue data" });
     }
   });
 
@@ -950,11 +1031,17 @@ export async function registerRoutes(
         customerId = customer.id;
       }
       
+      // Get the assigned therapist for revenue tracking
+      const therapists = await storage.getTherapistsForClient(user.id);
+      const therapistId = therapists.length > 0 ? therapists[0].id : null;
+      
       const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
       const session = await stripeService.createWeekPaymentCheckout(
         customerId,
         priceId,
         weekNumber,
+        user.id,
+        therapistId,
         `${baseUrl}/week/${weekNumber}?payment=success`,
         `${baseUrl}/week/${weekNumber}?payment=cancelled`
       );
@@ -963,6 +1050,66 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Create week payment checkout error:", error);
       res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  // Confirm and record a completed week payment (verifies with Stripe first)
+  app.post("/api/payments/confirm-week", requireRole("client"), async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { weekNumber, sessionId } = req.body;
+      
+      if (!weekNumber || typeof weekNumber !== 'number') {
+        return res.status(400).json({ message: "Valid week number is required" });
+      }
+      
+      if (!sessionId || typeof sessionId !== 'string') {
+        return res.status(400).json({ message: "Stripe session ID is required" });
+      }
+
+      // Check if already recorded by week number
+      const alreadyPaid = await storage.hasWeekPayment(user.id, weekNumber);
+      if (alreadyPaid) {
+        return res.json({ success: true, message: "Payment already recorded" });
+      }
+
+      // Check if this specific Stripe session was already processed (idempotency)
+      const existingPayment = await storage.getPaymentByStripeId(sessionId);
+      if (existingPayment) {
+        return res.json({ success: true, message: "Payment already recorded" });
+      }
+
+      // Verify the specific checkout session with Stripe
+      const { stripeService } = await import("./stripeService");
+      const verification = await stripeService.verifyWeekPaymentSession(sessionId, user.id, weekNumber);
+      
+      if (!verification.verified) {
+        return res.status(400).json({ message: "Payment not verified with Stripe" });
+      }
+
+      // Also check idempotency by paymentId (payment_intent) if different from sessionId
+      if (verification.paymentId && verification.paymentId !== sessionId) {
+        const existingByPaymentId = await storage.getPaymentByStripeId(verification.paymentId);
+        if (existingByPaymentId) {
+          return res.json({ success: true, message: "Payment already recorded" });
+        }
+      }
+
+      // Create payment record with verified data from Stripe
+      await storage.createPayment({
+        userId: user.id,
+        type: "week_fee",
+        weekNumber,
+        amount: verification.amount || 1499,
+        status: "completed",
+        assignedTherapistId: verification.therapistId || undefined,
+        stripePaymentId: verification.paymentId || sessionId,
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Confirm week payment error:", error);
+      res.status(500).json({ message: "Failed to confirm payment" });
     }
   });
 

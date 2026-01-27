@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -40,7 +41,8 @@ import {
   Check,
   X,
   Eye,
-  Key
+  Key,
+  DollarSign
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -74,11 +76,12 @@ export default function AdminPage() {
   const [showCreateTherapist, setShowCreateTherapist] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
 
   // Form states
   const [newTherapist, setNewTherapist] = useState({ name: "", email: "", password: "" });
   const [newClient, setNewClient] = useState({ name: "", email: "", password: "", therapistId: "" });
-  const [editForm, setEditForm] = useState({ startDate: "", allFeesWaived: false });
+  const [editForm, setEditForm] = useState({ startDate: "", allFeesWaived: false, therapistId: "" });
   const [resetPasswordUser, setResetPasswordUser] = useState<{ id: string; name: string | null; email: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
 
@@ -97,6 +100,12 @@ export default function AdminPage() {
   // Fetch clients
   const { data: clientsData, isLoading: loadingClients } = useQuery({
     queryKey: ["/api/admin/clients"],
+    enabled: !!(user && (user as any).role === "admin"),
+  });
+
+  // Fetch revenue data
+  const { data: revenueData, isLoading: loadingRevenue } = useQuery<{ revenue: { therapistId: string; therapistName: string | null; therapistEmail: string; totalAmount: number; paymentCount: number }[] }>({
+    queryKey: ["/api/admin/revenue"],
     enabled: !!(user && (user as any).role === "admin"),
   });
 
@@ -207,7 +216,15 @@ export default function AdminPage() {
   };
 
   const therapists: Therapist[] = (therapistsData as any)?.therapists || [];
-  const clients: Client[] = (clientsData as any)?.clients || [];
+  const allClients: Client[] = (clientsData as any)?.clients || [];
+  
+  // Filter clients based on search query
+  const clients = clientSearchQuery.trim()
+    ? allClients.filter(c => 
+        (c.name?.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+         c.email.toLowerCase().includes(clientSearchQuery.toLowerCase()))
+      )
+    : allClients;
 
   return (
     <div className="min-h-screen bg-background">
@@ -244,12 +261,17 @@ export default function AdminPage() {
               <Stethoscope className="mr-2 h-4 w-4" />
               Therapists
             </TabsTrigger>
+            <TabsTrigger value="revenue" data-testid="tab-revenue">
+              <DollarSign className="mr-2 h-4 w-4" />
+              Revenue
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="clients" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Clients</h2>
-              <Dialog open={showCreateClient} onOpenChange={setShowCreateClient}>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Clients</h2>
+                <Dialog open={showCreateClient} onOpenChange={setShowCreateClient}>
                 <DialogTrigger asChild>
                   <Button data-testid="button-create-client">
                     <Plus className="mr-2 h-4 w-4" />
@@ -324,6 +346,22 @@ export default function AdminPage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <Input
+                  placeholder="Search clients by name or email..."
+                  value={clientSearchQuery}
+                  onChange={(e) => setClientSearchQuery(e.target.value)}
+                  className="max-w-xs"
+                  data-testid="input-client-search"
+                />
+                {allClients.filter(c => c.therapists.length === 0).length > 0 && (
+                  <Badge variant="destructive" data-testid="badge-unassigned-count">
+                    {allClients.filter(c => c.therapists.length === 0).length} unassigned
+                  </Badge>
+                )}
+              </div>
             </div>
 
             <Card>
@@ -385,6 +423,7 @@ export default function AdminPage() {
                                   setEditForm({
                                     startDate: client.startDate || "",
                                     allFeesWaived: client.allFeesWaived || false,
+                                    therapistId: client.therapists.length > 0 ? client.therapists[0].id : "",
                                   });
                                 }}
                                 data-testid={`button-edit-client-${client.id}`}
@@ -523,6 +562,67 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="revenue" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Revenue by Therapist</h2>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Kickback Calculations
+                </CardTitle>
+                <CardDescription>
+                  Track revenue generated by each therapist for kickback payments
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loadingRevenue ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : !revenueData?.revenue || revenueData.revenue.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    No revenue data yet. Revenue will appear here once clients make payments.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Therapist</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead className="text-right">Payments</TableHead>
+                        <TableHead className="text-right">Total Revenue</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {revenueData.revenue.map((row) => (
+                        <TableRow key={row.therapistId} data-testid={`row-revenue-${row.therapistId}`}>
+                          <TableCell className="font-medium">{row.therapistName || "—"}</TableCell>
+                          <TableCell>{row.therapistEmail}</TableCell>
+                          <TableCell className="text-right">{row.paymentCount}</TableCell>
+                          <TableCell className="text-right font-semibold">
+                            ${(row.totalAmount / 100).toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-muted/50 font-bold">
+                        <TableCell colSpan={2}>Total</TableCell>
+                        <TableCell className="text-right">
+                          {revenueData.revenue.reduce((sum, r) => sum + r.paymentCount, 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* Edit Client Dialog */}
@@ -551,6 +651,24 @@ export default function AdminPage() {
                   onCheckedChange={(checked) => setEditForm({ ...editForm, allFeesWaived: checked })}
                   data-testid="switch-fees-waived"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-therapist">Assigned Therapist</Label>
+                <select
+                  id="edit-therapist"
+                  className="w-full rounded-md border p-2 bg-background"
+                  value={editForm.therapistId}
+                  onChange={(e) => setEditForm({ ...editForm, therapistId: e.target.value })}
+                  data-testid="select-edit-therapist"
+                >
+                  <option value="">No therapist assigned</option>
+                  {therapists.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name || t.email}</option>
+                  ))}
+                </select>
+                {editingClient && editingClient.therapists.length === 0 && (
+                  <p className="text-sm text-destructive">This client has no therapist assigned</p>
+                )}
               </div>
             </div>
             <DialogFooter>

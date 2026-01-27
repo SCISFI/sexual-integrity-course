@@ -28,18 +28,22 @@ export class StripeService {
   }
 
   // Create checkout session for client week payment (one-time)
-  async createWeekPaymentCheckout(customerId: string, priceId: string, weekNumber: number, successUrl: string, cancelUrl: string) {
+  async createWeekPaymentCheckout(customerId: string, priceId: string, weekNumber: number, userId: string, therapistId: string | null, successUrl: string, cancelUrl: string) {
     const stripe = await getUncachableStripeClient();
+    // Use {CHECKOUT_SESSION_ID} template variable - Stripe replaces this with the actual session ID
+    const successUrlWithSession = successUrl + (successUrl.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}';
     return await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'payment',
-      success_url: successUrl,
+      success_url: successUrlWithSession,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
       metadata: {
         weekNumber: weekNumber.toString(),
+        userId,
+        therapistId: therapistId || '',
       },
     });
   }
@@ -103,6 +107,47 @@ export class StripeService {
       sql`SELECT * FROM stripe.prices WHERE product = ${productId} AND active = true`
     );
     return result.rows;
+  }
+
+  // Verify a specific checkout session by ID for week payment
+  async verifyWeekPaymentSession(sessionId: string, expectedUserId: string, expectedWeekNumber: number): Promise<{ verified: boolean; therapistId: string | null; paymentId: string | null; amount: number | null; weekNumber: number | null }> {
+    const stripe = await getUncachableStripeClient();
+    
+    try {
+      // Retrieve the specific checkout session
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      
+      // Verify payment was completed
+      if (session.payment_status !== 'paid') {
+        console.log('Session payment status is not paid:', session.payment_status);
+        return { verified: false, therapistId: null, paymentId: null, amount: null, weekNumber: null };
+      }
+      
+      // Verify metadata matches expected values
+      const sessionWeekNumber = parseInt(session.metadata?.weekNumber || '0', 10);
+      const sessionUserId = session.metadata?.userId;
+      
+      if (sessionUserId !== expectedUserId) {
+        console.log('Session userId mismatch');
+        return { verified: false, therapistId: null, paymentId: null, amount: null, weekNumber: null };
+      }
+      
+      if (sessionWeekNumber !== expectedWeekNumber) {
+        console.log('Session weekNumber mismatch');
+        return { verified: false, therapistId: null, paymentId: null, amount: null, weekNumber: null };
+      }
+      
+      return {
+        verified: true,
+        therapistId: session.metadata?.therapistId || null,
+        paymentId: session.payment_intent as string || session.id,
+        amount: session.amount_total || 1499,
+        weekNumber: sessionWeekNumber,
+      };
+    } catch (error) {
+      console.error('Error verifying checkout session:', error);
+      return { verified: false, therapistId: null, paymentId: null, amount: null, weekNumber: null };
+    }
   }
 }
 

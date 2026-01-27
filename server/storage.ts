@@ -23,7 +23,7 @@ import {
   type PasswordResetToken,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, lt } from "drizzle-orm";
+import { eq, and, desc, lt, sql } from "drizzle-orm";
 import crypto from "crypto";
 
 export interface IStorage {
@@ -43,6 +43,7 @@ export interface IStorage {
   // Therapist-Client assignments
   assignTherapistToClient(therapistId: string, clientId: string): Promise<TherapistClient>;
   removeTherapistFromClient(therapistId: string, clientId: string): Promise<void>;
+  removeAllTherapistsFromClient(clientId: string): Promise<void>;
   getClientsForTherapist(therapistId: string): Promise<User[]>;
   getTherapistsForClient(clientId: string): Promise<User[]>;
 
@@ -52,10 +53,12 @@ export interface IStorage {
   removeWeekWaiver(clientId: string, weekNumber: number): Promise<void>;
 
   // Payments
-  createPayment(data: { userId: string; type: string; weekNumber?: number; amount: number; status?: string; stripePaymentId?: string }): Promise<Payment>;
+  createPayment(data: { userId: string; type: string; weekNumber?: number; amount: number; status?: string; stripePaymentId?: string; assignedTherapistId?: string }): Promise<Payment>;
   getPaymentsForUser(userId: string): Promise<Payment[]>;
   updatePaymentStatus(id: string, status: string, stripePaymentId?: string): Promise<Payment | undefined>;
   hasWeekPayment(userId: string, weekNumber: number): Promise<boolean>;
+  getPaymentByStripeId(stripePaymentId: string): Promise<Payment | undefined>;
+  getRevenueByTherapist(): Promise<{ therapistId: string; therapistName: string | null; therapistEmail: string; totalAmount: number; paymentCount: number }[]>;
 
   // Week reflections
   getWeekReflection(userId: string, weekNumber: number): Promise<WeekReflection | undefined>;
@@ -159,6 +162,12 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(therapistClients.therapistId, therapistId), eq(therapistClients.clientId, clientId)));
   }
 
+  async removeAllTherapistsFromClient(clientId: string): Promise<void> {
+    await db
+      .delete(therapistClients)
+      .where(eq(therapistClients.clientId, clientId));
+  }
+
   async getClientsForTherapist(therapistId: string): Promise<User[]> {
     const assignments = await db
       .select({ clientId: therapistClients.clientId })
@@ -209,7 +218,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Payments
-  async createPayment(data: { userId: string; type: string; weekNumber?: number; amount: number; status?: string; stripePaymentId?: string }): Promise<Payment> {
+  async createPayment(data: { userId: string; type: string; weekNumber?: number; amount: number; status?: string; stripePaymentId?: string; assignedTherapistId?: string }): Promise<Payment> {
     const [payment] = await db
       .insert(payments)
       .values({
@@ -219,6 +228,7 @@ export class DatabaseStorage implements IStorage {
         amount: data.amount,
         status: data.status || "pending",
         stripePaymentId: data.stripePaymentId || null,
+        assignedTherapistId: data.assignedTherapistId || null,
       })
       .returning();
     return payment;
@@ -254,6 +264,37 @@ export class DatabaseStorage implements IStorage {
         eq(payments.status, "completed")
       ));
     return !!payment;
+  }
+
+  async getPaymentByStripeId(stripePaymentId: string): Promise<Payment | undefined> {
+    const [payment] = await db
+      .select()
+      .from(payments)
+      .where(eq(payments.stripePaymentId, stripePaymentId));
+    return payment || undefined;
+  }
+
+  async getRevenueByTherapist(): Promise<{ therapistId: string; therapistName: string | null; therapistEmail: string; totalAmount: number; paymentCount: number }[]> {
+    const results = await db
+      .select({
+        therapistId: payments.assignedTherapistId,
+        therapistName: users.name,
+        therapistEmail: users.email,
+        totalAmount: sql<number>`COALESCE(SUM(${payments.amount}), 0)`,
+        paymentCount: sql<number>`COUNT(*)`,
+      })
+      .from(payments)
+      .innerJoin(users, eq(payments.assignedTherapistId, users.id))
+      .where(eq(payments.status, "completed"))
+      .groupBy(payments.assignedTherapistId, users.name, users.email);
+    
+    return results.filter(r => r.therapistId !== null).map(r => ({
+      therapistId: r.therapistId!,
+      therapistName: r.therapistName,
+      therapistEmail: r.therapistEmail,
+      totalAmount: Number(r.totalAmount),
+      paymentCount: Number(r.paymentCount),
+    }));
   }
 
   // Week reflections

@@ -10,7 +10,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **January 2026**: Complete implementation of:
+- **January 2026 (Latest)**:
+  - Therapist licensing requirements: Added licenseState, licenseNumber, licenseAttestation fields
+  - Client registration now requires selecting a therapist (auto-selects if only one available)
+  - Admin panel enhancements:
+    - Client search functionality
+    - Unassigned clients badge indicator
+    - Therapist reassignment in edit dialog
+    - Revenue by Therapist tab for kickback calculations
+    - Input validation on client update and therapist departure endpoints
+  - Therapist dashboard: Added client search functionality
+  - Therapist departure handling: API endpoint to reassign all clients when therapist leaves (with role validation)
+  - Revenue tracking: Payments now capture assigned therapist ID for kickback calculations
+  - Secure payment confirmation: Week payments are verified with Stripe before recording
+    - Checkout session ID passed from Stripe redirect
+    - Server verifies specific session with Stripe API (payment_status, userId, weekNumber)
+    - Idempotency enforced via stripePaymentId storage
+    - Therapist ID captured from Stripe metadata for accurate revenue tracking
+
+- **January 2026 (Prior)**:
   - Role-based registration (Therapist/Client separation)
   - Stripe integration for subscriptions and per-week payments
   - Admin panel with user management, fee waivers, and therapist-client assignments

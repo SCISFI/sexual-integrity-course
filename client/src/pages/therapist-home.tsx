@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, LogOut, Key } from "lucide-react";
+import { Users, LogOut, Key, Search } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -20,12 +22,21 @@ type ClientWithProgress = {
 
 export default function TherapistHome() {
   const [, setLocation] = useLocation();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: clientsData, isLoading } = useQuery<{ clients: ClientWithProgress[] }>({
     queryKey: ['/api/therapist/clients'],
   });
 
-  const clients = clientsData?.clients || [];
+  const allClients = clientsData?.clients || [];
+  
+  // Filter clients based on search query
+  const clients = searchQuery.trim()
+    ? allClients.filter(c => 
+        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.email.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : allClients;
 
   const getClientStatus = (client: ClientWithProgress) => {
     if (!client.startDate) return "Pending";
@@ -89,10 +100,29 @@ export default function TherapistHome() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Your Assigned Clients
-            </CardTitle>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Your Assigned Clients
+                {allClients.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {allClients.length}
+                  </Badge>
+                )}
+              </CardTitle>
+              {allClients.length > 0 && (
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search clients..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 w-full sm:w-64"
+                    data-testid="input-client-search"
+                  />
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (

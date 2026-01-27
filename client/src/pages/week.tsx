@@ -170,7 +170,7 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
 };
 
 export default function WeekPage() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [, params] = useRoute("/week/:week");
 
   const weekNumber = useMemo(() => safeNumber(params?.week, 1), [params?.week]);
@@ -188,6 +188,38 @@ export default function WeekPage() {
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
   const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const paymentConfirmedRef = useRef(false);
+
+  // Handle payment success confirmation
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = searchParams.get('payment');
+    const sessionId = searchParams.get('session_id');
+    
+    if (paymentSuccess === 'success' && sessionId && !paymentConfirmedRef.current) {
+      paymentConfirmedRef.current = true;
+      
+      // Confirm the payment with Stripe session verification
+      apiRequest("POST", "/api/payments/confirm-week", { weekNumber, sessionId })
+        .then(() => {
+          toast({
+            title: "Payment Confirmed",
+            description: `Week ${weekNumber} is now unlocked!`,
+          });
+          // Remove the query parameters
+          window.history.replaceState({}, '', `/week/${weekNumber}`);
+          // Refresh access data
+          queryClient.invalidateQueries({ queryKey: ['/api/progress/week-access', weekNumber] });
+        })
+        .catch(() => {
+          // Payment might have already been recorded or verification failed
+          window.history.replaceState({}, '', `/week/${weekNumber}`);
+        });
+    } else if (paymentSuccess === 'success' && !sessionId) {
+      // Old redirect without session ID - just clear the URL
+      window.history.replaceState({}, '', `/week/${weekNumber}`);
+    }
+  }, [weekNumber, toast]);
 
   // Fetch completed weeks to check if this week is already done
   const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
