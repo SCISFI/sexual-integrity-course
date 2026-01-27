@@ -32,6 +32,7 @@ import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListCheck
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
+import { CrisisResources } from "@/components/CrisisResources";
 
 function safeNumber(v: unknown, fallback: number) {
   const n = Number(v);
@@ -187,7 +188,9 @@ export default function WeekPage() {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
   const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
+  const [homeworkLoaded, setHomeworkLoaded] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const homeworkSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const paymentConfirmedRef = useRef(false);
 
   // Handle payment success confirmation
@@ -236,6 +239,11 @@ export default function WeekPage() {
     queryKey: ['/api/progress/reflection', weekNumber],
   });
 
+  // Fetch homework completions for this week
+  const { data: homeworkData } = useQuery<{ completedItems: number[] }>({
+    queryKey: ['/api/progress/homework', weekNumber],
+  });
+
   // Check if this week is already completed (locked)
   const weekIsLocked = completionsData?.completedWeeks?.includes(weekNumber) || false;
   
@@ -266,6 +274,18 @@ export default function WeekPage() {
       setReflectionsLoaded(true);
     }
   }, [reflectionData, reflectionsLoaded]);
+
+  // Load homework completions when data arrives
+  useEffect(() => {
+    if (homeworkData?.completedItems && !homeworkLoaded) {
+      const completed: Record<number, boolean> = {};
+      homeworkData.completedItems.forEach((idx: number) => {
+        completed[idx] = true;
+      });
+      setHomeworkCompleted(completed);
+      setHomeworkLoaded(true);
+    }
+  }, [homeworkData, homeworkLoaded]);
 
   // Mutation to save reflections
   const saveReflectionMutation = useMutation({
@@ -305,11 +325,30 @@ export default function WeekPage() {
     },
   });
 
+  // Mutation to save homework completions
+  const saveHomeworkMutation = useMutation({
+    mutationFn: async (completedItems: number[]) => {
+      const res = await apiRequest("PUT", `/api/progress/homework/${weekNumber}`, { completedItems });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/progress/homework', weekNumber] });
+    },
+    onError: () => {
+      toast({
+        title: "Auto-save failed",
+        description: "Your homework progress couldn't be saved.",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     setAffirmComplete(false);
     setHomeworkCompleted({});
     setReflectionAnswers({});
     setReflectionsLoaded(false);
+    setHomeworkLoaded(false);
     setIsWeekCompleted(false);
     setShowCompletionDialog(false);
   }, [weekNumber]);
@@ -331,11 +370,29 @@ export default function WeekPage() {
     }, 1000); // Save after 1 second of inactivity
   }, [weekNumber, weekIsLocked, loadingReflections]);
 
-  // Cleanup debounced save on unmount
+  // Debounced save for homework
+  const debouncedSaveHomework = useCallback((completed: Record<number, boolean>) => {
+    if (weekIsLocked) return;
+    
+    if (homeworkSaveTimeoutRef.current) {
+      clearTimeout(homeworkSaveTimeoutRef.current);
+    }
+    homeworkSaveTimeoutRef.current = setTimeout(() => {
+      const completedItems = Object.entries(completed)
+        .filter(([, isCompleted]) => isCompleted)
+        .map(([idx]) => parseInt(idx, 10));
+      saveHomeworkMutation.mutate(completedItems);
+    }, 500);
+  }, [weekNumber, weekIsLocked]);
+
+  // Cleanup debounced saves on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+      }
+      if (homeworkSaveTimeoutRef.current) {
+        clearTimeout(homeworkSaveTimeoutRef.current);
       }
     };
   }, []);
@@ -361,10 +418,11 @@ export default function WeekPage() {
   };
 
   const toggleHomework = (index: number) => {
-    setHomeworkCompleted(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
+    setHomeworkCompleted(prev => {
+      const updated = { ...prev, [index]: !prev[index] };
+      debouncedSaveHomework(updated);
+      return updated;
+    });
   };
 
   const handleReflectionChange = (questionId: string, value: string) => {
@@ -387,7 +445,7 @@ export default function WeekPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
+      <header className="flex items-center justify-between gap-3 flex-wrap border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -405,6 +463,7 @@ export default function WeekPage() {
             </div>
           </div>
         </div>
+        <CrisisResources />
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8">

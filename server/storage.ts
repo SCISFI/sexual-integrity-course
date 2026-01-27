@@ -9,6 +9,7 @@ import {
   weekFeeWaivers,
   therapistFeedback,
   passwordResetTokens,
+  homeworkCompletions,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -21,6 +22,7 @@ import {
   type UserRole,
   type TherapistFeedback,
   type PasswordResetToken,
+  type HomeworkCompletion,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql } from "drizzle-orm";
@@ -98,6 +100,11 @@ export interface IStorage {
 
   // Password update
   updateUserPassword(userId: string, hashedPassword: string): Promise<User | undefined>;
+
+  // Homework completions
+  getHomeworkCompletion(userId: string, weekNumber: number): Promise<HomeworkCompletion | undefined>;
+  upsertHomeworkCompletion(userId: string, weekNumber: number, completedItems: number[]): Promise<HomeworkCompletion>;
+  getAllHomeworkCompletions(userId: string): Promise<HomeworkCompletion[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -516,6 +523,45 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user || undefined;
+  }
+
+  // Homework completions
+  async getHomeworkCompletion(userId: string, weekNumber: number): Promise<HomeworkCompletion | undefined> {
+    const [result] = await db
+      .select()
+      .from(homeworkCompletions)
+      .where(and(
+        eq(homeworkCompletions.userId, userId),
+        eq(homeworkCompletions.weekNumber, weekNumber)
+      ));
+    return result || undefined;
+  }
+
+  async upsertHomeworkCompletion(userId: string, weekNumber: number, completedItems: number[]): Promise<HomeworkCompletion> {
+    const completedItemsJson = JSON.stringify(completedItems);
+    const existing = await this.getHomeworkCompletion(userId, weekNumber);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(homeworkCompletions)
+        .set({ completedItems: completedItemsJson, updatedAt: new Date() })
+        .where(eq(homeworkCompletions.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(homeworkCompletions)
+        .values({ userId, weekNumber, completedItems: completedItemsJson })
+        .returning();
+      return created;
+    }
+  }
+
+  async getAllHomeworkCompletions(userId: string): Promise<HomeworkCompletion[]> {
+    return await db
+      .select()
+      .from(homeworkCompletions)
+      .where(eq(homeworkCompletions.userId, userId));
   }
 }
 

@@ -302,6 +302,49 @@ export async function registerRoutes(
     }
   });
 
+  // Homework completions
+  app.get("/api/progress/homework/:week", requireAuth, async (req, res) => {
+    try {
+      const weekNumber = parseInt(req.params.week, 10);
+      if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 16) {
+        return res.status(400).json({ message: "Invalid week number" });
+      }
+      const userId = (req.user as any).id;
+      const homework = await storage.getHomeworkCompletion(userId, weekNumber);
+      const completedItems = homework ? JSON.parse(homework.completedItems || "[]") : [];
+      res.json({ completedItems });
+    } catch (error) {
+      console.error("Get homework error:", error);
+      res.status(500).json({ message: "Failed to get homework completion" });
+    }
+  });
+
+  app.put("/api/progress/homework/:week", requireAuth, async (req, res) => {
+    try {
+      const weekNumber = parseInt(req.params.week, 10);
+      if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 16) {
+        return res.status(400).json({ message: "Invalid week number" });
+      }
+      const userId = (req.user as any).id;
+      const { completedItems } = req.body;
+      if (!Array.isArray(completedItems)) {
+        return res.status(400).json({ message: "completedItems must be an array" });
+      }
+      // Validate all items are non-negative integers
+      const validItems = completedItems.every(item => 
+        typeof item === 'number' && Number.isInteger(item) && item >= 0
+      );
+      if (!validItems) {
+        return res.status(400).json({ message: "completedItems must be an array of non-negative integers" });
+      }
+      const homework = await storage.upsertHomeworkCompletion(userId, weekNumber, completedItems);
+      res.json({ homework });
+    } catch (error) {
+      console.error("Save homework error:", error);
+      res.status(500).json({ message: "Failed to save homework completion" });
+    }
+  });
+
   // Daily check-ins
   app.get("/api/progress/checkin/:dateKey", requireAuth, async (req, res) => {
     try {
@@ -622,6 +665,7 @@ export async function registerRoutes(
       const completedWeeks = await storage.getCompletedWeeks(clientId);
       const checkins = await storage.getUserCheckinHistory(clientId, 60);
       const reflections = await storage.getAllWeekReflections(clientId);
+      const homeworkCompletions = await storage.getAllHomeworkCompletions(clientId);
       
       // Get therapist info
       const therapists = await storage.getTherapistsForClient(clientId);
@@ -637,6 +681,7 @@ export async function registerRoutes(
         completedWeeks, 
         checkins,
         reflections,
+        homeworkCompletions,
         therapists 
       });
     } catch (error) {
@@ -740,9 +785,10 @@ export async function registerRoutes(
       const completedWeeks = await storage.getCompletedWeeks(clientId);
       const checkins = await storage.getUserCheckinHistory(clientId, 30);
       const reflections = await storage.getAllWeekReflections(clientId);
+      const homeworkCompletions = await storage.getAllHomeworkCompletions(clientId);
       const feedback = await storage.getFeedbackForTherapist(therapistId, clientId);
       
-      res.json({ completedWeeks, checkins, reflections, feedback });
+      res.json({ completedWeeks, checkins, reflections, homeworkCompletions, feedback });
     } catch (error) {
       console.error("Get client progress error:", error);
       res.status(500).json({ message: "Failed to get client progress" });

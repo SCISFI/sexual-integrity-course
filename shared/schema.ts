@@ -263,5 +263,24 @@ export type InsertDailyCheckin = z.infer<typeof insertDailyCheckinSchema>;
 export type WeekCompletion = typeof weekCompletions.$inferSelect;
 export type InsertWeekCompletion = z.infer<typeof insertWeekCompletionSchema>;
 
+// Homework checklist completions - tracks which homework items are done per week
+export const homeworkCompletions = pgTable("homework_completions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  weekNumber: integer("week_number").notNull(),
+  completedItems: text("completed_items").default("[]"), // JSON array of completed item indices
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  unique("homework_completions_user_week_unique").on(table.userId, table.weekNumber),
+]);
+
+export const insertHomeworkCompletionSchema = createInsertSchema(homeworkCompletions).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type HomeworkCompletion = typeof homeworkCompletions.$inferSelect;
+export type InsertHomeworkCompletion = z.infer<typeof insertHomeworkCompletionSchema>;
+
 // Export chat models
 export * from "./models/chat";

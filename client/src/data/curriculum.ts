@@ -579,6 +579,28 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           "Time Management: Unstructured time is dangerous. Build structure into your day. Fill lonely times with meaningful activities or connection.",
           "Remember: The goal is to buy yourself time. Every barrier between you and the behavior gives you more opportunity to choose differently."
         ]
+      },
+      {
+        id: "technology-safety",
+        title: "Technology Safety and Digital Boundaries",
+        content: [
+          "In the digital age, technology is both a primary access point for problematic behavior and an essential part of daily life. Effective technology management is critical for recovery.",
+          "ACCOUNTABILITY SOFTWARE: Tools like Covenant Eyes, Bark, or Ever Accountable send reports to someone you trust. This isn't about surveillance - it's about support. Knowing someone will see your activity creates a pause before impulsive action.",
+          "DEVICE MANAGEMENT STRATEGIES: Charge phones outside the bedroom. Use app blockers during high-risk hours. Consider a 'dumb phone' or basic phone for evenings/weekends. Enable SafeSearch on all devices. Remove browsers from phones if feasible - use only apps.",
+          "SOCIAL MEDIA BOUNDARIES: Unfollow or mute accounts that trigger you. Set time limits on apps. Consider deleting problematic apps entirely. Be honest: if 'just scrolling' often leads to problems, it's not innocent.",
+          "LOCATION-BASED TRIGGERS: Avoid browsing in bed, bathrooms, or other private spaces. Create device-free zones in your home. If a particular location is linked to acting out, change your patterns."
+        ]
+      },
+      {
+        id: "building-digital-structure",
+        title: "Building Digital Structure",
+        content: [
+          "Structure is your ally. The more decisions you automate, the fewer opportunities for impulsive choices.",
+          "MORNING ROUTINE: Don't check devices for the first 30-60 minutes. Start with something grounding: exercise, meditation, reading, or journaling before screen time.",
+          "EVENING ROUTINE: Set a 'screens off' time at least 1 hour before bed. Charge devices in a common area, not your bedroom. Replace screen time with connection, reading, or rest.",
+          "HIGH-RISK TIMES: Identify your vulnerable hours (often late night, early morning, or during transitions). Build accountability or activity into these times.",
+          "TRAVEL PROTOCOLS: Hotels and travel are high-risk. Plan ahead: request TV blocking, use accountability software, schedule check-ins with your accountability partner, stay connected to your support system."
+        ]
       }
     ],
     reflectionQuestions: [
@@ -659,6 +681,43 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
             label: "Barriers: What obstacles will you put between yourself and the behavior?",
             type: "textarea",
             placeholder: "List barriers you will create..."
+          }
+        ]
+      },
+      {
+        id: "technology-safety-plan",
+        title: "My Technology Safety Plan",
+        instructions: "Create a comprehensive plan for managing technology in your recovery.",
+        fields: [
+          {
+            id: "accountability-software",
+            label: "Accountability Software: What will you use? Who will receive reports?",
+            type: "textarea",
+            placeholder: "Software:\nAccountability partner:"
+          },
+          {
+            id: "device-rules",
+            label: "Device Rules: Where will you charge devices? When will you have screens-off time?",
+            type: "textarea",
+            placeholder: "Charging location:\nScreens-off time:\nOther rules:"
+          },
+          {
+            id: "social-media",
+            label: "Social Media Plan: What apps will you delete, limit, or modify? What boundaries will you set?",
+            type: "textarea",
+            placeholder: "Apps to delete:\nApps to limit:\nTime limits:\nOther boundaries:"
+          },
+          {
+            id: "travel-plan",
+            label: "Travel Protocol: What will you do differently when traveling or staying in hotels?",
+            type: "textarea",
+            placeholder: "Hotel TV blocking:\nAccountability check-ins:\nOther safeguards:"
+          },
+          {
+            id: "commitment",
+            label: "My Commitment: Write a statement committing to your technology boundaries.",
+            type: "textarea",
+            placeholder: "I commit to..."
           }
         ]
       },
@@ -922,6 +981,48 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           "If disclosure hasn't happened, consider whether, when, and how to disclose. This is a complex decision that should ideally involve professional guidance.",
           "Whether or not you're in a relationship, building healthy connection is essential for recovery. Isolation is fuel for the cycle."
         ]
+      },
+      {
+        id: "trauma-and-csbd",
+        title: "Understanding Trauma's Role in CSBD",
+        content: [
+          "Many men with CSBD have experienced some form of trauma, often in childhood. Research shows a strong correlation between Adverse Childhood Experiences (ACEs) and compulsive sexual behavior.",
+          "ADVERSE CHILDHOOD EXPERIENCES (ACEs) include: Physical, emotional, or sexual abuse. Physical or emotional neglect. Household dysfunction (substance abuse, mental illness, domestic violence, incarceration, divorce). Witnessing violence or traumatic events.",
+          "How trauma connects to CSBD: The behavior becomes a coping mechanism for unresolved pain. Sexual arousal can temporarily regulate difficult emotions. Dissociation during the behavior mirrors trauma responses. The cycle recreates patterns of secrecy, shame, and violation.",
+          "Important: Recognizing trauma's role is not about making excuses. It's about understanding the full picture so you can heal completely. You are responsible for your behavior AND you deserve compassion for what you've experienced."
+        ]
+      },
+      {
+        id: "trauma-responses",
+        title: "Trauma Responses and Sexual Behavior",
+        content: [
+          "Trauma affects the nervous system in profound ways. The behavior may have become a way to manage these effects.",
+          "HYPERAROUSAL: Feeling constantly on edge, anxious, or unable to relax. The behavior may provide temporary relief or numbing.",
+          "HYPOAROUSAL: Feeling numb, disconnected, or emotionally flat. The behavior may be an attempt to 'feel something.'",
+          "DISSOCIATION: Feeling disconnected from yourself or reality. The trance-like state during compulsive behavior is often dissociative.",
+          "If you recognize trauma in your history, specialized trauma treatment (such as EMDR, Somatic Experiencing, or trauma-focused therapy) may be essential alongside this program. Consider discussing this with your therapist."
+        ]
+      },
+      {
+        id: "partner-betrayal-trauma",
+        title: "Understanding Partner/Betrayal Trauma",
+        content: [
+          "When CSBD is discovered, partners often experience what's called betrayal trauma. This is a real psychological injury, not just disappointment or anger.",
+          "Betrayal trauma symptoms include: Intrusive thoughts and flashbacks. Hypervigilance and checking behaviors. Difficulty trusting their own perceptions. Anxiety, depression, and PTSD symptoms. Physical symptoms like sleep disruption and appetite changes.",
+          "Your partner's reactions are trauma responses, not attempts to punish you. Understanding this can help you respond with patience rather than defensiveness.",
+          "Partners deserve their own support and healing process. Encourage (but don't force) them to seek their own therapy or support groups for betrayed partners."
+        ]
+      },
+      {
+        id: "disclosure-guidance",
+        title: "Disclosure: If, When, and How",
+        content: [
+          "Disclosure is one of the most difficult decisions in recovery. There's no one-size-fits-all answer.",
+          "REASONS TO DISCLOSE: Honesty is foundational to genuine intimacy. Secrets maintain the double life. Partners deserve to make informed decisions. Disclosure often brings relief from the burden of secrecy.",
+          "CONSIDERATIONS: Timing matters - disclosure during crisis may cause more harm. Professional guidance is highly recommended. Therapeutic disclosure (facilitated by a therapist) is often more effective. Consider your partner's support system and resources.",
+          "WHAT DISCLOSURE IS NOT: It's not a detailed confession of every act. It's not meant to relieve your guilt at your partner's expense. It's not a one-time event but an ongoing commitment to honesty.",
+          "If you're considering disclosure, work with a therapist experienced in sexual addiction and betrayal trauma. A skilled professional can help both of you navigate this process."
+        ]
       }
     ],
     reflectionQuestions: [
@@ -931,15 +1032,15 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "q2",
-        question: "Which attachment pattern do you identify with? How does this show up in your relationships?"
+        question: "Which attachment pattern do you identify with? How might early experiences have shaped this pattern?"
       },
       {
         id: "q3",
-        question: "In what ways has your behavior been a substitute for genuine intimacy? What fears does it help you avoid?"
+        question: "Have you experienced any Adverse Childhood Experiences (ACEs)? If so, how might these connect to your current struggles? (Note: This is for your reflection - share with your therapist if appropriate)"
       },
       {
         id: "q4",
-        question: "What does genuine intimacy look like to you? What would need to change for you to pursue it more fully?"
+        question: "If your partner knows about your behavior, what do they need from you right now? If they don't know, what considerations are you weighing about disclosure?"
       }
     ],
     exercises: [
@@ -1029,16 +1130,79 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
             placeholder: "Describe one step..."
           }
         ]
+      },
+      {
+        id: "trauma-exploration",
+        title: "Trauma and History Exploration (Optional but Recommended)",
+        instructions: "This exercise helps you explore potential connections between your history and current struggles. Only complete what feels safe. Consider sharing with your therapist.",
+        fields: [
+          {
+            id: "aces",
+            label: "Adverse Childhood Experiences: Did you experience any of the following? (Check all that apply, or describe in your own words): Emotional/physical/sexual abuse, Neglect, Household dysfunction, Witnessing violence, Parental divorce/separation, etc.",
+            type: "textarea",
+            placeholder: "List any that apply, or write 'None that I'm aware of'..."
+          },
+          {
+            id: "connection",
+            label: "How might these experiences connect to your current struggles with CSBD?",
+            type: "textarea",
+            placeholder: "Explore potential connections..."
+          },
+          {
+            id: "coping",
+            label: "How has sexual behavior served as a coping mechanism for unresolved pain?",
+            type: "textarea",
+            placeholder: "Explore this connection..."
+          },
+          {
+            id: "support-needed",
+            label: "What additional support might you need to address trauma? (EMDR, trauma-focused therapy, etc.)",
+            type: "textarea",
+            placeholder: "Consider what support would help..."
+          }
+        ]
+      },
+      {
+        id: "trust-rebuilding-plan",
+        title: "Trust Rebuilding Plan (For Those in Relationships)",
+        instructions: "If you're in a relationship affected by your behavior, create a plan for rebuilding trust.",
+        fields: [
+          {
+            id: "current-state",
+            label: "What is the current state of trust in your relationship? Be honest.",
+            type: "textarea",
+            placeholder: "Describe the current state..."
+          },
+          {
+            id: "partner-needs",
+            label: "What does your partner need from you right now? Have you asked them directly?",
+            type: "textarea",
+            placeholder: "List what they need..."
+          },
+          {
+            id: "actions",
+            label: "What specific, consistent actions will you take to rebuild trust? (Not promises - actions)",
+            type: "textarea",
+            placeholder: "List specific actions..."
+          },
+          {
+            id: "partner-support",
+            label: "How will you support your partner's healing process? Have you encouraged them to seek their own support?",
+            type: "textarea",
+            placeholder: "Describe how you'll support them..."
+          }
+        ]
       }
     ],
     homeworkChecklist: [
-      "Read all Week 6 material",
+      "Read all Week 6 material, including the trauma-informed sections",
       "Complete the Relationship Impact Assessment",
       "Complete the Attachment Pattern Exploration",
+      "Complete the Trauma and History Exploration exercise (at your own pace)",
+      "If in a relationship, complete the Trust Rebuilding Plan",
       "Identify your Barriers to Genuine Intimacy",
       "Take one small step toward greater connection this week",
-      "If in a relationship, have one honest conversation with your partner about emotions (not necessarily about CSBD)",
-      "If single, reach out to a friend or family member for meaningful connection",
+      "Consider whether additional trauma support (EMDR, trauma therapy) might be beneficial",
       "Complete daily monitoring logs for all 7 days"
     ]
   },
@@ -1928,6 +2092,79 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
             placeholder: "One concrete action..."
           }
         ]
+      },
+      {
+        id: "valued-living-assessment",
+        title: "Valued Living Assessment (VLQ-Inspired)",
+        instructions: "For each life domain, rate both IMPORTANCE (how much this area matters to you) and CONSISTENCY (how consistently you live according to your values in this area). Use a scale of 1-10.",
+        fields: [
+          {
+            id: "family",
+            label: "FAMILY: How important is family to you? How consistently are you living your family values?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "marriage-intimate",
+            label: "MARRIAGE/INTIMATE RELATIONSHIPS: How important? How consistently are you living these values?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "parenting",
+            label: "PARENTING (if applicable): How important? How consistent?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:\n(Write N/A if not applicable)"
+          },
+          {
+            id: "friendship",
+            label: "FRIENDSHIP/SOCIAL: How important? How consistent?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "work",
+            label: "WORK/CAREER: How important? How consistent?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "education-growth",
+            label: "EDUCATION/PERSONAL GROWTH: How important? How consistent?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "recreation",
+            label: "RECREATION/LEISURE: How important? How consistent?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "spirituality",
+            label: "SPIRITUALITY/FAITH: How important? How consistent?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "health",
+            label: "PHYSICAL HEALTH/SELF-CARE: How important? How consistent?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "community",
+            label: "COMMUNITY/CITIZENSHIP: How important? How consistent?",
+            type: "textarea",
+            placeholder: "Importance: /10\nConsistency: /10\nGap (if any) and why:"
+          },
+          {
+            id: "biggest-gap",
+            label: "Which domain has the BIGGEST gap between importance and consistency? What one action will you take this week to close that gap?",
+            type: "textarea",
+            placeholder: "Domain:\nAction I will take:"
+          }
+        ]
       }
     ],
     homeworkChecklist: [
@@ -2808,6 +3045,30 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           "Remember: Your story is still being written. You are capable of healing. You are defined not by your past but by your direction. Every day is a new opportunity to live your values.",
           "Continue the practices that have helped you. Stay connected to your support system. When you struggle (and you will), return to what you've learned.",
           "You've completed something significant. Take time to acknowledge that. Then take the next step."
+        ]
+      },
+      {
+        id: "if-i-relapse",
+        title: "If I Relapse After the Program",
+        content: [
+          "Let's be honest: Many men will experience lapses or relapses after completing this program. This doesn't mean the program failed or that you failed. It means you're human and recovery is a process.",
+          "WHAT TO DO IMMEDIATELY: (1) Stop as soon as you realize what's happening. A lapse doesn't have to become a full relapse. (2) Reach out to someone - your therapist, accountability partner, or support group. Isolation is the enemy. (3) Don't let shame spiral you further. Use the self-compassion tools you learned.",
+          "WITHIN 24-48 HOURS: (1) Complete a relapse analysis - what led to this? What warning signs did you miss? (2) Review your relapse prevention plan. Does it need updating? (3) Recommit to your daily practices. Don't wait until you 'feel ready.'",
+          "WHAT NOT TO DO: Don't conclude that recovery is impossible. Don't use 'I already messed up' thinking to continue acting out. Don't hide or isolate. Don't punish yourself - it fuels the cycle.",
+          "IMPORTANT: A relapse is data, not destiny. It shows you where your plan needs strengthening. Every person who has achieved long-term recovery has faced setbacks. What matters is what you do next."
+        ]
+      },
+      {
+        id: "ongoing-support",
+        title: "Ongoing Support Resources",
+        content: [
+          "Recovery doesn't end when the program ends. Here are resources for continued support:",
+          "INDIVIDUAL THERAPY: Continue working with a therapist who specializes in sexual compulsivity. EMDR or trauma-focused therapy may be helpful if you haven't addressed underlying trauma.",
+          "SUPPORT GROUPS: Sex Addicts Anonymous (SAA), Celebrate Recovery, SMART Recovery, and similar groups provide ongoing community and accountability.",
+          "COUPLES THERAPY: If you're in a relationship, consider ongoing couples work with a therapist trained in betrayal trauma.",
+          "RETREAT PROGRAMS: Intensive multi-day workshops and retreats can provide breakthrough experiences at critical moments.",
+          "BOOKS AND RESOURCES: Continue reading and learning. Recommended: 'Out of the Shadows' by Patrick Carnes, 'Unwanted' by Jay Stringer, 'The Happiness Trap' by Russ Harris.",
+          "BOOSTER SESSIONS: Consider scheduling quarterly 'booster' sessions with your therapist to review your progress and address any emerging issues."
         ]
       }
     ],
