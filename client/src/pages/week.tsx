@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock, Eye } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
@@ -481,6 +481,23 @@ export default function WeekPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {/* Review Mode Banner - show for completed weeks */}
+            {weekIsLocked && (
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-4" data-testid="banner-review-mode">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    <Eye className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-blue-800 dark:text-blue-200">Review Mode</h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      You completed this week. You can review your answers below, but cannot make changes.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* AI Encouragement section - only show if week is accessible */}
             {!isTimeLocked && (
               <AIEncouragement weekNumber={weekNumber} />

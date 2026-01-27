@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 
 type WeekItem = {
@@ -27,8 +28,22 @@ export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
   const [, setLocation] = useLocation();
 
-  // For now: only Week 1 is available. Later we’ll unlock Week 2–16.
-  const unlockedWeek = 1;
+  // Fetch completed weeks from the API
+  const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
+    queryKey: ['/api/progress/completions'],
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  // Fetch unlocked weeks based on start date
+  const { data: unlockedWeeksData } = useQuery<{ unlockedWeeks: number[] }>({
+    queryKey: ['/api/progress/unlocked-weeks'],
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  const completedWeeks = completionsData?.completedWeeks || [];
+  const unlockedWeeks = unlockedWeeksData?.unlockedWeeks || [];
 
   // Keep Week 1 expanded. (Feels like “in progress”, not hidden.)
   const [showWeek1, setShowWeek1] = useState(true);
@@ -54,11 +69,19 @@ export default function Dashboard() {
     setLocation("/");
   };
 
-  const resumeWeek1 = () => {
-    const lastWeek = Number(localStorage.getItem("si_last_week") || "1");
-    setLocation(
-      `/week/${Number.isFinite(lastWeek) && lastWeek > 0 ? lastWeek : 1}`,
-    );
+  // Find the next available week to continue (first unlocked but not completed)
+  const nextAvailableWeek = useMemo(() => {
+    for (let i = 1; i <= 16; i++) {
+      if (unlockedWeeks.includes(i) && !completedWeeks.includes(i)) {
+        return i;
+      }
+    }
+    // If all unlocked weeks are completed, return the last completed week for review
+    return completedWeeks.length > 0 ? Math.max(...completedWeeks) : 1;
+  }, [unlockedWeeks, completedWeeks]);
+
+  const resumeCurrentWeek = () => {
+    setLocation(`/week/${nextAvailableWeek}`);
   };
 
   if (isLoading || isAuthenticating) {
@@ -131,7 +154,9 @@ export default function Dashboard() {
                   </Button>
                 </Link>
                 {/* Resume button */}
-                <Button onClick={resumeWeek1} data-testid="button-resume-week">Resume Week 1</Button>
+                <Button onClick={resumeCurrentWeek} data-testid="button-resume-week">
+                  {completedWeeks.includes(nextAvailableWeek) ? `Review Week ${nextAvailableWeek}` : `Continue Week ${nextAvailableWeek}`}
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -148,31 +173,49 @@ export default function Dashboard() {
 
             <div className="grid gap-3">
               {WEEKS.map((w) => {
-                const isUnlocked = w.week <= unlockedWeek;
-                const isCurrent = w.week === 1;
+                const isCompleted = completedWeeks.includes(w.week);
+                const isUnlocked = unlockedWeeks.includes(w.week);
+                const isAvailable = isUnlocked && !isCompleted;
 
                 return (
                   <div
                     key={w.week}
-                    className="rounded-lg border p-4 flex items-center justify-between"
+                    className={`rounded-lg border p-4 flex items-center justify-between ${
+                      isCompleted ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900" : ""
+                    }`}
+                    data-testid={`week-row-${w.week}`}
                   >
                     <div>
-                      <div className="font-medium">
+                      <div className="font-medium flex items-center gap-2">
                         Week {w.week}: {w.title}
+                        {isCompleted && (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        )}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {isUnlocked
-                          ? "Available • ~60 minutes"
-                          : "Locked • Unlocks weekly"}
+                        {isCompleted
+                          ? "Completed"
+                          : isUnlocked
+                          ? "Available"
+                          : "Locked"}
                       </div>
                     </div>
 
-                    {isCurrent ? (
-                      <Button variant="outline" onClick={resumeWeek1}>
-                        Continue
-                      </Button>
+                    {isCompleted ? (
+                      <Link href={`/week/${w.week}`}>
+                        <Button variant="outline" className="gap-2" data-testid={`button-review-week-${w.week}`}>
+                          <Eye className="h-4 w-4" />
+                          Review
+                        </Button>
+                      </Link>
+                    ) : isAvailable ? (
+                      <Link href={`/week/${w.week}`}>
+                        <Button variant="default" data-testid={`button-continue-week-${w.week}`}>
+                          Continue
+                        </Button>
+                      </Link>
                     ) : (
-                      <Button variant="outline" disabled className="gap-2">
+                      <Button variant="outline" disabled className="gap-2" data-testid={`button-locked-week-${w.week}`}>
                         <Lock className="h-4 w-4" />
                         Locked
                       </Button>
