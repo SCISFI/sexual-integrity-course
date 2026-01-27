@@ -62,8 +62,7 @@ async function initStripe() {
   }
 }
 
-// Initialize Stripe before setting up routes
-await initStripe();
+// Stripe initialization moved to async IIFE below
 
 // Register Stripe webhook route BEFORE express.json()
 app.post(
@@ -163,6 +162,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize Stripe before setting up routes
+  await initStripe();
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
