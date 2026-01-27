@@ -10,7 +10,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **January 2026 (Latest)**:
+- **January 2026 (Latest - UI/Testing)**:
+  - **Masculine Professional Color Scheme**: Deep navy blues, cyan accents, charcoal tones
+    - Light mode: Navy primary (215 50% 23%), cyan accent (199 89% 48%)
+    - Dark mode: Matching professional dark theme
+    - Sidebar: Dark navy background with light text
+  - **Enhanced Login Page**: Split-screen layout with mountain hero image
+    - Motivational messaging: "Your journey to freedom begins here"
+    - Feature badges: Evidence-based, Professional support, Confidential
+    - Responsive: Hero hidden on mobile, form adapts
+  - **Tester Accounts Created**:
+    - Therapist: therapist.tester@example.com (password: testpass123)
+    - Client: client.tester@example.com (password: testpass123)
+    - Client is assigned to therapist for testing workflows
+
+- **January 2026 (Features)**:
   - Therapist licensing requirements: Added licenseState, licenseNumber, licenseAttestation fields
   - Client registration now requires selecting a therapist (auto-selects if only one available)
   - Admin panel enhancements:
