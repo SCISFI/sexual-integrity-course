@@ -664,11 +664,12 @@ export default function WeekPage() {
                                 id={`homework-${idx}`}
                                 checked={homeworkCompleted[idx] || false}
                                 onCheckedChange={() => toggleHomework(idx)}
+                                disabled={weekIsLocked}
                                 data-testid={`checkbox-homework-${idx}`}
                               />
                               <label
                                 htmlFor={`homework-${idx}`}
-                                className={`text-sm cursor-pointer ${homeworkCompleted[idx] ? 'line-through text-muted-foreground' : ''}`}
+                                className={`text-sm ${weekIsLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} ${homeworkCompleted[idx] ? 'line-through text-muted-foreground' : ''}`}
                               >
                                 {item}
                               </label>
