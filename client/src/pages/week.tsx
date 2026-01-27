@@ -252,7 +252,7 @@ export default function WeekPage() {
     needsPayment: boolean; 
     reason?: string;
   }>({
-    queryKey: ['/api/payments/week', weekNumber, 'status'],
+    queryKey: [`/api/payments/week/${weekNumber}/status`],
     staleTime: 0,
     refetchOnMount: 'always',
   });
