@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 
 type WeekItem = {
@@ -95,8 +95,10 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
 
-            <Link href="/therapist-home">
-              <Button variant="outline">Therapist Home (MVP)</Button>
+            <Link href="/change-password">
+              <Button variant="ghost" size="icon" title="Change Password" data-testid="button-change-password">
+                <Key className="h-4 w-4" />
+              </Button>
             </Link>
 
             <Button variant="outline" onClick={handleLogout} data-testid="button-logout">

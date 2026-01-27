@@ -39,7 +39,8 @@ import {
   Loader2,
   Check,
   X,
-  Eye
+  Eye,
+  Key
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -78,6 +79,8 @@ export default function AdminPage() {
   const [newTherapist, setNewTherapist] = useState({ name: "", email: "", password: "" });
   const [newClient, setNewClient] = useState({ name: "", email: "", password: "", therapistId: "" });
   const [editForm, setEditForm] = useState({ startDate: "", allFeesWaived: false });
+  const [resetPasswordUser, setResetPasswordUser] = useState<{ id: string; name: string | null; email: string } | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   // Check if user is admin
   if (user && (user as any).role !== "admin") {
@@ -178,6 +181,26 @@ export default function AdminPage() {
     },
   });
 
+  // Reset password mutation
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
+      const res = await apiRequest("POST", `/api/admin/reset-password/${userId}`, { newPassword });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to reset password");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setResetPasswordUser(null);
+      setNewPassword("");
+      toast({ title: "Password reset successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleLogout = async () => {
     await logout();
     setLocation("/");
@@ -198,6 +221,11 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <Link href="/change-password">
+              <Button variant="ghost" size="icon" title="Change Password" data-testid="button-change-password">
+                <Key className="h-5 w-5" />
+              </Button>
+            </Link>
             <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
               <LogOut className="h-5 w-5" />
             </Button>
@@ -363,6 +391,15 @@ export default function AdminPage() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setResetPasswordUser({ id: client.id, name: client.name, email: client.email })}
+                                data-testid={`button-reset-password-client-${client.id}`}
+                                title="Reset Password"
+                              >
+                                <Key className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -457,6 +494,7 @@ export default function AdminPage() {
                         <TableHead>Email</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -466,6 +504,17 @@ export default function AdminPage() {
                           <TableCell>{therapist.email}</TableCell>
                           <TableCell>{therapist.subscriptionStatus || "active"}</TableCell>
                           <TableCell>{new Date(therapist.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setResetPasswordUser({ id: therapist.id, name: therapist.name, email: therapist.email })}
+                              data-testid={`button-reset-password-therapist-${therapist.id}`}
+                              title="Reset Password"
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -524,6 +573,56 @@ export default function AdminPage() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={!!resetPasswordUser} onOpenChange={(open) => { if (!open) { setResetPasswordUser(null); setNewPassword(""); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Password</DialogTitle>
+              <DialogDescription>
+                Set a new password for {resetPasswordUser?.name || resetPasswordUser?.email}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 6 characters)"
+                  data-testid="input-new-password"
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                The user will receive an email notification that their password has been changed.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setResetPasswordUser(null); setNewPassword(""); }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (resetPasswordUser && newPassword.length >= 6) {
+                    resetPasswordMutation.mutate({
+                      userId: resetPasswordUser.id,
+                      newPassword,
+                    });
+                  }
+                }}
+                disabled={resetPasswordMutation.isPending || newPassword.length < 6}
+                data-testid="button-confirm-reset-password"
+              >
+                {resetPasswordMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Reset Password
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -4,7 +4,8 @@ import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, LogOut } from "lucide-react";
+import { Users, LogOut, Key } from "lucide-react";
+import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 
 type ClientWithProgress = {
@@ -73,10 +74,17 @@ export default function TherapistHome() {
               Manage your assigned clients and monitor their progress
             </p>
           </div>
-          <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href="/change-password">
+              <Button variant="ghost" size="icon" title="Change Password" data-testid="button-change-password">
+                <Key className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         <Card>

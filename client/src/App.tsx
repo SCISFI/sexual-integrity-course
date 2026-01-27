@@ -21,6 +21,9 @@ import Protected from "@/pages/protected";
 import RelapseAutopsyPage from "@/pages/relapse-autopsy";
 import PricingPage from "@/pages/pricing";
 import AdminClientPage from "@/pages/admin-client";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
+import ChangePassword from "@/pages/change-password";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +34,9 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/register/therapist" component={RegisterTherapist} />
       <Route path="/register/client" component={RegisterClient} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/change-password" component={ChangePassword} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/admin/clients/:clientId" component={AdminClientPage} />
       <Route path="/dashboard" component={Dashboard} />

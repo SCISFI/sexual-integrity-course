@@ -1006,5 +1006,201 @@ export async function registerRoutes(
     }
   });
 
+  // =======================================
+  // Password Reset API endpoints
+  // =======================================
+
+  // Request password reset (user self-service)
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      // Always return success to prevent email enumeration
+      if (!user) {
+        return res.json({ message: "If an account exists with this email, you will receive a password reset link." });
+      }
+
+      // Clean expired tokens first
+      await storage.cleanExpiredTokens();
+
+      // Create reset token
+      const tokenRecord = await storage.createPasswordResetToken(user.id);
+      
+      // Build reset link
+      const baseUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}`;
+      const resetLink = `${baseUrl}/reset-password?token=${tokenRecord.token}`;
+
+      // Send email
+      const { sendPasswordResetEmail } = await import("./emailService");
+      await sendPasswordResetEmail(user.email, resetLink, user.name || undefined);
+
+      res.json({ message: "If an account exists with this email, you will receive a password reset link." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  // Verify reset token
+  app.get("/api/auth/verify-reset-token", async (req, res) => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ valid: false, message: "Token is required" });
+      }
+
+      const tokenRecord = await storage.getPasswordResetToken(token);
+      
+      if (!tokenRecord) {
+        return res.json({ valid: false, message: "Invalid or expired token" });
+      }
+
+      if (tokenRecord.usedAt) {
+        return res.json({ valid: false, message: "This reset link has already been used" });
+      }
+
+      if (new Date(tokenRecord.expiresAt) < new Date()) {
+        return res.json({ valid: false, message: "This reset link has expired" });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      console.error("Verify reset token error:", error);
+      res.status(500).json({ valid: false, message: "Failed to verify token" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token and password are required" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const tokenRecord = await storage.getPasswordResetToken(token);
+      
+      if (!tokenRecord) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+      }
+
+      if (tokenRecord.usedAt) {
+        return res.status(400).json({ message: "This reset link has already been used" });
+      }
+
+      if (new Date(tokenRecord.expiresAt) < new Date()) {
+        return res.status(400).json({ message: "This reset link has expired" });
+      }
+
+      // Update password
+      const hashedPassword = await hashPassword(password);
+      const user = await storage.updateUserPassword(tokenRecord.userId, hashedPassword);
+
+      if (!user) {
+        return res.status(400).json({ message: "Failed to update password" });
+      }
+
+      // Mark token as used
+      await storage.markTokenAsUsed(tokenRecord.id);
+
+      // Send confirmation email
+      const { sendPasswordChangedConfirmation } = await import("./emailService");
+      await sendPasswordChangedConfirmation(user.email, user.name || undefined);
+
+      res.json({ message: "Password has been reset successfully" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
+  // Change password for logged-in users (all roles)
+  app.post("/api/auth/change-password", requireAuth, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const user = req.user as any;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "New password must be at least 6 characters" });
+      }
+
+      // Verify current password
+      const bcrypt = await import("bcrypt");
+      const isValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isValid) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      // Update password
+      const hashedPassword = await hashPassword(newPassword);
+      const updatedUser = await storage.updateUserPassword(user.id, hashedPassword);
+
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update password" });
+      }
+
+      // Send confirmation email
+      const { sendPasswordChangedConfirmation } = await import("./emailService");
+      await sendPasswordChangedConfirmation(user.email, user.name || undefined);
+
+      res.json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Change password error:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
+  // Admin reset user password (admin can reset any user's password)
+  app.post("/api/admin/reset-password/:userId", requireRole("admin"), async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const { newPassword } = req.body;
+
+      if (!newPassword) {
+        return res.status(400).json({ message: "New password is required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Update password
+      const hashedPassword = await hashPassword(newPassword);
+      const updatedUser = await storage.updateUserPassword(userId, hashedPassword);
+
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update password" });
+      }
+
+      // Optionally send notification to user
+      const { sendPasswordChangedConfirmation } = await import("./emailService");
+      await sendPasswordChangedConfirmation(user.email, user.name || undefined);
+
+      res.json({ message: "Password has been reset successfully" });
+    } catch (error) {
+      console.error("Admin reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
   return httpServer;
 }
