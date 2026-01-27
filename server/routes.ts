@@ -566,7 +566,8 @@ export async function registerRoutes(
       }
       
       const updateData: any = {};
-      if (startDate !== undefined) updateData.startDate = startDate;
+      // Convert empty strings to null for date fields
+      if (startDate !== undefined) updateData.startDate = startDate === '' ? null : startDate;
       if (allFeesWaived !== undefined) updateData.allFeesWaived = allFeesWaived;
       if (subscriptionStatus !== undefined) updateData.subscriptionStatus = subscriptionStatus;
       if (name !== undefined) updateData.name = name;
@@ -587,9 +588,15 @@ export async function registerRoutes(
 
       const { password: _, ...safeUser } = user;
       res.json({ client: safeUser });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Update client error:", error);
-      res.status(500).json({ message: "Failed to update client" });
+      console.error("Update client error details:", {
+        clientId: req.params.clientId,
+        body: req.body,
+        errorMessage: error?.message,
+        errorStack: error?.stack
+      });
+      res.status(500).json({ message: "Failed to update client", error: error?.message });
     }
   });
 
