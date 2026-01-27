@@ -3,7 +3,7 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { passport } from "./auth";
+import { passport, hashPassword } from "./auth";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { runMigrations } from 'stripe-replit-sync';
@@ -59,6 +59,38 @@ async function initStripe() {
       .catch((err: any) => console.error('Error syncing Stripe data:', err));
   } catch (error) {
     console.error('Failed to initialize Stripe:', error);
+  }
+}
+
+// Seed admin account if it doesn't exist (only when ADMIN_SEED_PASSWORD env var is set)
+async function seedAdminIfNeeded() {
+  const adminEmail = "ken@scifsi.com";
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD;
+  const adminName = "Ken (Admin)";
+
+  if (!adminPassword) {
+    return;
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT id FROM users WHERE email = $1",
+      [adminEmail]
+    );
+
+    if (result.rows.length === 0) {
+      console.log(`Creating admin account: ${adminEmail}`);
+      const hashedPassword = await hashPassword(adminPassword);
+      await pool.query(
+        `INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)`,
+        [adminEmail, hashedPassword, adminName, "admin"]
+      );
+      console.log("Admin account created. Please change password after first login.");
+    } else {
+      console.log("Admin account already exists");
+    }
+  } catch (error) {
+    console.error("Failed to seed admin:", error);
   }
 }
 
@@ -164,6 +196,9 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize Stripe before setting up routes
   await initStripe();
+
+  // Seed admin account if needed
+  await seedAdminIfNeeded();
 
   await registerRoutes(httpServer, app);
 
