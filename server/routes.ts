@@ -79,7 +79,7 @@ export async function registerRoutes(
         });
       }
 
-      const { email, password, name } = parsed.data;
+      const { email, password, name, licenseState, licenseNumber, licenseAttestation } = parsed.data;
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
@@ -92,6 +92,10 @@ export async function registerRoutes(
         password: hashedPassword,
         name,
         role: "therapist",
+        licenseState,
+        licenseNumber,
+        licenseAttestation,
+        licenseAttestationDate: new Date(),
       });
 
       req.login(user, (err) => {
@@ -117,11 +121,17 @@ export async function registerRoutes(
         });
       }
 
-      const { email, password, name } = parsed.data;
+      const { email, password, name, therapistId } = parsed.data;
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "Email already registered" });
+      }
+
+      // Verify the selected therapist exists and is a therapist
+      const therapist = await storage.getUser(therapistId);
+      if (!therapist || therapist.role !== "therapist") {
+        return res.status(400).json({ message: "Invalid therapist selected" });
       }
 
       const hashedPassword = await hashPassword(password);
@@ -134,6 +144,9 @@ export async function registerRoutes(
         startDate: today,
       });
 
+      // Assign the client to the selected therapist
+      await storage.assignTherapistToClient(therapistId, user.id);
+
       req.login(user, (err) => {
         if (err) {
           return res.status(500).json({ message: "Login failed after registration" });
@@ -144,6 +157,28 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Client registration error:", error);
       res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  // Get available therapists for client registration (public endpoint)
+  app.get("/api/therapists/available", async (req, res) => {
+    try {
+      const therapists = await storage.getUsersByRole("therapist");
+      // Also include admins as they can act as therapists
+      const admins = await storage.getUsersByRole("admin");
+      
+      // Return only id, name for privacy
+      const availableTherapists = [...therapists, ...admins]
+        .filter(t => t.subscriptionStatus === "active" || t.role === "admin")
+        .map(t => ({
+          id: t.id,
+          name: t.name || t.email.split("@")[0],
+        }));
+      
+      res.json({ therapists: availableTherapists });
+    } catch (error) {
+      console.error("Error fetching available therapists:", error);
+      res.status(500).json({ message: "Failed to fetch therapists" });
     }
   });
 

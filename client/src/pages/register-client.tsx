@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Shield, Loader2, AlertCircle, User, Check, CreditCard } from "lucide-react";
+import { Shield, Loader2, AlertCircle, User, Check, CreditCard, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Form,
@@ -25,7 +25,21 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
+
+type AvailableTherapist = {
+  id: string;
+  name: string;
+};
 
 export default function RegisterClient() {
   const { refetch } = useAuth();
@@ -33,14 +47,28 @@ export default function RegisterClient() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { data: therapistsData, isLoading: isLoadingTherapists } = useQuery<{ therapists: AvailableTherapist[] }>({
+    queryKey: ["/api/therapists/available"],
+  });
+
+  const therapists = therapistsData?.therapists || [];
+
   const form = useForm<RegisterClientInput>({
     resolver: zodResolver(registerClientSchema),
     defaultValues: {
       email: "",
       password: "",
       name: "",
+      therapistId: "",
     },
   });
+
+  // Auto-select if only one therapist available
+  useEffect(() => {
+    if (therapists.length === 1 && !form.getValues("therapistId")) {
+      form.setValue("therapistId", therapists[0].id);
+    }
+  }, [therapists, form]);
 
   const onSubmit = async (data: RegisterClientInput) => {
     setError(null);
@@ -197,10 +225,47 @@ export default function RegisterClient() {
                     </FormItem>
                   )}
                 />
+                
+                <FormField
+                  control={form.control}
+                  name="therapistId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Select Your Therapist
+                      </FormLabel>
+                      {isLoadingTherapists ? (
+                        <Skeleton className="h-10 w-full" />
+                      ) : therapists.length === 0 ? (
+                        <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
+                          No therapists available at this time. Please contact support.
+                        </div>
+                      ) : (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-therapist">
+                              <SelectValue placeholder="Select a therapist" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {therapists.map((therapist) => (
+                              <SelectItem key={therapist.id} value={therapist.id}>
+                                {therapist.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={isLoading}
+                  disabled={isLoading || isLoadingTherapists || therapists.length === 0}
                   data-testid="button-sign-up"
                 >
                   {isLoading ? (

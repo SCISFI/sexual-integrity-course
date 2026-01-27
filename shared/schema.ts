@@ -17,6 +17,12 @@ export const users = pgTable("users", {
   // Client-specific fields
   startDate: date("start_date"), // When client's 16-week program starts
   
+  // Therapist licensing fields
+  licenseState: text("license_state"), // State where license is held
+  licenseNumber: text("license_number"), // License number
+  licenseAttestation: boolean("license_attestation").default(false), // Attested that license is in good standing
+  licenseAttestationDate: timestamp("license_attestation_date"), // When they attested
+  
   // Subscription/payment status
   subscriptionStatus: text("subscription_status").default("active"), // active, paused, cancelled
   allFeesWaived: boolean("all_fees_waived").default(false), // Admin can waive all fees
@@ -47,6 +53,7 @@ export const payments = pgTable("payments", {
   amount: integer("amount").notNull(), // In cents
   status: text("status").notNull().default("pending"), // pending, completed, waived, failed
   stripePaymentId: text("stripe_payment_id"),
+  assignedTherapistId: varchar("assigned_therapist_id").references(() => users.id), // Therapist assigned at time of payment (for revenue tracking)
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -89,12 +96,18 @@ export const registerTherapistSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(1, "Name is required"),
+  licenseState: z.string().min(2, "License state is required"),
+  licenseNumber: z.string().min(1, "License number is required"),
+  licenseAttestation: z.literal(true, {
+    errorMap: () => ({ message: "You must attest that your license is in good standing" }),
+  }),
 });
 
 export const registerClientSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(1, "Name is required"),
+  therapistId: z.string().min(1, "Please select a therapist"),
 });
 
 // Insert schemas for new tables

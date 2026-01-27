@@ -29,7 +29,14 @@ import crypto from "crypto";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser & { role?: UserRole; startDate?: string }): Promise<User>;
+  createUser(user: InsertUser & { 
+    role?: UserRole; 
+    startDate?: string;
+    licenseState?: string;
+    licenseNumber?: string;
+    licenseAttestation?: boolean;
+    licenseAttestationDate?: Date;
+  }): Promise<User>;
   updateUser(id: string, data: Partial<{ name: string; startDate: string; allFeesWaived: boolean; subscriptionStatus: string; stripeCustomerId: string; stripeSubscriptionId: string }>): Promise<User | undefined>;
   getUsersByRole(role: UserRole): Promise<User[]>;
 
@@ -101,13 +108,24 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser & { role?: UserRole; startDate?: string }): Promise<User> {
+  async createUser(insertUser: InsertUser & { 
+    role?: UserRole; 
+    startDate?: string;
+    licenseState?: string;
+    licenseNumber?: string;
+    licenseAttestation?: boolean;
+    licenseAttestationDate?: Date;
+  }): Promise<User> {
     const [user] = await db
       .insert(users)
       .values({
         ...insertUser,
         role: insertUser.role || "client",
         startDate: insertUser.startDate || null,
+        licenseState: insertUser.licenseState || null,
+        licenseNumber: insertUser.licenseNumber || null,
+        licenseAttestation: insertUser.licenseAttestation || false,
+        licenseAttestationDate: insertUser.licenseAttestationDate || null,
       })
       .returning();
     return user;
