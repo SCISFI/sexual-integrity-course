@@ -166,6 +166,9 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// Trust proxy for secure cookies behind Replit's reverse proxy
+app.set("trust proxy", 1);
+
 const PgStore = connectPgSimple(session);
 
 app.use(
