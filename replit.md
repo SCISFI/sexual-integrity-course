@@ -8,7 +8,24 @@ A comprehensive 16-week Sexual Integrity curriculum program web application desi
 
 Preferred communication style: Simple, everyday language.
 
+## Known Issues (To Fix Next Session)
+
+1. **Payment Wall Not Triggering**: Client registration completes but clients are not redirected to Stripe for payment. The payment wall on Week pages may not be displaying or the payment check isn't working correctly in production.
+
+2. **Login Failure for New Accounts**: A newly registered client account (John Doe) could not log in after registration. Need to investigate:
+   - Password hashing during registration
+   - Login authentication flow
+   - Session creation
+
 ## Recent Changes
+
+- **January 27, 2026 (Stripe Payment Walls)**:
+  - Added payment wall to week pages for clients ($14.99/week)
+  - Added subscription wall to therapist dashboard ($49/month)
+  - Fixed query key format for payment status endpoint
+  - Added server startup error handling
+  - Payment status endpoint: `/api/payments/week/:weekNumber/status`
+  - Checkout endpoints auto-lookup Stripe price IDs
 
 - **January 2026 (Latest - Content & Features)**:
   - **Homework Tracking System**:
