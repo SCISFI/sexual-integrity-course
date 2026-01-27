@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, LogOut, Key, Search } from "lucide-react";
+import { Users, LogOut, Key, Search, CreditCard, Loader2 } from "lucide-react";
 import { Link } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type ClientWithProgress = {
   id: number;
@@ -23,9 +24,61 @@ type ClientWithProgress = {
 export default function TherapistHome() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+  const subscriptionConfirmedRef = useRef(false);
+
+  // Handle subscription success callback
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const paymentStatus = searchParams.get('payment');
+    
+    if (paymentStatus === 'success' && !subscriptionConfirmedRef.current) {
+      subscriptionConfirmedRef.current = true;
+      toast({
+        title: "Subscription Activated",
+        description: "Welcome! Your therapist subscription is now active.",
+      });
+      // Clear URL and refresh subscription data
+      window.history.replaceState({}, '', '/therapist-home');
+      queryClient.invalidateQueries({ queryKey: ['/api/payments/subscription'] });
+    } else if (paymentStatus === 'cancelled') {
+      window.history.replaceState({}, '', '/therapist-home');
+    }
+  }, [toast]);
+
+  // Check subscription status
+  const { data: subscriptionData, isLoading: loadingSubscription } = useQuery<{ subscription: any }>({
+    queryKey: ['/api/payments/subscription'],
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  // Subscription checkout mutation
+  const subscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/payments/checkout/subscription", {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Checkout Error",
+        description: "Failed to start subscription checkout. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const hasActiveSubscription = subscriptionData?.subscription?.status === 'active' || 
+                                 subscriptionData?.subscription?.status === 'trialing';
 
   const { data: clientsData, isLoading } = useQuery<{ clients: ClientWithProgress[] }>({
     queryKey: ['/api/therapist/clients'],
+    enabled: hasActiveSubscription, // Only fetch clients if subscribed
   });
 
   const allClients = clientsData?.clients || [];
@@ -74,6 +127,84 @@ export default function TherapistHome() {
     await apiRequest("POST", "/api/auth/logout");
     setLocation("/login");
   };
+
+  // Show loading while checking subscription
+  if (loadingSubscription) {
+    return (
+      <div className="min-h-screen bg-background px-6 py-8">
+        <div className="mx-auto max-w-5xl flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show subscription wall if no active subscription
+  if (!hasActiveSubscription) {
+    return (
+      <div className="min-h-screen bg-background px-6 py-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl font-bold">Therapist Dashboard</h1>
+            <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+          
+          <Card data-testid="card-subscription-required">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                <CreditCard className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="mb-2 text-xl font-semibold">Subscription Required</h3>
+              <p className="max-w-md text-muted-foreground mb-6">
+                Subscribe for <span className="font-semibold text-foreground">$49/month</span> to access the therapist dashboard, manage your clients, and monitor their progress through the 16-week program.
+              </p>
+              <div className="space-y-4">
+                <ul className="text-left text-sm text-muted-foreground space-y-2 mb-6">
+                  <li className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    Unlimited client management
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    Real-time progress monitoring
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    Client check-in data access
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    Cancel anytime
+                  </li>
+                </ul>
+                <Button
+                  size="lg"
+                  onClick={() => subscriptionMutation.mutate()}
+                  disabled={subscriptionMutation.isPending}
+                  data-testid="button-subscribe"
+                >
+                  {subscriptionMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Subscribe $49/month
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">

@@ -1051,15 +1051,24 @@ export async function registerRoutes(
   app.post("/api/payments/checkout/subscription", requireRole("therapist"), async (req, res) => {
     try {
       const user = req.user as any;
-      const { priceId } = req.body;
-      
-      if (!priceId) {
-        return res.status(400).json({ message: "Price ID is required" });
-      }
+      let { priceId } = req.body;
       
       const { stripeService } = await import("./stripeService");
       const { getUncachableStripeClient } = await import("./stripeClient");
       const stripe = await getUncachableStripeClient();
+      
+      // If priceId not provided, look up the Therapist Subscription price
+      if (!priceId) {
+        const products = await stripe.products.search({ query: "name:'Therapist Monthly Subscription'" });
+        if (products.data.length === 0) {
+          return res.status(500).json({ message: "Therapist subscription product not found in Stripe" });
+        }
+        const prices = await stripe.prices.list({ product: products.data[0].id, active: true, limit: 1 });
+        if (prices.data.length === 0) {
+          return res.status(500).json({ message: "Therapist subscription price not found in Stripe" });
+        }
+        priceId = prices.data[0].id;
+      }
       
       // Create or get customer
       let customerId = user.stripeCustomerId;
@@ -1092,10 +1101,26 @@ export async function registerRoutes(
   app.post("/api/payments/checkout/week", requireRole("client"), async (req, res) => {
     try {
       const user = req.user as any;
-      const { priceId, weekNumber } = req.body;
+      const { weekNumber } = req.body;
+      let { priceId } = req.body;
       
-      if (!priceId || !weekNumber) {
-        return res.status(400).json({ message: "Price ID and week number are required" });
+      if (!weekNumber) {
+        return res.status(400).json({ message: "Week number is required" });
+      }
+      
+      // If priceId not provided, look up the Weekly Lesson Access price
+      if (!priceId) {
+        const { getUncachableStripeClient } = await import("./stripeClient");
+        const stripe = await getUncachableStripeClient();
+        const products = await stripe.products.search({ query: "name:'Weekly Lesson Access'" });
+        if (products.data.length === 0) {
+          return res.status(500).json({ message: "Week access product not found in Stripe" });
+        }
+        const prices = await stripe.prices.list({ product: products.data[0].id, active: true, limit: 1 });
+        if (prices.data.length === 0) {
+          return res.status(500).json({ message: "Week access price not found in Stripe" });
+        }
+        priceId = prices.data[0].id;
       }
       
       // Check if week fee is waived

@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock, Eye } from "lucide-react";
+import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
@@ -246,6 +246,42 @@ export default function WeekPage() {
   const { data: homeworkData } = useQuery<{ completedItems: number[] }>({
     queryKey: ['/api/progress/homework', weekNumber],
   });
+
+  // Fetch payment status for this week
+  const { data: paymentStatusData, isLoading: loadingPaymentStatus } = useQuery<{ 
+    needsPayment: boolean; 
+    reason?: string;
+  }>({
+    queryKey: ['/api/payments/week', weekNumber, 'status'],
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+
+  // Mutation to start checkout
+  const checkoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/payments/checkout/week", { 
+        weekNumber,
+        successUrl: `${window.location.origin}/week/${weekNumber}?payment=success`,
+        cancelUrl: `${window.location.origin}/week/${weekNumber}?payment=cancelled`,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Checkout Error",
+        description: "Failed to start checkout. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const needsPayment = paymentStatusData?.needsPayment === true;
 
   // Check if this week is already completed (locked)
   const weekIsLocked = completionsData?.completedWeeks?.includes(weekNumber) || false;
@@ -525,7 +561,48 @@ export default function WeekPage() {
               </div>
             )}
 
-            {!isTimeLocked && (
+            {/* Payment wall - show if week is unlocked but not paid for */}
+            {!isTimeLocked && needsPayment && (
+              <div className="flex flex-col items-center justify-center py-12 text-center" data-testid="week-payment-required">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                  <CreditCard className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">Payment Required</h3>
+                <p className="max-w-md text-muted-foreground mb-6">
+                  Unlock Week {weekNumber} for <span className="font-semibold text-foreground">$14.99</span> to access the full lesson content, exercises, and reflection activities.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <Button
+                    size="lg"
+                    onClick={() => checkoutMutation.mutate()}
+                    disabled={checkoutMutation.isPending}
+                    data-testid="button-pay-week"
+                  >
+                    {checkoutMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Pay $14.99 to Unlock
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setLocation("/dashboard")}
+                    data-testid="button-back-dashboard-pay"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Return to Dashboard
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!isTimeLocked && !needsPayment && (
             <Tabs defaultValue="read">
               <TabsList>
                 <TabsTrigger value="read" data-testid="tab-read">Read</TabsTrigger>
