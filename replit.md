@@ -10,7 +10,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-- **January 2026 (Latest - UI/Testing)**:
+- **January 2026 (Latest - Content & Features)**:
+  - **Homework Tracking System**:
+    - Trackable checklists for weekly homework assignments
+    - Auto-save with 500ms debounce to reduce API calls
+    - Database persistence via `homework_completions` table
+    - Therapist visibility in client progress view
+    - API: GET/PUT /api/progress/homework/:week
+  - **Crisis Resources Component**:
+    - Persistent button on all week pages
+    - Emergency contacts: 988 Lifeline, Crisis Text Line, 911
+    - Recovery support links: SAA, Celebrate Recovery, S-Anon
+  - **Enhanced Curriculum Content**:
+    - Week 6: Trauma-informed content (ACEs, CSBD connection, referral guidance)
+    - Week 8: Partner/relationship support (disclosure, trust rebuilding, betrayal trauma)
+    - Week 10: Technology safety (accountability software, device management)
+    - Week 11: Valued Living Assessment (VLQ-inspired) with 10 life domains
+    - Week 16: Post-program relapse guidance and ongoing support resources
+
+- **January 2026 (UI/Testing)**:
   - **Masculine Professional Color Scheme**: Deep navy blues, cyan accents, charcoal tones
     - Light mode: Navy primary (215 50% 23%), cyan accent (199 89% 48%)
     - Dark mode: Matching professional dark theme
@@ -111,6 +129,7 @@ Core Tables:
 - `therapist_feedback`: id, therapistId, clientId, weekNumber, feedbackType, content, createdAt
 - `week_fee_waivers`: id, clientId, weekNumber, adminId, createdAt
 - `password_reset_tokens`: id, userId, token, expiresAt, used, createdAt (1-hour expiration, single-use)
+- `homework_completions`: id, userId, weekNumber, completedItems (JSON array of indices), updatedAt (unique on userId/weekNumber)
 
 Stripe Schema (managed by stripe-replit-sync):
 - `stripe.products`, `stripe.prices`, `stripe.customers`, `stripe.subscriptions`, etc.
