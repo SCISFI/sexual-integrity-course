@@ -62,36 +62,69 @@ async function initStripe() {
   }
 }
 
-// Seed admin account if it doesn't exist (only when ADMIN_SEED_PASSWORD env var is set)
-async function seedAdminIfNeeded() {
-  const adminEmail = "ken@scifsi.com";
-  const adminPassword = process.env.ADMIN_SEED_PASSWORD;
-  const adminName = "Ken (Admin)";
+// Seed accounts if they don't exist (only when ADMIN_SEED_PASSWORD env var is set)
+async function seedAccountsIfNeeded() {
+  const seedPassword = process.env.ADMIN_SEED_PASSWORD;
 
-  if (!adminPassword) {
-    console.log("Admin seeding skipped: ADMIN_SEED_PASSWORD not set");
+  if (!seedPassword) {
+    console.log("Account seeding skipped: ADMIN_SEED_PASSWORD not set");
     return;
   }
 
-  try {
-    const result = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [adminEmail]
-    );
+  const hashedPassword = await hashPassword(seedPassword);
 
-    if (result.rows.length === 0) {
-      console.log(`Creating admin account: ${adminEmail}`);
-      const hashedPassword = await hashPassword(adminPassword);
-      await pool.query(
-        `INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)`,
-        [adminEmail, hashedPassword, adminName, "admin"]
+  // Define accounts to seed
+  const accounts = [
+    { email: "ken@scifsi.com", name: "Ken (Admin)", role: "admin" },
+    { email: "ken-therapist@scifsi.com", name: "Ken (Therapist)", role: "therapist" },
+    { email: "therapist.tester@example.com", name: "Test Therapist", role: "therapist" },
+    { email: "client.tester@example.com", name: "Test Client", role: "client" },
+  ];
+
+  try {
+    for (const account of accounts) {
+      const result = await pool.query(
+        "SELECT id FROM users WHERE email = $1",
+        [account.email]
       );
-      console.log("Admin account created. Please change password after first login.");
-    } else {
-      console.log("Admin account already exists");
+
+      if (result.rows.length === 0) {
+        console.log(`Creating ${account.role} account: ${account.email}`);
+        
+        if (account.role === "client") {
+          // Assign client to tester therapist
+          const therapist = await pool.query(
+            "SELECT id FROM users WHERE email = $1",
+            ["therapist.tester@example.com"]
+          );
+          const therapistId = therapist.rows[0]?.id || null;
+          const startDate = new Date().toISOString().split('T')[0]; // Just the date part
+          await pool.query(
+            `INSERT INTO users (email, password, name, role, start_date) VALUES ($1, $2, $3, $4, $5)`,
+            [account.email, hashedPassword, account.name, account.role, startDate]
+          );
+          if (therapistId) {
+            // Create therapist-client relationship
+            const newClient = await pool.query("SELECT id FROM users WHERE email = $1", [account.email]);
+            await pool.query(
+              `INSERT INTO therapist_clients (therapist_id, client_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+              [therapistId, newClient.rows[0].id]
+            );
+          }
+        } else {
+          await pool.query(
+            `INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)`,
+            [account.email, hashedPassword, account.name, account.role]
+          );
+        }
+        console.log(`  ${account.role} account created.`);
+      } else {
+        console.log(`${account.role} account ${account.email} already exists`);
+      }
     }
+    console.log("Account seeding complete.");
   } catch (error) {
-    console.error("Failed to seed admin:", error);
+    console.error("Failed to seed accounts:", error);
   }
 }
 
@@ -198,8 +231,8 @@ app.use((req, res, next) => {
   // Initialize Stripe before setting up routes
   await initStripe();
 
-  // Seed admin account if needed
-  await seedAdminIfNeeded();
+  // Seed accounts if needed
+  await seedAccountsIfNeeded();
 
   await registerRoutes(httpServer, app);
 
