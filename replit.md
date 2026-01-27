@@ -18,6 +18,10 @@ Preferred communication style: Simple, everyday language.
   - Time-based week unlocking (7-day intervals from client start date)
   - AI-powered encouragement and technique reminders (uses Replit AI Integrations - no API key needed, charges billed to credits)
   - Therapist feedback system for clients (general, week-specific, or check-in feedback)
+  - Complete password management system:
+    - User self-service password reset via email (Gmail integration)
+    - Admin-managed password resets for any user
+    - Change password feature for logged-in users (all roles)
 
 ## System Architecture
 
@@ -38,10 +42,13 @@ Key Pages:
 - `/login` - User login
 - `/register/therapist` - Therapist registration
 - `/register/client` - Client registration (requires therapist access code)
+- `/forgot-password` - Request password reset email
+- `/reset-password?token=X` - Reset password with token
+- `/change-password` - Change password for logged-in users
 - `/dashboard` - Client curriculum dashboard
 - `/week/:weekNumber` - Individual week lesson content
-- `/therapist/home` - Therapist dashboard with client list
-- `/therapist/client/:clientId` - Individual client progress view
+- `/therapist-home` - Therapist dashboard with client list
+- `/therapist/clients/:clientId` - Individual client progress view
 - `/admin` - Admin panel for user and system management
 
 ### Backend Architecture
@@ -59,6 +66,7 @@ Server Modules:
 - `server/stripeService.ts` - Stripe operations (checkout sessions)
 - `server/webhookHandlers.ts` - Stripe webhook processing
 - `server/aiService.ts` - AI-powered encouragement and technique reminders
+- `server/emailService.ts` - Email service for password reset notifications (Gmail integration)
 
 ### Database Schema
 
@@ -70,6 +78,7 @@ Core Tables:
 - `therapist_clients`: therapistId, clientId, createdAt
 - `therapist_feedback`: id, therapistId, clientId, weekNumber, feedbackType, content, createdAt
 - `week_fee_waivers`: id, clientId, weekNumber, adminId, createdAt
+- `password_reset_tokens`: id, userId, token, expiresAt, used, createdAt (1-hour expiration, single-use)
 
 Stripe Schema (managed by stripe-replit-sync):
 - `stripe.products`, `stripe.prices`, `stripe.customers`, `stripe.subscriptions`, etc.
