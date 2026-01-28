@@ -8,15 +8,6 @@ A comprehensive 16-week Sexual Integrity curriculum program web application desi
 
 Preferred communication style: Simple, everyday language.
 
-## Known Issues (To Fix Next Session)
-
-1. **Payment Wall Not Triggering**: Client registration completes but clients are not redirected to Stripe for payment. The payment wall on Week pages may not be displaying or the payment check isn't working correctly in production.
-
-2. **Login Failure for New Accounts**: A newly registered client account (John Doe) could not log in after registration. Need to investigate:
-   - Password hashing during registration
-   - Login authentication flow
-   - Session creation
-
 ## Recent Changes
 
 - **January 27, 2026 (Stripe Payment Walls)**:
