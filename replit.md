@@ -51,6 +51,10 @@ Preferred communication style: Simple, everyday language.
     - Client is assigned to therapist for testing workflows
 
 - **January 28, 2026 (Admin & Therapist Enhancements)**:
+  - **Therapist Subscription Waiver**: Admin can waive subscription fees for therapists
+    - Toggle switch in Therapists table to enable/disable fee waiver
+    - Therapists with waived fees can access dashboard without active subscription
+    - API endpoint: PATCH /api/admin/therapists/:therapistId
   - **Client Deletion**: Admin can permanently delete client accounts
     - API endpoint: DELETE /api/admin/clients/:clientId
     - Cascades deletion of all client data (homework, reflections, check-ins, payments, assignments)
