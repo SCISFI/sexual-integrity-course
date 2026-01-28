@@ -242,6 +242,25 @@ export default function AdminPage() {
     },
   });
 
+  // Update therapist fee waiver mutation
+  const updateTherapistMutation = useMutation({
+    mutationFn: async ({ therapistId, allFeesWaived }: { therapistId: string; allFeesWaived: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/admin/therapists/${therapistId}`, { allFeesWaived });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update therapist");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/therapists"] });
+      toast({ title: "Therapist updated successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleLogout = async () => {
     await logout();
     setLocation("/");
@@ -574,6 +593,7 @@ export default function AdminPage() {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Subscription Waived</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -584,6 +604,19 @@ export default function AdminPage() {
                           <TableCell className="font-medium">{therapist.name || "—"}</TableCell>
                           <TableCell>{therapist.email}</TableCell>
                           <TableCell>{therapist.subscriptionStatus || "active"}</TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={therapist.allFeesWaived || false}
+                              onCheckedChange={(checked) => {
+                                updateTherapistMutation.mutate({
+                                  therapistId: therapist.id,
+                                  allFeesWaived: checked,
+                                });
+                              }}
+                              disabled={updateTherapistMutation.isPending}
+                              data-testid={`switch-therapist-waiver-${therapist.id}`}
+                            />
+                          </TableCell>
                           <TableCell>{new Date(therapist.createdAt).toLocaleDateString()}</TableCell>
                           <TableCell>
                             <Button

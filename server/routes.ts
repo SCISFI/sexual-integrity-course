@@ -504,6 +504,45 @@ export async function registerRoutes(
     }
   });
 
+  // Update therapist settings (admin only)
+  app.patch("/api/admin/therapists/:therapistId", requireRole("admin"), async (req, res) => {
+    try {
+      const { therapistId } = req.params;
+      const { allFeesWaived } = req.body;
+      
+      const user = await storage.getUser(therapistId);
+      if (!user) {
+        return res.status(404).json({ message: "Therapist not found" });
+      }
+      
+      if (user.role !== "therapist") {
+        return res.status(400).json({ message: "User is not a therapist" });
+      }
+      
+      if (allFeesWaived !== undefined && typeof allFeesWaived !== 'boolean') {
+        return res.status(400).json({ message: "allFeesWaived must be a boolean" });
+      }
+      
+      const updateData: any = {};
+      if (allFeesWaived !== undefined) updateData.allFeesWaived = allFeesWaived;
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      
+      const updatedUser = await storage.updateUser(therapistId, updateData);
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update therapist" });
+      }
+      
+      const { password: _, ...safeUser } = updatedUser;
+      res.json({ therapist: safeUser });
+    } catch (error) {
+      console.error("Update therapist error:", error);
+      res.status(500).json({ message: "Failed to update therapist" });
+    }
+  });
+
   // Create client (admin can create client accounts)
   app.post("/api/admin/clients", requireRole("admin"), async (req, res) => {
     try {
@@ -1262,13 +1301,14 @@ export async function registerRoutes(
     try {
       const user = req.user as any;
       
+      // Include fee waiver status for therapists
       if (!user.stripeSubscriptionId) {
-        return res.json({ subscription: null });
+        return res.json({ subscription: null, allFeesWaived: user.allFeesWaived || false });
       }
       
       const { stripeService } = await import("./stripeService");
       const subscription = await stripeService.getSubscription(user.stripeSubscriptionId);
-      res.json({ subscription });
+      res.json({ subscription, allFeesWaived: user.allFeesWaived || false });
     } catch (error) {
       console.error("Get subscription error:", error);
       res.status(500).json({ message: "Failed to get subscription" });

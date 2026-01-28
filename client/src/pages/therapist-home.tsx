@@ -47,7 +47,7 @@ export default function TherapistHome() {
   }, [toast]);
 
   // Check subscription status
-  const { data: subscriptionData, isLoading: loadingSubscription } = useQuery<{ subscription: any }>({
+  const { data: subscriptionData, isLoading: loadingSubscription } = useQuery<{ subscription: any; allFeesWaived: boolean }>({
     queryKey: ['/api/payments/subscription'],
     staleTime: 0,
     refetchOnMount: 'always',
@@ -74,11 +74,12 @@ export default function TherapistHome() {
   });
 
   const hasActiveSubscription = subscriptionData?.subscription?.status === 'active' || 
-                                 subscriptionData?.subscription?.status === 'trialing';
+                                 subscriptionData?.subscription?.status === 'trialing' ||
+                                 subscriptionData?.allFeesWaived === true;
 
   const { data: clientsData, isLoading } = useQuery<{ clients: ClientWithProgress[] }>({
     queryKey: ['/api/therapist/clients'],
-    enabled: hasActiveSubscription, // Only fetch clients if subscribed
+    enabled: hasActiveSubscription, // Only fetch clients if subscribed or fees waived
   });
 
   const allClients = clientsData?.clients || [];
