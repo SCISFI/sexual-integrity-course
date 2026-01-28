@@ -50,6 +50,16 @@ Preferred communication style: Simple, everyday language.
     - Client: client.tester@example.com (password: testpass123)
     - Client is assigned to therapist for testing workflows
 
+- **January 28, 2026 (Admin & Therapist Enhancements)**:
+  - **Client Deletion**: Admin can permanently delete client accounts
+    - API endpoint: DELETE /api/admin/clients/:clientId
+    - Cascades deletion of all client data (homework, reflections, check-ins, payments, assignments)
+    - Confirmation dialog shows all data that will be deleted
+  - **Enhanced Client Work Visibility**:
+    - Therapists can view client homework completions in read-only Homework tab
+    - Admin client progress includes all homework, reflections, and check-in data
+    - Therapist-client view has 5 tabs: Progress, Check-ins, Reflections, Homework, Feedback
+
 - **January 2026 (Features)**:
   - Therapist licensing requirements: Added licenseState, licenseNumber, licenseAttestation fields
   - Client registration now requires selecting a therapist (auto-selects if only one available)
@@ -59,6 +69,7 @@ Preferred communication style: Simple, everyday language.
     - Therapist reassignment in edit dialog
     - Revenue by Therapist tab for kickback calculations
     - Input validation on client update and therapist departure endpoints
+    - Client deletion with confirmation dialog
   - Therapist dashboard: Added client search functionality
   - Therapist departure handling: API endpoint to reassign all clients when therapist leaves (with role validation)
   - Revenue tracking: Payments now capture assigned therapist ID for kickback calculations

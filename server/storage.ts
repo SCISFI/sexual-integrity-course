@@ -31,6 +31,7 @@ import crypto from "crypto";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined>;
   createUser(user: InsertUser & { 
     role?: UserRole; 
     startDate?: string;
@@ -106,6 +107,9 @@ export interface IStorage {
   getHomeworkCompletion(userId: string, weekNumber: number): Promise<HomeworkCompletion | undefined>;
   upsertHomeworkCompletion(userId: string, weekNumber: number, completedItems: number[]): Promise<HomeworkCompletion>;
   getAllHomeworkCompletions(userId: string): Promise<HomeworkCompletion[]>;
+
+  // User deletion
+  deleteUser(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -116,6 +120,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, stripeCustomerId));
     return user || undefined;
   }
 
@@ -569,6 +578,22 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(homeworkCompletions)
       .where(eq(homeworkCompletions.userId, userId));
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Delete all related data for the user
+    // Order matters due to foreign key constraints
+    await db.delete(homeworkCompletions).where(eq(homeworkCompletions.userId, userId));
+    await db.delete(weekReflections).where(eq(weekReflections.userId, userId));
+    await db.delete(dailyCheckins).where(eq(dailyCheckins.userId, userId));
+    await db.delete(weekCompletions).where(eq(weekCompletions.userId, userId));
+    await db.delete(therapistFeedback).where(eq(therapistFeedback.clientId, userId));
+    await db.delete(weekFeeWaivers).where(eq(weekFeeWaivers.clientId, userId));
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await db.delete(payments).where(eq(payments.userId, userId));
+    await db.delete(therapistClients).where(eq(therapistClients.clientId, userId));
+    // Finally delete the user
+    await db.delete(users).where(eq(users.id, userId));
   }
 }
 

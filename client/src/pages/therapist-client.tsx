@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -28,6 +28,11 @@ type ClientProgress = {
     q2: string | null;
     q3: string | null;
     q4: string | null;
+  }>;
+  homeworkCompletions: Array<{
+    weekNumber: number;
+    completedItems: number[];
+    updatedAt: string;
   }>;
   feedback: Array<{
     id: string;
@@ -84,6 +89,7 @@ export default function TherapistClient() {
   const completedWeeks = progressData?.completedWeeks || [];
   const checkins = progressData?.checkins || [];
   const reflections = progressData?.reflections || [];
+  const homeworkCompletions = progressData?.homeworkCompletions || [];
   const feedback = progressData?.feedback || [];
 
   const getWeekStatus = (weekNum: number) => {
@@ -153,10 +159,11 @@ export default function TherapistClient() {
             </Card>
 
             <Tabs defaultValue="progress" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="progress">Progress</TabsTrigger>
                 <TabsTrigger value="checkins">Check-ins</TabsTrigger>
                 <TabsTrigger value="reflections">Reflections</TabsTrigger>
+                <TabsTrigger value="homework">Homework</TabsTrigger>
                 <TabsTrigger value="feedback">Feedback</TabsTrigger>
               </TabsList>
 
@@ -315,6 +322,44 @@ export default function TherapistClient() {
                                 </div>
                               )}
                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="homework" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ListChecks className="h-5 w-5" />
+                      Homework Progress
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {homeworkCompletions.length === 0 ? (
+                      <p className="text-muted-foreground">No homework tracked yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {homeworkCompletions
+                          .sort((a, b) => a.weekNumber - b.weekNumber)
+                          .map((hw) => (
+                          <div
+                            key={hw.weekNumber}
+                            className="rounded-lg border p-4"
+                            data-testid={`homework-week-${hw.weekNumber}`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium">Week {hw.weekNumber}</h4>
+                              <Badge variant="outline">
+                                {hw.completedItems.length} items completed
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Last updated: {new Date(hw.updatedAt).toLocaleDateString()}
+                            </p>
                           </div>
                         ))}
                       </div>

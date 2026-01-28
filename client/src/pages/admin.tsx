@@ -42,8 +42,19 @@ import {
   X,
   Eye,
   Key,
-  DollarSign
+  DollarSign,
+  Trash2
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 
 interface Therapist {
@@ -84,6 +95,7 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState({ startDate: "", allFeesWaived: false, therapistId: "" });
   const [resetPasswordUser, setResetPasswordUser] = useState<{ id: string; name: string | null; email: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
+  const [deletingClient, setDeletingClient] = useState<{ id: string; name: string | null; email: string } | null>(null);
 
   // Check if user is admin
   if (user && (user as any).role !== "admin") {
@@ -204,6 +216,26 @@ export default function AdminPage() {
       setResetPasswordUser(null);
       setNewPassword("");
       toast({ title: "Password reset successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Delete client mutation
+  const deleteClientMutation = useMutation({
+    mutationFn: async (clientId: string) => {
+      const res = await apiRequest("DELETE", `/api/admin/clients/${clientId}`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to delete client");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
+      setDeletingClient(null);
+      toast({ title: "Client deleted successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -438,6 +470,16 @@ export default function AdminPage() {
                                 title="Reset Password"
                               >
                                 <Key className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setDeletingClient({ id: client.id, name: client.name, email: client.email })}
+                                data-testid={`button-delete-client-${client.id}`}
+                                title="Delete Client"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </TableCell>
@@ -745,6 +787,43 @@ export default function AdminPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Client Confirmation Dialog */}
+        <AlertDialog open={!!deletingClient} onOpenChange={(open) => { if (!open) setDeletingClient(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Client Account</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the account for <strong>{deletingClient?.name || deletingClient?.email}</strong>?
+                This action cannot be undone. All of the client's data will be permanently removed, including:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Check-in history</li>
+                  <li>Weekly reflections</li>
+                  <li>Homework completions</li>
+                  <li>Payment records</li>
+                  <li>Therapist assignments</li>
+                </ul>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete-client">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deletingClient) {
+                    deleteClientMutation.mutate(deletingClient.id);
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                data-testid="button-confirm-delete-client"
+              >
+                {deleteClientMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Delete Client
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

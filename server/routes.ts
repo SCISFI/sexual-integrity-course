@@ -783,6 +783,30 @@ export async function registerRoutes(
     }
   });
 
+  // Delete a client (admin only)
+  app.delete("/api/admin/clients/:clientId", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      
+      const user = await storage.getUser(clientId);
+      if (!user) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      if (user.role !== "client") {
+        return res.status(400).json({ message: "Can only delete client accounts" });
+      }
+      
+      await storage.deleteUser(clientId);
+      console.log(`Admin deleted client: ${user.email} (${clientId})`);
+      
+      res.json({ message: "Client deleted successfully" });
+    } catch (error) {
+      console.error("Delete client error:", error);
+      res.status(500).json({ message: "Failed to delete client" });
+    }
+  });
+
   // =======================================
   // Therapist API endpoints
   // =======================================
