@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sexual Integrity Curriculum - Project Documentation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #1a1a2e;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: #fff;
+    }
+    h1 {
+      color: #1a365d;
+      font-size: 28px;
+      margin-bottom: 10px;
+      border-bottom: 3px solid #0891b2;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #1a365d;
+      font-size: 20px;
+      margin-top: 30px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+    h3 {
+      color: #2d3748;
+      font-size: 16px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+    p {
+      margin-bottom: 12px;
+    }
+    ul, ol {
+      margin-left: 25px;
+      margin-bottom: 15px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 14px;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 15px 0;
+      font-size: 13px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background: #f8fafc;
+      font-weight: 600;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .subtitle {
+      color: #64748b;
+      font-size: 16px;
+    }
+    .section {
+      margin-bottom: 30px;
+      page-break-inside: avoid;
+    }
+    .highlight {
+      background: #f0f9ff;
+      border-left: 4px solid #0891b2;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .price-tag {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    @media print {
+      body {
+        padding: 20px;
+      }
+      h2 {
+        page-break-after: avoid;
+      }
+      .section {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Sexual Integrity Curriculum</h1>
+    <p class="subtitle">16-Week Program Application - Technical Documentation</p>
+    <p class="subtitle">Last Updated: January 28, 2026</p>
+  </div>
+
+  <div class="section">
+    <h2>1. Project Overview</h2>
+    <p>A comprehensive 16-week Sexual Integrity curriculum program web application designed for therapists and clients. The application features role-based access (Admin, Therapist, Client), weekly lessons combining CBT (weeks 1-8) and ACT (weeks 9-16) content, time-based week unlocking, daily self-monitoring tools, and integrated Stripe payment processing.</p>
+    
+    <h3>Key Features</h3>
+    <ul>
+      <li>Role-based access control (Admin, Therapist, Client)</li>
+      <li>16-week curriculum with CBT and ACT therapeutic content</li>
+      <li>Time-based week unlocking (7-day intervals)</li>
+      <li>Daily self-monitoring and check-in tools</li>
+      <li>Therapist-client assignment and progress monitoring</li>
+      <li>Stripe payment integration for subscriptions and per-week payments</li>
+      <li>AI-powered encouragement and technique reminders</li>
+      <li>Password reset via email</li>
+      <li>Crisis resources component</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>2. User Roles</h2>
+    <table>
+      <tr>
+        <th>Role</th>
+        <th>Access Level</th>
+        <th>Pricing</th>
+      </tr>
+      <tr>
+        <td><strong>Admin</strong></td>
+        <td>Full system access, user management, fee waivers, therapist-client assignments, revenue tracking</td>
+        <td>N/A</td>
+      </tr>
+      <tr>
+        <td><strong>Therapist</strong></td>
+        <td>View assigned clients, monitor progress, provide feedback</td>
+        <td><span class="price-tag">$49/month</span> subscription</td>
+      </tr>
+      <tr>
+        <td><strong>Client</strong></td>
+        <td>Access curriculum weeks, complete lessons, daily check-ins</td>
+        <td><span class="price-tag">$14.99/week</span> per lesson</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>3. Technology Stack</h2>
+    
+    <h3>Frontend</h3>
+    <ul>
+      <li><strong>Framework:</strong> React 18 with Vite</li>
+      <li><strong>Routing:</strong> Wouter (lightweight client-side routing)</li>
+      <li><strong>State Management:</strong> TanStack React Query for server state, React Context for auth</li>
+      <li><strong>Styling:</strong> Tailwind CSS with shadcn/ui component library</li>
+      <li><strong>Form Handling:</strong> React Hook Form with Zod validation</li>
+    </ul>
+
+    <h3>Backend</h3>
+    <ul>
+      <li><strong>Framework:</strong> Express.js with TypeScript</li>
+      <li><strong>Authentication:</strong> Passport.js with Local Strategy</li>
+      <li><strong>Session Storage:</strong> PostgreSQL-backed via connect-pg-simple</li>
+      <li><strong>Payments:</strong> Stripe integration</li>
+      <li><strong>Email:</strong> Gmail integration for password resets</li>
+      <li><strong>AI:</strong> OpenAI-compatible API for encouragement features</li>
+    </ul>
+
+    <h3>Database</h3>
+    <ul>
+      <li><strong>Database:</strong> PostgreSQL</li>
+      <li><strong>ORM:</strong> Drizzle ORM</li>
+      <li><strong>Schema Validation:</strong> drizzle-zod</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>4. Database Schema</h2>
+    
+    <h3>Core Tables</h3>
+    <table>
+      <tr>
+        <th>Table</th>
+        <th>Key Columns</th>
+      </tr>
+      <tr>
+        <td><code>users</code></td>
+        <td>id, email, password, name, role, startDate, therapistId, accessCode, allFeesWaived, stripeCustomerId, stripeSubscriptionId, licenseState, licenseNumber</td>
+      </tr>
+      <tr>
+        <td><code>week_completions</code></td>
+        <td>id, userId, weekNumber, completedAt</td>
+      </tr>
+      <tr>
+        <td><code>daily_checkins</code></td>
+        <td>id, userId, dateKey, morningChecks, haltChecks, urgeLevel, moodLevel, eveningChecks, journalEntry</td>
+      </tr>
+      <tr>
+        <td><code>week_reflections</code></td>
+        <td>id, userId, weekNumber, q1, q2, q3, q4, updatedAt</td>
+      </tr>
+      <tr>
+        <td><code>therapist_clients</code></td>
+        <td>therapistId, clientId, createdAt</td>
+      </tr>
+      <tr>
+        <td><code>therapist_feedback</code></td>
+        <td>id, therapistId, clientId, weekNumber, feedbackType, content, createdAt</td>
+      </tr>
+      <tr>
+        <td><code>week_fee_waivers</code></td>
+        <td>id, clientId, weekNumber, adminId, createdAt</td>
+      </tr>
+      <tr>
+        <td><code>password_reset_tokens</code></td>
+        <td>id, userId, token, expiresAt, used, createdAt</td>
+      </tr>
+      <tr>
+        <td><code>homework_completions</code></td>
+        <td>id, userId, weekNumber, completedItems (JSON), updatedAt</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>5. API Endpoints</h2>
+    
+    <h3>Authentication</h3>
+    <ul>
+      <li><code>POST /api/auth/login</code> - User login</li>
+      <li><code>POST /api/auth/logout</code> - User logout</li>
+      <li><code>GET /api/auth/me</code> - Get current user</li>
+      <li><code>POST /api/auth/register/therapist</code> - Therapist registration</li>
+      <li><code>POST /api/auth/register/client</code> - Client registration</li>
+      <li><code>POST /api/auth/forgot-password</code> - Request password reset</li>
+      <li><code>POST /api/auth/reset-password</code> - Reset password with token</li>
+      <li><code>POST /api/auth/change-password</code> - Change password (logged in)</li>
+    </ul>
+
+    <h3>Client Progress</h3>
+    <ul>
+      <li><code>GET /api/progress/weeks</code> - Get week completion status</li>
+      <li><code>POST /api/progress/weeks/:weekNumber/complete</code> - Mark week complete</li>
+      <li><code>GET /api/progress/checkin/:dateKey</code> - Get daily check-in</li>
+      <li><code>PUT /api/progress/checkin/:dateKey</code> - Save daily check-in</li>
+      <li><code>GET /api/progress/reflection/:weekNumber</code> - Get week reflection</li>
+      <li><code>PUT /api/progress/reflection/:weekNumber</code> - Save week reflection</li>
+      <li><code>GET /api/progress/homework/:week</code> - Get homework completion</li>
+      <li><code>PUT /api/progress/homework/:week</code> - Save homework completion</li>
+    </ul>
+
+    <h3>Therapist</h3>
+    <ul>
+      <li><code>GET /api/therapist/clients</code> - Get assigned clients</li>
+      <li><code>GET /api/therapist/clients/:clientId/progress</code> - Get client progress</li>
+      <li><code>GET /api/therapist/clients/:clientId/checkins</code> - Get client check-ins</li>
+      <li><code>GET /api/therapist/clients/:clientId/reflections</code> - Get client reflections</li>
+      <li><code>POST /api/therapist/feedback</code> - Submit feedback to client</li>
+      <li><code>GET /api/therapist/feedback/:clientId</code> - Get feedback for client</li>
+    </ul>
+
+    <h3>Admin</h3>
+    <ul>
+      <li><code>GET /api/admin/therapists</code> - List all therapists</li>
+      <li><code>GET /api/admin/clients</code> - List all clients</li>
+      <li><code>GET /api/admin/unassigned-clients</code> - List unassigned clients</li>
+      <li><code>POST /api/admin/assign-client</code> - Assign client to therapist</li>
+      <li><code>PATCH /api/admin/clients/:clientId</code> - Update client</li>
+      <li><code>DELETE /api/admin/clients/:clientId</code> - Delete client</li>
+      <li><code>PATCH /api/admin/therapists/:therapistId</code> - Update therapist (fee waiver)</li>
+      <li><code>POST /api/admin/therapist-departure/:therapistId</code> - Handle therapist departure</li>
+      <li><code>GET /api/admin/revenue-by-therapist</code> - Revenue tracking</li>
+    </ul>
+
+    <h3>Payments (Stripe)</h3>
+    <ul>
+      <li><code>GET /api/stripe/config</code> - Get Stripe price IDs</li>
+      <li><code>POST /api/payments/checkout/subscription</code> - Create therapist subscription</li>
+      <li><code>POST /api/payments/checkout/week</code> - Create week payment checkout</li>
+      <li><code>GET /api/payments/subscription</code> - Get subscription status</li>
+      <li><code>GET /api/payments/week/:weekNumber/status</code> - Check week payment status</li>
+      <li><code>POST /api/stripe/webhook</code> - Stripe webhook handler</li>
+    </ul>
+
+    <h3>AI Features</h3>
+    <ul>
+      <li><code>GET /api/ai/encouragement?week=N</code> - Get AI encouragement</li>
+      <li><code>GET /api/ai/technique?week=N&technique=name</code> - Get technique reminder</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>6. Environment Variables</h2>
+    
+    <div class="highlight">
+      <h3>Required Variables</h3>
+      <table>
+        <tr>
+          <th>Variable</th>
+          <th>Description</th>
+        </tr>
+        <tr>
+          <td><code>DATABASE_URL</code></td>
+          <td>PostgreSQL connection string</td>
+        </tr>
+        <tr>
+          <td><code>SESSION_SECRET</code></td>
+          <td>Secret for signing session cookies</td>
+        </tr>
+        <tr>
+          <td><code>STRIPE_SECRET_KEY</code></td>
+          <td>Stripe API secret key</td>
+        </tr>
+        <tr>
+          <td><code>STRIPE_PUBLISHABLE_KEY</code></td>
+          <td>Stripe publishable key (frontend)</td>
+        </tr>
+        <tr>
+          <td><code>ADMIN_SEED_PASSWORD</code></td>
+          <td>Password for seeded admin account</td>
+        </tr>
+      </table>
+      
+      <h3>Optional Variables</h3>
+      <table>
+        <tr>
+          <th>Variable</th>
+          <th>Description</th>
+        </tr>
+        <tr>
+          <td><code>OPENAI_API_KEY</code></td>
+          <td>For AI encouragement features (or use Replit AI)</td>
+        </tr>
+        <tr>
+          <td><code>GMAIL_USER</code></td>
+          <td>Gmail address for sending password reset emails</td>
+        </tr>
+        <tr>
+          <td><code>GMAIL_APP_PASSWORD</code></td>
+          <td>Gmail app-specific password</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>7. Project Structure</h2>
+    <pre>
+/
+├── client/                    # Frontend React application
+│   ├── src/
+│   │   ├── components/        # Reusable UI components
+│   │   ├── pages/             # Page components
+│   │   ├── hooks/             # Custom React hooks
+│   │   ├── lib/               # Utility functions
+│   │   └── App.tsx            # Main app with routing
+│   └── public/                # Static assets
+├── server/                    # Backend Express application
+│   ├── index.ts               # Entry point, middleware
+│   ├── routes.ts              # API route definitions
+│   ├── auth.ts                # Passport authentication
+│   ├── storage.ts             # Data access layer
+│   ├── stripeClient.ts        # Stripe client setup
+│   ├── stripeService.ts       # Stripe operations
+│   ├── webhookHandlers.ts     # Stripe webhook processing
+│   ├── aiService.ts           # AI encouragement
+│   └── emailService.ts        # Email notifications
+├── shared/                    # Shared types and schemas
+│   └── schema.ts              # Drizzle ORM schema
+├── scripts/
+│   └── seed-stripe-products.ts # Stripe product seeder
+└── drizzle.config.ts          # Database configuration
+    </pre>
+  </div>
+
+  <div class="section">
+    <h2>8. Setup Instructions</h2>
+    
+    <h3>1. Install Dependencies</h3>
+    <pre>npm install</pre>
+
+    <h3>2. Set Up Database</h3>
+    <pre># Create PostgreSQL database and set DATABASE_URL
+npm run db:push</pre>
+
+    <h3>3. Configure Environment Variables</h3>
+    <p>Create a <code>.env</code> file with all required variables listed in section 6.</p>
+
+    <h3>4. Seed Stripe Products</h3>
+    <pre>npx tsx scripts/seed-stripe-products.ts</pre>
+
+    <h3>5. Run Development Server</h3>
+    <pre>npm run dev</pre>
+    <p>Server runs on port 5000 (Express + Vite)</p>
+
+    <h3>6. Production Build</h3>
+    <pre>npm run build
+npm start</pre>
+  </div>
+
+  <div class="section">
+    <h2>9. Key Technical Notes</h2>
+    <ol>
+      <li><strong>Stripe Webhook:</strong> Must be registered BEFORE express.json() middleware</li>
+      <li><strong>Week Unlocking:</strong> Week 1 available immediately; subsequent weeks unlock 7 days after previous</li>
+      <li><strong>Payment Verification:</strong> Checkout sessions verified with Stripe API before recording payment</li>
+      <li><strong>Fee Waivers:</strong> Admin can waive all fees (allFeesWaived flag) or per-week waivers</li>
+      <li><strong>Session Storage:</strong> PostgreSQL-backed sessions via connect-pg-simple</li>
+      <li><strong>AI Boundaries:</strong> AI limited to encouragement only - no crisis intervention or medical advice</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>10. Stripe Products to Create</h2>
+    <table>
+      <tr>
+        <th>Product</th>
+        <th>Type</th>
+        <th>Price</th>
+      </tr>
+      <tr>
+        <td>Therapist Monthly Subscription</td>
+        <td>Recurring (monthly)</td>
+        <td>$49.00</td>
+      </tr>
+      <tr>
+        <td>Weekly Lesson Access</td>
+        <td>One-time</td>
+        <td>$14.99</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section" style="margin-top: 50px; border-top: 2px solid #e2e8f0; padding-top: 20px;">
+    <p style="text-align: center; color: #64748b; font-size: 14px;">
+      Sexual Integrity Curriculum - Technical Documentation<br>
+      Generated from project on January 28, 2026
+    </p>
+  </div>
+</body>
+</html>
