@@ -198,10 +198,10 @@ export default function WeekPage() {
     const searchParams = new URLSearchParams(window.location.search);
     const paymentSuccess = searchParams.get('payment');
     const sessionId = searchParams.get('session_id');
-    
+
     if (paymentSuccess === 'success' && sessionId && !paymentConfirmedRef.current) {
       paymentConfirmedRef.current = true;
-      
+
       // Confirm the payment with Stripe session verification
       apiRequest("POST", "/api/payments/confirm-week", { weekNumber, sessionId })
         .then(() => {
@@ -285,11 +285,11 @@ export default function WeekPage() {
 
   // Check if this week is already completed (locked)
   const weekIsLocked = completionsData?.completedWeeks?.includes(weekNumber) || false;
-  
+
   // Check if this week is time-locked (not yet unlocked based on start date)
   const unlockedWeeks = unlockedWeeksData?.unlockedWeeks || [];
   const isTimeLocked = unlockedWeeks.length > 0 && !unlockedWeeks.includes(weekNumber);
-  
+
   // Check if next week is unlocked
   const nextWeekUnlocked = weekNumber < 16 && unlockedWeeks.includes(weekNumber + 1);
 
@@ -395,7 +395,7 @@ export default function WeekPage() {
   // Debounced save for reflections
   const debouncedSaveReflections = useCallback((answers: Record<string, string>) => {
     if (weekIsLocked || loadingReflections) return; // Don't save if week is locked or still loading
-    
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -412,7 +412,7 @@ export default function WeekPage() {
   // Debounced save for homework
   const debouncedSaveHomework = useCallback((completed: Record<number, boolean>) => {
     if (weekIsLocked) return;
-    
+
     if (homeworkSaveTimeoutRef.current) {
       clearTimeout(homeworkSaveTimeoutRef.current);
     }
@@ -466,7 +466,7 @@ export default function WeekPage() {
 
   const handleReflectionChange = (questionId: string, value: string) => {
     if (weekIsLocked) return; // Don't allow changes if week is locked
-    
+
     const newAnswers = {
       ...reflectionAnswers,
       [questionId]: value
@@ -882,7 +882,7 @@ export default function WeekPage() {
               Congratulations on completing Week {weekNumber}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6 py-4">
             {/* Congratulations Message */}
             <div className="rounded-lg bg-primary/10 p-4">
