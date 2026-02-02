@@ -28,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard } from "lucide-react";
+import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
@@ -189,7 +189,9 @@ export default function WeekPage() {
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
   const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
   const [homeworkLoaded, setHomeworkLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const saveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const homeworkSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const paymentConfirmedRef = useRef(false);
 
@@ -332,10 +334,22 @@ export default function WeekPage() {
       const res = await apiRequest("PUT", `/api/progress/reflection/${weekNumber}`, data);
       return res.json();
     },
+    onMutate: () => {
+      setSaveStatus("saving");
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/progress/reflection', weekNumber] });
+      setSaveStatus("saved");
+      // Clear the "saved" status after 3 seconds
+      if (saveStatusTimeoutRef.current) {
+        clearTimeout(saveStatusTimeoutRef.current);
+      }
+      saveStatusTimeoutRef.current = setTimeout(() => {
+        setSaveStatus("idle");
+      }, 3000);
     },
     onError: () => {
+      setSaveStatus("idle");
       toast({
         title: "Auto-save failed",
         description: "Your reflection answers couldn't be saved. Please try again.",
@@ -432,6 +446,9 @@ export default function WeekPage() {
       }
       if (homeworkSaveTimeoutRef.current) {
         clearTimeout(homeworkSaveTimeoutRef.current);
+      }
+      if (saveStatusTimeoutRef.current) {
+        clearTimeout(saveStatusTimeoutRef.current);
       }
     };
   }, []);
@@ -647,9 +664,33 @@ export default function WeekPage() {
                     {/* Reflection Questions */}
                     {weekContent.reflectionQuestions && weekContent.reflectionQuestions.length > 0 && (
                       <section className="space-y-4" data-testid="section-reflection">
-                        <div className="flex items-center gap-2">
-                          <HelpCircle className="h-5 w-5 text-primary" />
-                          <h2 className="text-xl font-semibold">Reflection Questions</h2>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <HelpCircle className="h-5 w-5 text-primary" />
+                            <h2 className="text-xl font-semibold">Reflection Questions</h2>
+                          </div>
+                          {!weekIsLocked && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground" data-testid="save-indicator">
+                              {saveStatus === "saving" && (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  <span>Saving...</span>
+                                </>
+                              )}
+                              {saveStatus === "saved" && (
+                                <>
+                                  <Cloud className="h-3 w-3 text-green-600" />
+                                  <span className="text-green-600">Saved</span>
+                                </>
+                              )}
+                              {saveStatus === "idle" && reflectionsLoaded && (
+                                <>
+                                  <Cloud className="h-3 w-3" />
+                                  <span>Auto-save on</span>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-4">
                           {weekContent.reflectionQuestions.map((q, idx) => (
@@ -923,6 +964,16 @@ export default function WeekPage() {
               </div>
             )}
 
+            {/* Daily Check-in Reminder */}
+            {weekNumber < 16 && (
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4">
+                <h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-1">Don't forget: Daily Check-ins</h3>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  Complete your daily check-in every day to track your progress and stay accountable. This is a key part of the program.
+                </p>
+              </div>
+            )}
+
             {/* Next Steps */}
             <div className="space-y-3">
               <h3 className="font-semibold">
@@ -941,6 +992,15 @@ export default function WeekPage() {
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 pt-4">
               <Button 
+                onClick={() => setLocation("/daily-checkin")}
+                className="w-full"
+                data-testid="button-go-checkin"
+              >
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Do Today's Check-in
+              </Button>
+              <Button 
+                variant="outline"
                 onClick={() => setLocation("/dashboard")}
                 className="w-full"
                 data-testid="button-go-dashboard"
@@ -950,7 +1010,7 @@ export default function WeekPage() {
               </Button>
               {weekNumber < 16 && nextWeekUnlocked && (
                 <Button 
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => {
                     setShowCompletionDialog(false);
                     setLocation(`/week/${weekNumber + 1}`);

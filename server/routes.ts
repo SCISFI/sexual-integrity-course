@@ -140,12 +140,12 @@ export async function registerRoutes(
         }
       }
 
-      // Verify the therapist exists and is a therapist
+      // Verify the therapist exists and is a therapist or admin
       let therapist = null;
       if (therapistId) {
         therapist = await storage.getUser(therapistId);
       }
-      if (!therapist || therapist.role !== "therapist") {
+      if (!therapist || (therapist.role !== "therapist" && therapist.role !== "admin")) {
         return res.status(400).json({ message: "No available therapist found" });
       }
 
@@ -182,12 +182,14 @@ export async function registerRoutes(
       // Also include admins as they can act as therapists
       const admins = await storage.getUsersByRole("admin");
       
-      // Return only id, name for privacy
+      // Return id, name, and credentials for selection
       const availableTherapists = [...therapists, ...admins]
-        .filter(t => t.subscriptionStatus === "active" || t.role === "admin")
+        .filter(t => t.subscriptionStatus === "active" || t.role === "admin" || t.allFeesWaived)
         .map(t => ({
           id: t.id,
           name: t.name || t.email.split("@")[0],
+          licenseState: t.licenseState || null,
+          isAdmin: t.role === "admin",
         }));
       
       res.json({ therapists: availableTherapists });

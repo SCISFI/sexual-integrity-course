@@ -13,6 +13,7 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
+import { OnboardingModal } from "@/components/OnboardingModal";
 
 type WeekItem = {
   week: number;
@@ -50,6 +51,27 @@ export default function Dashboard() {
 
   // Used to scroll directly to Week 1 when user clicks Resume/Continue
   const week1Ref = useRef<HTMLDivElement | null>(null);
+
+  // Check if user has completed onboarding (only for clients)
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  
+  useEffect(() => {
+    if (user && (user as any).role === "client") {
+      const onboardingKey = `onboarding_completed_${(user as any).id}`;
+      const hasCompletedOnboarding = localStorage.getItem(onboardingKey);
+      if (!hasCompletedOnboarding) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [user]);
+
+  const handleOnboardingComplete = () => {
+    if (user) {
+      const onboardingKey = `onboarding_completed_${(user as any).id}`;
+      localStorage.setItem(onboardingKey, "true");
+      setShowOnboarding(false);
+    }
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticating && !user) {
@@ -96,6 +118,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Onboarding Modal for first-time users */}
+      <OnboardingModal open={showOnboarding} onComplete={handleOnboardingComplete} />
+      
       {/* Header */}
       <header className="border-b">
         <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between gap-3">

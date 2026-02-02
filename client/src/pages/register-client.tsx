@@ -39,6 +39,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 type AvailableTherapist = {
   id: string;
   name: string;
+  licenseState: string | null;
+  isAdmin: boolean;
 };
 
 export default function RegisterClient() {
@@ -233,7 +235,7 @@ export default function RegisterClient() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        Select Your Therapist (Optional)
+                        Select Your Therapist
                       </FormLabel>
                       {isLoadingTherapists ? (
                         <Skeleton className="h-10 w-full" />
@@ -241,21 +243,35 @@ export default function RegisterClient() {
                         <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
                           You will be assigned to the default therapist.
                         </div>
+                      ) : therapists.length === 1 ? (
+                        <div className="text-sm p-3 border rounded-md bg-muted/50">
+                          <span className="font-medium">{therapists[0].name}</span>
+                          {therapists[0].licenseState && (
+                            <span className="text-muted-foreground"> — Licensed in {therapists[0].licenseState}</span>
+                          )}
+                        </div>
                       ) : (
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-therapist">
-                              <SelectValue placeholder="Use default therapist" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {therapists.map((therapist) => (
-                              <SelectItem key={therapist.id} value={therapist.id}>
-                                {therapist.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            If your therapist referred you to this program, select them below. Otherwise, you may choose any available therapist.
+                          </p>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-therapist">
+                                <SelectValue placeholder="Choose a therapist..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {therapists.map((therapist) => (
+                                <SelectItem key={therapist.id} value={therapist.id}>
+                                  {therapist.name}
+                                  {therapist.licenseState && ` (${therapist.licenseState})`}
+                                  {therapist.isAdmin && " — Program Director"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </>
                       )}
                       <FormMessage />
                     </FormItem>
