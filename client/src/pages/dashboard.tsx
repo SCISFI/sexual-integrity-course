@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { OnboardingModal } from "@/components/OnboardingModal";
 
@@ -46,11 +46,6 @@ export default function Dashboard() {
   const completedWeeks = completionsData?.completedWeeks || [];
   const unlockedWeeks = unlockedWeeksData?.unlockedWeeks || [];
 
-  // Keep Week 1 expanded. (Feels like “in progress”, not hidden.)
-  const [showWeek1, setShowWeek1] = useState(true);
-
-  // Used to scroll directly to Week 1 when user clicks Resume/Continue
-  const week1Ref = useRef<HTMLDivElement | null>(null);
 
   // Check if user has completed onboarding (only for clients)
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -250,133 +245,37 @@ export default function Dashboard() {
               })}
             </div>
 
-            {/* Week 1 module (always accessible) */}
-            {showWeek1 && (
-              <div
-                ref={week1Ref}
-                className="mt-2 rounded-lg border p-6 space-y-6"
-              >
-                <div>
-                  <h2 className="text-2xl font-semibold">
-                    Week 1: {WEEK_TITLES[1]}
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Phase 1: {PHASE_INFO[1].name} • Estimated time: 60 minutes
-                  </p>
+
+            {/* Daily Check-ins and Support Resources */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Daily Check-ins */}
+              <div className="rounded-lg border p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <ClipboardCheck className="h-5 w-5 text-primary" />
+                  <h3 className="font-medium">Daily Check-In</h3>
                 </div>
-
-                {/* Teaching */}
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Teaching Preview</h3>
-                  <p className="text-sm">
-                    This week covers what Compulsive Sexual Behavior Disorder
-                    (CSBD) actually is, the four-stage addiction cycle
-                    (Preoccupation, Ritualization, Acting Out, Despair), and the
-                    brain science behind why this happens.
-                  </p>
-                  <p className="text-sm">
-                    You'll learn the difference between shame and guilt,
-                    understand how CSBD differs from healthy sexuality, and
-                    begin clarifying your personal motivation for change.
-                  </p>
-                  <p className="text-sm">
-                    Progress in this program is not measured by perfection, but
-                    by honesty, consistency, and willingness to learn —
-                    especially after setbacks.
-                  </p>
-                </div>
-
-                {/* Reflection */}
-                <div className="rounded-lg border p-4 space-y-3">
-                  <h3 className="font-medium">Reflection Questions</h3>
-                  <ul className="list-disc pl-5 text-sm space-y-1">
-                    <li>
-                      Why is sexual integrity important to me at this stage of
-                      my life?
-                    </li>
-                    <li>
-                      What has my behavior cost me (emotionally, relationally,
-                      spiritually)?
-                    </li>
-                    <li>What fears or doubts do I have about changing?</li>
-                    <li>What would staying the same cost me in 5 years?</li>
-                  </ul>
-                </div>
-
-                {/* Required Exercise */}
-                <div className="rounded-lg border p-4 space-y-2">
-                  <h3 className="font-medium">
-                    Required Exercise: Commitment Statement
-                  </h3>
-                  <p className="text-sm">
-                    Write a brief commitment statement answering the question:
-                  </p>
-                  <p className="text-sm font-medium italic">
-                    “Why am I choosing to pursue sexual integrity right now?”
-                  </p>
-                  <p className="text-sm">
-                    This statement will be revisited throughout the program. Be
-                    honest. No one else will see this unless you choose to share
-                    it with a coach.
-                  </p>
-                </div>
-
-                {/* Expectations */}
-                <div className="rounded-lg border p-4 space-y-2">
-                  <h3 className="font-medium">Expectations for This Program</h3>
-                  <ul className="list-disc pl-5 text-sm space-y-1">
-                    <li>
-                      Daily check-ins are required to continue progressing
-                    </li>
-                    <li>
-                      Skipping days or abandoning the course disqualifies
-                      refunds
-                    </li>
-                    <li>Relapse does not disqualify you — avoidance does</li>
-                    <li>Honesty is more important than performance</li>
-                  </ul>
-                </div>
-
-                {/* Relapse Rule */}
-                <div className="rounded-lg border border-red-300 bg-red-50 p-4 space-y-2">
-                  <h3 className="font-medium text-red-700">
-                    If a Relapse Occurs
-                  </h3>
-                  <p className="text-sm text-red-700">
-                    A relapse does NOT remove you from the program. However,
-                    continuing requires completion of a{" "}
-                    <strong>Relapse Analysis Exercise</strong>.
-                  </p>
-                  <p className="text-sm text-red-700">
-                    This analysis helps identify what was missed, what warning
-                    signs were present, and what needs to change going forward.
-                  </p>
-                </div>
-
-                {/* Completion (placeholder for later) */}
-                <div className="pt-2 flex items-center gap-3">
-                  <Button disabled>
-                    Mark Week 1 Complete (unlocks Week 2)
-                  </Button>
-                  <span className="text-xs text-muted-foreground">
-                    (Next: we’ll make this button real and save progress.)
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Daily Check-ins (always visible) */}
-            <div className="rounded-lg border p-4">
-              <h3 className="font-medium">Daily Check-Ins</h3>
-              <p className="text-sm mt-2 text-muted-foreground">
-                Daily check-ins will be required to keep moving forward and
-                qualify for the guarantee.
-              </p>
-
-              <div className="mt-4">
-                <Button onClick={() => setLocation("/checkin")}>
-                  Start Daily Check-In
+                <p className="text-sm text-muted-foreground mb-4">
+                  Track your progress with morning and evening check-ins. Required to continue progressing through the program.
+                </p>
+                <Button onClick={() => setLocation("/checkin")} data-testid="button-start-checkin">
+                  Start Today's Check-In
                 </Button>
+              </div>
+
+              {/* Relapse Support */}
+              <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+                  <h3 className="font-medium text-amber-700 dark:text-amber-400">If You've Had a Setback</h3>
+                </div>
+                <p className="text-sm text-amber-700 dark:text-amber-300/80 mb-4">
+                  A relapse does NOT remove you from the program. Use the Relapse Autopsy tool to process what happened and create a plan forward.
+                </p>
+                <Link href="/relapse-autopsy">
+                  <Button variant="outline" className="border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50" data-testid="button-relapse-autopsy">
+                    Open Relapse Autopsy
+                  </Button>
+                </Link>
               </div>
             </div>
           </CardContent>
