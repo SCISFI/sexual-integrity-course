@@ -10,6 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **February 2, 2026 (Client Feedback UX Improvements)**:
+  - **First-Time Onboarding Modal**: 4-step walkthrough for new clients explaining program structure, daily check-ins, week unlocking, and support resources
+    - Gated to client role only (admins/therapists don't see it)
+    - localStorage persistence per user
+  - **Reflection Auto-Save Status**: Visual indicators ("Auto-save on", "Saving...", "Saved") for reflection forms
+  - **Improved Therapist Selection**: Shows license state and "Program Director" label for admins during client registration
+    - Admins can now be assigned as therapists for clients
+    - Guidance text when multiple therapists available
+  - **Post-Week-Completion UX**: Daily check-in reminder banner in completion dialog with primary CTA prioritizing check-ins
+
 - **January 27, 2026 (Stripe Payment Walls)**:
   - Added payment wall to week pages for clients ($14.99/week)
   - Added subscription wall to therapist dashboard ($49/month)
