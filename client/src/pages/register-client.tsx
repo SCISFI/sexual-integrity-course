@@ -76,15 +76,27 @@ export default function RegisterClient() {
     setError(null);
     setIsLoading(true);
     try {
-      const res = await apiRequest("POST", "/api/auth/register/client", data);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Registration failed");
-      }
+      await apiRequest("POST", "/api/auth/register/client", data);
       await refetch();
       setLocation("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      // Parse error message from the API response
+      let errorMessage = "Registration failed. Please try again.";
+      if (err instanceof Error) {
+        const errText = err.message;
+        // Try to extract JSON message from error like "400: {"message":"Email already registered"}"
+        const jsonMatch = errText.match(/\{.*"message"\s*:\s*"([^"]+)".*\}/);
+        if (jsonMatch && jsonMatch[1]) {
+          const rawMessage = jsonMatch[1];
+          // Make error messages more user-friendly
+          if (rawMessage.toLowerCase().includes("email already registered")) {
+            errorMessage = "This email is already registered. Please sign in instead, or use a different email address.";
+          } else {
+            errorMessage = rawMessage;
+          }
+        }
+      }
+      setError(errorMessage);
       setIsLoading(false);
     }
   };
