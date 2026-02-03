@@ -1,0 +1,448 @@
+import { Link, useLocation } from "wouter";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  ArrowLeft, 
+  Flame, 
+  TrendingUp, 
+  TrendingDown, 
+  Target, 
+  Heart, 
+  Zap, 
+  Award, 
+  Calendar,
+  ClipboardCheck,
+  BarChart3,
+  LineChart
+} from "lucide-react";
+
+type CheckinStats = {
+  totalCheckins: number;
+  currentStreak: number;
+  longestStreak: number;
+  averageMood: number;
+  averageUrge: number;
+  dailyCompletionRate: number;
+  recentCheckins: Array<{
+    date: string;
+    mood: number | null;
+    urge: number | null;
+  }>;
+};
+
+function ProgressRing({ percentage, color, size = 120 }: { percentage: number; color: string; size?: number }) {
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percentage / 100) * circumference;
+  
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          className="text-muted/30"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-700 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-2xl font-bold">{percentage}%</span>
+      </div>
+    </div>
+  );
+}
+
+function TrendChart({ data, color, label, height = 120 }: { data: (number | null)[]; color: string; label: string; height?: number }) {
+  const validData = data.filter(d => d !== null) as number[];
+  if (validData.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground py-8">
+        No data yet. Complete check-ins to see trends.
+      </div>
+    );
+  }
+  
+  const max = Math.max(...validData, 10);
+  const min = Math.min(...validData, 0);
+  const range = max - min || 1;
+  
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
+        <span className="text-lg font-bold" style={{ color }}>
+          {validData[validData.length - 1]}/10
+        </span>
+      </div>
+      <div className="flex items-end gap-1" style={{ height }}>
+        {data.map((value, i) => {
+          const barHeight = value !== null ? ((value - min) / range) * 100 : 0;
+          return (
+            <div
+              key={i}
+              className="flex-1 rounded-t transition-all duration-300 relative group"
+              style={{ 
+                height: `${Math.max(barHeight, 5)}%`, 
+                backgroundColor: value !== null ? color : 'transparent',
+                opacity: value !== null ? 0.6 + (i / data.length) * 0.4 : 0.1
+              }}
+            >
+              {value !== null && (
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-popover border rounded px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {value}/10
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>14 days ago</span>
+        <span>Today</span>
+      </div>
+    </div>
+  );
+}
+
+function getInsight(stats: CheckinStats): string {
+  const insights: string[] = [];
+  
+  if (stats.currentStreak >= 14) {
+    insights.push("You've maintained a two-week streak! This level of consistency is building lasting neural pathways.");
+  } else if (stats.currentStreak >= 7) {
+    insights.push("A week-long streak shows real commitment. Your brain is adapting to this new routine.");
+  } else if (stats.currentStreak >= 3) {
+    insights.push("Three days of consistency is when habits start forming. Keep going!");
+  }
+  
+  if (stats.averageUrge < 4 && stats.totalCheckins >= 7) {
+    insights.push("Your urge levels are staying low - a sign of growing control.");
+  } else if (stats.averageUrge > 6) {
+    insights.push("Higher urge levels are normal, especially early on. Each check-in builds awareness.");
+  }
+  
+  if (stats.averageMood >= 6) {
+    insights.push("Your mood is generally positive, which supports recovery.");
+  }
+  
+  if (stats.dailyCompletionRate >= 80) {
+    insights.push("Excellent consistency! You're checking in most days.");
+  } else if (stats.dailyCompletionRate < 50 && stats.totalCheckins > 5) {
+    insights.push("More frequent check-ins help you stay aware of patterns. Try to check in daily.");
+  }
+  
+  return insights.length > 0 ? insights[0] : "Keep checking in daily to build your data and see meaningful trends.";
+}
+
+export default function AnalyticsPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const { data: stats, isLoading } = useQuery<CheckinStats>({
+    queryKey: ['/api/progress/checkin-stats'],
+    staleTime: 60000,
+    enabled: !!user,
+  });
+
+  const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
+    queryKey: ['/api/progress/completions'],
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setLocation("/login");
+    }
+  }, [user, authLoading, setLocation]);
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-10 w-10" />
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl px-4 py-8">
+          <Skeleton className="h-64 w-full" />
+        </main>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  const completedWeeks = completionsData?.completedWeeks || [];
+  const moodData = stats?.recentCheckins.map(c => c.mood) || [];
+  const urgeData = stats?.recentCheckins.map(c => c.urge) || [];
+  
+  // Calculate trends
+  const recentMoods = moodData.filter(m => m !== null).slice(-3);
+  const olderMoods = moodData.filter(m => m !== null).slice(0, -3);
+  const moodTrending = recentMoods.length > 0 && olderMoods.length > 0
+    ? (recentMoods.reduce((a, b) => a! + b!, 0)! / recentMoods.length) > (olderMoods.reduce((a, b) => a! + b!, 0)! / olderMoods.length)
+    : null;
+
+  const recentUrges = urgeData.filter(u => u !== null).slice(-3);
+  const olderUrges = urgeData.filter(u => u !== null).slice(0, -3);
+  const urgeTrending = recentUrges.length > 0 && olderUrges.length > 0
+    ? (recentUrges.reduce((a, b) => a! + b!, 0)! / recentUrges.length) < (olderUrges.reduce((a, b) => a! + b!, 0)! / olderUrges.length)
+    : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="icon" data-testid="button-back-dashboard">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="font-semibold leading-tight">My Analytics</div>
+                <div className="text-xs text-muted-foreground">Track your recovery progress</div>
+              </div>
+            </div>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
+        {/* Insight Banner */}
+        {stats && stats.totalCheckins > 0 && (
+          <Card className="border-l-4 border-l-cyan-500 bg-gradient-to-r from-cyan-50/50 to-blue-50/50 dark:from-cyan-950/20 dark:to-blue-950/20">
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <LineChart className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium text-cyan-700 dark:text-cyan-300 mb-1">Your Progress Insight</p>
+                  <p className="text-sm text-cyan-600 dark:text-cyan-400">{getInsight(stats)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Summary Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/30 dark:to-red-950/30 border-orange-200 dark:border-orange-800">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-orange-600 dark:text-orange-400">Current Streak</p>
+                  <p className="text-4xl font-bold text-orange-700 dark:text-orange-300">
+                    {stats?.currentStreak || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Best: {stats?.longestStreak || 0} days
+                  </p>
+                </div>
+                <div className="h-16 w-16 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                  <Flame className="h-8 w-8 text-orange-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30 border-cyan-200 dark:border-cyan-800">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-cyan-600 dark:text-cyan-400">Total Check-ins</p>
+                  <p className="text-4xl font-bold text-cyan-700 dark:text-cyan-300">
+                    {stats?.totalCheckins || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Days of awareness
+                  </p>
+                </div>
+                <div className="h-16 w-16 rounded-full bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center">
+                  <Target className="h-8 w-8 text-cyan-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/30 dark:to-green-950/30 border-emerald-200 dark:border-emerald-800">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400">Avg Mood</p>
+                    {moodTrending !== null && (
+                      <Badge variant="outline" className={`text-xs ${moodTrending ? 'text-green-600 border-green-300' : 'text-red-600 border-red-300'}`}>
+                        {moodTrending ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-4xl font-bold text-emerald-700 dark:text-emerald-300">
+                    {stats?.averageMood || 0}<span className="text-xl">/10</span>
+                  </p>
+                </div>
+                <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                  <Heart className="h-8 w-8 text-emerald-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border-purple-200 dark:border-purple-800">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-purple-600 dark:text-purple-400">Avg Urge</p>
+                    {urgeTrending !== null && (
+                      <Badge variant="outline" className={`text-xs ${urgeTrending ? 'text-green-600 border-green-300' : 'text-red-600 border-red-300'}`}>
+                        {urgeTrending ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-4xl font-bold text-purple-700 dark:text-purple-300">
+                    {stats?.averageUrge || 0}<span className="text-xl">/10</span>
+                  </p>
+                </div>
+                <div className="h-16 w-16 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+                  <Zap className="h-8 w-8 text-purple-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-emerald-500" />
+                Mood Trends (14 Days)
+              </CardTitle>
+              <CardDescription>
+                Higher is better - track how you're feeling each day
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TrendChart data={moodData} color="#10b981" label="Mood Level" height={150} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-purple-500" />
+                Urge Trends (14 Days)
+              </CardTitle>
+              <CardDescription>
+                Lower is better - watch urges decrease over time
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TrendChart data={urgeData} color="#8b5cf6" label="Urge Level" height={150} />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Completion Rate and Program Progress */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardCheck className="h-5 w-5 text-cyan-500" />
+                Daily Check-in Rate
+              </CardTitle>
+              <CardDescription>
+                Percentage of days with completed check-ins (last 14 days)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center py-6">
+              <ProgressRing percentage={stats?.dailyCompletionRate || 0} color="#0891b2" size={140} />
+              <p className="text-sm text-muted-foreground mt-4">
+                {stats?.dailyCompletionRate || 0}% consistency builds lasting change
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5 text-amber-500" />
+                Program Progress
+              </CardTitle>
+              <CardDescription>
+                Weeks completed in your 16-week journey
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="py-6">
+              <div className="flex flex-col items-center">
+                <div className="text-5xl font-bold text-amber-600 dark:text-amber-400">
+                  {completedWeeks.length}<span className="text-2xl text-muted-foreground">/16</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">weeks completed</p>
+                <div className="w-full mt-4 bg-muted rounded-full h-3">
+                  <div 
+                    className="bg-amber-500 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${(completedWeeks.length / 16) * 100}%` }}
+                  />
+                </div>
+                <div className="flex justify-between w-full mt-2 text-xs text-muted-foreground">
+                  <span>Phase 1: CBT</span>
+                  <span>Phase 2: ACT</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardContent className="py-6">
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="/daily-checkin">
+                <Button data-testid="button-goto-checkin">
+                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                  Complete Today's Check-in
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button variant="outline" data-testid="button-goto-lessons">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Continue Lessons
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+}

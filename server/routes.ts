@@ -1482,6 +1482,11 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid week number" });
       }
       
+      // Week 1 is always free to help men start their journey
+      if (weekNumber === 1) {
+        return res.json({ needsPayment: false, reason: "week_1_free" });
+      }
+      
       // Check if all fees are waived
       if (user.allFeesWaived) {
         return res.json({ needsPayment: false, reason: "all_fees_waived" });

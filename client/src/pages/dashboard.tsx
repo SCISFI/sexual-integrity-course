@@ -11,10 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle, BarChart3, Clock } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
+import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
 
 type WeekItem = {
   week: number;
@@ -136,7 +137,13 @@ export default function Dashboard() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/analytics">
+              <Button variant="ghost" size="icon" title="My Analytics" data-testid="button-analytics">
+                <BarChart3 className="h-4 w-4" />
+              </Button>
+            </Link>
+
             <ThemeToggle />
 
             <Link href="/change-password">
@@ -167,6 +174,8 @@ export default function Dashboard() {
               </div>
 
               <div className="flex flex-wrap gap-2">
+                {/* I'm Struggling button */}
+                <UrgeSurfingTool />
                 {/* Daily Check-in button */}
                 <Link href="/daily-checkin">
                   <Button variant="outline" data-testid="button-daily-checkin">
@@ -252,6 +261,25 @@ export default function Dashboard() {
 
         {/* Check-in Progress Dashboard */}
         <CheckinProgressDashboard />
+
+        {/* Therapist Support */}
+        <Card className="border-primary/30 bg-primary/5 dark:bg-primary/10">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-primary">
+              <User className="h-5 w-5" />
+              Your Therapist Support
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">
+              You have a licensed therapist monitoring your progress throughout this program. They review your check-ins, reflections, and homework—and will provide personalized feedback to support your recovery.
+            </p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
+              <Clock className="h-4 w-4" />
+              <span>Typical response time: Within 1-2 business days</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Support Resources */}
         <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">

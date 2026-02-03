@@ -71,6 +71,12 @@ export default function Home() {
                   This is not “tips.” This is training.
                 </Badge>
 
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <Badge className="bg-green-600 text-white px-3 py-1">
+                    Week 1 FREE
+                  </Badge>
+                </div>
+
                 <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
                   A difficult program for a difficult problem.
                 </h1>
@@ -372,26 +378,51 @@ export default function Home() {
                   integrate your beliefs if you want, but it’s not required.
                 </CardContent>
               </Card>
+
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    What does it cost?
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  Week 1 is completely free. After that, it's $14.99 per week—only pay as you progress. No subscriptions, no hidden fees.
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Is there therapist support?
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">
+                  Yes. You're assigned a licensed therapist who monitors your progress, reviews your work, and provides personalized feedback throughout the program.
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
 
         {/* CTA footer */}
-        <section className="border-t">
+        <section className="border-t bg-green-50/50 dark:bg-green-950/20">
           <div className="mx-auto max-w-7xl px-4 py-12">
             <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border bg-card p-8 shadow-sm md:flex-row md:items-center">
               <div>
+                <Badge className="bg-green-600 text-white mb-3">
+                  Week 1 FREE
+                </Badge>
                 <h3 className="text-xl font-semibold">
-                  Start Week 1. Do the work. Track everything.
+                  Start Week 1 today. No payment required.
                 </h3>
                 <p className="mt-1 text-muted-foreground">
-                  Create an account to begin the program.
+                  Try the first week completely free. Then $14.99/week as you progress.
                 </p>
               </div>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                 <Button size="lg" asChild className="w-full sm:w-auto">
                   <Link href="/register">
-                    Sign up <ArrowRight className="ml-1 h-4 w-4" />
+                    Start Free <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
                 </Button>
                 <Button

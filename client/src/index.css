@@ -287,3 +287,10 @@
     inset: -1px;
   }
 }
+
+/* Smooth scrolling for better mobile experience */
+@supports (scroll-behavior: smooth) {
+  html {
+    scroll-behavior: smooth;
+  }
+}

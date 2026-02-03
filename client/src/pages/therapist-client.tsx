@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -159,13 +159,184 @@ export default function TherapistClient() {
             </Card>
 
             <Tabs defaultValue="progress" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="progress">Progress</TabsTrigger>
                 <TabsTrigger value="checkins">Check-ins</TabsTrigger>
                 <TabsTrigger value="reflections">Reflections</TabsTrigger>
                 <TabsTrigger value="homework">Homework</TabsTrigger>
                 <TabsTrigger value="feedback">Feedback</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="analytics" className="space-y-4">
+                {/* Client Analytics Summary */}
+                {(() => {
+                  // Calculate analytics data - sort checkins by date first for accuracy
+                  const sortedCheckins = [...checkins].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+                  const totalCheckins = sortedCheckins.length;
+                  const last14Days = Array.from({ length: 14 }, (_, i) => {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    return date.toISOString().split('T')[0];
+                  });
+                  const checkinsLast14 = sortedCheckins.filter(c => last14Days.includes(c.dateKey)).length;
+                  const completionRate = Math.round((checkinsLast14 / 14) * 100);
+                  
+                  // Calculate streak from sorted dates
+                  let currentStreak = 0;
+                  const uniqueDateSet = new Set(sortedCheckins.map(c => c.dateKey));
+                  const today = new Date().toISOString().split('T')[0];
+                  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                  
+                  if (uniqueDateSet.has(today) || uniqueDateSet.has(yesterday)) {
+                    let checkDate = uniqueDateSet.has(today) ? new Date() : new Date(Date.now() - 86400000);
+                    while (true) {
+                      const dateKey = checkDate.toISOString().split('T')[0];
+                      if (uniqueDateSet.has(dateKey)) {
+                        currentStreak++;
+                        checkDate.setDate(checkDate.getDate() - 1);
+                      } else {
+                        break;
+                      }
+                    }
+                  }
+                  
+                  // Calculate mood and urge averages from recent sorted checkins
+                  const recentCheckins = sortedCheckins.slice(0, 14);
+                  const moodValues = recentCheckins.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
+                  const urgeValues = recentCheckins.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
+                  const avgMood = moodValues.length > 0 ? (moodValues.reduce((a, b) => a + b, 0) / moodValues.length).toFixed(1) : '--';
+                  const avgUrge = urgeValues.length > 0 ? (urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length).toFixed(1) : '--';
+                  
+                  // Trend calculation (compare older half to newer half)
+                  // firstHalf = older data, secondHalf = newer data (from most recent)
+                  const olderHalf = urgeValues.slice(Math.floor(urgeValues.length / 2));
+                  const newerHalf = urgeValues.slice(0, Math.floor(urgeValues.length / 2));
+                  const olderAvg = olderHalf.length > 0 ? olderHalf.reduce((a, b) => a + b, 0) / olderHalf.length : 0;
+                  const newerAvg = newerHalf.length > 0 ? newerHalf.reduce((a, b) => a + b, 0) / newerHalf.length : 0;
+                  const urgeTrend = newerHalf.length > 0 && olderHalf.length > 0 ? (olderAvg > newerAvg ? 'improving' : olderAvg < newerAvg ? 'increasing' : 'stable') : 'stable';
+                  
+                  return (
+                    <>
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {/* Engagement Streak */}
+                        <Card>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-muted-foreground">Current Streak</p>
+                                <p className="text-2xl font-bold">{currentStreak} days</p>
+                              </div>
+                              <Flame className={`h-8 w-8 ${currentStreak >= 7 ? 'text-orange-500' : 'text-muted-foreground'}`} />
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Completion Rate */}
+                        <Card>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-muted-foreground">14-Day Completion</p>
+                                <p className="text-2xl font-bold">{completionRate}%</p>
+                              </div>
+                              <Target className={`h-8 w-8 ${completionRate >= 70 ? 'text-green-500' : completionRate >= 40 ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Average Mood */}
+                        <Card>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-muted-foreground">Avg Mood (14d)</p>
+                                <p className="text-2xl font-bold">{avgMood}/10</p>
+                              </div>
+                              <TrendingUp className="h-8 w-8 text-primary" />
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        {/* Urge Trend */}
+                        <Card>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-muted-foreground">Avg Urge Level</p>
+                                <p className="text-2xl font-bold">{avgUrge}/10</p>
+                              </div>
+                              {urgeTrend === 'improving' ? (
+                                <TrendingDown className="h-8 w-8 text-green-500" />
+                              ) : urgeTrend === 'increasing' ? (
+                                <TrendingUp className="h-8 w-8 text-red-500" />
+                              ) : (
+                                <BarChart3 className="h-8 w-8 text-muted-foreground" />
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      {/* Insights Card */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5" />
+                            Client Insights
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {currentStreak >= 7 && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+                              <Flame className="h-4 w-4 text-green-600 mt-0.5" />
+                              <p className="text-sm text-green-700 dark:text-green-300">
+                                Strong engagement with {currentStreak}-day streak. Client is staying consistent with daily practice.
+                              </p>
+                            </div>
+                          )}
+                          {currentStreak < 3 && totalCheckins > 0 && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+                              <Clock className="h-4 w-4 text-amber-600 mt-0.5" />
+                              <p className="text-sm text-amber-700 dark:text-amber-300">
+                                Check-in consistency has dropped. Consider reaching out to encourage re-engagement.
+                              </p>
+                            </div>
+                          )}
+                          {urgeTrend === 'improving' && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
+                              <TrendingDown className="h-4 w-4 text-green-600 mt-0.5" />
+                              <p className="text-sm text-green-700 dark:text-green-300">
+                                Urge levels are trending down. The tools and techniques appear to be helping.
+                              </p>
+                            </div>
+                          )}
+                          {urgeTrend === 'increasing' && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
+                              <TrendingUp className="h-4 w-4 text-red-600 mt-0.5" />
+                              <p className="text-sm text-red-700 dark:text-red-300">
+                                Urge levels are increasing. Client may benefit from additional support or crisis resources.
+                              </p>
+                            </div>
+                          )}
+                          {totalCheckins === 0 && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-muted border">
+                              <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                              <p className="text-sm text-muted-foreground">
+                                No check-in data yet. Client hasn't started tracking their daily progress.
+                              </p>
+                            </div>
+                          )}
+                          <div className="pt-2 text-sm text-muted-foreground">
+                            <p>Program Progress: {completedWeeks.length}/16 weeks completed ({Math.round((completedWeeks.length / 16) * 100)}%)</p>
+                            <p>Total Check-ins: {totalCheckins}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  );
+                })()}
+              </TabsContent>
 
               <TabsContent value="progress" className="space-y-4">
                 <Card>

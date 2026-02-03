@@ -28,11 +28,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud } from "lucide-react";
+import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3 } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
 import { CrisisResources } from "@/components/CrisisResources";
+import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
+import { MilestoneDialog, isMilestoneWeek } from "@/components/MilestoneDialog";
 
 function safeNumber(v: unknown, fallback: number) {
   const n = Number(v);
@@ -186,6 +188,7 @@ export default function WeekPage() {
   const [affirmComplete, setAffirmComplete] = useState(false);
   const [homeworkCompleted, setHomeworkCompleted] = useState<Record<number, boolean>>({});
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [showMilestoneDialog, setShowMilestoneDialog] = useState(false);
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
   const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
   const [homeworkLoaded, setHomeworkLoaded] = useState(false);
@@ -368,6 +371,10 @@ export default function WeekPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/progress/completions'] });
       setIsWeekCompleted(true);
       setShowCompletionDialog(true);
+      // Show milestone dialog after completion dialog for milestone weeks
+      if (isMilestoneWeek(weekNumber)) {
+        setTimeout(() => setShowMilestoneDialog(true), 500);
+      }
     },
     onError: () => {
       toast({
@@ -519,7 +526,19 @@ export default function WeekPage() {
             </div>
           </div>
         </div>
-        <CrisisResources />
+        <div className="flex items-center gap-2">
+          <UrgeSurfingTool />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setLocation("/analytics")}
+            data-testid="button-analytics"
+            title="View Analytics"
+          >
+            <BarChart3 className="h-5 w-5" />
+          </Button>
+          <CrisisResources />
+        </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8">
@@ -1031,6 +1050,12 @@ export default function WeekPage() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Milestone Celebration Dialog */}
+      <MilestoneDialog 
+        weekNumber={weekNumber} 
+        open={showMilestoneDialog} 
+        onClose={() => setShowMilestoneDialog(false)} 
+      />
     </div>
   );
 }

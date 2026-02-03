@@ -24,6 +24,7 @@ import AdminClientPage from "@/pages/admin-client";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import ChangePassword from "@/pages/change-password";
+import AnalyticsPage from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/therapist-home" component={TherapistHome} />
       <Route path="/week/:weekNumber" component={WeekPage} />
       <Route path="/daily-checkin" component={DailyCheckinPage} />
+      <Route path="/analytics" component={AnalyticsPage} />
       <Route path="/therapist/clients/:id" component={TherapistClient} />
       <Route path="/checkin" component={Checkin} />
       <Route path="/protected" component={Protected} />

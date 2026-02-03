@@ -15,8 +15,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Loader2, Activity } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Loader2, Activity, Lightbulb, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getTodaysPrompt } from "@/data/journal-prompts";
+import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
 
 interface DailyCheckItem {
   id: string;
@@ -400,7 +402,16 @@ export default function DailyCheckinPage() {
                   Optional: Write about your day, feelings, or insights
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3">
+                  <div className="flex items-start gap-2">
+                    <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Today's Prompt</p>
+                      <p className="text-sm text-amber-700 dark:text-amber-300">{getTodaysPrompt()}</p>
+                    </div>
+                  </div>
+                </div>
                 <Textarea
                   placeholder="What's on your mind today? Any wins to celebrate? Challenges you faced? Insights you gained?"
                   className="min-h-[120px]"
