@@ -22,6 +22,8 @@ export const users = pgTable("users", {
   licenseNumber: text("license_number"), // License number
   licenseAttestation: boolean("license_attestation").default(false), // Attested that license is in good standing
   licenseAttestationDate: timestamp("license_attestation_date"), // When they attested
+  termsAccepted: boolean("terms_accepted").default(false), // Accepted terms and conditions (50% revenue share)
+  termsAcceptedDate: timestamp("terms_accepted_date"), // When they accepted terms
   
   // Subscription/payment status
   subscriptionStatus: text("subscription_status").default("active"), // active, paused, cancelled
@@ -100,6 +102,9 @@ export const registerTherapistSchema = z.object({
   licenseNumber: z.string().min(1, "License number is required"),
   licenseAttestation: z.literal(true, {
     errorMap: () => ({ message: "You must attest that your license is in good standing" }),
+  }),
+  termsAccepted: z.literal(true, {
+    errorMap: () => ({ message: "You must agree to the terms and conditions" }),
   }),
 });
 

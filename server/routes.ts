@@ -79,7 +79,7 @@ export async function registerRoutes(
         });
       }
 
-      const { email, password, name, licenseState, licenseNumber, licenseAttestation } = parsed.data;
+      const { email, password, name, licenseState, licenseNumber, licenseAttestation, termsAccepted } = parsed.data;
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
@@ -96,7 +96,11 @@ export async function registerRoutes(
         licenseNumber,
         licenseAttestation,
         licenseAttestationDate: new Date(),
+        termsAccepted,
+        termsAcceptedDate: new Date(),
       });
+      
+      console.log(`Therapist registered: ${email} - terms accepted: ${termsAccepted} at ${new Date().toISOString()}`);
 
       req.login(user, (err) => {
         if (err) {
@@ -644,6 +648,65 @@ export async function registerRoutes(
     }
   });
 
+  // Delete therapist (admin only) - requires reassigning clients first
+  app.delete("/api/admin/therapists/:therapistId", requireRole("admin"), async (req, res) => {
+    try {
+      const { therapistId } = req.params;
+      const { reassignToTherapistId } = req.body;
+      
+      const therapist = await storage.getUser(therapistId);
+      if (!therapist) {
+        return res.status(404).json({ message: "Therapist not found" });
+      }
+      
+      if (therapist.role !== "therapist") {
+        return res.status(400).json({ message: "User is not a therapist" });
+      }
+      
+      // Check if therapist has assigned clients
+      const clients = await storage.getClientsForTherapist(therapistId);
+      
+      if (clients.length > 0) {
+        if (!reassignToTherapistId) {
+          return res.status(400).json({ 
+            message: "Therapist has assigned clients. Provide reassignToTherapistId to reassign them.",
+            clientCount: clients.length
+          });
+        }
+        
+        // Validate reassignment target is not the same as the therapist being deleted
+        if (reassignToTherapistId === therapistId) {
+          return res.status(400).json({ message: "Cannot reassign clients to the therapist being deleted" });
+        }
+        
+        // Verify reassignment target exists and is a therapist
+        const targetTherapist = await storage.getUser(reassignToTherapistId);
+        if (!targetTherapist || (targetTherapist.role !== "therapist" && targetTherapist.role !== "admin")) {
+          return res.status(400).json({ message: "Invalid reassignment target" });
+        }
+        
+        // Reassign all clients to new therapist
+        for (const client of clients) {
+          await storage.removeTherapistFromClient(therapistId, client.id);
+          await storage.assignTherapistToClient(reassignToTherapistId, client.id);
+        }
+        console.log(`Reassigned ${clients.length} clients from ${therapist.email} to ${targetTherapist.email}`);
+      }
+      
+      // Delete the therapist account
+      await storage.deleteUser(therapistId);
+      console.log(`Admin deleted therapist: ${therapist.email} (${therapistId})`);
+      
+      res.json({ 
+        message: "Therapist deleted successfully",
+        reassignedClients: clients.length
+      });
+    } catch (error) {
+      console.error("Delete therapist error:", error);
+      res.status(500).json({ message: "Failed to delete therapist" });
+    }
+  });
+
   // Create client (admin can create client accounts)
   app.post("/api/admin/clients", requireRole("admin"), async (req, res) => {
     try {
@@ -667,9 +730,15 @@ export async function registerRoutes(
         startDate: clientStartDate,
       });
 
-      // Assign therapist if provided
-      if (therapistId) {
-        await storage.assignTherapistToClient(therapistId, user.id);
+      // Assign therapist if provided and valid
+      if (therapistId && therapistId !== "" && therapistId !== "none") {
+        const therapist = await storage.getUser(therapistId);
+        if (!therapist || (therapist.role !== 'therapist' && therapist.role !== 'admin')) {
+          console.error(`Invalid therapist ID provided for client creation: ${therapistId}`);
+          // Don't fail the whole operation, just skip assignment
+        } else {
+          await storage.assignTherapistToClient(therapistId, user.id);
+        }
       }
 
       const { password: _, ...safeUser } = user;

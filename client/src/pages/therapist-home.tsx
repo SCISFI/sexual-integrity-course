@@ -159,8 +159,13 @@ export default function TherapistHome() {
                 <CreditCard className="h-8 w-8 text-primary" />
               </div>
               <h3 className="mb-2 text-xl font-semibold">Subscription Required</h3>
+              <div className="mb-4 rounded-lg border-2 border-green-600/30 dark:border-green-500/30 bg-green-600/10 dark:bg-green-500/10 px-4 py-2">
+                <Badge className="bg-green-600 dark:bg-green-600 text-white" data-testid="badge-first-month-free">
+                  First Month FREE
+                </Badge>
+              </div>
               <p className="max-w-md text-muted-foreground mb-6">
-                Subscribe for <span className="font-semibold text-foreground">$49/month</span> to access the therapist dashboard, manage your clients, and monitor their progress through the 16-week program.
+                Start with a <span className="font-semibold text-foreground">30-day free trial</span>, then <span className="font-semibold text-foreground">$49/month</span> to access the therapist dashboard, manage your clients, and monitor their progress through the 16-week program.
               </p>
               <div className="space-y-4">
                 <ul className="text-left text-sm text-muted-foreground space-y-2 mb-6">
@@ -195,7 +200,7 @@ export default function TherapistHome() {
                   ) : (
                     <>
                       <CreditCard className="mr-2 h-4 w-4" />
-                      Subscribe $49/month
+                      Start Free Trial
                     </>
                   )}
                 </Button>

@@ -13,7 +13,7 @@ export class StripeService {
     });
   }
 
-  // Create checkout session for therapist subscription
+  // Create checkout session for therapist subscription with 30-day free trial
   async createTherapistSubscriptionCheckout(customerId: string, priceId: string, successUrl: string, cancelUrl: string) {
     const stripe = await getUncachableStripeClient();
     return await stripe.checkout.sessions.create({
@@ -24,6 +24,9 @@ export class StripeService {
       success_url: successUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
+      subscription_data: {
+        trial_period_days: 30,
+      },
     });
   }
 

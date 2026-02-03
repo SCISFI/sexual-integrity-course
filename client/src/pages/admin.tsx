@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { 
@@ -96,6 +97,8 @@ export default function AdminPage() {
   const [resetPasswordUser, setResetPasswordUser] = useState<{ id: string; name: string | null; email: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [deletingClient, setDeletingClient] = useState<{ id: string; name: string | null; email: string } | null>(null);
+  const [deletingTherapist, setDeletingTherapist] = useState<{ id: string; name: string | null; email: string; clientCount: number } | null>(null);
+  const [reassignToTherapistId, setReassignToTherapistId] = useState("");
 
   // Check if user is admin
   if (user && (user as any).role !== "admin") {
@@ -261,6 +264,33 @@ export default function AdminPage() {
     },
   });
 
+  // Delete therapist mutation
+  const deleteTherapistMutation = useMutation({
+    mutationFn: async ({ therapistId, reassignToTherapistId }: { therapistId: string; reassignToTherapistId?: string }) => {
+      const res = await apiRequest("DELETE", `/api/admin/therapists/${therapistId}`, { reassignToTherapistId });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to delete therapist");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/therapists"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
+      setDeletingTherapist(null);
+      setReassignToTherapistId("");
+      toast({ 
+        title: "Therapist deleted", 
+        description: data.reassignedClients > 0 
+          ? `${data.reassignedClients} clients were reassigned.` 
+          : "No clients needed reassignment." 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleLogout = async () => {
     await logout();
     setLocation("/");
@@ -369,18 +399,20 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="client-therapist">Assign Therapist (optional)</Label>
-                      <select
-                        id="client-therapist"
-                        className="w-full rounded-md border p-2"
-                        value={newClient.therapistId}
-                        onChange={(e) => setNewClient({ ...newClient, therapistId: e.target.value })}
-                        data-testid="select-therapist"
+                      <Select
+                        value={newClient.therapistId || "none"}
+                        onValueChange={(value) => setNewClient({ ...newClient, therapistId: value === "none" ? "" : value })}
                       >
-                        <option value="">No therapist</option>
-                        {therapists.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name || t.email}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger id="client-therapist" data-testid="select-therapist">
+                          <SelectValue placeholder="No therapist" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No therapist</SelectItem>
+                          {therapists.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>{t.name || t.email}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <DialogFooter>
@@ -618,15 +650,35 @@ export default function AdminPage() {
                             />
                           </TableCell>
                           <TableCell>{new Date(therapist.createdAt).toLocaleDateString()}</TableCell>
-                          <TableCell>
+                          <TableCell className="flex gap-1">
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
                               onClick={() => setResetPasswordUser({ id: therapist.id, name: therapist.name, email: therapist.email })}
                               data-testid={`button-reset-password-therapist-${therapist.id}`}
                               title="Reset Password"
                             >
                               <Key className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const clientCount = allClients.filter(c => 
+                                  c.therapists?.some(t => t.id === therapist.id)
+                                ).length;
+                                setDeletingTherapist({ 
+                                  id: therapist.id, 
+                                  name: therapist.name, 
+                                  email: therapist.email,
+                                  clientCount
+                                });
+                              }}
+                              data-testid={`button-delete-therapist-${therapist.id}`}
+                              title="Delete Therapist"
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -647,10 +699,10 @@ export default function AdminPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5" />
-                  Kickback Calculations
+                  Therapist Revenue Share (50%)
                 </CardTitle>
                 <CardDescription>
-                  Track revenue generated by each therapist for kickback payments
+                  Track revenue generated by each therapist — therapists earn 50% of client payments
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -670,6 +722,8 @@ export default function AdminPage() {
                         <TableHead>Email</TableHead>
                         <TableHead className="text-right">Payments</TableHead>
                         <TableHead className="text-right">Total Revenue</TableHead>
+                        <TableHead className="text-right">Therapist Share (50%)</TableHead>
+                        <TableHead className="text-right">Your Share (50%)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -678,8 +732,14 @@ export default function AdminPage() {
                           <TableCell className="font-medium">{row.therapistName || "—"}</TableCell>
                           <TableCell>{row.therapistEmail}</TableCell>
                           <TableCell className="text-right">{row.paymentCount}</TableCell>
-                          <TableCell className="text-right font-semibold">
+                          <TableCell className="text-right">
                             ${(row.totalAmount / 100).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold text-green-600 dark:text-green-500">
+                            ${(row.totalAmount / 100 * 0.5).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            ${(row.totalAmount / 100 * 0.5).toFixed(2)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -690,6 +750,12 @@ export default function AdminPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right text-green-600 dark:text-green-500">
+                          ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100 * 0.5).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100 * 0.5).toFixed(2)}
                         </TableCell>
                       </TableRow>
                     </TableBody>
@@ -729,18 +795,20 @@ export default function AdminPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-therapist">Assigned Therapist</Label>
-                <select
-                  id="edit-therapist"
-                  className="w-full rounded-md border p-2 bg-background"
-                  value={editForm.therapistId}
-                  onChange={(e) => setEditForm({ ...editForm, therapistId: e.target.value })}
-                  data-testid="select-edit-therapist"
+                <Select
+                  value={editForm.therapistId || "none"}
+                  onValueChange={(value) => setEditForm({ ...editForm, therapistId: value === "none" ? "" : value })}
                 >
-                  <option value="">No therapist assigned</option>
-                  {therapists.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name || t.email}</option>
-                  ))}
-                </select>
+                  <SelectTrigger id="edit-therapist" data-testid="select-edit-therapist">
+                    <SelectValue placeholder="No therapist assigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No therapist assigned</SelectItem>
+                    {therapists.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name || t.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {editingClient && editingClient.therapists.length === 0 && (
                   <p className="text-sm text-destructive">This client has no therapist assigned</p>
                 )}
@@ -853,6 +921,69 @@ export default function AdminPage() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 Delete Client
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Therapist Confirmation Dialog */}
+        <AlertDialog open={!!deletingTherapist} onOpenChange={(open) => { if (!open) { setDeletingTherapist(null); setReassignToTherapistId(""); } }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Therapist Account</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div>
+                  Are you sure you want to delete the account for <strong>{deletingTherapist?.name || deletingTherapist?.email}</strong>?
+                  
+                  {deletingTherapist && deletingTherapist.clientCount > 0 && (
+                    <div className="mt-4 p-3 border rounded-lg bg-yellow-50 dark:bg-yellow-950/30">
+                      <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                        This therapist has {deletingTherapist.clientCount} assigned client(s).
+                      </p>
+                      <p className="text-sm mt-2 text-yellow-700 dark:text-yellow-300">
+                        Select a therapist to reassign these clients to:
+                      </p>
+                      <Select
+                        value={reassignToTherapistId || "none"}
+                        onValueChange={(value) => setReassignToTherapistId(value === "none" ? "" : value)}
+                      >
+                        <SelectTrigger className="mt-2" data-testid="select-reassign-therapist">
+                          <SelectValue placeholder="-- Select therapist --" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- Select therapist --</SelectItem>
+                          {therapists
+                            .filter(t => t.id !== deletingTherapist.id)
+                            .map(t => (
+                              <SelectItem key={t.id} value={t.id}>{t.name || t.email}</SelectItem>
+                            ))
+                          }
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel data-testid="button-cancel-delete-therapist">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deletingTherapist) {
+                    deleteTherapistMutation.mutate({ 
+                      therapistId: deletingTherapist.id, 
+                      reassignToTherapistId: deletingTherapist.clientCount > 0 ? reassignToTherapistId : undefined 
+                    });
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground"
+                disabled={!!(deletingTherapist && deletingTherapist.clientCount > 0 && !reassignToTherapistId)}
+                data-testid="button-confirm-delete-therapist"
+              >
+                {deleteTherapistMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Delete Therapist
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

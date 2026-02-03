@@ -59,6 +59,7 @@ export default function RegisterTherapist() {
       licenseState: "",
       licenseNumber: "",
       licenseAttestation: false as unknown as true,
+      termsAccepted: false as unknown as true,
     },
   });
 
@@ -127,11 +128,22 @@ export default function RegisterTherapist() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 rounded-lg border-2 border-green-600/30 dark:border-green-500/30 bg-green-600/10 dark:bg-green-500/10 p-4" data-testid="card-trial-free">
+              <div className="flex items-center gap-3 mb-2">
+                <Badge className="bg-green-600 dark:bg-green-600 text-white px-3 py-1 text-sm font-semibold" data-testid="badge-first-month-free">
+                  First Month FREE
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Start with a 30-day free trial. No charges until your trial ends.
+              </p>
+            </div>
+
             <div className="mb-6 rounded-lg border bg-muted/50 p-4" data-testid="card-pricing-info">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-primary" />
-                  <span className="font-medium">Therapist Subscription</span>
+                  <span className="font-medium">After Trial</span>
                 </div>
                 <Badge variant="secondary">Monthly</Badge>
               </div>
@@ -295,6 +307,28 @@ export default function RegisterTherapist() {
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-sm font-normal">
                             I attest that my professional license is in good standing and I agree to notify the program administrator immediately if my license status changes.
+                          </FormLabel>
+                          <FormMessage />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="termsAccepted"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-background">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-terms-accepted"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            I agree to the therapist terms and conditions, including the 50% revenue share agreement for client payments. I understand that I will receive 50% of client weekly fees ($7.50 per $14.99 week) for clients assigned to me.
                           </FormLabel>
                           <FormMessage />
                         </div>
