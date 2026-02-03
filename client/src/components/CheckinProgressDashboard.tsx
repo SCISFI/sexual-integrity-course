@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Flame, TrendingUp, TrendingDown, Sun, Moon, Target, Heart, Zap, Award, Calendar } from "lucide-react";
+import { Flame, TrendingUp, TrendingDown, Target, Heart, Zap, Award, Calendar, ClipboardCheck } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
@@ -12,8 +12,7 @@ type CheckinStats = {
   longestStreak: number;
   averageMood: number;
   averageUrge: number;
-  morningCompletionRate: number;
-  eveningCompletionRate: number;
+  dailyCompletionRate: number;
   recentCheckins: Array<{
     date: string;
     mood: number | null;
@@ -173,7 +172,7 @@ export function CheckinProgressDashboard() {
           </p>
           <Link href="/daily-checkin">
             <Button className="bg-amber-600 hover:bg-amber-700 text-white" data-testid="button-start-checkin">
-              <Sun className="mr-2 h-4 w-4" />
+              <ClipboardCheck className="mr-2 h-4 w-4" />
               Start First Check-in
             </Button>
           </Link>
@@ -324,7 +323,7 @@ export function CheckinProgressDashboard() {
         </Card>
       </div>
 
-      {/* Charts and Completion Rates */}
+      {/* Charts and Completion Rate */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Trend Charts */}
         <Card>
@@ -340,35 +339,26 @@ export function CheckinProgressDashboard() {
           </CardContent>
         </Card>
 
-        {/* Completion Rates */}
+        {/* Daily Completion Rate */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Target className="h-4 w-4 text-muted-foreground" />
-              Check-in Completion
+              Daily Check-in Rate
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-around py-4">
-              <div className="text-center">
-                <ProgressRing percentage={stats.morningCompletionRate} color="#f59e0b" />
-                <div className="flex items-center justify-center gap-1 mt-2">
-                  <Sun className="h-4 w-4 text-amber-500" />
-                  <span className="text-sm text-muted-foreground">Morning</span>
-                </div>
-              </div>
-              <div className="text-center">
-                <ProgressRing percentage={stats.eveningCompletionRate} color="#6366f1" />
-                <div className="flex items-center justify-center gap-1 mt-2">
-                  <Moon className="h-4 w-4 text-indigo-500" />
-                  <span className="text-sm text-muted-foreground">Evening</span>
-                </div>
+            <div className="flex flex-col items-center justify-center py-4">
+              <ProgressRing percentage={stats.dailyCompletionRate} color="#0891b2" size={100} />
+              <div className="flex items-center justify-center gap-1 mt-3">
+                <ClipboardCheck className="h-4 w-4 text-cyan-600" />
+                <span className="text-sm text-muted-foreground">Last 14 days</span>
               </div>
             </div>
             <div className="text-center mt-4">
               <Link href="/daily-checkin">
                 <Button variant="outline" size="sm" data-testid="button-goto-checkin">
-                  Continue Today's Check-in
+                  Complete Today's Check-in
                 </Button>
               </Link>
             </div>

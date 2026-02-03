@@ -25,8 +25,8 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
       icon: BookOpen,
     },
     {
-      title: "Daily Check-ins Are Essential",
-      description: "Every day, you'll complete a brief check-in to track your mood, urges, and progress. This is required to continue in the program and helps you stay accountable. Look for the 'Daily Check-in' button on your dashboard.",
+      title: "One Daily Check-in",
+      description: "Complete a quick daily check-in whenever works for you. You'll track your mood, urges, and key recovery behaviors. It takes just a few minutes and helps you build awareness of your patterns. Look for 'Daily Check-in' on your dashboard.",
       icon: ClipboardCheck,
     },
     {

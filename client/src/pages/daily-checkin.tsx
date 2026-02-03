@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Moon, Sun, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Loader2, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DailyCheckItem {
@@ -25,23 +25,16 @@ interface DailyCheckItem {
   description?: string;
 }
 
-const MORNING_ITEMS: DailyCheckItem[] = [
-  { id: "sleep", category: "Physical", label: "Got adequate sleep (7-8 hours)", description: "Rest is crucial for self-regulation" },
-  { id: "morning-routine", category: "Routine", label: "Completed morning routine", description: "Shower, healthy breakfast, etc." },
-  { id: "intention", category: "Mindset", label: "Set a positive intention for the day" },
-  { id: "gratitude", category: "Mindset", label: "Practiced gratitude (3 things I'm thankful for)" },
-  { id: "accountability", category: "Support", label: "Connected with accountability partner or support person" },
-];
-
-const EVENING_ITEMS: DailyCheckItem[] = [
-  { id: "triggers-managed", category: "Recovery", label: "Successfully managed triggers today" },
+// Unified daily check-in items - complete once per day
+const DAILY_ITEMS: DailyCheckItem[] = [
+  { id: "no-acting-out", category: "Recovery", label: "Did not engage in compulsive sexual behavior today" },
+  { id: "no-rituals", category: "Recovery", label: "Did not engage in ritualistic behaviors leading to acting out" },
+  { id: "triggers-managed", category: "Recovery", label: "Successfully managed triggers when they occurred" },
+  { id: "sleep", category: "Wellness", label: "Got adequate sleep (7-8 hours)", description: "Rest is crucial for self-regulation" },
+  { id: "exercise", category: "Wellness", label: "Got physical exercise or movement" },
+  { id: "connection", category: "Relationships", label: "Had meaningful connection with others" },
   { id: "values-aligned", category: "Values", label: "Took at least one values-aligned action" },
   { id: "honest", category: "Integrity", label: "Was honest in my interactions today" },
-  { id: "no-acting-out", category: "Recovery", label: "Did not engage in compulsive sexual behavior" },
-  { id: "no-rituals", category: "Recovery", label: "Did not engage in ritualistic behaviors leading to acting out" },
-  { id: "emotions-processed", category: "Emotional", label: "Processed difficult emotions healthily" },
-  { id: "exercise", category: "Physical", label: "Got physical exercise or movement" },
-  { id: "connection", category: "Relationships", label: "Had meaningful connection with others" },
 ];
 
 const HALT_ITEMS = [
@@ -54,11 +47,10 @@ const HALT_ITEMS = [
 export default function DailyCheckinPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [morningChecks, setMorningChecks] = useState<Record<string, boolean>>({});
-  const [eveningChecks, setEveningChecks] = useState<Record<string, boolean>>({});
+  const [dailyChecks, setDailyChecks] = useState<Record<string, boolean>>({});
   const [haltChecks, setHaltChecks] = useState<Record<string, boolean>>({});
   const [urgeLevel, setUrgeLevel] = useState([0]);
-  const [moodLevel, setMoodLevel] = useState([0]);
+  const [moodLevel, setMoodLevel] = useState([5]);
   const [journalEntry, setJournalEntry] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -83,15 +75,14 @@ export default function DailyCheckinPage() {
     if (checkinData?.checkin && !dataLoaded) {
       const c = checkinData.checkin;
       try {
-        const morning = c.morningChecks ? JSON.parse(c.morningChecks) : [];
         const halt = c.haltChecks ? JSON.parse(c.haltChecks) : [];
-        const evening = c.eveningChecks ? JSON.parse(c.eveningChecks) : [];
+        // Daily checks are stored in eveningChecks column for compatibility
+        const daily = c.eveningChecks ? JSON.parse(c.eveningChecks) : [];
         
-        setMorningChecks(morning.reduce((acc: Record<string, boolean>, id: string) => ({ ...acc, [id]: true }), {}));
         setHaltChecks(halt.reduce((acc: Record<string, boolean>, id: string) => ({ ...acc, [id]: true }), {}));
-        setEveningChecks(evening.reduce((acc: Record<string, boolean>, id: string) => ({ ...acc, [id]: true }), {}));
+        setDailyChecks(daily.reduce((acc: Record<string, boolean>, id: string) => ({ ...acc, [id]: true }), {}));
         setUrgeLevel([c.urgeLevel ?? 0]);
-        setMoodLevel([c.moodLevel ?? 0]);
+        setMoodLevel([c.moodLevel ?? 5]);
         setJournalEntry(c.journalEntry || "");
       } catch (e) {
         console.error("Error parsing check-in data:", e);
@@ -108,15 +99,12 @@ export default function DailyCheckinPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/progress/checkin', dateKey] });
+      queryClient.invalidateQueries({ queryKey: ['/api/progress/checkin-stats'] });
     },
   });
 
-  const toggleMorningCheck = (id: string) => {
-    setMorningChecks(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const toggleEveningCheck = (id: string) => {
-    setEveningChecks(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleDailyCheck = (id: string) => {
+    setDailyChecks(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const toggleHaltCheck = (id: string) => {
@@ -124,17 +112,16 @@ export default function DailyCheckinPage() {
   };
 
   const handleSubmit = async () => {
-    const morningCheckIds = Object.entries(morningChecks).filter(([, v]) => v).map(([k]) => k);
+    const dailyCheckIds = Object.entries(dailyChecks).filter(([, v]) => v).map(([k]) => k);
     const haltCheckIds = Object.entries(haltChecks).filter(([, v]) => v).map(([k]) => k);
-    const eveningCheckIds = Object.entries(eveningChecks).filter(([, v]) => v).map(([k]) => k);
     
     try {
       await saveCheckinMutation.mutateAsync({
-        morningChecks: morningCheckIds,
+        morningChecks: [], // No longer used
         haltChecks: haltCheckIds,
         urgeLevel: urgeLevel[0],
         moodLevel: moodLevel[0],
-        eveningChecks: eveningCheckIds,
+        eveningChecks: dailyCheckIds, // Store unified daily checks here
         journalEntry,
       });
       setSubmitted(true);
@@ -168,6 +155,16 @@ export default function DailyCheckinPage() {
   };
 
   const anyHaltChecked = Object.values(haltChecks).some(v => v);
+  const checkedCount = Object.values(dailyChecks).filter(v => v).length;
+  const progressPercent = Math.round((checkedCount / DAILY_ITEMS.length) * 100);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,7 +180,7 @@ export default function DailyCheckinPage() {
             Dashboard
           </Button>
           <div>
-            <div className="font-semibold">Daily Self-Monitoring</div>
+            <div className="font-semibold">Daily Check-in</div>
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {today}
@@ -210,7 +207,7 @@ export default function DailyCheckinPage() {
                   onClick={() => {
                     setSubmitted(false);
                   }}
-                  data-testid="button-new-checkin"
+                  data-testid="button-edit-checkin"
                 >
                   Edit Today's Check-in
                 </Button>
@@ -219,36 +216,54 @@ export default function DailyCheckinPage() {
           </Card>
         ) : (
           <>
-            {/* Morning Check-in */}
+            {/* Instructions */}
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="py-4">
+                <p className="text-sm text-muted-foreground">
+                  Complete this check-in <strong>once per day</strong>, anytime that works for you. 
+                  Check the items that apply to your day so far. You can update it later if needed.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Daily Recovery & Wellness Items */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sun className="h-5 w-5 text-amber-500" />
-                  Morning Check-in
-                </CardTitle>
-                <CardDescription>
-                  Start your day with intention and awareness
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-primary" />
+                      Today's Check-in
+                    </CardTitle>
+                    <CardDescription>
+                      Check all that apply to your day
+                    </CardDescription>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-primary">{checkedCount}/{DAILY_ITEMS.length}</div>
+                    <div className="text-xs text-muted-foreground">{progressPercent}% complete</div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {MORNING_ITEMS.map((item) => (
+                {DAILY_ITEMS.map((item) => (
                   <div 
                     key={item.id} 
-                    className="flex items-start gap-3 p-2 rounded-lg hover-elevate cursor-pointer"
-                    onClick={() => toggleMorningCheck(item.id)}
-                    data-testid={`morning-item-${item.id}`}
+                    className="flex items-start gap-3 p-3 rounded-lg hover-elevate cursor-pointer border"
+                    onClick={() => toggleDailyCheck(item.id)}
+                    data-testid={`daily-item-${item.id}`}
                   >
                     <Checkbox
-                      id={`morning-${item.id}`}
-                      checked={morningChecks[item.id] || false}
-                      onCheckedChange={() => toggleMorningCheck(item.id)}
+                      id={`daily-${item.id}`}
+                      checked={dailyChecks[item.id] || false}
+                      onCheckedChange={() => toggleDailyCheck(item.id)}
                       onClick={(e) => e.stopPropagation()}
-                      data-testid={`checkbox-morning-${item.id}`}
+                      data-testid={`checkbox-daily-${item.id}`}
                     />
                     <div className="flex-1">
                       <label
-                        htmlFor={`morning-${item.id}`}
-                        className={`text-sm font-medium cursor-pointer ${morningChecks[item.id] ? 'line-through text-muted-foreground' : ''}`}
+                        htmlFor={`daily-${item.id}`}
+                        className={`text-sm font-medium cursor-pointer ${dailyChecks[item.id] ? 'line-through text-muted-foreground' : ''}`}
                       >
                         {item.label}
                       </label>
@@ -269,7 +284,7 @@ export default function DailyCheckinPage() {
                   HALT Check
                 </CardTitle>
                 <CardDescription>
-                  Check if you're experiencing any of these vulnerability states
+                  Are you experiencing any of these vulnerability states? Check any that apply.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -320,7 +335,7 @@ export default function DailyCheckinPage() {
                   Current State
                 </CardTitle>
                 <CardDescription>
-                  Rate your current urge and mood levels
+                  Rate your urge and mood levels right now
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -371,43 +386,6 @@ export default function DailyCheckinPage() {
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Evening Check-in */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Moon className="h-5 w-5 text-indigo-500" />
-                  Evening Reflection
-                </CardTitle>
-                <CardDescription>
-                  Review your day and celebrate your progress
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {EVENING_ITEMS.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="flex items-start gap-3 p-2 rounded-lg hover-elevate cursor-pointer"
-                    onClick={() => toggleEveningCheck(item.id)}
-                    data-testid={`evening-item-${item.id}`}
-                  >
-                    <Checkbox
-                      id={`evening-${item.id}`}
-                      checked={eveningChecks[item.id] || false}
-                      onCheckedChange={() => toggleEveningCheck(item.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      data-testid={`checkbox-evening-${item.id}`}
-                    />
-                    <label
-                      htmlFor={`evening-${item.id}`}
-                      className={`text-sm cursor-pointer ${eveningChecks[item.id] ? 'line-through text-muted-foreground' : ''}`}
-                    >
-                      {item.label}
-                    </label>
-                  </div>
-                ))}
               </CardContent>
             </Card>
 

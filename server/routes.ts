@@ -454,11 +454,8 @@ export async function registerRoutes(
           longestStreak: 0,
           averageMood: 0,
           averageUrge: 0,
-          morningCompletionRate: 0,
-          eveningCompletionRate: 0,
+          dailyCompletionRate: 0,
           recentCheckins: [],
-          moodTrend: [],
-          urgeTrend: [],
         });
       }
 
@@ -505,11 +502,15 @@ export async function registerRoutes(
       const averageMood = moodValues.length > 0 ? Math.round(moodValues.reduce((a, b) => a + b, 0) / moodValues.length * 10) / 10 : 0;
       const averageUrge = urgeValues.length > 0 ? Math.round(urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length * 10) / 10 : 0;
 
-      // Completion rates
-      const withMorning = checkins.filter(c => c.morningChecks && c.morningChecks !== "[]").length;
-      const withEvening = checkins.filter(c => c.eveningChecks && c.eveningChecks !== "[]").length;
-      const morningCompletionRate = Math.round((withMorning / checkins.length) * 100);
-      const eveningCompletionRate = Math.round((withEvening / checkins.length) * 100);
+      // Daily completion rate - percentage of last 14 days with check-ins
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      const recentDates = new Set(
+        checkins
+          .filter(c => new Date(c.dateKey) >= fourteenDaysAgo)
+          .map(c => c.dateKey)
+      );
+      const dailyCompletionRate = Math.round((recentDates.size / 14) * 100);
 
       // Get last 14 days for trend charts
       const recentCheckins = checkins.slice(-14).map(c => ({
@@ -524,8 +525,7 @@ export async function registerRoutes(
         longestStreak,
         averageMood,
         averageUrge,
-        morningCompletionRate,
-        eveningCompletionRate,
+        dailyCompletionRate,
         recentCheckins,
       });
     } catch (error) {
