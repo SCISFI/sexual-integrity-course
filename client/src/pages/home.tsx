@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { Link, useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -18,13 +16,6 @@ import {
 } from "lucide-react";
 
 export default function Home() {
-  const { user, isLoading, isAuthenticating } = useAuth();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticating && user) setLocation("/dashboard");
-  }, [user, isLoading, isAuthenticating, setLocation]);
-
   return (
     <div className="min-h-screen bg-background">
       {/* Top bar */}
