@@ -39,6 +39,8 @@ export interface IStorage {
     licenseNumber?: string;
     licenseAttestation?: boolean;
     licenseAttestationDate?: Date;
+    termsAccepted?: boolean;
+    termsAcceptedDate?: Date;
   }): Promise<User>;
   updateUser(id: string, data: Partial<{ name: string; startDate: string; allFeesWaived: boolean; subscriptionStatus: string; stripeCustomerId: string; stripeSubscriptionId: string }>): Promise<User | undefined>;
   getUsersByRole(role: UserRole): Promise<User[]>;
@@ -135,6 +137,8 @@ export class DatabaseStorage implements IStorage {
     licenseNumber?: string;
     licenseAttestation?: boolean;
     licenseAttestationDate?: Date;
+    termsAccepted?: boolean;
+    termsAcceptedDate?: Date;
   }): Promise<User> {
     const [user] = await db
       .insert(users)
@@ -146,6 +150,8 @@ export class DatabaseStorage implements IStorage {
         licenseNumber: insertUser.licenseNumber || null,
         licenseAttestation: insertUser.licenseAttestation || false,
         licenseAttestationDate: insertUser.licenseAttestationDate || null,
+        termsAccepted: insertUser.termsAccepted || false,
+        termsAcceptedDate: insertUser.termsAcceptedDate || null,
       })
       .returning();
     return user;

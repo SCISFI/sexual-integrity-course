@@ -73,12 +73,10 @@ async function seedAccountsIfNeeded() {
 
   const hashedPassword = await hashPassword(seedPassword);
 
-  // Define accounts to seed
+  // Define accounts to seed (admin and therapist only - no test accounts)
   const accounts = [
     { email: "ken@scifsi.com", name: "Ken (Admin)", role: "admin" },
     { email: "ken-therapist@scifsi.com", name: "Ken (Therapist)", role: "therapist" },
-    { email: "therapist.tester@example.com", name: "Test Therapist", role: "therapist" },
-    { email: "client.tester@example.com", name: "Test Client", role: "client" },
   ];
 
   try {
@@ -90,33 +88,10 @@ async function seedAccountsIfNeeded() {
 
       if (result.rows.length === 0) {
         console.log(`Creating ${account.role} account: ${account.email}`);
-        
-        if (account.role === "client") {
-          // Assign client to tester therapist
-          const therapist = await pool.query(
-            "SELECT id FROM users WHERE email = $1",
-            ["therapist.tester@example.com"]
-          );
-          const therapistId = therapist.rows[0]?.id || null;
-          const startDate = new Date().toISOString().split('T')[0]; // Just the date part
-          await pool.query(
-            `INSERT INTO users (email, password, name, role, start_date) VALUES ($1, $2, $3, $4, $5)`,
-            [account.email, hashedPassword, account.name, account.role, startDate]
-          );
-          if (therapistId) {
-            // Create therapist-client relationship
-            const newClient = await pool.query("SELECT id FROM users WHERE email = $1", [account.email]);
-            await pool.query(
-              `INSERT INTO therapist_clients (therapist_id, client_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-              [therapistId, newClient.rows[0].id]
-            );
-          }
-        } else {
-          await pool.query(
-            `INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)`,
-            [account.email, hashedPassword, account.name, account.role]
-          );
-        }
+        await pool.query(
+          `INSERT INTO users (email, password, name, role) VALUES ($1, $2, $3, $4)`,
+          [account.email, hashedPassword, account.name, account.role]
+        );
         console.log(`  ${account.role} account created.`);
       } else {
         console.log(`${account.role} account ${account.email} already exists`);

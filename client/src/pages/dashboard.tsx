@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,11 +11,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle, BarChart3, Clock } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle, BarChart3, Clock, XCircle, Loader2 } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type WeekItem = {
   week: number;
@@ -30,6 +43,7 @@ const WEEKS: WeekItem[] = Array.from({ length: 16 }, (_, i) => ({
 export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   // Fetch completed weeks from the API
   const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
@@ -87,6 +101,28 @@ export default function Dashboard() {
     await logout();
     setLocation("/");
   };
+
+  // Cancel account mutation
+  const cancelAccountMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/account/cancel", {});
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account Cancelled",
+        description: "Your account has been cancelled. You will retain access to any previously paid weeks. No refunds will be issued.",
+      });
+      setLocation("/login");
+    },
+    onError: () => {
+      toast({
+        title: "Cancellation Failed",
+        description: "Failed to cancel account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Find the next available week to continue (first unlocked but not completed)
   const nextAvailableWeek = useMemo(() => {
@@ -151,6 +187,45 @@ export default function Dashboard() {
                 <Key className="h-4 w-4" />
               </Button>
             </Link>
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" title="Cancel Account" data-testid="button-cancel-account">
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel Your Account?</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2">
+                    <p>Are you sure you want to cancel your account?</p>
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
+                      <p className="font-medium text-yellow-800 dark:text-yellow-200">Important:</p>
+                      <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
+                        <li>You will retain access to any weeks you have already paid for</li>
+                        <li>No refunds will be issued for previously purchased weeks</li>
+                        <li>You will not be able to purchase new weeks after cancellation</li>
+                      </ul>
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-keep-account">Keep Account</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => cancelAccountMutation.mutate()}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={cancelAccountMutation.isPending}
+                    data-testid="button-confirm-cancel-account"
+                  >
+                    {cancelAccountMutation.isPending ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</>
+                    ) : (
+                      "Cancel Account"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
               <LogOut className="h-4 w-4 mr-2" />

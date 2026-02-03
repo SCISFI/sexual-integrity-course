@@ -6,10 +6,21 @@ import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, LogOut, Key, Search, CreditCard, Loader2 } from "lucide-react";
+import { Users, LogOut, Key, Search, CreditCard, Loader2, XCircle } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type ClientWithProgress = {
   id: number;
@@ -47,7 +58,12 @@ export default function TherapistHome() {
   }, [toast]);
 
   // Check subscription status
-  const { data: subscriptionData, isLoading: loadingSubscription } = useQuery<{ subscription: any; allFeesWaived: boolean }>({
+  const { data: subscriptionData, isLoading: loadingSubscription } = useQuery<{ 
+    subscription: any; 
+    allFeesWaived: boolean;
+    cancelAtPeriodEnd?: boolean;
+    periodEnd?: string | null;
+  }>({
     queryKey: ['/api/payments/subscription'],
     staleTime: 0,
     refetchOnMount: 'always',
@@ -73,9 +89,35 @@ export default function TherapistHome() {
     },
   });
 
+  // Cancel subscription mutation
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/account/cancel-subscription", {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Subscription Cancelled",
+        description: data.accessEndsAt 
+          ? `Your subscription will remain active until ${new Date(data.accessEndsAt).toLocaleDateString()}. No refunds will be issued.`
+          : "Your subscription has been cancelled. No refunds will be issued.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/payments/subscription'] });
+    },
+    onError: () => {
+      toast({
+        title: "Cancellation Failed",
+        description: "Failed to cancel subscription. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const hasActiveSubscription = subscriptionData?.subscription?.status === 'active' || 
                                  subscriptionData?.subscription?.status === 'trialing' ||
                                  subscriptionData?.allFeesWaived === true;
+
+  const subscriptionCancelledButActive = hasActiveSubscription && subscriptionData?.cancelAtPeriodEnd === true;
 
   const { data: clientsData, isLoading } = useQuery<{ clients: ClientWithProgress[] }>({
     queryKey: ['/api/therapist/clients'],
@@ -215,6 +257,18 @@ export default function TherapistHome() {
   return (
     <div className="min-h-screen bg-background px-6 py-8">
       <div className="mx-auto max-w-5xl space-y-6">
+        {/* Cancellation pending banner */}
+        {subscriptionCancelledButActive && subscriptionData?.periodEnd && (
+          <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg" data-testid="banner-subscription-ending">
+            <p className="font-medium text-yellow-800 dark:text-yellow-200">
+              Subscription Cancelled
+            </p>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+              Your subscription will end on {new Date(subscriptionData.periodEnd).toLocaleDateString()}. You will retain full access until then. No refunds will be issued.
+            </p>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold" data-testid="text-therapist-title">Therapist Dashboard</h1>
@@ -228,6 +282,46 @@ export default function TherapistHome() {
                 <Key className="h-4 w-4" />
               </Button>
             </Link>
+            {!subscriptionCancelledButActive && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" title="Cancel Subscription" data-testid="button-cancel-subscription">
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2">
+                      <p>Are you sure you want to cancel your subscription?</p>
+                      <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
+                        <p className="font-medium text-yellow-800 dark:text-yellow-200">Important:</p>
+                        <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
+                          <li>Your subscription will remain active until the end of your billing period</li>
+                          <li>No refunds will be issued for any unused time</li>
+                          <li>You will lose access to the dashboard after your billing period ends</li>
+                        </ul>
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel data-testid="button-keep-subscription">Keep Subscription</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => cancelSubscriptionMutation.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      disabled={cancelSubscriptionMutation.isPending}
+                      data-testid="button-confirm-cancel"
+                    >
+                      {cancelSubscriptionMutation.isPending ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</>
+                      ) : (
+                        "Cancel Subscription"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
             <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
               <LogOut className="mr-2 h-4 w-4" />
               Logout

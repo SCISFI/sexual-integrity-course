@@ -10,6 +10,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **February 3, 2026 (Account Cancellation)**:
+  - **Therapist Subscription Cancellation**: Therapists can cancel via Stripe API (cancel at period end)
+    - No refunds issued; access retained until billing period ends
+    - Persistent banner shows cancellation status and access end date
+    - Cancel button hidden when cancellation already pending
+    - API endpoint: POST /api/account/cancel-subscription
+  - **Client Account Cancellation**: Clients can deactivate their account
+    - Sets subscriptionStatus to "cancelled" in database
+    - Retains access to previously paid weeks (no refunds)
+    - Blocks future week purchases via checkout validation
+    - API endpoint: POST /api/account/cancel
+  - **Enhanced Subscription Status**: /api/payments/subscription now returns cancelAtPeriodEnd and periodEnd fields
+  - **Database Cleanup**: Removed test accounts, only admin and primary therapist in seed file
+
 - **February 3, 2026 (Simplified Daily Check-in)**:
   - **Unified Daily Check-in**: Replaced confusing morning/evening split with single daily check-in
     - 8 key items covering recovery, wellness, relationships, values, and integrity

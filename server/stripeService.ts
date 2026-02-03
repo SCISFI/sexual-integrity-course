@@ -60,6 +60,45 @@ export class StripeService {
     });
   }
 
+  // Cancel subscription at period end (no refund - subscription remains active until period ends)
+  async cancelSubscriptionAtPeriodEnd(subscriptionId: string): Promise<{ success: boolean; periodEnd: Date | null; error?: string }> {
+    const stripe = await getUncachableStripeClient();
+    try {
+      const subscription = await stripe.subscriptions.update(subscriptionId, {
+        cancel_at_period_end: true,
+      });
+      const periodEnd = (subscription as any).current_period_end;
+      return {
+        success: true,
+        periodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
+      };
+    } catch (error: any) {
+      console.error('Error cancelling subscription:', error);
+      return {
+        success: false,
+        periodEnd: null,
+        error: error.message || 'Failed to cancel subscription',
+      };
+    }
+  }
+
+  // Get subscription details including period end date
+  async getSubscriptionDetails(subscriptionId: string): Promise<{ status: string; cancelAtPeriodEnd: boolean; periodEnd: Date | null } | null> {
+    const stripe = await getUncachableStripeClient();
+    try {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const periodEnd = (subscription as any).current_period_end;
+      return {
+        status: subscription.status,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        periodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
+      };
+    } catch (error) {
+      console.error('Error retrieving subscription:', error);
+      return null;
+    }
+  }
+
   // Query products from stripe schema
   async getProduct(productId: string) {
     const result = await db.execute(

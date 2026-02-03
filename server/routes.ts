@@ -1370,6 +1370,11 @@ export async function registerRoutes(
       const { weekNumber } = req.body;
       let { priceId } = req.body;
       
+      // Check if account is cancelled - prevent future purchases
+      if (user.subscriptionStatus === 'cancelled') {
+        return res.status(403).json({ message: "Your account has been cancelled. You cannot purchase additional weeks." });
+      }
+      
       if (!weekNumber) {
         return res.status(400).json({ message: "Week number is required" });
       }
@@ -1511,7 +1516,16 @@ export async function registerRoutes(
       
       const { stripeService } = await import("./stripeService");
       const subscription = await stripeService.getSubscription(user.stripeSubscriptionId);
-      res.json({ subscription, allFeesWaived: user.allFeesWaived || false });
+      
+      // Get live subscription details from Stripe for cancel_at_period_end status
+      const subscriptionDetails = await stripeService.getSubscriptionDetails(user.stripeSubscriptionId);
+      
+      res.json({ 
+        subscription, 
+        allFeesWaived: user.allFeesWaived || false,
+        cancelAtPeriodEnd: subscriptionDetails?.cancelAtPeriodEnd || false,
+        periodEnd: subscriptionDetails?.periodEnd || null
+      });
     } catch (error) {
       console.error("Get subscription error:", error);
       res.status(500).json({ message: "Failed to get subscription" });
@@ -1538,6 +1552,63 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Create portal session error:", error);
       res.status(500).json({ message: "Failed to create portal session" });
+    }
+  });
+
+  // Cancel therapist subscription (no refund - active until period end)
+  app.post("/api/account/cancel-subscription", requireRole("therapist"), async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (!user.stripeSubscriptionId) {
+        return res.status(400).json({ message: "No active subscription found" });
+      }
+      
+      const { stripeService } = await import("./stripeService");
+      const result = await stripeService.cancelSubscriptionAtPeriodEnd(user.stripeSubscriptionId);
+      
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Failed to cancel subscription" });
+      }
+      
+      console.log(`Therapist ${user.email} cancelled subscription - access until ${result.periodEnd}`);
+      
+      res.json({ 
+        message: "Subscription cancelled",
+        accessEndsAt: result.periodEnd,
+        noRefund: true
+      });
+    } catch (error) {
+      console.error("Cancel subscription error:", error);
+      res.status(500).json({ message: "Failed to cancel subscription" });
+    }
+  });
+
+  // Cancel client account (deactivate - no refunds on already-paid weeks)
+  app.post("/api/account/cancel", requireRole("client"), async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Update user status to cancelled
+      await storage.updateUser(user.id, { subscriptionStatus: "cancelled" });
+      
+      console.log(`User ${user.email} (${user.role}) cancelled their account`);
+      
+      // Logout the user
+      req.logout((err) => {
+        if (err) {
+          console.error("Logout error during cancellation:", err);
+        }
+      });
+      
+      res.json({ 
+        message: "Account cancelled successfully",
+        noRefund: true,
+        note: "You will retain access to any previously paid weeks."
+      });
+    } catch (error) {
+      console.error("Cancel account error:", error);
+      res.status(500).json({ message: "Failed to cancel account" });
     }
   });
 
