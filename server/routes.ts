@@ -502,15 +502,21 @@ export async function registerRoutes(
       const averageMood = moodValues.length > 0 ? Math.round(moodValues.reduce((a, b) => a + b, 0) / moodValues.length * 10) / 10 : 0;
       const averageUrge = urgeValues.length > 0 ? Math.round(urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length * 10) / 10 : 0;
 
-      // Daily completion rate - percentage of last 14 days with check-ins
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      // Daily completion rate - percentage of days with check-ins
+      // Uses a 14-day window, but caps at days since first check-in for new users
+      const nowDate = new Date();
+      const oldestCheckinDate = checkins[0]?.dateKey ? new Date(checkins[0].dateKey) : nowDate;
+      const daysSinceStart = Math.max(1, Math.ceil((nowDate.getTime() - oldestCheckinDate.getTime()) / 86400000) + 1);
+      const windowSize = Math.min(14, daysSinceStart);
+      
+      const windowStart = new Date();
+      windowStart.setDate(windowStart.getDate() - windowSize + 1);
       const recentDates = new Set(
         checkins
-          .filter(c => new Date(c.dateKey) >= fourteenDaysAgo)
+          .filter(c => new Date(c.dateKey) >= windowStart)
           .map(c => c.dateKey)
       );
-      const dailyCompletionRate = Math.round((recentDates.size / 14) * 100);
+      const dailyCompletionRate = Math.round((recentDates.size / windowSize) * 100);
 
       // Get last 14 days for trend charts
       const recentCheckins = checkins.slice(-14).map(c => ({

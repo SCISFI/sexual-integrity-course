@@ -273,15 +273,9 @@ export default function AdminClientPage() {
                             )}
                           </div>
                         </div>
-                        {checkin.morningChecks && (
-                          <div className="mt-2">
-                            <p className="text-xs text-muted-foreground">Morning</p>
-                            <p className="text-sm">{checkin.morningChecks}</p>
-                          </div>
-                        )}
                         {checkin.eveningChecks && (
                           <div className="mt-2">
-                            <p className="text-xs text-muted-foreground">Evening</p>
+                            <p className="text-xs text-muted-foreground">Daily Items</p>
                             <p className="text-sm">{checkin.eveningChecks}</p>
                           </div>
                         )}
