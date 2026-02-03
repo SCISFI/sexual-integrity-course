@@ -137,11 +137,23 @@ export default function RegisterClient() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Week 1 Free Banner */}
+            <div className="mb-4 rounded-lg border-2 border-green-600/30 dark:border-green-500/30 bg-green-600/10 dark:bg-green-500/10 p-4" data-testid="card-week1-free">
+              <div className="flex items-center gap-3 mb-2">
+                <Badge className="bg-green-600 dark:bg-green-600 text-white px-3 py-1 text-sm font-semibold" data-testid="badge-week1-free">
+                  Week 1 FREE
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground" data-testid="text-week1-free-description">
+                Start today with full access to Week 1 — no payment required. Experience the program before committing.
+              </p>
+            </div>
+
             <div className="mb-6 rounded-lg border bg-muted/50 p-4" data-testid="card-pricing-info">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-primary" />
-                  <span className="font-medium">Weekly Access</span>
+                  <span className="font-medium">Weeks 2-16</span>
                 </div>
                 <Badge variant="secondary">Pay as you go</Badge>
               </div>
@@ -302,7 +314,7 @@ export default function RegisterClient() {
                       Creating account...
                     </>
                   ) : (
-                    "Start Your Journey"
+                    "Start Your Free Week"
                   )}
                 </Button>
               </form>

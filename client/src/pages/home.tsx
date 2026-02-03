@@ -44,12 +44,12 @@ export default function Home() {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild data-testid="button-nav-login">
               <Link href="/login">Log in</Link>
             </Button>
-            <Button asChild>
-              <Link href="/register">
-                Sign up <ArrowRight className="ml-1 h-4 w-4" />
+            <Button asChild className="bg-green-600 dark:bg-green-600 text-white border-green-700 dark:border-green-600" data-testid="button-nav-try-free">
+              <Link href="/register/client">
+                Try Week 1 Free <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
           </div>
@@ -70,12 +70,6 @@ export default function Home() {
                 <Badge variant="secondary" className="px-3 py-1">
                   This is not “tips.” This is training.
                 </Badge>
-
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <Badge className="bg-green-600 text-white px-3 py-1">
-                    Week 1 FREE
-                  </Badge>
-                </div>
 
                 <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
                   A difficult program for a difficult problem.
@@ -135,10 +129,19 @@ export default function Home() {
                   </div>
                 </div>
 
+                <div className="rounded-xl border-2 border-green-600/30 dark:border-green-500/30 bg-green-600/10 dark:bg-green-500/10 p-4 mb-2" data-testid="card-hero-week1-free">
+                  <div className="flex items-center gap-3">
+                    <Badge className="bg-green-600 dark:bg-green-600 text-white px-4 py-1.5 text-base font-semibold" data-testid="badge-hero-week1-free">
+                      Week 1 FREE
+                    </Badge>
+                    <span className="text-sm text-muted-foreground" data-testid="text-no-credit-card">No credit card required to start</span>
+                  </div>
+                </div>
+
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <Button size="lg" asChild>
-                    <Link href="/register">
-                      Sign Up <ArrowRight className="ml-1 h-4 w-4" />
+                  <Button size="lg" asChild className="bg-green-600 dark:bg-green-600 text-white border-green-700 dark:border-green-600" data-testid="button-hero-try-free">
+                    <Link href="/register/client">
+                      Try Week 1 Free <ArrowRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>
                   <Button size="lg" variant="outline" asChild>
@@ -409,7 +412,7 @@ export default function Home() {
           <div className="mx-auto max-w-7xl px-4 py-12">
             <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border bg-card p-8 shadow-sm md:flex-row md:items-center">
               <div>
-                <Badge className="bg-green-600 text-white mb-3">
+                <Badge className="bg-green-600 dark:bg-green-600 text-white mb-3" data-testid="badge-footer-week1-free">
                   Week 1 FREE
                 </Badge>
                 <h3 className="text-xl font-semibold">
@@ -420,9 +423,9 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                <Button size="lg" asChild className="w-full sm:w-auto">
-                  <Link href="/register">
-                    Start Free <ArrowRight className="ml-1 h-4 w-4" />
+                <Button size="lg" asChild className="w-full sm:w-auto bg-green-600 dark:bg-green-600 text-white border-green-700 dark:border-green-600" data-testid="button-footer-try-free">
+                  <Link href="/register/client">
+                    Try Week 1 Free <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
                 </Button>
                 <Button
