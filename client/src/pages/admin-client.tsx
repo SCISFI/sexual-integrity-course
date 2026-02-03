@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw, ListChecks, Send } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -36,6 +37,18 @@ type ClientProgress = {
     q3: string | null;
     q4: string | null;
   }>;
+  homeworkCompletions: Array<{
+    weekNumber: number;
+    completedItems: number[];
+    updatedAt: string;
+  }>;
+  feedback: Array<{
+    id: string;
+    feedbackType: string;
+    content: string;
+    weekNumber: number | null;
+    createdAt: string;
+  }>;
   therapists: Array<{ id: string; name: string | null; email: string }>;
 };
 
@@ -44,6 +57,8 @@ export default function AdminClientPage() {
   const { clientId } = useParams<{ clientId: string }>();
   const { toast } = useToast();
   const [resetWeekNumber, setResetWeekNumber] = useState<number | null>(null);
+  const [newFeedback, setNewFeedback] = useState("");
+  const [feedbackWeek, setFeedbackWeek] = useState<number | null>(null);
 
   const { data, isLoading, error } = useQuery<ClientProgress>({
     queryKey: ['/api/admin/clients', clientId, 'progress'],
@@ -68,6 +83,32 @@ export default function AdminClientPage() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
+
+  const feedbackMutation = useMutation({
+    mutationFn: async (data: { feedbackType: string; content: string; weekNumber?: number }) => {
+      const res = await apiRequest("POST", `/api/admin/clients/${clientId}/feedback`, data);
+      if (!res.ok) throw new Error("Failed to add feedback");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/clients', clientId, 'progress'] });
+      setNewFeedback("");
+      setFeedbackWeek(null);
+      toast({ title: "Feedback added successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to add feedback", variant: "destructive" });
+    },
+  });
+
+  const handleSubmitFeedback = () => {
+    if (!newFeedback.trim()) return;
+    feedbackMutation.mutate({
+      feedbackType: feedbackWeek ? "week_specific" : "general",
+      content: newFeedback,
+      weekNumber: feedbackWeek || undefined,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -99,7 +140,7 @@ export default function AdminClientPage() {
     );
   }
 
-  const { client, completedWeeks, checkins, reflections, therapists } = data;
+  const { client, completedWeeks, checkins, reflections, homeworkCompletions, feedback, therapists } = data;
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">
@@ -145,10 +186,12 @@ export default function AdminClientPage() {
         </Card>
 
         <Tabs defaultValue="progress" className="w-full">
-          <TabsList>
-            <TabsTrigger value="progress">Week Progress</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="progress">Progress</TabsTrigger>
             <TabsTrigger value="checkins">Check-ins</TabsTrigger>
             <TabsTrigger value="reflections">Reflections</TabsTrigger>
+            <TabsTrigger value="homework">Homework</TabsTrigger>
+            <TabsTrigger value="feedback">Feedback</TabsTrigger>
           </TabsList>
 
           <TabsContent value="progress" className="space-y-4">
@@ -302,6 +345,112 @@ export default function AdminClientPage() {
                             </div>
                           )}
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="homework" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ListChecks className="h-5 w-5" />
+                  Homework Completions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {homeworkCompletions?.length === 0 ? (
+                  <p className="text-muted-foreground">No homework completions recorded yet.</p>
+                ) : (
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {homeworkCompletions?.map((hw) => (
+                      <div
+                        key={hw.weekNumber}
+                        className="rounded-lg border p-4"
+                        data-testid={`homework-week-${hw.weekNumber}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">Week {hw.weekNumber}</h4>
+                          <Badge variant="outline">
+                            {hw.completedItems.length} items completed
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Last updated: {new Date(hw.updatedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="feedback" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Add Feedback
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {feedbackWeek && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">For Week {feedbackWeek}</Badge>
+                      <Button variant="ghost" size="sm" onClick={() => setFeedbackWeek(null)}>
+                        Clear
+                      </Button>
+                    </div>
+                  )}
+                  <Textarea
+                    placeholder="Write your feedback, encouragement, or technique reminders here..."
+                    value={newFeedback}
+                    onChange={(e) => setNewFeedback(e.target.value)}
+                    className="min-h-24"
+                    data-testid="input-feedback"
+                  />
+                  <Button 
+                    onClick={handleSubmitFeedback}
+                    disabled={!newFeedback.trim() || feedbackMutation.isPending}
+                    data-testid="button-submit-feedback"
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Previous Feedback</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {feedback?.length === 0 ? (
+                  <p className="text-muted-foreground">No feedback given yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {feedback?.map((fb) => (
+                      <div
+                        key={fb.id}
+                        className="rounded-lg border p-4"
+                        data-testid={`feedback-${fb.id}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {fb.weekNumber && <Badge variant="outline">Week {fb.weekNumber}</Badge>}
+                            <Badge variant="secondary">{fb.feedbackType}</Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(fb.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-sm">{fb.content}</p>
                       </div>
                     ))}
                   </div>

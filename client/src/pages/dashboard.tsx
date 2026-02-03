@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
 
 type WeekItem = {
   week: number;
@@ -246,38 +247,29 @@ export default function Dashboard() {
             </div>
 
 
-            {/* Daily Check-ins and Support Resources */}
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Daily Check-ins */}
-              <div className="rounded-lg border p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <ClipboardCheck className="h-5 w-5 text-primary" />
-                  <h3 className="font-medium">Daily Check-In</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Track your progress with morning and evening check-ins. Required to continue progressing through the program.
-                </p>
-                <Button onClick={() => setLocation("/checkin")} data-testid="button-start-checkin">
-                  Start Today's Check-In
-                </Button>
-              </div>
+          </CardContent>
+        </Card>
 
-              {/* Relapse Support */}
-              <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
-                  <h3 className="font-medium text-amber-700 dark:text-amber-400">If You've Had a Setback</h3>
-                </div>
-                <p className="text-sm text-amber-700 dark:text-amber-300/80 mb-4">
-                  A relapse does NOT remove you from the program. Use the Relapse Autopsy tool to process what happened and create a plan forward.
-                </p>
-                <Link href="/relapse-autopsy">
-                  <Button variant="outline" className="border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50" data-testid="button-relapse-autopsy">
-                    Open Relapse Autopsy
-                  </Button>
-                </Link>
-              </div>
-            </div>
+        {/* Check-in Progress Dashboard */}
+        <CheckinProgressDashboard />
+
+        {/* Support Resources */}
+        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="h-5 w-5" />
+              Support Resources
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-amber-700 dark:text-amber-300/80 mb-4">
+              A setback does NOT remove you from the program. Use these tools to process and move forward.
+            </p>
+            <Link href="/relapse-autopsy">
+              <Button variant="outline" className="border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50" data-testid="button-relapse-autopsy">
+                Open Relapse Autopsy
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 

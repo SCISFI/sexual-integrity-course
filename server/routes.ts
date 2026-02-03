@@ -441,6 +441,99 @@ export async function registerRoutes(
     }
   });
 
+  // Get check-in statistics for progress dashboard
+  app.get("/api/progress/checkin-stats", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const checkins = await storage.getUserCheckinHistory(userId, 365); // Get up to a year of data
+      
+      if (checkins.length === 0) {
+        return res.json({
+          totalCheckins: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          averageMood: 0,
+          averageUrge: 0,
+          morningCompletionRate: 0,
+          eveningCompletionRate: 0,
+          recentCheckins: [],
+          moodTrend: [],
+          urgeTrend: [],
+        });
+      }
+
+      // Calculate streaks
+      const sortedDates = checkins.map(c => c.dateKey).sort().reverse();
+      let currentStreak = 0;
+      let longestStreak = 0;
+      let tempStreak = 1;
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      
+      // Check if there's a checkin today or yesterday to start streak
+      if (sortedDates[0] === today || sortedDates[0] === yesterday) {
+        currentStreak = 1;
+        for (let i = 1; i < sortedDates.length; i++) {
+          const prevDate = new Date(sortedDates[i - 1]);
+          const currDate = new Date(sortedDates[i]);
+          const diffDays = Math.round((prevDate.getTime() - currDate.getTime()) / 86400000);
+          if (diffDays === 1) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Calculate longest streak
+      for (let i = 1; i < sortedDates.length; i++) {
+        const prevDate = new Date(sortedDates[i - 1]);
+        const currDate = new Date(sortedDates[i]);
+        const diffDays = Math.round((prevDate.getTime() - currDate.getTime()) / 86400000);
+        if (diffDays === 1) {
+          tempStreak++;
+        } else {
+          longestStreak = Math.max(longestStreak, tempStreak);
+          tempStreak = 1;
+        }
+      }
+      longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
+
+      // Calculate averages
+      const moodValues = checkins.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
+      const urgeValues = checkins.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
+      const averageMood = moodValues.length > 0 ? Math.round(moodValues.reduce((a, b) => a + b, 0) / moodValues.length * 10) / 10 : 0;
+      const averageUrge = urgeValues.length > 0 ? Math.round(urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length * 10) / 10 : 0;
+
+      // Completion rates
+      const withMorning = checkins.filter(c => c.morningChecks && c.morningChecks !== "[]").length;
+      const withEvening = checkins.filter(c => c.eveningChecks && c.eveningChecks !== "[]").length;
+      const morningCompletionRate = Math.round((withMorning / checkins.length) * 100);
+      const eveningCompletionRate = Math.round((withEvening / checkins.length) * 100);
+
+      // Get last 14 days for trend charts
+      const recentCheckins = checkins.slice(-14).map(c => ({
+        date: c.dateKey,
+        mood: c.moodLevel,
+        urge: c.urgeLevel,
+      }));
+
+      res.json({
+        totalCheckins: checkins.length,
+        currentStreak,
+        longestStreak,
+        averageMood,
+        averageUrge,
+        morningCompletionRate,
+        eveningCompletionRate,
+        recentCheckins,
+      });
+    } catch (error) {
+      console.error("Get checkin stats error:", error);
+      res.status(500).json({ message: "Failed to get checkin statistics" });
+    }
+  });
+
   // =======================================
   // Admin API endpoints
   // =======================================
@@ -729,6 +822,7 @@ export async function registerRoutes(
       const checkins = await storage.getUserCheckinHistory(clientId, 60);
       const reflections = await storage.getAllWeekReflections(clientId);
       const homeworkCompletions = await storage.getAllHomeworkCompletions(clientId);
+      const feedback = await storage.getClientFeedback(clientId);
       
       // Get therapist info
       const therapists = await storage.getTherapistsForClient(clientId);
@@ -745,6 +839,7 @@ export async function registerRoutes(
         checkins,
         reflections,
         homeworkCompletions,
+        feedback,
         therapists 
       });
     } catch (error) {
@@ -777,6 +872,37 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Reset week completion error:", error);
       res.status(500).json({ message: "Failed to reset week completion" });
+    }
+  });
+
+  // Add admin feedback for a client
+  app.post("/api/admin/clients/:clientId/feedback", requireRole("admin"), async (req, res) => {
+    try {
+      const adminId = (req.user as any).id;
+      const { clientId } = req.params;
+      const { feedbackType, content, weekNumber } = req.body;
+
+      if (!content || !feedbackType) {
+        return res.status(400).json({ message: "Feedback type and content are required" });
+      }
+
+      const user = await storage.getUser(clientId);
+      if (!user || user.role !== "client") {
+        return res.status(404).json({ message: "Client not found" });
+      }
+
+      const feedback = await storage.addTherapistFeedback(
+        adminId, 
+        clientId, 
+        feedbackType, 
+        content, 
+        weekNumber
+      );
+      
+      res.status(201).json({ feedback });
+    } catch (error) {
+      console.error("Add admin feedback error:", error);
+      res.status(500).json({ message: "Failed to add feedback" });
     }
   });
 
