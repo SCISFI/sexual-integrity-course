@@ -10,6 +10,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+- **February 3, 2026 (Simplified Daily Check-in)**:
+  - **Unified Daily Check-in**: Replaced confusing morning/evening split with single daily check-in
+    - 8 key items covering recovery, wellness, relationships, values, and integrity
+    - HALT check (Hungry, Angry, Lonely, Tired) for vulnerability awareness
+    - Mood and urge level sliders (0-10)
+    - Optional journal entry
+  - **Smart Completion Rate**: dailyCompletionRate now uses a 14-day window capped at days since first check-in
+    - New users are not penalized for having fewer check-ins in their first 2 weeks
+  - **Updated Labels**: Admin and therapist client views now show "Daily Items" instead of "Morning"/"Evening"
+  - **Onboarding Update**: Changed description to explain "one daily check-in" process
+
 - **February 2, 2026 (Client Feedback UX Improvements)**:
   - **First-Time Onboarding Modal**: 4-step walkthrough for new clients explaining program structure, daily check-ins, week unlocking, and support resources
     - Gated to client role only (admins/therapists don't see it)
