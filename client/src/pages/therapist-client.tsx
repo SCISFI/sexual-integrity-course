@@ -44,7 +44,7 @@ type ClientProgress = {
 };
 
 type ClientInfo = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   startDate: string | null;
@@ -85,7 +85,7 @@ export default function TherapistClient() {
     },
   });
 
-  const client = clientsData?.clients?.find(c => c.id === parseInt(clientId || "0"));
+  const client = clientsData?.clients?.find(c => c.id === clientId);
   const completedWeeks = progressData?.completedWeeks || [];
   const checkins = progressData?.checkins || [];
   const reflections = progressData?.reflections || [];
