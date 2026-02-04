@@ -437,7 +437,34 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid week number" });
       }
       const userId = (req.user as any).id;
+      const user = req.user as any;
       const completion = await storage.markWeekComplete(userId, weekNumber);
+      
+      // Send notification to assigned therapist(s)
+      try {
+        const therapists = await storage.getTherapistsForClient(userId);
+        if (therapists.length > 0) {
+          const { sendWeekCompletionNotification } = await import("./emailService");
+          const dashboardLink = `${req.protocol}://${req.get('host')}/therapist/clients/${userId}`;
+          const clientName = user.name || user.email || 'Client';
+          
+          for (const therapist of therapists) {
+            if (therapist.email) {
+              await sendWeekCompletionNotification(
+                therapist.email,
+                therapist.name || undefined,
+                clientName,
+                weekNumber,
+                dashboardLink
+              );
+            }
+          }
+        }
+      } catch (notifyError) {
+        console.error("Failed to send therapist notification:", notifyError);
+        // Don't fail the request if notification fails
+      }
+      
       res.json({ completion });
     } catch (error) {
       console.error("Mark complete error:", error);
@@ -1140,6 +1167,84 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Add therapist feedback error:", error);
       res.status(500).json({ message: "Failed to add feedback" });
+    }
+  });
+
+  // Get pending reviews for therapist (week completions awaiting review)
+  app.get("/api/therapist/pending-reviews", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const pendingReviews = await storage.getPendingReviewsForTherapist(therapistId);
+      res.json({ pendingReviews });
+    } catch (error) {
+      console.error("Get pending reviews error:", error);
+      res.status(500).json({ message: "Failed to get pending reviews" });
+    }
+  });
+
+  // Submit a week review for a client
+  app.post("/api/therapist/clients/:clientId/review/:weekNumber", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const { clientId, weekNumber } = req.params;
+      const { reviewNotes } = req.body;
+      const weekNum = parseInt(weekNumber);
+
+      if (isNaN(weekNum) || weekNum < 1 || weekNum > 16) {
+        return res.status(400).json({ message: "Invalid week number" });
+      }
+
+      // Verify therapist is assigned to this client
+      const clients = await storage.getClientsForTherapist(therapistId);
+      const isAssigned = clients.some(c => c.id === clientId);
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Not authorized to review this client" });
+      }
+
+      // Check if already reviewed
+      const existingReview = await storage.getWeekReview(clientId, weekNum);
+      if (existingReview) {
+        return res.status(400).json({ message: "This week has already been reviewed" });
+      }
+
+      const review = await storage.createWeekReview(therapistId, clientId, weekNum, reviewNotes || "");
+      res.status(201).json({ review });
+    } catch (error) {
+      console.error("Submit week review error:", error);
+      res.status(500).json({ message: "Failed to submit review" });
+    }
+  });
+
+  // Get reviews for a specific client (for therapist view)
+  app.get("/api/therapist/clients/:clientId/reviews", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const { clientId } = req.params;
+
+      // Verify therapist is assigned to this client
+      const clients = await storage.getClientsForTherapist(therapistId);
+      const isAssigned = clients.some(c => c.id === clientId);
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Not authorized to view this client" });
+      }
+
+      const reviews = await storage.getAllWeekReviewsForClient(clientId);
+      res.json({ reviews });
+    } catch (error) {
+      console.error("Get client reviews error:", error);
+      res.status(500).json({ message: "Failed to get reviews" });
+    }
+  });
+
+  // Admin: Get overdue reviews (reviews pending > 48 hours)
+  app.get("/api/admin/overdue-reviews", requireRole("admin"), async (req, res) => {
+    try {
+      const hoursThreshold = parseInt(req.query.hours as string) || 48;
+      const overdueReviews = await storage.getOverdueReviews(hoursThreshold);
+      res.json({ overdueReviews });
+    } catch (error) {
+      console.error("Get overdue reviews error:", error);
+      res.status(500).json({ message: "Failed to get overdue reviews" });
     }
   });
 

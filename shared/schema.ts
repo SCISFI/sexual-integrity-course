@@ -287,5 +287,25 @@ export const insertHomeworkCompletionSchema = createInsertSchema(homeworkComplet
 export type HomeworkCompletion = typeof homeworkCompletions.$inferSelect;
 export type InsertHomeworkCompletion = z.infer<typeof insertHomeworkCompletionSchema>;
 
+// Week reviews - tracks therapist reviews of client week completions
+export const weekReviews = pgTable("week_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  therapistId: varchar("therapist_id").notNull().references(() => users.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  weekNumber: integer("week_number").notNull(),
+  reviewNotes: text("review_notes").default(""), // Therapist notes on the review
+  reviewedAt: timestamp("reviewed_at").defaultNow(),
+}, (table) => [
+  unique("week_reviews_client_week_unique").on(table.clientId, table.weekNumber),
+]);
+
+export const insertWeekReviewSchema = createInsertSchema(weekReviews).omit({
+  id: true,
+  reviewedAt: true,
+});
+
+export type WeekReview = typeof weekReviews.$inferSelect;
+export type InsertWeekReview = z.infer<typeof insertWeekReviewSchema>;
+
 // Export chat models
 export * from "./models/chat";

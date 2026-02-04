@@ -46,7 +46,7 @@ Core tables include `users` (id, email, password, role, subscription status, etc
 
 -   **Curriculum Delivery**: 16-week program with CBT (weeks 1-8) and ACT (weeks 9-16) content.
 -   **Week Unlocking Logic**: Weeks unlock sequentially, 7 days after the previous week's unlock date, with payment required for paid content unless waived.
--   **Daily Check-ins**: A unified daily check-in system covering recovery, wellness, relationships, values, integrity, HALT check, mood/urge levels, and optional journal entries.
+-   **Daily Check-ins**: A unified daily check-in system covering recovery, wellness, relationships, values, integrity, HALT-BS check (Hungry, Angry, Lonely, Tired, Bored, Stressed), mood/urge levels, and optional journal entries.
 -   **Homework Tracking**: Trackable checklists for weekly assignments with therapist visibility.
 -   **Reflection Forms**: Auto-saving functionality for client reflections.
 -   **Crisis Resources**: Persistent component with emergency contacts and recovery support links.
@@ -59,4 +59,11 @@ Core tables include `users` (id, email, password, role, subscription status, etc
 -   **Stripe**: For subscription management (Therapists: $49/month) and per-week payments (Clients: $14.99/week). Utilizes `stripe-replit-sync` for integration and webhooks.
 -   **PostgreSQL**: Primary database for user data, curriculum progress, and session storage.
 -   **Replit AI Integrations**: Used for AI-powered encouragement and technique reminders without requiring separate API keys.
--   **Gmail**: Integrated for sending password reset emails.
+-   **Gmail**: Integrated for sending password reset emails and week completion notifications to therapists.
+
+## Recent Changes (February 2026)
+
+-   **Mandatory Therapist Review System**: When clients complete weeks, their assigned therapist is notified via email. Therapists must review client progress through the Pending Reviews section on their dashboard. Admin can track overdue reviews (>48 hours) in a dedicated tab.
+-   **User Manual**: Downloadable PDF manual accessible via /user-manual route, linked from client dashboard Support Resources section.
+-   **HALT-BS Extended Check-in**: Daily check-in now tracks 6 vulnerability states (Hungry, Angry, Lonely, Tired, Bored, Stressed) instead of the original 4.
+-   **Week Page Design**: Professional visual styling with gradient hero sections, numbered topic badges, and progress indicators.

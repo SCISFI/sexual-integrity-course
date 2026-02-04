@@ -181,3 +181,73 @@ export async function sendPasswordChangedConfirmation(email: string, userName?: 
     return false;
   }
 }
+
+export async function sendWeekCompletionNotification(
+  therapistEmail: string, 
+  therapistName: string | undefined,
+  clientName: string, 
+  weekNumber: number,
+  dashboardLink: string
+): Promise<boolean> {
+  try {
+    const gmail = await getUncachableGmailClient();
+    
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #0891b2; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+    .highlight { background-color: #ecfeff; border-left: 4px solid #0891b2; padding: 15px; margin: 20px 0; }
+    .button { display: inline-block; background-color: #0891b2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Client Week Completed - Review Needed</h1>
+    </div>
+    <div class="content">
+      <p>Hello${therapistName ? ` ${therapistName}` : ''},</p>
+      <div class="highlight">
+        <strong>${clientName}</strong> has completed <strong>Week ${weekNumber}</strong> and is awaiting your review.
+      </div>
+      <p>Please review their reflections, homework, and overall progress to help them continue their recovery journey.</p>
+      <p style="text-align: center;">
+        <a href="${dashboardLink}" class="button">Review Client Progress</a>
+      </p>
+      <p><strong>Remember:</strong> Timely feedback is important for client engagement and accountability.</p>
+    </div>
+    <div class="footer">
+      <p>Sexual Integrity Curriculum</p>
+      <p>This is an automated notification. Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const rawMessage = createEmailMessage(
+      therapistEmail,
+      `Review Needed: ${clientName} completed Week ${weekNumber}`,
+      htmlContent
+    );
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: rawMessage
+      }
+    });
+
+    console.log(`Week completion notification sent to ${therapistEmail} for ${clientName} Week ${weekNumber}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send week completion notification:', error);
+    return false;
+  }
+}

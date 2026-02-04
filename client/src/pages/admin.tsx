@@ -44,7 +44,8 @@ import {
   Eye,
   Key,
   DollarSign,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import {
   AlertDialog,
@@ -79,6 +80,16 @@ interface Client {
   createdAt: string;
   therapists: { id: string; name: string | null; email: string }[];
   waivedWeeks: number[];
+}
+
+interface OverdueReview {
+  therapistId: string;
+  therapistName: string;
+  clientId: string;
+  clientName: string;
+  weekNumber: number;
+  completedAt: string;
+  hoursPending: number;
 }
 
 export default function AdminPage() {
@@ -123,6 +134,14 @@ export default function AdminPage() {
     queryKey: ["/api/admin/revenue"],
     enabled: !!(user && (user as any).role === "admin"),
   });
+
+  // Fetch overdue reviews
+  const { data: overdueReviewsData, isLoading: loadingOverdueReviews } = useQuery<{ overdueReviews: OverdueReview[] }>({
+    queryKey: ["/api/admin/overdue-reviews"],
+    enabled: !!(user && (user as any).role === "admin"),
+  });
+
+  const overdueReviews = overdueReviewsData?.overdueReviews || [];
 
   // Create therapist mutation
   const createTherapistMutation = useMutation({
@@ -345,6 +364,15 @@ export default function AdminPage() {
             <TabsTrigger value="revenue" data-testid="tab-revenue">
               <DollarSign className="mr-2 h-4 w-4" />
               Revenue
+            </TabsTrigger>
+            <TabsTrigger value="overdue-reviews" data-testid="tab-overdue-reviews" className="relative">
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Overdue Reviews
+              {overdueReviews.length > 0 && (
+                <Badge variant="destructive" className="ml-2" data-testid="badge-overdue-reviews-count">
+                  {overdueReviews.length}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -758,6 +786,55 @@ export default function AdminPage() {
                           ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100 * 0.5).toFixed(2)}
                         </TableCell>
                       </TableRow>
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="overdue-reviews" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Overdue Reviews</h2>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                {loadingOverdueReviews ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : overdueReviews.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground" data-testid="text-no-overdue-reviews">
+                    <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                    <p>No overdue reviews</p>
+                    <p className="text-sm">All therapists are up to date with their client reviews.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Therapist</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Week #</TableHead>
+                        <TableHead>Completed Date</TableHead>
+                        <TableHead>Hours Pending</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {overdueReviews.map((review) => (
+                        <TableRow key={`${review.clientId}-${review.weekNumber}`} data-testid={`row-overdue-${review.clientId}-${review.weekNumber}`}>
+                          <TableCell className="font-medium">{review.therapistName || "—"}</TableCell>
+                          <TableCell>{review.clientName || "—"}</TableCell>
+                          <TableCell>Week {review.weekNumber}</TableCell>
+                          <TableCell>{new Date(review.completedAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <span className={review.hoursPending > 72 ? "font-semibold text-red-600 dark:text-red-500" : ""}>
+                              {Math.round(review.hoursPending)} hours
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 )}

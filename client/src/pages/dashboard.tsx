@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle, BarChart3, Clock, XCircle, Loader2 } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle, BarChart3, Clock, XCircle, Loader2, BookOpen } from "lucide-react";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
@@ -368,11 +368,19 @@ export default function Dashboard() {
             <p className="text-sm text-amber-700 dark:text-amber-300/80 mb-4">
               A setback does NOT remove you from the program. Use these tools to process and move forward.
             </p>
-            <Link href="/relapse-autopsy">
-              <Button variant="outline" className="border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50" data-testid="button-relapse-autopsy">
-                Open Relapse Autopsy
-              </Button>
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/relapse-autopsy">
+                <Button variant="outline" className="border-amber-300 dark:border-amber-700" data-testid="button-relapse-autopsy">
+                  Open Relapse Autopsy
+                </Button>
+              </Link>
+              <Link href="/user-manual">
+                <Button variant="outline" className="border-amber-300 dark:border-amber-700" data-testid="button-user-manual">
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  User Manual
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
 

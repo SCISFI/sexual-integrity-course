@@ -184,14 +184,15 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "halt-states",
-        title: "The HALT Framework",
+        title: "The HALT-BS Framework",
         content: [
-          "HALT is a simple but powerful tool for recognizing vulnerability states. When you're Hungry, Angry, Lonely, or Tired, your brain's executive function weakens and urges intensify.",
+          "HALT-BS is a powerful tool for recognizing vulnerability states. When you're Hungry, Angry, Lonely, Tired, Bored, or Stressed, your brain's executive function weakens and urges intensify.",
           "HUNGRY: Not just physical hunger, but any unmet need. Are you hungry for connection, validation, rest, or meaning?",
           "ANGRY: Unprocessed anger creates internal pressure. Instead of dealing with anger directly, the behavior becomes an escape valve.",
           "LONELY: Isolation is fuel for compulsive behavior. Loneliness includes emotional disconnection even when physically around others.",
           "TIRED: When exhausted, your prefrontal cortex (the brake pedal) is weakened. Decision-making suffers and urges feel more powerful.",
-          "Expand HALT to HALT-B: Add Bored. Boredom is a major trigger for many men. An understimulated mind seeks stimulation."
+          "BORED: An understimulated mind seeks stimulation. Boredom is a major trigger - idle hands and minds are vulnerable to compulsive urges.",
+          "STRESSED: Overwhelming pressure and anxiety drain your willpower. Stress makes escape behaviors feel more appealing as a coping mechanism."
         ]
       },
       {
@@ -324,7 +325,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       "Complete the Personal Trigger Inventory exercise",
       "Map your personal cycle in detail",
       "Identify your permission-giving thoughts",
-      "Practice HALT check-ins at least twice daily",
+      "Practice HALT-BS check-ins at least twice daily",
       "Notice and record when you enter preoccupation this week",
       "Complete daily monitoring logs for all 7 days"
     ]

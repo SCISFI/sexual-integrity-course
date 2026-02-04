@@ -10,6 +10,7 @@ import {
   therapistFeedback,
   passwordResetTokens,
   homeworkCompletions,
+  weekReviews,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -23,6 +24,7 @@ import {
   type TherapistFeedback,
   type PasswordResetToken,
   type HomeworkCompletion,
+  type WeekReview,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql } from "drizzle-orm";
@@ -112,6 +114,13 @@ export interface IStorage {
 
   // User deletion
   deleteUser(userId: string): Promise<void>;
+
+  // Week reviews
+  getWeekReview(clientId: string, weekNumber: number): Promise<WeekReview | undefined>;
+  createWeekReview(therapistId: string, clientId: string, weekNumber: number, reviewNotes: string): Promise<WeekReview>;
+  getAllWeekReviewsForClient(clientId: string): Promise<WeekReview[]>;
+  getPendingReviewsForTherapist(therapistId: string): Promise<Array<{clientId: string; clientName: string; weekNumber: number; completedAt: Date}>>;
+  getOverdueReviews(hoursThreshold: number): Promise<Array<{therapistId: string; therapistName: string; clientId: string; clientName: string; weekNumber: number; completedAt: Date; hoursPending: number}>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -598,8 +607,136 @@ export class DatabaseStorage implements IStorage {
     await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
     await db.delete(payments).where(eq(payments.userId, userId));
     await db.delete(therapistClients).where(eq(therapistClients.clientId, userId));
+    await db.delete(weekReviews).where(eq(weekReviews.clientId, userId));
     // Finally delete the user
     await db.delete(users).where(eq(users.id, userId));
+  }
+
+  // Week reviews implementation
+  async getWeekReview(clientId: string, weekNumber: number): Promise<WeekReview | undefined> {
+    const [result] = await db
+      .select()
+      .from(weekReviews)
+      .where(and(
+        eq(weekReviews.clientId, clientId),
+        eq(weekReviews.weekNumber, weekNumber)
+      ));
+    return result || undefined;
+  }
+
+  async createWeekReview(therapistId: string, clientId: string, weekNumber: number, reviewNotes: string): Promise<WeekReview> {
+    const [review] = await db
+      .insert(weekReviews)
+      .values({ therapistId, clientId, weekNumber, reviewNotes })
+      .returning();
+    return review;
+  }
+
+  async getAllWeekReviewsForClient(clientId: string): Promise<WeekReview[]> {
+    return await db
+      .select()
+      .from(weekReviews)
+      .where(eq(weekReviews.clientId, clientId))
+      .orderBy(weekReviews.weekNumber);
+  }
+
+  async getPendingReviewsForTherapist(therapistId: string): Promise<Array<{clientId: string; clientName: string; weekNumber: number; completedAt: Date}>> {
+    // Get all clients assigned to this therapist
+    const clientAssignments = await db
+      .select({ clientId: therapistClients.clientId })
+      .from(therapistClients)
+      .where(eq(therapistClients.therapistId, therapistId));
+
+    if (clientAssignments.length === 0) return [];
+
+    const clientIds = clientAssignments.map(a => a.clientId);
+
+    // Get all week completions for these clients that don't have reviews
+    const results: Array<{clientId: string; clientName: string; weekNumber: number; completedAt: Date}> = [];
+
+    for (const clientId of clientIds) {
+      const client = await this.getUser(clientId);
+      if (!client) continue;
+
+      // Get completed weeks for this client
+      const completions = await db
+        .select()
+        .from(weekCompletions)
+        .where(eq(weekCompletions.userId, clientId));
+
+      // Get reviewed weeks for this client
+      const reviews = await db
+        .select()
+        .from(weekReviews)
+        .where(eq(weekReviews.clientId, clientId));
+
+      const reviewedWeeks = new Set(reviews.map(r => r.weekNumber));
+
+      // Find completions without reviews
+      for (const completion of completions) {
+        if (!reviewedWeeks.has(completion.weekNumber) && completion.completedAt) {
+          results.push({
+            clientId: client.id,
+            clientName: client.name || client.email,
+            weekNumber: completion.weekNumber,
+            completedAt: completion.completedAt
+          });
+        }
+      }
+    }
+
+    // Sort by completedAt (oldest first for urgency)
+    results.sort((a, b) => a.completedAt.getTime() - b.completedAt.getTime());
+    return results;
+  }
+
+  async getOverdueReviews(hoursThreshold: number): Promise<Array<{therapistId: string; therapistName: string; clientId: string; clientName: string; weekNumber: number; completedAt: Date; hoursPending: number}>> {
+    const now = new Date();
+    const thresholdDate = new Date(now.getTime() - hoursThreshold * 60 * 60 * 1000);
+
+    // Get all week completions older than threshold
+    const allCompletions = await db
+      .select()
+      .from(weekCompletions)
+      .where(lt(weekCompletions.completedAt, thresholdDate));
+
+    // Get all reviews
+    const allReviews = await db.select().from(weekReviews);
+    const reviewedSet = new Set(allReviews.map(r => `${r.clientId}-${r.weekNumber}`));
+
+    // Get all client-therapist assignments
+    const allAssignments = await db.select().from(therapistClients);
+    const clientToTherapist = new Map(allAssignments.map(a => [a.clientId, a.therapistId]));
+
+    const results: Array<{therapistId: string; therapistName: string; clientId: string; clientName: string; weekNumber: number; completedAt: Date; hoursPending: number}> = [];
+
+    for (const completion of allCompletions) {
+      const key = `${completion.userId}-${completion.weekNumber}`;
+      if (reviewedSet.has(key)) continue; // Already reviewed
+
+      const therapistId = clientToTherapist.get(completion.userId);
+      if (!therapistId) continue; // No therapist assigned
+
+      const client = await this.getUser(completion.userId);
+      const therapist = await this.getUser(therapistId);
+      if (!client || !therapist || !completion.completedAt) continue;
+
+      const hoursPending = Math.floor((now.getTime() - completion.completedAt.getTime()) / (1000 * 60 * 60));
+
+      results.push({
+        therapistId,
+        therapistName: therapist.name || therapist.email,
+        clientId: completion.userId,
+        clientName: client.name || client.email,
+        weekNumber: completion.weekNumber,
+        completedAt: completion.completedAt,
+        hoursPending
+      });
+    }
+
+    // Sort by hours pending (most overdue first)
+    results.sort((a, b) => b.hoursPending - a.hoursPending);
+    return results;
   }
 }
 

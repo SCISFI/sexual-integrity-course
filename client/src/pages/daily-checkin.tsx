@@ -39,11 +39,13 @@ const DAILY_ITEMS: DailyCheckItem[] = [
   { id: "honest", category: "Integrity", label: "Was honest in my interactions today" },
 ];
 
-const HALT_ITEMS = [
+const HALTBS_ITEMS = [
   { id: "hungry", letter: "H", label: "Hungry", description: "Am I neglecting my physical needs?" },
   { id: "angry", letter: "A", label: "Angry", description: "Am I holding onto resentment or frustration?" },
   { id: "lonely", letter: "L", label: "Lonely", description: "Am I feeling isolated or disconnected?" },
   { id: "tired", letter: "T", label: "Tired", description: "Am I physically or emotionally exhausted?" },
+  { id: "bored", letter: "B", label: "Bored", description: "Am I lacking purpose or stimulation?" },
+  { id: "stressed", letter: "S", label: "Stressed", description: "Am I feeling overwhelmed or anxious?" },
 ];
 
 export default function DailyCheckinPage() {
@@ -278,20 +280,20 @@ export default function DailyCheckinPage() {
               </CardContent>
             </Card>
 
-            {/* HALT Check */}
+            {/* HALT-BS Check */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5 text-red-500" />
-                  HALT Check
+                  HALT-BS Check
                 </CardTitle>
                 <CardDescription>
                   Are you experiencing any of these vulnerability states? Check any that apply.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {HALT_ITEMS.map((item) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {HALTBS_ITEMS.map((item) => (
                     <div 
                       key={item.id} 
                       className={`p-3 rounded-lg border cursor-pointer transition-colors ${
