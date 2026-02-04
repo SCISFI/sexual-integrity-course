@@ -2,253 +2,61 @@
 
 ## Overview
 
-A comprehensive 16-week Sexual Integrity curriculum program web application designed for therapists and clients. The application features role-based access (Admin, Therapist, Client), weekly lessons combining CBT (weeks 1-8) and ACT (weeks 9-16) content, time-based week unlocking, daily self-monitoring tools, and integrated Stripe payment processing.
+A comprehensive 16-week web application designed to deliver a Sexual Integrity curriculum, integrating CBT (weeks 1-8) and ACT (weeks 9-16) principles. It supports role-based access for Admins, Therapists, and Clients, features time-based content unlocking, daily self-monitoring tools, and integrated payment processing. The application aims to provide a structured, supportive environment for clients while enabling therapists to monitor progress and manage their caseload effectively.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes
-
-- **February 3, 2026 (Account Cancellation)**:
-  - **Therapist Subscription Cancellation**: Therapists can cancel via Stripe API (cancel at period end)
-    - No refunds issued; access retained until billing period ends
-    - Persistent banner shows cancellation status and access end date
-    - Cancel button hidden when cancellation already pending
-    - API endpoint: POST /api/account/cancel-subscription
-  - **Client Account Cancellation**: Clients can deactivate their account
-    - Sets subscriptionStatus to "cancelled" in database
-    - Retains access to previously paid weeks (no refunds)
-    - Blocks future week purchases via checkout validation
-    - API endpoint: POST /api/account/cancel
-  - **Enhanced Subscription Status**: /api/payments/subscription now returns cancelAtPeriodEnd and periodEnd fields
-  - **Database Cleanup**: Removed test accounts, only admin and primary therapist in seed file
-
-- **February 3, 2026 (Simplified Daily Check-in)**:
-  - **Unified Daily Check-in**: Replaced confusing morning/evening split with single daily check-in
-    - 8 key items covering recovery, wellness, relationships, values, and integrity
-    - HALT check (Hungry, Angry, Lonely, Tired) for vulnerability awareness
-    - Mood and urge level sliders (0-10)
-    - Optional journal entry
-  - **Smart Completion Rate**: dailyCompletionRate now uses a 14-day window capped at days since first check-in
-    - New users are not penalized for having fewer check-ins in their first 2 weeks
-  - **Updated Labels**: Admin and therapist client views now show "Daily Items" instead of "Morning"/"Evening"
-  - **Onboarding Update**: Changed description to explain "one daily check-in" process
-
-- **February 2, 2026 (Client Feedback UX Improvements)**:
-  - **First-Time Onboarding Modal**: 4-step walkthrough for new clients explaining program structure, daily check-ins, week unlocking, and support resources
-    - Gated to client role only (admins/therapists don't see it)
-    - localStorage persistence per user
-  - **Reflection Auto-Save Status**: Visual indicators ("Auto-save on", "Saving...", "Saved") for reflection forms
-  - **Improved Therapist Selection**: Shows license state and "Program Director" label for admins during client registration
-    - Admins can now be assigned as therapists for clients
-    - Guidance text when multiple therapists available
-  - **Post-Week-Completion UX**: Daily check-in reminder banner in completion dialog with primary CTA prioritizing check-ins
-
-- **January 27, 2026 (Stripe Payment Walls)**:
-  - Added payment wall to week pages for clients ($14.99/week)
-  - Added subscription wall to therapist dashboard ($49/month)
-  - Fixed query key format for payment status endpoint
-  - Added server startup error handling
-  - Payment status endpoint: `/api/payments/week/:weekNumber/status`
-  - Checkout endpoints auto-lookup Stripe price IDs
-
-- **January 2026 (Latest - Content & Features)**:
-  - **Homework Tracking System**:
-    - Trackable checklists for weekly homework assignments
-    - Auto-save with 500ms debounce to reduce API calls
-    - Database persistence via `homework_completions` table
-    - Therapist visibility in client progress view
-    - API: GET/PUT /api/progress/homework/:week
-  - **Crisis Resources Component**:
-    - Persistent button on all week pages
-    - Emergency contacts: 988 Lifeline, Crisis Text Line, 911
-    - Recovery support links: SAA, Celebrate Recovery, S-Anon
-  - **Enhanced Curriculum Content**:
-    - Week 6: Trauma-informed content (ACEs, CSBD connection, referral guidance)
-    - Week 8: Partner/relationship support (disclosure, trust rebuilding, betrayal trauma)
-    - Week 10: Technology safety (accountability software, device management)
-    - Week 11: Valued Living Assessment (VLQ-inspired) with 10 life domains
-    - Week 16: Post-program relapse guidance and ongoing support resources
-
-- **January 2026 (UI/Testing)**:
-  - **Masculine Professional Color Scheme**: Deep navy blues, cyan accents, charcoal tones
-    - Light mode: Navy primary (215 50% 23%), cyan accent (199 89% 48%)
-    - Dark mode: Matching professional dark theme
-    - Sidebar: Dark navy background with light text
-  - **Enhanced Login Page**: Split-screen layout with mountain hero image
-    - Motivational messaging: "Your journey to freedom begins here"
-    - Feature badges: Evidence-based, Professional support, Confidential
-    - Responsive: Hero hidden on mobile, form adapts
-  - **Tester Accounts Created**:
-    - Therapist: therapist.tester@example.com (password: testpass123)
-    - Client: client.tester@example.com (password: testpass123)
-    - Client is assigned to therapist for testing workflows
-
-- **January 28, 2026 (Admin & Therapist Enhancements)**:
-  - **Therapist Subscription Waiver**: Admin can waive subscription fees for therapists
-    - Toggle switch in Therapists table to enable/disable fee waiver
-    - Therapists with waived fees can access dashboard without active subscription
-    - API endpoint: PATCH /api/admin/therapists/:therapistId
-  - **Client Deletion**: Admin can permanently delete client accounts
-    - API endpoint: DELETE /api/admin/clients/:clientId
-    - Cascades deletion of all client data (homework, reflections, check-ins, payments, assignments)
-    - Confirmation dialog shows all data that will be deleted
-  - **Enhanced Client Work Visibility**:
-    - Therapists can view client homework completions in read-only Homework tab
-    - Admin client progress includes all homework, reflections, and check-in data
-    - Therapist-client view has 5 tabs: Progress, Check-ins, Reflections, Homework, Feedback
-
-- **January 2026 (Features)**:
-  - Therapist licensing requirements: Added licenseState, licenseNumber, licenseAttestation fields
-  - Client registration now requires selecting a therapist (auto-selects if only one available)
-  - Admin panel enhancements:
-    - Client search functionality
-    - Unassigned clients badge indicator
-    - Therapist reassignment in edit dialog
-    - Revenue by Therapist tab for kickback calculations
-    - Input validation on client update and therapist departure endpoints
-    - Client deletion with confirmation dialog
-  - Therapist dashboard: Added client search functionality
-  - Therapist departure handling: API endpoint to reassign all clients when therapist leaves (with role validation)
-  - Revenue tracking: Payments now capture assigned therapist ID for kickback calculations
-  - Secure payment confirmation: Week payments are verified with Stripe before recording
-    - Checkout session ID passed from Stripe redirect
-    - Server verifies specific session with Stripe API (payment_status, userId, weekNumber)
-    - Idempotency enforced via stripePaymentId storage
-    - Therapist ID captured from Stripe metadata for accurate revenue tracking
-
-- **January 2026 (Prior)**:
-  - Role-based registration (Therapist/Client separation)
-  - Stripe integration for subscriptions and per-week payments
-  - Admin panel with user management, fee waivers, and therapist-client assignments
-  - Therapist dashboard with client progress monitoring, feedback system with tabs for progress/check-ins/reflections/feedback
-  - Time-based week unlocking (7-day intervals from client start date)
-  - AI-powered encouragement and technique reminders (uses Replit AI Integrations - no API key needed, charges billed to credits)
-  - Therapist feedback system for clients (general, week-specific, or check-in feedback)
-  - Complete password management system:
-    - User self-service password reset via email (Gmail integration)
-    - Admin-managed password resets for any user
-    - Change password feature for logged-in users (all roles)
-
 ## System Architecture
+
+The application is built with a React frontend (Vite, Wouter, TanStack React Query, Tailwind CSS, shadcn/ui, React Hook Form with Zod) and an Express.js backend (TypeScript, Passport.js for authentication, PostgreSQL for session storage).
 
 ### User Roles
 
-1. **Admin**: Full system access, user management, fee waivers, therapist-client assignments
-2. **Therapist**: View assigned clients, monitor progress, subscription-based access ($49/month)
-3. **Client**: Access curriculum weeks, complete lessons, per-week payments ($14.99/week)
+1.  **Admin**: Full system access, user management, fee waivers, therapist-client assignments.
+2.  **Therapist**: Access to assigned client progress, feedback system, subscription-based.
+3.  **Client**: Access to curriculum weeks, complete lessons, daily check-ins, homework, per-week payments.
 
 ### Frontend Architecture
-- **Framework**: React 18 with Vite as the build tool
-- **Routing**: Wouter (lightweight client-side routing)
-- **State Management**: TanStack React Query for server state, React Context for auth state
-- **Styling**: Tailwind CSS with shadcn/ui component library
-- **Form Handling**: React Hook Form with Zod validation
 
-Key Pages:
-- `/login` - User login
-- `/register/therapist` - Therapist registration
-- `/register/client` - Client registration (requires therapist access code)
-- `/forgot-password` - Request password reset email
-- `/reset-password?token=X` - Reset password with token
-- `/change-password` - Change password for logged-in users
-- `/dashboard` - Client curriculum dashboard
-- `/week/:weekNumber` - Individual week lesson content
-- `/therapist-home` - Therapist dashboard with client list
-- `/therapist/clients/:clientId` - Individual client progress view
-- `/admin` - Admin panel for user and system management
+-   **Framework**: React 18 with Vite.
+-   **Routing**: Wouter.
+-   **State Management**: TanStack React Query for server state, React Context for authentication.
+-   **Styling**: Tailwind CSS with shadcn/ui.
+-   **Form Handling**: React Hook Form with Zod validation.
+-   **Key Pages**: Login, registration (Therapist/Client), password management, client dashboard, individual week lessons, therapist dashboard, admin panel.
+-   **UI/UX**: Masculine professional color scheme (deep navy blues, cyan accents, charcoal tones) with responsive design and enhanced login page featuring a split-screen layout and motivational messaging.
+-   **Client Onboarding**: A 4-step walkthrough for new clients explaining program structure, daily check-ins, week unlocking, and support resources.
 
 ### Backend Architecture
-- **Framework**: Express.js with TypeScript
-- **Authentication**: Passport.js with Local Strategy
-- **Session Storage**: PostgreSQL-backed via connect-pg-simple
-- **Payments**: Stripe integration via stripe-replit-sync
 
-Server Modules:
-- `server/index.ts` - Entry point, middleware, Stripe initialization
-- `server/routes.ts` - API route definitions
-- `server/auth.ts` - Passport configuration
-- `server/storage.ts` - Data access layer
-- `server/stripeClient.ts` - Stripe client and sync setup
-- `server/stripeService.ts` - Stripe operations (checkout sessions)
-- `server/webhookHandlers.ts` - Stripe webhook processing
-- `server/aiService.ts` - AI-powered encouragement and technique reminders
-- `server/emailService.ts` - Email service for password reset notifications (Gmail integration)
+-   **Framework**: Express.js with TypeScript.
+-   **Authentication**: Passport.js Local Strategy.
+-   **Session Storage**: PostgreSQL-backed via `connect-pg-simple`.
+-   **Payments**: Stripe integration via `stripe-replit-sync`.
+-   **Email Service**: Gmail integration for password reset notifications.
+-   **AI Service**: Replit AI Integrations for personalized encouragement and technique reminders.
 
 ### Database Schema
 
-Core Tables:
-- `users`: id, email, password, name, role, startDate, therapistId, accessCode, allFeesWaived, stripeCustomerId, stripeSubscriptionId
-- `week_completions`: id, userId, weekNumber, completedAt
-- `daily_checkins`: id, userId, dateKey, morningChecks, haltChecks, urgeLevel, moodLevel, eveningChecks, journalEntry
-- `week_reflections`: id, userId, weekNumber, q1-q4, updatedAt
-- `therapist_clients`: therapistId, clientId, createdAt
-- `therapist_feedback`: id, therapistId, clientId, weekNumber, feedbackType, content, createdAt
-- `week_fee_waivers`: id, clientId, weekNumber, adminId, createdAt
-- `password_reset_tokens`: id, userId, token, expiresAt, used, createdAt (1-hour expiration, single-use)
-- `homework_completions`: id, userId, weekNumber, completedItems (JSON array of indices), updatedAt (unique on userId/weekNumber)
+Core tables include `users` (id, email, password, role, subscription status, etc.), `week_completions`, `daily_checkins`, `week_reflections`, `homework_completions`, `therapist_clients`, `therapist_feedback`, `week_fee_waivers`, and `password_reset_tokens`. Stripe-related data is managed by `stripe-replit-sync`.
 
-Stripe Schema (managed by stripe-replit-sync):
-- `stripe.products`, `stripe.prices`, `stripe.customers`, `stripe.subscriptions`, etc.
+### Feature Specifications
 
-### Stripe Integration
+-   **Curriculum Delivery**: 16-week program with CBT (weeks 1-8) and ACT (weeks 9-16) content.
+-   **Week Unlocking Logic**: Weeks unlock sequentially, 7 days after the previous week's unlock date, with payment required for paid content unless waived.
+-   **Daily Check-ins**: A unified daily check-in system covering recovery, wellness, relationships, values, integrity, HALT check, mood/urge levels, and optional journal entries.
+-   **Homework Tracking**: Trackable checklists for weekly assignments with therapist visibility.
+-   **Reflection Forms**: Auto-saving functionality for client reflections.
+-   **Crisis Resources**: Persistent component with emergency contacts and recovery support links.
+-   **Account Management**: Clients can deactivate accounts, therapists can cancel subscriptions.
+-   **Admin & Therapist Tools**: Admin can manage users, waive fees, delete clients, and track revenue. Therapists can view client progress (homework, reflections, check-ins, feedback), provide feedback, and search clients.
+-   **AI Encouragement**: Personalized motivational messages and technique reminders using Replit AI Integrations, adhering to strict boundaries (no crisis intervention or medical advice).
 
-Products:
-- **Therapist Monthly Subscription**: $49/month recurring
-- **Weekly Lesson Access**: $14.99 one-time payment per week
+## External Dependencies
 
-Fee Waivers:
-- Admin can set `allFeesWaived` flag on user for complete fee bypass
-- Admin can grant per-week waivers via `week_fee_waivers` table
-
-API Endpoints:
-- `GET /api/stripe/config` - Get price IDs for frontend
-- `POST /api/payments/checkout/subscription` - Create therapist subscription checkout
-- `POST /api/payments/checkout/week` - Create client week payment checkout
-- `POST /api/stripe/webhook` - Stripe webhook handler (registered before express.json)
-
-### AI Encouragement
-
-The AI encouragement system uses Replit AI Integrations (OpenAI-compatible API) without requiring a separate API key. Charges are billed to Replit credits.
-
-Features:
-- **Encouragement messages**: Personalized motivational messages based on current week and user progress
-- **Technique reminders**: Brief explanations of CBT/ACT techniques for the current week
-- **Strict boundaries**: AI is limited to encouragement only - will not engage with crisis situations, provide medical advice, or discuss specific behaviors
-
-API Endpoints:
-- `GET /api/ai/encouragement?week=N` - Get AI encouragement for specified week
-- `GET /api/ai/technique?week=N&technique=name` - Get technique reminder
-
-Components:
-- `client/src/components/AIEncouragement.tsx` - Displays encouragement and technique reminders on week pages
-
-### Week Unlocking Logic
-
-- Week 1 is always available once client has a start date
-- Subsequent weeks unlock 7 days after the previous week's unlock date
-- Formula: `unlockDate = startDate + ((weekNumber - 1) * 7 days)`
-- Fee payment required before accessing paid content (unless waived)
-
-## Environment Variables
-
-Required:
-- `DATABASE_URL`: PostgreSQL connection string
-- `SESSION_SECRET`: Session signing secret
-
-Managed by Replit Connectors:
-- Stripe API keys (via stripe-replit-sync)
-
-## Development
-
-- Run: `npm run dev` (starts Express + Vite)
-- Database Push: `npm run db:push`
-- Seed Stripe Products: `npx tsx scripts/seed-stripe-products.ts`
-
-## Key Technical Notes
-
-1. Stripe webhook route must be registered BEFORE express.json() middleware
-2. The stripe-replit-sync package handles automatic data sync from Stripe
-3. All week access checks should verify both time-unlock AND payment status
-4. Therapists must have active subscription to manage clients
+-   **Stripe**: For subscription management (Therapists: $49/month) and per-week payments (Clients: $14.99/week). Utilizes `stripe-replit-sync` for integration and webhooks.
+-   **PostgreSQL**: Primary database for user data, curriculum progress, and session storage.
+-   **Replit AI Integrations**: Used for AI-powered encouragement and technique reminders without requiring separate API keys.
+-   **Gmail**: Integrated for sending password reset emails.
