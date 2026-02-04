@@ -1,0 +1,144 @@
+Below is the **exact, copy-paste–ready Replit prompt**.
+It is deliberately narrow, firm, and scope-locked to prevent drift.
+
+---
+
+## Replit Prompt: Trial Boundary & Conversion Statement (v1-Safe)
+
+**Role:**
+You are a senior frontend engineer working on an existing React + TypeScript application deployed on Replit. Your task is to implement **one read-only, therapist-facing trial statement**. This change must be additive only.
+
+This app has strict clinical and ethical guardrails. You must follow them exactly.
+
+---
+
+### Objective (Single Change Only)
+
+Add a **therapist-only, read-only screen or modal** titled:
+
+> **Trial Use & Clinical Fit**
+
+This statement exists to frame the free trial and prevent feature misinterpretation.
+It is **not marketing**, **not interactive**, and **not conditional logic beyond visibility**.
+
+---
+
+### Hard Constraints (Non-Negotiable)
+
+* ❌ Do NOT add features
+* ❌ Do NOT add analytics, tracking, or logging
+* ❌ Do NOT add messaging, notifications, or reminders
+* ❌ Do NOT add AI, summaries, or interpretation
+* ❌ Do NOT change pricing, trials, or subscription logic
+* ❌ Do NOT modify client-facing views
+
+This change must **not alter existing workflows**.
+
+---
+
+### Visibility Rules
+
+* Visible **only to therapists**
+* Shown **during the trial period only**
+* Read-only
+* No dismiss-forever behavior
+* No feedback buttons
+* No links
+
+You may:
+
+* Display it as a dedicated page
+  **OR**
+* Display it as a modal shown when therapists access the app during trial
+
+Choose the approach that best fits existing navigation patterns **without redesigning them**.
+
+---
+
+### Navigation Requirements
+
+If implemented as a page:
+
+* Add a therapist-only navigation entry labeled: **Trial Use**
+* Include a simple “Back” action consistent with existing navigation
+
+If implemented as a modal:
+
+* Display it once per session during the trial
+* Provide a simple “Continue” button
+* Do not store acknowledgment state beyond the session
+
+---
+
+### Content (Exact Text — Do Not Rewrite)
+
+**Title:**
+Trial Use & Clinical Fit
+
+**Body:**
+
+> This app does not expand during a paid subscription.
+> The trial reflects the full product as it is intentionally designed.
+
+> The purpose of this trial is to assess **clinical fit**, not feature capacity.
+
+> This tool is built to hold structure without interpretation, automation, or surveillance.
+> If you are looking for reminders, scoring, messaging, or behavioral analytics, this product is not designed to provide them.
+
+> A paid subscription represents agreement with this clinical stance and continued use of the structure it provides.
+
+**Footer (single line):**
+
+> The app does not change after the trial—only your decision to continue using it does.
+
+---
+
+### UI / Styling Guidance
+
+* Clean, neutral, professional
+* Use existing typography and spacing
+* No icons required
+* No emphasis colors
+* Text must be easy to read and scan
+* Avoid celebratory or promotional styling
+
+---
+
+### Technical Guidance
+
+* Implement as a static React component
+* No backend changes
+* No database changes
+* No API calls
+* No new state beyond session-level visibility (if modal)
+* Do not refactor existing code
+
+---
+
+### Validation Checklist (Must Self-Verify)
+
+Before completion, confirm:
+
+* [ ] Visible only to therapists
+* [ ] Visible only during trial
+* [ ] Read-only
+* [ ] No existing flows changed
+* [ ] No automation or interpretation added
+
+---
+
+### Deliverables
+
+Provide:
+
+* The new component file
+* Any minimal routing or conditional rendering added
+* A brief note indicating where the trial-period check occurs
+
+Nothing else.
+
+---
+
+This prompt will implement the **single most important conversion-protecting boundary** in your product without compromising ethics, UX, or scope.
+
+Once this is live, you are commercially protected.

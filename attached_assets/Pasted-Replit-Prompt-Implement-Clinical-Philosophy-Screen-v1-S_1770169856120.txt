@@ -1,0 +1,158 @@
+Replit Prompt: Implement Clinical Philosophy Screen (v1-Safe)
+
+Role:
+You are a senior frontend engineer working on an existing React/TypeScript application built on Replit. You must implement one new read-only screen without altering any existing logic, data models, permissions, or workflows.
+
+This app has strict ethical and clinical constraints. You must follow them exactly.
+
+Objective (Single Change Only)
+
+Add a therapist-facing, read-only screen titled:
+
+Clinical Philosophy & Use Boundaries
+
+This screen exists to clearly document the app’s purpose and limits.
+It is not a marketing page and not interactive.
+
+Hard Constraints (Do Not Violate)
+
+❌ Do NOT add features
+
+❌ Do NOT add analytics, tracking, or logging
+
+❌ Do NOT add messaging, notifications, reminders, or automation
+
+❌ Do NOT modify existing dashboards, flows, or permissions
+
+❌ Do NOT add AI logic or summaries
+
+❌ Do NOT make this screen visible to clients
+
+This change must be additive only.
+
+Access Rules
+
+Screen is visible only to therapists
+
+Screen is read-only
+
+No edit buttons
+
+No toggles
+
+No links
+
+No collapsible sections
+
+Navigation Requirements
+
+Add a simple navigation entry for therapists only (e.g., sidebar or header link)
+
+Label: Clinical Philosophy
+
+Clicking it opens the new screen
+
+Include a “Back” option consistent with existing navigation patterns
+
+Do not redesign navigation.
+
+Content (Exact Text — Do Not Rewrite)
+
+Title:
+Clinical Philosophy & Use Boundaries
+
+What This App Is
+
+A structure that supports honesty between sessions
+
+A boundary-holding tool, not a therapeutic agent
+
+Designed to preserve therapist judgment and client agency
+
+What This App Refuses to Do
+
+Interpret client behavior
+
+Score, rank, or analyze progress
+
+Send reminders, nudges, or interventions
+
+Replace human confrontation or insight
+
+Why These Limits Exist
+
+Accountability must remain relational
+
+Automation weakens responsibility
+
+Surveillance undermines honesty
+
+Meaning belongs in the therapy room
+
+Role of the Therapist
+
+Holds meaning, interpretation, and intervention
+
+Maintains private notes and flags
+
+Uses the app to support curiosity, not conclusions
+
+Role of the Client
+
+Completes reflections honestly
+
+Self-attestation is intentional and final
+
+Responsibility remains with the client
+
+UI / Styling Guidance
+
+Clean, minimal, professional
+
+Use existing typography and spacing conventions
+
+No icons required
+
+No color emphasis beyond current theme
+
+Content should be easy to read and scan
+
+Technical Guidance
+
+Implement as a new React component/page
+
+No backend changes
+
+No database changes
+
+No API calls
+
+No state management needed
+
+Static content only
+
+Validation Checklist (You Must Self-Check)
+
+Before marking complete, confirm:
+
+ Screen is therapist-only
+
+ Screen is read-only
+
+ No existing features changed
+
+ No automation added
+
+ No interpretation logic introduced
+
+Deliverable
+
+Provide:
+
+The new component file
+
+Any minimal routing or navigation additions required
+
+Clear indication of which files were modified
+
+Nothing else.
