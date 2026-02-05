@@ -26,7 +26,7 @@ export default function Home() {
               <Shield className="h-5 w-5" />
             </div>
             <div className="leading-tight">
-              <div className="font-semibold">Sexual Integrity</div>
+              <div className="font-semibold">The Integrity Protocol</div>
               <div className="text-xs text-muted-foreground">
                 16-week recovery program • structured • private
               </div>
@@ -61,7 +61,11 @@ export default function Home() {
                 <Badge variant="secondary" className="px-3 py-1">
                   This is not “tips.” This is training.
                 </Badge>
-
+                
+                <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-primary">
+                  The Integrity Protocol
+                </h1>
+                
                 <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
                   A difficult program for a difficult problem.
                 </h1>
