@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -416,9 +417,8 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="client-password">Password</Label>
-                      <Input
+                      <PasswordInput
                         id="client-password"
-                        type="password"
                         value={newClient.password}
                         onChange={(e) => setNewClient({ ...newClient, password: e.target.value })}
                         placeholder="Initial password"
@@ -610,9 +610,8 @@ export default function AdminPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="therapist-password">Password</Label>
-                      <Input
+                      <PasswordInput
                         id="therapist-password"
-                        type="password"
                         value={newTherapist.password}
                         onChange={(e) => setNewTherapist({ ...newTherapist, password: e.target.value })}
                         placeholder="Initial password"
@@ -928,9 +927,8 @@ export default function AdminPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input
+                <PasswordInput
                   id="new-password"
-                  type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter new password (min 6 characters)"

@@ -6,6 +6,7 @@ import { registerClientSchema, type RegisterClientInput } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Card,
   CardContent,
@@ -239,8 +240,7 @@ export default function RegisterClient() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input
-                          type="password"
+                        <PasswordInput
                           placeholder="Create a password (min. 6 characters)"
                           autoComplete="new-password"
                           data-testid="input-password"

@@ -6,6 +6,7 @@ import { loginSchema, type LoginInput } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Shield, Loader2, AlertCircle, Mountain } from "lucide-react";
@@ -171,8 +172,7 @@ export default function Login() {
                           </Link>
                         </div>
                         <FormControl>
-                          <Input
-                            type="password"
+                          <PasswordInput
                             placeholder="Enter your password"
                             autoComplete="current-password"
                             data-testid="input-password"
