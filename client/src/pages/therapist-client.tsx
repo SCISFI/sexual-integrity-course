@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -58,6 +58,8 @@ export default function TherapistClient() {
   const { toast } = useToast();
   const [newFeedback, setNewFeedback] = useState("");
   const [feedbackWeek, setFeedbackWeek] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("progress");
+  const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
 
   const { data: clientsData } = useQuery<{ clients: ClientInfo[] }>({
     queryKey: ['/api/therapist/clients'],
@@ -111,6 +113,29 @@ export default function TherapistClient() {
     });
   };
 
+  const handleGenerateAIDraft = async () => {
+    if (!clientId) return;
+    setIsGeneratingDraft(true);
+    try {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-feedback`, {
+        weekNumber: feedbackWeek || undefined,
+      });
+      if (!res.ok) throw new Error("Failed to generate draft");
+      const data = await res.json();
+      setNewFeedback(data.draft);
+      toast({ title: "AI draft generated - feel free to edit before sending" });
+    } catch (error) {
+      toast({ title: "Failed to generate AI draft", variant: "destructive" });
+    } finally {
+      setIsGeneratingDraft(false);
+    }
+  };
+
+  const handleAddFeedbackForWeek = (weekNumber: number) => {
+    setFeedbackWeek(weekNumber);
+    setActiveTab("feedback");
+  };
+
   return (
     <div className="min-h-screen bg-background px-6 py-8">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -158,7 +183,7 @@ export default function TherapistClient() {
               </CardContent>
             </Card>
 
-            <Tabs defaultValue="progress" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="progress">Progress</TabsTrigger>
@@ -453,10 +478,8 @@ export default function TherapistClient() {
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => {
-                                  setFeedbackWeek(reflection.weekNumber);
-                                  document.querySelector('[data-value="feedback"]')?.dispatchEvent(new Event('click', { bubbles: true }));
-                                }}
+                                onClick={() => handleAddFeedbackForWeek(reflection.weekNumber)}
+                                data-testid={`button-add-feedback-week-${reflection.weekNumber}`}
                               >
                                 Add Feedback
                               </Button>
@@ -551,11 +574,31 @@ export default function TherapistClient() {
                           </Button>
                         </div>
                       )}
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline"
+                          onClick={handleGenerateAIDraft}
+                          disabled={isGeneratingDraft}
+                          data-testid="button-generate-ai-draft"
+                        >
+                          {isGeneratingDraft ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="mr-2 h-4 w-4" />
+                              Generate AI Draft
+                            </>
+                          )}
+                        </Button>
+                      </div>
                       <Textarea
-                        placeholder="Write your feedback, encouragement, or technique reminders here..."
+                        placeholder="Write your feedback, encouragement, or technique reminders here... or click 'Generate AI Draft' to get a personalized starting point based on this client's progress."
                         value={newFeedback}
                         onChange={(e) => setNewFeedback(e.target.value)}
-                        className="min-h-24"
+                        className="min-h-32"
                         data-testid="input-feedback"
                       />
                       <Button 

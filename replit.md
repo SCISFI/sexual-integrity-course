@@ -63,6 +63,8 @@ Core tables include `users` (id, email, password, role, subscription status, etc
 
 ## Recent Changes (February 2026)
 
+-   **AI-Powered Feedback Generation**: Therapists can generate AI draft feedback using Gemini that references client reflections, journal entries, and check-in data. The draft is editable before sending.
+-   **Client Feedback Notifications**: Clients receive email notifications when their therapist provides feedback.
 -   **Mandatory Therapist Review System**: When clients complete weeks, their assigned therapist is notified via email. Therapists must review client progress through the Pending Reviews section on their dashboard. Admin can track overdue reviews (>48 hours) in a dedicated tab.
 -   **User Manual**: Downloadable PDF manual accessible via /user-manual route, linked from client dashboard Support Resources section.
 -   **HALT-BS Extended Check-in**: Daily check-in now tracks 6 vulnerability states (Hungry, Angry, Lonely, Tired, Bored, Stressed) instead of the original 4.

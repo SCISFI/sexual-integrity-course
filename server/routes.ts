@@ -1164,9 +1164,139 @@ export async function registerRoutes(
       );
       
       res.status(201).json({ feedback });
+      
+      // Send email notification to the client
+      try {
+        const clientData = await storage.getUser(clientId);
+        if (clientData && clientData.email) {
+          const { sendFeedbackNotification } = await import("./emailService");
+          const therapistData = req.user as any;
+          await sendFeedbackNotification(
+            clientData.email,
+            clientData.name || undefined,
+            therapistData.name || 'Your therapist',
+            weekNumber
+          );
+        }
+      } catch (notifyError) {
+        console.error("Failed to send feedback notification:", notifyError);
+        // Don't fail the request if notification fails
+      }
     } catch (error) {
       console.error("Add therapist feedback error:", error);
       res.status(500).json({ message: "Failed to add feedback" });
+    }
+  });
+
+  // Generate AI feedback draft for a client
+  app.post("/api/therapist/clients/:clientId/generate-feedback", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const { clientId } = req.params;
+      const { weekNumber } = req.body;
+
+      // Verify therapist is assigned to this client
+      const clients = await storage.getClientsForTherapist(therapistId);
+      const isAssigned = clients.some(c => c.id === clientId);
+      if (!isAssigned) {
+        return res.status(403).json({ message: "Not authorized for this client" });
+      }
+
+      // Gather client data for context
+      const clientUser = await storage.getUser(clientId);
+      const completedWeeks = await storage.getCompletedWeeks(clientId);
+      const checkins = await storage.getUserCheckinHistory(clientId, 14); // Last 14 days
+      const reflections = await storage.getAllWeekReflections(clientId);
+      
+      // Get specific week reflection if weekNumber provided
+      let weekReflection: typeof reflections[0] | null = null;
+      if (weekNumber) {
+        weekReflection = reflections.find(r => r.weekNumber === weekNumber) || null;
+      }
+
+      // Build context for AI
+      const recentCheckins = checkins.slice(0, 7);
+      const avgMood = recentCheckins.length > 0 
+        ? recentCheckins.filter(c => c.moodLevel).reduce((sum, c) => sum + (c.moodLevel || 0), 0) / recentCheckins.filter(c => c.moodLevel).length
+        : null;
+      const avgUrge = recentCheckins.length > 0
+        ? recentCheckins.filter(c => c.urgeLevel).reduce((sum, c) => sum + (c.urgeLevel || 0), 0) / recentCheckins.filter(c => c.urgeLevel).length
+        : null;
+      
+      const journalEntries = recentCheckins
+        .filter(c => c.journalEntry)
+        .map(c => c.journalEntry)
+        .slice(0, 3);
+
+      // Generate AI feedback using Gemini
+      if (!process.env.AI_INTEGRATIONS_GEMINI_API_KEY || !process.env.AI_INTEGRATIONS_GEMINI_BASE_URL) {
+        return res.status(503).json({ message: "AI feedback generation is not available. Please contact support." });
+      }
+      
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({
+        apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+        httpOptions: {
+          apiVersion: "",
+          baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+        },
+      });
+
+      const clientName = clientUser?.name || 'the client';
+      
+      let contextInfo = `Client: ${clientName}
+Completed weeks: ${completedWeeks.length} of 16
+`;
+
+      if (avgMood !== null) {
+        contextInfo += `Recent average mood: ${avgMood.toFixed(1)}/10\n`;
+      }
+      if (avgUrge !== null) {
+        contextInfo += `Recent average urge level: ${avgUrge.toFixed(1)}/10\n`;
+      }
+
+      if (weekReflection) {
+        contextInfo += `\nWeek ${weekNumber} Reflection:\n`;
+        if (weekReflection.q1) contextInfo += `- Key insight: "${weekReflection.q1}"\n`;
+        if (weekReflection.q2) contextInfo += `- What went well: "${weekReflection.q2}"\n`;
+        if (weekReflection.q3) contextInfo += `- Challenges faced: "${weekReflection.q3}"\n`;
+        if (weekReflection.q4) contextInfo += `- Goals for next week: "${weekReflection.q4}"\n`;
+      }
+
+      if (journalEntries.length > 0) {
+        contextInfo += `\nRecent journal entries:\n`;
+        journalEntries.forEach((entry, i) => {
+          contextInfo += `- "${entry?.slice(0, 200)}${entry && entry.length > 200 ? '...' : ''}"\n`;
+        });
+      }
+
+      const prompt = `You are a supportive therapist providing feedback to a client in a Sexual Integrity recovery program. Based on the following client information, write a personalized, encouraging feedback message.
+
+${contextInfo}
+
+Guidelines:
+- Speak directly to the client using "you" language
+- Be direct yet encouraging and supportive
+- Reference specific details from their reflections or journal entries when available
+- Acknowledge their progress and effort
+- Offer gentle guidance or suggestions based on their challenges
+- Keep the message focused and under 250 words
+- Do not provide medical advice or crisis intervention
+- End with an encouraging note about their continued journey
+
+Write the feedback message now:`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+      });
+
+      const draft = response.text || "Unable to generate feedback. Please write your own message.";
+
+      res.json({ draft });
+    } catch (error) {
+      console.error("Generate AI feedback error:", error);
+      res.status(500).json({ message: "Failed to generate AI feedback draft" });
     }
   });
 

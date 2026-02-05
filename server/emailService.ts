@@ -251,3 +251,70 @@ export async function sendWeekCompletionNotification(
     return false;
   }
 }
+
+export async function sendFeedbackNotification(
+  clientEmail: string,
+  clientName: string | undefined,
+  therapistName: string,
+  weekNumber?: number
+): Promise<boolean> {
+  try {
+    const gmail = await getUncachableGmailClient();
+    
+    const weekText = weekNumber ? ` for Week ${weekNumber}` : '';
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+    .highlight { background-color: #ecfeff; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; }
+    .button { display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>New Feedback Available</h1>
+    </div>
+    <div class="content">
+      <p>Hello${clientName ? ` ${clientName}` : ''},</p>
+      <div class="highlight">
+        <strong>${therapistName}</strong> has provided new feedback${weekText} for you.
+      </div>
+      <p>Log in to your account to read the feedback and continue your recovery journey.</p>
+      <p><strong>Remember:</strong> Your therapist is here to support your growth and progress.</p>
+    </div>
+    <div class="footer">
+      <p>Sexual Integrity Curriculum</p>
+      <p>This is an automated notification. Please do not reply to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const rawMessage = createEmailMessage(
+      clientEmail,
+      `New Feedback Available${weekText} - Sexual Integrity Curriculum`,
+      htmlContent
+    );
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: rawMessage
+      }
+    });
+
+    console.log(`Feedback notification sent to ${clientEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send feedback notification:', error);
+    return false;
+  }
+}
