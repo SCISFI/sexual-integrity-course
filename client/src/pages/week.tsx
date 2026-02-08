@@ -197,6 +197,11 @@ export default function WeekPage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reflectionAnswersRef = useRef<Record<string, string>>({});
+  const homeworkCompletedRef = useRef<Record<number, boolean>>({});
+  const weekIsLockedRef = useRef(false);
+  const reflectionsDirtyRef = useRef(false);
+  const homeworkDirtyRef = useRef(false);
   const homeworkSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const paymentConfirmedRef = useRef(false);
 
@@ -292,6 +297,7 @@ export default function WeekPage() {
 
   // Check if this week is already completed (locked)
   const weekIsLocked = completionsData?.completedWeeks?.includes(weekNumber) || false;
+  weekIsLockedRef.current = weekIsLocked;
 
   // Check if this week is time-locked (not yet unlocked based on start date)
   const unlockedWeeks = unlockedWeeksData?.unlockedWeeks || [];
@@ -311,12 +317,15 @@ export default function WeekPage() {
   useEffect(() => {
     if (reflectionData?.reflection && !reflectionsLoaded) {
       const r = reflectionData.reflection;
-      setReflectionAnswers({
+      const loaded = {
         q1: r.q1 || "",
         q2: r.q2 || "",
         q3: r.q3 || "",
         q4: r.q4 || "",
-      });
+      };
+      setReflectionAnswers(loaded);
+      reflectionAnswersRef.current = loaded;
+      reflectionsDirtyRef.current = false;
       setReflectionsLoaded(true);
     }
   }, [reflectionData, reflectionsLoaded]);
@@ -329,6 +338,8 @@ export default function WeekPage() {
         completed[idx] = true;
       });
       setHomeworkCompleted(completed);
+      homeworkCompletedRef.current = completed;
+      homeworkDirtyRef.current = false;
       setHomeworkLoaded(true);
     }
   }, [homeworkData, homeworkLoaded]);
@@ -344,8 +355,8 @@ export default function WeekPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/progress/reflection', weekNumber] });
+      reflectionsDirtyRef.current = false;
       setSaveStatus("saved");
-      // Clear the "saved" status after 3 seconds
       if (saveStatusTimeoutRef.current) {
         clearTimeout(saveStatusTimeoutRef.current);
       }
@@ -395,6 +406,7 @@ export default function WeekPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/progress/homework', weekNumber] });
+      homeworkDirtyRef.current = false;
     },
     onError: () => {
       toast({
@@ -413,6 +425,10 @@ export default function WeekPage() {
     setHomeworkLoaded(false);
     setIsWeekCompleted(false);
     setShowCompletionDialog(false);
+    reflectionAnswersRef.current = {};
+    homeworkCompletedRef.current = {};
+    reflectionsDirtyRef.current = false;
+    homeworkDirtyRef.current = false;
   }, [weekNumber]);
 
   // Debounced save for reflections
@@ -447,7 +463,6 @@ export default function WeekPage() {
     }, 500);
   }, [weekNumber, weekIsLocked]);
 
-  // Cleanup debounced saves on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -459,8 +474,38 @@ export default function WeekPage() {
       if (saveStatusTimeoutRef.current) {
         clearTimeout(saveStatusTimeoutRef.current);
       }
+
+      if (!weekIsLockedRef.current && reflectionsDirtyRef.current) {
+        const answers = reflectionAnswersRef.current;
+        fetch(`/api/progress/reflection/${weekNumber}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            q1: answers.q1 ?? "",
+            q2: answers.q2 ?? "",
+            q3: answers.q3 ?? "",
+            q4: answers.q4 ?? "",
+          }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+
+      if (!weekIsLockedRef.current && homeworkDirtyRef.current) {
+        const completed = homeworkCompletedRef.current;
+        const completedItems = Object.entries(completed)
+          .filter(([, isCompleted]) => isCompleted)
+          .map(([idx]) => parseInt(idx, 10));
+        fetch(`/api/progress/homework/${weekNumber}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ completedItems }),
+          keepalive: true,
+        }).catch(() => {});
+      }
     };
-  }, []);
+  }, [weekNumber]);
 
   const markWeekComplete = async () => {
     try {
@@ -485,19 +530,23 @@ export default function WeekPage() {
   const toggleHomework = (index: number) => {
     setHomeworkCompleted(prev => {
       const updated = { ...prev, [index]: !prev[index] };
+      homeworkCompletedRef.current = updated;
+      homeworkDirtyRef.current = true;
       debouncedSaveHomework(updated);
       return updated;
     });
   };
 
   const handleReflectionChange = (questionId: string, value: string) => {
-    if (weekIsLocked) return; // Don't allow changes if week is locked
+    if (weekIsLocked) return;
 
     const newAnswers = {
       ...reflectionAnswers,
       [questionId]: value
     };
     setReflectionAnswers(newAnswers);
+    reflectionAnswersRef.current = newAnswers;
+    reflectionsDirtyRef.current = true;
     debouncedSaveReflections(newAnswers);
   };
 
