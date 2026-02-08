@@ -391,11 +391,11 @@ export default function Home() {
               <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-base">
-                    Is there therapist support?
+                    Is there mentor support?
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
-                  Yes. You're assigned a licensed therapist who monitors your progress, reviews your work, and provides personalized feedback throughout the program.
+                  Yes. You're assigned a dedicated mentor who monitors your progress, reviews your work, and provides personalized feedback throughout the program.
                 </CardContent>
               </Card>
             </div>
@@ -433,6 +433,9 @@ export default function Home() {
                 </Button>
               </div>
             </div>
+            <p className="mt-4 text-xs text-muted-foreground text-center" data-testid="text-disclaimer">
+              This program is an educational and personal growth resource. It is not therapy, counseling, or a substitute for professional mental health treatment.
+            </p>
           </div>
         </section>
       </main>

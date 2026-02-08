@@ -41,9 +41,9 @@ export default function PricingPage() {
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-5 h-5 text-primary" />
-                <Badge variant="secondary">For Therapists</Badge>
+                <Badge variant="secondary">For Mentors</Badge>
               </div>
-              <CardTitle className="text-2xl">Therapist Access</CardTitle>
+              <CardTitle className="text-2xl">Mentor Access</CardTitle>
               <CardDescription>
                 Full platform access to manage and monitor your clients' progress
               </CardDescription>
@@ -79,7 +79,7 @@ export default function PricingPage() {
             <CardFooter>
               <Link href="/register/therapist" className="w-full">
                 <Button className="w-full" size="lg" data-testid="button-register-therapist">
-                  Get Started as Therapist
+                  Get Started as Mentor
                 </Button>
               </Link>
             </CardFooter>
@@ -120,7 +120,7 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                  <span>Therapist-guided progress tracking</span>
+                  <span>Mentor-guided progress tracking</span>
                 </li>
               </ul>
             </CardContent>
@@ -175,16 +175,16 @@ export default function PricingPage() {
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-2">Do I need a therapist to participate?</h3>
+              <h3 className="font-semibold mb-2">Do I need a mentor to participate?</h3>
               <p className="text-muted-foreground">
-                Yes, clients register using an access code provided by their therapist. This ensures 
-                you have professional support throughout your journey.
+                Yes, clients register using an access code provided by their mentor. This ensures 
+                you have dedicated support throughout your journey.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-2">Can my therapist waive the weekly fees?</h3>
+              <h3 className="font-semibold mb-2">Can my mentor waive the weekly fees?</h3>
               <p className="text-muted-foreground">
-                Yes, your therapist or administrator can request fee waivers for specific weeks or 
+                Yes, your mentor or administrator can request fee waivers for specific weeks or 
                 the entire program based on your circumstances.
               </p>
             </div>

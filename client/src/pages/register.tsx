@@ -69,7 +69,7 @@ export default function Register() {
                     <Stethoscope className="h-6 w-6 text-secondary-foreground" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold" data-testid="text-therapist-option">Therapist</h3>
+                    <h3 className="font-semibold" data-testid="text-therapist-option">Mentor</h3>
                     <p className="text-sm text-muted-foreground">
                       Register to support and monitor your clients
                     </p>
@@ -92,6 +92,9 @@ export default function Register() {
                 Sign in
               </Link>
             </div>
+            <p className="text-xs text-muted-foreground text-center" data-testid="text-disclaimer">
+              This program is an educational and personal growth resource. It is not therapy, counseling, or a substitute for professional mental health treatment.
+            </p>
           </CardFooter>
         </Card>
       </main>

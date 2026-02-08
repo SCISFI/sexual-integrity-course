@@ -21,7 +21,7 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   const steps = [
     {
       title: "Welcome to Your Journey",
-      description: "You're about to begin a 16-week program designed to help you build lasting sexual integrity. Let's quickly walk through how the program works.",
+      description: "You're about to begin a 16-week program designed to help you build lasting sexual integrity. Let's quickly walk through how the program works. Please note: this program is an educational and personal growth resource. It is not therapy, counseling, or a substitute for professional mental health treatment.",
       icon: BookOpen,
     },
     {
@@ -36,7 +36,7 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
     },
     {
       title: "You're Not Alone",
-      description: "Your therapist can view your progress and provide feedback. If you're struggling, there are crisis resources available on every lesson page. Remember: relapse doesn't disqualify you — avoidance does. Honesty is more important than perfection.",
+      description: "Your mentor can view your progress and provide feedback. If you're struggling, there are crisis resources available on every lesson page. Remember: relapse doesn't disqualify you — avoidance does. Honesty is more important than perfection.",
       icon: CheckCircle,
     },
   ];

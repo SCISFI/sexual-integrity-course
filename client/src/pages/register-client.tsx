@@ -177,7 +177,7 @@ export default function RegisterClient() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
-                  <span>Therapist-guided progress</span>
+                  <span>Mentor-guided progress</span>
                 </li>
               </ul>
             </div>
@@ -259,13 +259,13 @@ export default function RegisterClient() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        Select Your Therapist
+                        Select Your Mentor
                       </FormLabel>
                       {isLoadingTherapists ? (
                         <Skeleton className="h-10 w-full" />
                       ) : therapists.length === 0 ? (
                         <div className="text-sm text-muted-foreground p-3 border rounded-md bg-muted/50">
-                          You will be assigned to the default therapist.
+                          You will be assigned to the default mentor.
                         </div>
                       ) : therapists.length === 1 ? (
                         <div className="text-sm p-3 border rounded-md bg-muted/50">
@@ -277,12 +277,12 @@ export default function RegisterClient() {
                       ) : (
                         <>
                           <p className="text-xs text-muted-foreground mb-2">
-                            If your therapist referred you to this program, select them below. Otherwise, you may choose any available therapist.
+                            If your mentor referred you to this program, select them below. Otherwise, you may choose any available mentor.
                           </p>
                           <Select onValueChange={field.onChange} value={field.value || ""}>
                             <FormControl>
                               <SelectTrigger data-testid="select-therapist">
-                                <SelectValue placeholder="Choose a therapist..." />
+                                <SelectValue placeholder="Choose a mentor..." />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -336,14 +336,17 @@ export default function RegisterClient() {
             <div
               className="text-center text-sm text-muted-foreground"
             >
-              Are you a therapist?{" "}
+              Are you a mentor?{" "}
               <Link
                 href="/register/therapist"
                 className="font-medium text-primary underline underline-offset-4"
               >
-                Register as Therapist
+                Register as Mentor
               </Link>
             </div>
+            <p className="text-xs text-muted-foreground text-center" data-testid="text-disclaimer">
+              This program is an educational and personal growth resource. It is not therapy, counseling, or a substitute for professional mental health treatment.
+            </p>
           </CardFooter>
         </Card>
       </main>

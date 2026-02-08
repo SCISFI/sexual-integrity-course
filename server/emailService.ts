@@ -62,7 +62,21 @@ function createEmailMessage(to: string, subject: string, htmlContent: string): s
   return Buffer.from(message).toString('base64url');
 }
 
-export async function sendPasswordResetEmail(email: string, resetLink: string, userName?: string): Promise<boolean> {
+function getEmailFooter(loginUrl?: string): string {
+  const loginSection = loginUrl 
+    ? `<p style="margin-top: 16px;"><a href="${loginUrl}" style="color: #4f46e5; text-decoration: underline;">Log in to your account</a></p>`
+    : '';
+  return `
+    <div class="footer">
+      <p>The Integrity Protocol</p>
+      <p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">This program is an educational and personal growth resource. It is not therapy, counseling, or a substitute for professional mental health treatment.</p>
+      ${loginSection}
+      <p style="margin-top: 8px;">This is an automated message. Please do not reply to this email.</p>
+    </div>
+  `;
+}
+
+export async function sendPasswordResetEmail(email: string, resetLink: string, userName?: string, loginUrl?: string): Promise<boolean> {
   try {
     const gmail = await getUncachableGmailClient();
     
@@ -86,7 +100,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string, u
     </div>
     <div class="content">
       <p>Hello${userName ? ` ${userName}` : ''},</p>
-      <p>We received a request to reset your password for your Sexual Integrity Curriculum account.</p>
+      <p>We received a request to reset your password for your Integrity Protocol account.</p>
       <p>Click the button below to reset your password:</p>
       <p style="text-align: center;">
         <a href="${resetLink}" class="button">Reset Password</a>
@@ -96,10 +110,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string, u
       <p><strong>This link will expire in 1 hour.</strong></p>
       <p>If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
     </div>
-    <div class="footer">
-      <p>Sexual Integrity Curriculum</p>
-      <p>This is an automated message. Please do not reply to this email.</p>
-    </div>
+    ${getEmailFooter(loginUrl)}
   </div>
 </body>
 </html>
@@ -107,7 +118,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string, u
 
     const rawMessage = createEmailMessage(
       email,
-      'Password Reset Request - Sexual Integrity Curriculum',
+      'Password Reset Request - The Integrity Protocol',
       htmlContent
     );
 
@@ -126,7 +137,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string, u
   }
 }
 
-export async function sendPasswordChangedConfirmation(email: string, userName?: string): Promise<boolean> {
+export async function sendPasswordChangedConfirmation(email: string, userName?: string, loginUrl?: string): Promise<boolean> {
   try {
     const gmail = await getUncachableGmailClient();
     
@@ -139,6 +150,7 @@ export async function sendPasswordChangedConfirmation(email: string, userName?: 
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .header { background-color: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
     .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+    .button { display: inline-block; background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
     .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
   </style>
 </head>
@@ -151,11 +163,9 @@ export async function sendPasswordChangedConfirmation(email: string, userName?: 
       <p>Hello${userName ? ` ${userName}` : ''},</p>
       <p>Your password has been successfully changed.</p>
       <p>If you did not make this change, please contact your administrator immediately.</p>
+      ${loginUrl ? `<p style="text-align: center;"><a href="${loginUrl}" class="button">Log In to Your Account</a></p>` : ''}
     </div>
-    <div class="footer">
-      <p>Sexual Integrity Curriculum</p>
-      <p>This is an automated message. Please do not reply to this email.</p>
-    </div>
+    ${getEmailFooter(loginUrl)}
   </div>
 </body>
 </html>
@@ -163,7 +173,7 @@ export async function sendPasswordChangedConfirmation(email: string, userName?: 
 
     const rawMessage = createEmailMessage(
       email,
-      'Password Changed - Sexual Integrity Curriculum',
+      'Password Changed - The Integrity Protocol',
       htmlContent
     );
 
@@ -183,11 +193,12 @@ export async function sendPasswordChangedConfirmation(email: string, userName?: 
 }
 
 export async function sendWeekCompletionNotification(
-  therapistEmail: string, 
-  therapistName: string | undefined,
+  mentorEmail: string, 
+  mentorName: string | undefined,
   clientName: string, 
   weekNumber: number,
-  dashboardLink: string
+  dashboardLink: string,
+  loginUrl?: string
 ): Promise<boolean> {
   try {
     const gmail = await getUncachableGmailClient();
@@ -212,7 +223,7 @@ export async function sendWeekCompletionNotification(
       <h1>Client Week Completed - Review Needed</h1>
     </div>
     <div class="content">
-      <p>Hello${therapistName ? ` ${therapistName}` : ''},</p>
+      <p>Hello${mentorName ? ` ${mentorName}` : ''},</p>
       <div class="highlight">
         <strong>${clientName}</strong> has completed <strong>Week ${weekNumber}</strong> and is awaiting your review.
       </div>
@@ -222,17 +233,14 @@ export async function sendWeekCompletionNotification(
       </p>
       <p><strong>Remember:</strong> Timely feedback is important for client engagement and accountability.</p>
     </div>
-    <div class="footer">
-      <p>Sexual Integrity Curriculum</p>
-      <p>This is an automated notification. Please do not reply to this email.</p>
-    </div>
+    ${getEmailFooter(loginUrl || dashboardLink.split('/therapist')[0] + '/login')}
   </div>
 </body>
 </html>
     `;
 
     const rawMessage = createEmailMessage(
-      therapistEmail,
+      mentorEmail,
       `Review Needed: ${clientName} completed Week ${weekNumber}`,
       htmlContent
     );
@@ -244,7 +252,7 @@ export async function sendWeekCompletionNotification(
       }
     });
 
-    console.log(`Week completion notification sent to ${therapistEmail} for ${clientName} Week ${weekNumber}`);
+    console.log(`Week completion notification sent to ${mentorEmail} for ${clientName} Week ${weekNumber}`);
     return true;
   } catch (error) {
     console.error('Failed to send week completion notification:', error);
@@ -255,8 +263,9 @@ export async function sendWeekCompletionNotification(
 export async function sendFeedbackNotification(
   clientEmail: string,
   clientName: string | undefined,
-  therapistName: string,
-  weekNumber?: number
+  mentorName: string,
+  weekNumber?: number,
+  loginUrl?: string
 ): Promise<boolean> {
   try {
     const gmail = await getUncachableGmailClient();
@@ -284,15 +293,13 @@ export async function sendFeedbackNotification(
     <div class="content">
       <p>Hello${clientName ? ` ${clientName}` : ''},</p>
       <div class="highlight">
-        <strong>${therapistName}</strong> has provided new feedback${weekText} for you.
+        <strong>${mentorName}</strong> has provided new feedback${weekText} for you.
       </div>
       <p>Log in to your account to read the feedback and continue your recovery journey.</p>
-      <p><strong>Remember:</strong> Your therapist is here to support your growth and progress.</p>
+      ${loginUrl ? `<p style="text-align: center;"><a href="${loginUrl}" class="button">Log In to View Feedback</a></p>` : ''}
+      <p><strong>Remember:</strong> Your mentor is here to support your growth and progress.</p>
     </div>
-    <div class="footer">
-      <p>Sexual Integrity Curriculum</p>
-      <p>This is an automated notification. Please do not reply to this email.</p>
-    </div>
+    ${getEmailFooter(loginUrl)}
   </div>
 </body>
 </html>
@@ -300,7 +307,7 @@ export async function sendFeedbackNotification(
 
     const rawMessage = createEmailMessage(
       clientEmail,
-      `New Feedback Available${weekText} - Sexual Integrity Curriculum`,
+      `New Feedback Available${weekText} - The Integrity Protocol`,
       htmlContent
     );
 

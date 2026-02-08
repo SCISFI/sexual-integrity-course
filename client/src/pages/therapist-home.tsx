@@ -65,7 +65,7 @@ export default function TherapistHome() {
       subscriptionConfirmedRef.current = true;
       toast({
         title: "Subscription Activated",
-        description: "Welcome! Your therapist subscription is now active.",
+        description: "Welcome! Your mentor subscription is now active.",
       });
       // Clear URL and refresh subscription data
       window.history.replaceState({}, '', '/therapist-home');
@@ -259,7 +259,7 @@ export default function TherapistHome() {
       <div className="min-h-screen bg-background px-6 py-8">
         <div className="mx-auto max-w-2xl">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold">Therapist Dashboard</h1>
+            <h1 className="text-2xl font-bold">Mentor Dashboard</h1>
             <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
               <LogOut className="mr-2 h-4 w-4" />
               Logout
@@ -278,7 +278,7 @@ export default function TherapistHome() {
                 </Badge>
               </div>
               <p className="max-w-md text-muted-foreground mb-6">
-                Start with a <span className="font-semibold text-foreground">30-day free trial</span>, then <span className="font-semibold text-foreground">$49/month</span> to access the therapist dashboard, manage your clients, and monitor their progress through the 16-week program.
+                Start with a <span className="font-semibold text-foreground">30-day free trial</span>, then <span className="font-semibold text-foreground">$49/month</span> to access the mentor dashboard, manage your clients, and monitor their progress through the 16-week program.
               </p>
               <div className="space-y-4">
                 <ul className="text-left text-sm text-muted-foreground space-y-2 mb-6">
@@ -342,7 +342,7 @@ export default function TherapistHome() {
         
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-therapist-title">Therapist Dashboard</h1>
+            <h1 className="text-2xl font-bold" data-testid="text-therapist-title">Mentor Dashboard</h1>
             <p className="text-muted-foreground">
               Manage your assigned clients and monitor their progress
             </p>

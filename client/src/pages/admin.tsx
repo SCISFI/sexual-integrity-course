@@ -158,7 +158,7 @@ export default function AdminPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/therapists"] });
       setShowCreateTherapist(false);
       setNewTherapist({ name: "", email: "", password: "" });
-      toast({ title: "Therapist created successfully" });
+      toast({ title: "Mentor created successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -218,7 +218,7 @@ export default function AdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
-      toast({ title: "Therapist assigned successfully" });
+      toast({ title: "Mentor assigned successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -277,7 +277,7 @@ export default function AdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/therapists"] });
-      toast({ title: "Therapist updated successfully" });
+      toast({ title: "Mentor updated successfully" });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -300,7 +300,7 @@ export default function AdminPage() {
       setDeletingTherapist(null);
       setReassignToTherapistId("");
       toast({ 
-        title: "Therapist deleted", 
+        title: "Mentor deleted", 
         description: data.reassignedClients > 0 
           ? `${data.reassignedClients} clients were reassigned.` 
           : "No clients needed reassignment." 
@@ -360,7 +360,7 @@ export default function AdminPage() {
             </TabsTrigger>
             <TabsTrigger value="therapists" data-testid="tab-therapists">
               <Stethoscope className="mr-2 h-4 w-4" />
-              Therapists
+              Mentors
             </TabsTrigger>
             <TabsTrigger value="revenue" data-testid="tab-revenue">
               <DollarSign className="mr-2 h-4 w-4" />
@@ -426,16 +426,16 @@ export default function AdminPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="client-therapist">Assign Therapist (optional)</Label>
+                      <Label htmlFor="client-therapist">Assign Mentor (optional)</Label>
                       <Select
                         value={newClient.therapistId || "none"}
                         onValueChange={(value) => setNewClient({ ...newClient, therapistId: value === "none" ? "" : value })}
                       >
                         <SelectTrigger id="client-therapist" data-testid="select-therapist">
-                          <SelectValue placeholder="No therapist" />
+                          <SelectValue placeholder="No mentor" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">No therapist</SelectItem>
+                          <SelectItem value="none">No mentor</SelectItem>
                           {therapists.map((t) => (
                             <SelectItem key={t.id} value={t.id}>{t.name || t.email}</SelectItem>
                           ))}
@@ -492,7 +492,7 @@ export default function AdminPage() {
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Start Date</TableHead>
-                        <TableHead>Therapist(s)</TableHead>
+                        <TableHead>Mentor(s)</TableHead>
                         <TableHead>Fees Waived</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -573,18 +573,18 @@ export default function AdminPage() {
 
           <TabsContent value="therapists" className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Therapists</h2>
+              <h2 className="text-2xl font-bold">Mentors</h2>
               <Dialog open={showCreateTherapist} onOpenChange={setShowCreateTherapist}>
                 <DialogTrigger asChild>
                   <Button data-testid="button-create-therapist">
                     <Plus className="mr-2 h-4 w-4" />
-                    Add Therapist
+                    Add Mentor
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Create New Therapist</DialogTitle>
-                    <DialogDescription>Add a new therapist to the platform</DialogDescription>
+                    <DialogTitle>Create New Mentor</DialogTitle>
+                    <DialogDescription>Add a new mentor to the platform</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
@@ -604,7 +604,7 @@ export default function AdminPage() {
                         type="email"
                         value={newTherapist.email}
                         onChange={(e) => setNewTherapist({ ...newTherapist, email: e.target.value })}
-                        placeholder="therapist@example.com"
+                        placeholder="mentor@example.com"
                         data-testid="input-therapist-email"
                       />
                     </div>
@@ -628,7 +628,7 @@ export default function AdminPage() {
                       {createTherapistMutation.isPending ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : null}
-                      Create Therapist
+                      Create Mentor
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -643,7 +643,7 @@ export default function AdminPage() {
                   </div>
                 ) : therapists.length === 0 ? (
                   <div className="p-8 text-center text-muted-foreground">
-                    No therapists yet. Create your first therapist above.
+                    No mentors yet. Create your first mentor above.
                   </div>
                 ) : (
                   <Table>
@@ -702,7 +702,7 @@ export default function AdminPage() {
                                 });
                               }}
                               data-testid={`button-delete-therapist-${therapist.id}`}
-                              title="Delete Therapist"
+                              title="Delete Mentor"
                               className="text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -719,17 +719,17 @@ export default function AdminPage() {
 
           <TabsContent value="revenue" className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Revenue by Therapist</h2>
+              <h2 className="text-2xl font-bold">Revenue by Mentor</h2>
             </div>
 
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5" />
-                  Therapist Revenue Share (50%)
+                  Mentor Revenue Share (50%)
                 </CardTitle>
                 <CardDescription>
-                  Track revenue generated by each therapist — therapists earn 50% of client payments
+                  Track revenue generated by each mentor — mentors earn 50% of client payments
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -745,11 +745,11 @@ export default function AdminPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Therapist</TableHead>
+                        <TableHead>Mentor</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead className="text-right">Payments</TableHead>
                         <TableHead className="text-right">Total Revenue</TableHead>
-                        <TableHead className="text-right">Therapist Share (50%)</TableHead>
+                        <TableHead className="text-right">Mentor Share (50%)</TableHead>
                         <TableHead className="text-right">Your Share (50%)</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -807,13 +807,13 @@ export default function AdminPage() {
                   <div className="p-8 text-center text-muted-foreground" data-testid="text-no-overdue-reviews">
                     <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-50" />
                     <p>No overdue reviews</p>
-                    <p className="text-sm">All therapists are up to date with their client reviews.</p>
+                    <p className="text-sm">All mentors are up to date with their client reviews.</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Therapist</TableHead>
+                        <TableHead>Mentor</TableHead>
                         <TableHead>Client</TableHead>
                         <TableHead>Week #</TableHead>
                         <TableHead>Completed Date</TableHead>
@@ -870,23 +870,23 @@ export default function AdminPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-therapist">Assigned Therapist</Label>
+                <Label htmlFor="edit-therapist">Assigned Mentor</Label>
                 <Select
                   value={editForm.therapistId || "none"}
                   onValueChange={(value) => setEditForm({ ...editForm, therapistId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger id="edit-therapist" data-testid="select-edit-therapist">
-                    <SelectValue placeholder="No therapist assigned" />
+                    <SelectValue placeholder="No mentor assigned" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No therapist assigned</SelectItem>
+                    <SelectItem value="none">No mentor assigned</SelectItem>
                     {therapists.map((t) => (
                       <SelectItem key={t.id} value={t.id}>{t.name || t.email}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {editingClient && editingClient.therapists.length === 0 && (
-                  <p className="text-sm text-destructive">This client has no therapist assigned</p>
+                  <p className="text-sm text-destructive">This client has no mentor assigned</p>
                 )}
               </div>
             </div>
@@ -977,7 +977,7 @@ export default function AdminPage() {
                   <li>Weekly reflections</li>
                   <li>Homework completions</li>
                   <li>Payment records</li>
-                  <li>Therapist assignments</li>
+                  <li>Mentor assignments</li>
                 </ul>
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -1005,7 +1005,7 @@ export default function AdminPage() {
         <AlertDialog open={!!deletingTherapist} onOpenChange={(open) => { if (!open) { setDeletingTherapist(null); setReassignToTherapistId(""); } }}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Therapist Account</AlertDialogTitle>
+              <AlertDialogTitle>Delete Mentor Account</AlertDialogTitle>
               <AlertDialogDescription asChild>
                 <div>
                   Are you sure you want to delete the account for <strong>{deletingTherapist?.name || deletingTherapist?.email}</strong>?
@@ -1013,20 +1013,20 @@ export default function AdminPage() {
                   {deletingTherapist && deletingTherapist.clientCount > 0 && (
                     <div className="mt-4 p-3 border rounded-lg bg-yellow-50 dark:bg-yellow-950/30">
                       <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                        This therapist has {deletingTherapist.clientCount} assigned client(s).
+                        This mentor has {deletingTherapist.clientCount} assigned client(s).
                       </p>
                       <p className="text-sm mt-2 text-yellow-700 dark:text-yellow-300">
-                        Select a therapist to reassign these clients to:
+                        Select a mentor to reassign these clients to:
                       </p>
                       <Select
                         value={reassignToTherapistId || "none"}
                         onValueChange={(value) => setReassignToTherapistId(value === "none" ? "" : value)}
                       >
                         <SelectTrigger className="mt-2" data-testid="select-reassign-therapist">
-                          <SelectValue placeholder="-- Select therapist --" />
+                          <SelectValue placeholder="-- Select mentor --" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">-- Select therapist --</SelectItem>
+                          <SelectItem value="none">-- Select mentor --</SelectItem>
                           {therapists
                             .filter(t => t.id !== deletingTherapist.id)
                             .map(t => (
@@ -1058,7 +1058,7 @@ export default function AdminPage() {
                 {deleteTherapistMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
-                Delete Therapist
+                Delete Mentor
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

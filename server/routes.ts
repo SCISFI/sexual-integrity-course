@@ -446,6 +446,7 @@ export async function registerRoutes(
         if (therapists.length > 0) {
           const { sendWeekCompletionNotification } = await import("./emailService");
           const dashboardLink = `${req.protocol}://${req.get('host')}/therapist/clients/${userId}`;
+          const loginUrl = `${req.protocol}://${req.get('host')}/login`;
           const clientName = user.name || user.email || 'Client';
           
           for (const therapist of therapists) {
@@ -455,7 +456,8 @@ export async function registerRoutes(
                 therapist.name || undefined,
                 clientName,
                 weekNumber,
-                dashboardLink
+                dashboardLink,
+                loginUrl
               );
             }
           }
@@ -1007,11 +1009,13 @@ export async function registerRoutes(
         if (user.email) {
           const { sendFeedbackNotification } = await import("./emailService");
           const adminData = req.user as any;
+          const loginUrl = `${req.protocol}://${req.get('host')}/login`;
           await sendFeedbackNotification(
             user.email,
             user.name || undefined,
-            adminData.name || 'Your therapist',
-            weekNumber
+            adminData.name || 'Your mentor',
+            weekNumber,
+            loginUrl
           );
         }
       } catch (notifyError) {
@@ -1186,11 +1190,13 @@ export async function registerRoutes(
         if (clientData && clientData.email) {
           const { sendFeedbackNotification } = await import("./emailService");
           const therapistData = req.user as any;
+          const loginUrl = `${req.protocol}://${req.get('host')}/login`;
           await sendFeedbackNotification(
             clientData.email,
             clientData.name || undefined,
-            therapistData.name || 'Your therapist',
-            weekNumber
+            therapistData.name || 'Your mentor',
+            weekNumber,
+            loginUrl
           );
         }
       } catch (notifyError) {
@@ -1931,8 +1937,9 @@ Write the feedback message now:`;
       const resetLink = `${baseUrl}/reset-password?token=${tokenRecord.token}`;
 
       // Send email
+      const loginUrl = `${baseUrl}/login`;
       const { sendPasswordResetEmail } = await import("./emailService");
-      await sendPasswordResetEmail(user.email, resetLink, user.name || undefined);
+      await sendPasswordResetEmail(user.email, resetLink, user.name || undefined, loginUrl);
 
       res.json({ message: "If an account exists with this email, you will receive a password reset link." });
     } catch (error) {
@@ -2009,8 +2016,9 @@ Write the feedback message now:`;
       await storage.markTokenAsUsed(tokenRecord.id);
 
       // Send confirmation email
+      const loginUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/login`;
       const { sendPasswordChangedConfirmation } = await import("./emailService");
-      await sendPasswordChangedConfirmation(user.email, user.name || undefined);
+      await sendPasswordChangedConfirmation(user.email, user.name || undefined, loginUrl);
 
       res.json({ message: "Password has been reset successfully" });
     } catch (error) {
@@ -2049,8 +2057,9 @@ Write the feedback message now:`;
       }
 
       // Send confirmation email
+      const loginUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/login`;
       const { sendPasswordChangedConfirmation } = await import("./emailService");
-      await sendPasswordChangedConfirmation(user.email, user.name || undefined);
+      await sendPasswordChangedConfirmation(user.email, user.name || undefined, loginUrl);
 
       res.json({ message: "Password changed successfully" });
     } catch (error) {
@@ -2087,8 +2096,9 @@ Write the feedback message now:`;
       }
 
       // Optionally send notification to user
+      const loginUrl = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/login`;
       const { sendPasswordChangedConfirmation } = await import("./emailService");
-      await sendPasswordChangedConfirmation(user.email, user.name || undefined);
+      await sendPasswordChangedConfirmation(user.email, user.name || undefined, loginUrl);
 
       res.json({ message: "Password has been reset successfully" });
     } catch (error) {

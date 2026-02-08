@@ -132,7 +132,7 @@ export default function UserManualPage() {
                 <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
                     <strong>Note:</strong> Weeks 2-16 require payment of $14.99 per week unless your fees
-                    have been waived by an administrator. Your therapist can request fee waivers on your behalf.
+                    have been waived by an administrator. Your mentor can request fee waivers on your behalf.
                   </p>
                 </div>
               </CardContent>
@@ -285,7 +285,7 @@ export default function UserManualPage() {
                       <h4 className="font-semibold">Reflection Questions</h4>
                       <p className="text-sm text-muted-foreground">
                         Four reflection questions to help you internalize the week's concepts.
-                        Your answers auto-save as you type and are visible to your therapist.
+                        Your answers auto-save as you type and are visible to your mentor.
                       </p>
                     </div>
                   </div>
@@ -308,7 +308,7 @@ export default function UserManualPage() {
                       <h4 className="font-semibold">Homework Checklist</h4>
                       <p className="text-sm text-muted-foreground">
                         A list of tasks to complete throughout the week. Check items off as you complete them.
-                        Your therapist can view your homework progress.
+                        Your mentor can view your homework progress.
                       </p>
                     </div>
                   </div>
@@ -322,12 +322,12 @@ export default function UserManualPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-100 dark:bg-cyan-900/30">
                 <Users className="h-5 w-5 text-cyan-600" />
               </div>
-              <h2 className="text-2xl font-bold">Working With Your Therapist</h2>
+              <h2 className="text-2xl font-bold">Working With Your Mentor</h2>
             </div>
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <p>
-                  Your assigned therapist plays a crucial role in your recovery journey. They can:
+                  Your assigned mentor plays a crucial role in your recovery journey. They can:
                 </p>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                   <li>View your daily check-in history and identify patterns</li>
@@ -338,7 +338,7 @@ export default function UserManualPage() {
                 </ul>
                 <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                   <p className="text-sm text-green-800 dark:text-green-200">
-                    <strong>Be honest:</strong> Your therapist is there to help, not judge. The more honest
+                    <strong>Be honest:</strong> Your mentor is there to help, not judge. The more honest
                     you are in your reflections and check-ins, the better support they can provide.
                   </p>
                 </div>
@@ -426,7 +426,7 @@ export default function UserManualPage() {
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-green-500 mt-1" />
-                      <span className="text-sm">Communicate openly with your therapist</span>
+                      <span className="text-sm">Communicate openly with your mentor</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="h-4 w-4 text-green-500 mt-1" />

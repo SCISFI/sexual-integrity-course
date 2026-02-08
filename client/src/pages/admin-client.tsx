@@ -168,7 +168,7 @@ export default function AdminClientPage() {
                 <p className="font-medium">{client.startDate || "Not set"}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Therapist(s)</p>
+                <p className="text-sm text-muted-foreground">Mentor(s)</p>
                 <p className="font-medium">
                   {therapists.length > 0 
                     ? therapists.map(t => t.name || t.email).join(", ") 

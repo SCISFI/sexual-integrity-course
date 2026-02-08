@@ -122,10 +122,10 @@ export default function RegisterTherapist() {
               className="text-2xl font-bold"
               data-testid="text-register-title"
             >
-              Therapist Registration
+              Mentor Registration
             </CardTitle>
             <CardDescription data-testid="text-register-description">
-              Create your therapist account to manage clients
+              Create your mentor account to manage clients
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -213,7 +213,7 @@ export default function RegisterTherapist() {
                       <FormControl>
                         <Input
                           type="email"
-                          placeholder="therapist@example.com"
+                          placeholder="mentor@example.com"
                           autoComplete="email"
                           data-testid="input-email"
                           {...field}
@@ -328,7 +328,7 @@ export default function RegisterTherapist() {
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-sm font-normal">
-                            I agree to the therapist terms and conditions, including the 50% revenue share agreement for client payments. I understand that I will receive 50% of client weekly fees ($7.50 per $14.99 week) for clients assigned to me.
+                            I agree to the mentor terms and conditions, including the 50% revenue share agreement for client payments. I understand that I will receive 50% of client weekly fees ($7.50 per $14.99 week) for clients assigned to me.
                           </FormLabel>
                           <FormMessage />
                         </div>
@@ -349,7 +349,7 @@ export default function RegisterTherapist() {
                       Creating account...
                     </>
                   ) : (
-                    "Create Therapist Account"
+                    "Create Mentor Account"
                   )}
                 </Button>
               </form>
@@ -379,6 +379,9 @@ export default function RegisterTherapist() {
                 Register as Client
               </Link>
             </div>
+            <p className="text-xs text-muted-foreground text-center" data-testid="text-disclaimer">
+              This program is an educational and personal growth resource. It is not therapy, counseling, or a substitute for professional mental health treatment.
+            </p>
           </CardFooter>
         </Card>
       </main>

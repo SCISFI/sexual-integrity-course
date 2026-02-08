@@ -1001,7 +1001,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           "HYPERAROUSAL: Feeling constantly on edge, anxious, or unable to relax. The behavior may provide temporary relief or numbing.",
           "HYPOAROUSAL: Feeling numb, disconnected, or emotionally flat. The behavior may be an attempt to 'feel something.'",
           "DISSOCIATION: Feeling disconnected from yourself or reality. The trance-like state during compulsive behavior is often dissociative.",
-          "If you recognize trauma in your history, specialized trauma treatment (such as EMDR, Somatic Experiencing, or trauma-focused therapy) may be essential alongside this program. Consider discussing this with your therapist."
+          "If you recognize trauma in your history, specialized trauma treatment (such as EMDR, Somatic Experiencing, or trauma-focused therapy) may be essential alongside this program. Consider discussing this with your mentor."
         ]
       },
       {
@@ -1020,9 +1020,9 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
         content: [
           "Disclosure is one of the most difficult decisions in recovery. There's no one-size-fits-all answer.",
           "REASONS TO DISCLOSE: Honesty is foundational to genuine intimacy. Secrets maintain the double life. Partners deserve to make informed decisions. Disclosure often brings relief from the burden of secrecy.",
-          "CONSIDERATIONS: Timing matters - disclosure during crisis may cause more harm. Professional guidance is highly recommended. Therapeutic disclosure (facilitated by a therapist) is often more effective. Consider your partner's support system and resources.",
+          "CONSIDERATIONS: Timing matters - disclosure during crisis may cause more harm. Professional guidance is highly recommended. Therapeutic disclosure (facilitated by a professional) is often more effective. Consider your partner's support system and resources.",
           "WHAT DISCLOSURE IS NOT: It's not a detailed confession of every act. It's not meant to relieve your guilt at your partner's expense. It's not a one-time event but an ongoing commitment to honesty.",
-          "If you're considering disclosure, work with a therapist experienced in sexual addiction and betrayal trauma. A skilled professional can help both of you navigate this process."
+          "If you're considering disclosure, work with a qualified professional experienced in sexual addiction and betrayal trauma. They can help both of you navigate this process."
         ]
       }
     ],
@@ -1037,7 +1037,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "q3",
-        question: "Have you experienced any Adverse Childhood Experiences (ACEs)? If so, how might these connect to your current struggles? (Note: This is for your reflection - share with your therapist if appropriate)"
+        question: "Have you experienced any Adverse Childhood Experiences (ACEs)? If so, how might these connect to your current struggles? (Note: This is for your reflection - share with your mentor if appropriate)"
       },
       {
         id: "q4",
@@ -1135,7 +1135,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       {
         id: "trauma-exploration",
         title: "Trauma and History Exploration (Optional but Recommended)",
-        instructions: "This exercise helps you explore potential connections between your history and current struggles. Only complete what feels safe. Consider sharing with your therapist.",
+        instructions: "This exercise helps you explore potential connections between your history and current struggles. Only complete what feels safe. Consider sharing with your mentor.",
         fields: [
           {
             id: "aces",
@@ -1442,7 +1442,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
         content: [
           "A relapse prevention plan includes: Your personal warning signs, your coping strategies for each stage, your support contacts, your environmental controls, and your emergency action plan.",
           "The plan should be specific and accessible. Know exactly what you'll do when warning signs appear. Don't wait until you're in crisis to figure it out.",
-          "Share your plan with someone who can help you implement it. An accountability partner or therapist who knows your plan can spot warning signs you might miss.",
+          "Share your plan with someone who can help you implement it. An accountability partner or mentor who knows your plan can spot warning signs you might miss.",
           "Review and update your plan regularly. As you learn more about your patterns, the plan should evolve."
         ]
       },
@@ -2915,7 +2915,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           },
           {
             id: "support",
-            label: "MY SUPPORT SYSTEM (accountability partner, therapist, support group):",
+            label: "MY SUPPORT SYSTEM (accountability partner, mentor, support group):",
             type: "textarea",
             placeholder: "List your support system..."
           },
@@ -2983,7 +2983,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       "Create your Emergency Action Plan",
       "Complete your Comprehensive Relapse Prevention Plan",
       "Complete Recovery Lifestyle Assessment",
-      "Share your plan with your accountability partner or therapist",
+      "Share your plan with your accountability partner or mentor",
       "Begin implementing daily and weekly recovery practices",
       "Complete daily monitoring logs for all 7 days"
     ]
@@ -3053,7 +3053,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
         title: "If I Relapse After the Program",
         content: [
           "Let's be honest: Many men will experience lapses or relapses after completing this program. This doesn't mean the program failed or that you failed. It means you're human and recovery is a process.",
-          "WHAT TO DO IMMEDIATELY: (1) Stop as soon as you realize what's happening. A lapse doesn't have to become a full relapse. (2) Reach out to someone - your therapist, accountability partner, or support group. Isolation is the enemy. (3) Don't let shame spiral you further. Use the self-compassion tools you learned.",
+          "WHAT TO DO IMMEDIATELY: (1) Stop as soon as you realize what's happening. A lapse doesn't have to become a full relapse. (2) Reach out to someone - your mentor, accountability partner, or support group. Isolation is the enemy. (3) Don't let shame spiral you further. Use the self-compassion tools you learned.",
           "WITHIN 24-48 HOURS: (1) Complete a relapse analysis - what led to this? What warning signs did you miss? (2) Review your relapse prevention plan. Does it need updating? (3) Recommit to your daily practices. Don't wait until you 'feel ready.'",
           "WHAT NOT TO DO: Don't conclude that recovery is impossible. Don't use 'I already messed up' thinking to continue acting out. Don't hide or isolate. Don't punish yourself - it fuels the cycle.",
           "IMPORTANT: A relapse is data, not destiny. It shows you where your plan needs strengthening. Every person who has achieved long-term recovery has faced setbacks. What matters is what you do next."
@@ -3069,7 +3069,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           "COUPLES THERAPY: If you're in a relationship, consider ongoing couples work with a therapist trained in betrayal trauma.",
           "RETREAT PROGRAMS: Intensive multi-day workshops and retreats can provide breakthrough experiences at critical moments.",
           "BOOKS AND RESOURCES: Continue reading and learning. Recommended: 'Out of the Shadows' by Patrick Carnes, 'Unwanted' by Jay Stringer, 'The Happiness Trap' by Russ Harris.",
-          "BOOSTER SESSIONS: Consider scheduling quarterly 'booster' sessions with your therapist to review your progress and address any emerging issues."
+          "BOOSTER SESSIONS: Consider scheduling quarterly 'booster' sessions with your mentor to review your progress and address any emerging issues."
         ]
       }
     ],
@@ -3250,7 +3250,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       "Build your Recovery Blueprint with daily/weekly/monthly structure",
       "Write your Final Commitment Statement",
       "Write a letter to your future self (to read in 6 months)",
-      "Share your plan with your therapist or accountability partner",
+      "Share your plan with your mentor or accountability partner",
       "Schedule your first post-program check-in",
       "Celebrate completing this program - you've done significant work"
     ]

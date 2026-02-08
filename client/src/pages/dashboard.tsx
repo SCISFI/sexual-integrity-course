@@ -337,17 +337,17 @@ export default function Dashboard() {
         {/* Check-in Progress Dashboard */}
         <CheckinProgressDashboard />
 
-        {/* Therapist Support */}
+        {/* Mentor Support */}
         <Card className="border-primary/30 bg-primary/5 dark:bg-primary/10">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-primary">
               <User className="h-5 w-5" />
-              Your Therapist Support
+              Your Mentor Support
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-3">
-              You have a licensed therapist monitoring your progress throughout this program. They review your check-ins, reflections, and homework—and will provide personalized feedback to support your recovery.
+              You have a dedicated mentor monitoring your progress throughout this program. They review your check-ins, reflections, and homework—and will provide personalized feedback to support your recovery.
             </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
               <Clock className="h-4 w-4" />
