@@ -1002,6 +1002,21 @@ export async function registerRoutes(
       );
       
       res.status(201).json({ feedback });
+
+      try {
+        if (user.email) {
+          const { sendFeedbackNotification } = await import("./emailService");
+          const adminData = req.user as any;
+          await sendFeedbackNotification(
+            user.email,
+            user.name || undefined,
+            adminData.name || 'Your therapist',
+            weekNumber
+          );
+        }
+      } catch (notifyError) {
+        console.error("Failed to send feedback notification:", notifyError);
+      }
     } catch (error) {
       console.error("Add admin feedback error:", error);
       res.status(500).json({ message: "Failed to add feedback" });
