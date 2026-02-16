@@ -78,7 +78,7 @@ export default function Login() {
                 <Mountain className="h-6 w-6 text-white" />
               </div>
               <span className="text-2xl font-bold tracking-tight">
-                Sexual Integrity
+                The Integrity Protocol
               </span>
             </div>
           </Link>
@@ -111,7 +111,7 @@ export default function Login() {
                 <Shield className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-semibold tracking-tight" data-testid="text-logo">
-                Sexual Integrity
+                The Integrity Protocol
               </span>
             </div>
           </Link>

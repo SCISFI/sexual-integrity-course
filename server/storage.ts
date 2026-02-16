@@ -14,6 +14,7 @@ import {
   weekReviews,
   pushSubscriptions,
   notificationPreferences,
+  relapseAutopsies,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -31,6 +32,7 @@ import {
   type WeekReview,
   type PushSubscription,
   type NotificationPreference,
+  type RelapseAutopsy,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql } from "drizzle-orm";
@@ -142,6 +144,13 @@ export interface IStorage {
   // Notification preferences
   getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined>;
   upsertNotificationPreferences(userId: string, data: Partial<{checkinReminderEnabled: boolean; checkinReminderTime: string; feedbackNotificationsEnabled: boolean; weeklyProgressEnabled: boolean}>): Promise<NotificationPreference>;
+
+  // Relapse autopsies
+  createRelapseAutopsy(userId: string, data: Partial<RelapseAutopsy>): Promise<RelapseAutopsy>;
+  updateRelapseAutopsy(id: string, userId: string, data: Partial<RelapseAutopsy>): Promise<RelapseAutopsy | undefined>;
+  getRelapseAutopsies(userId: string): Promise<RelapseAutopsy[]>;
+  getRelapseAutopsy(id: string): Promise<RelapseAutopsy | undefined>;
+  completeRelapseAutopsy(id: string, userId: string): Promise<RelapseAutopsy | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -859,6 +868,59 @@ export class DatabaseStorage implements IStorage {
       .values({ userId, ...data })
       .returning();
     return created;
+  }
+  // Relapse autopsies
+  async createRelapseAutopsy(userId: string, data: Partial<RelapseAutopsy>): Promise<RelapseAutopsy> {
+    const [autopsy] = await db.insert(relapseAutopsies).values({
+      userId,
+      date: data.date || new Date().toISOString().slice(0, 10),
+      lapseOrRelapse: data.lapseOrRelapse || "lapse",
+      summary: data.summary || "",
+      whenStarted: data.whenStarted || "",
+      duration: data.duration || "",
+      context: data.context || "",
+      triggers: data.triggers || "",
+      emotions: data.emotions || "",
+      thoughts: data.thoughts || "",
+      body: data.body || "",
+      boundariesBroken: data.boundariesBroken || "",
+      warningSigns: data.warningSigns || "",
+      decisionPoints: data.decisionPoints || "",
+      immediateActions: data.immediateActions || "",
+      ruleChanges: data.ruleChanges || "",
+      environmentChanges: data.environmentChanges || "",
+      supportPlan: data.supportPlan || "",
+      next24HoursPlan: data.next24HoursPlan || "",
+      status: data.status || "draft",
+    }).returning();
+    return autopsy;
+  }
+
+  async updateRelapseAutopsy(id: string, userId: string, data: Partial<RelapseAutopsy>): Promise<RelapseAutopsy | undefined> {
+    const [updated] = await db.update(relapseAutopsies)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(relapseAutopsies.id, id), eq(relapseAutopsies.userId, userId)))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getRelapseAutopsies(userId: string): Promise<RelapseAutopsy[]> {
+    return db.select().from(relapseAutopsies)
+      .where(eq(relapseAutopsies.userId, userId))
+      .orderBy(desc(relapseAutopsies.createdAt));
+  }
+
+  async getRelapseAutopsy(id: string): Promise<RelapseAutopsy | undefined> {
+    const [autopsy] = await db.select().from(relapseAutopsies).where(eq(relapseAutopsies.id, id));
+    return autopsy || undefined;
+  }
+
+  async completeRelapseAutopsy(id: string, userId: string): Promise<RelapseAutopsy | undefined> {
+    const [updated] = await db.update(relapseAutopsies)
+      .set({ status: "completed", completedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(relapseAutopsies.id, id), eq(relapseAutopsies.userId, userId)))
+      .returning();
+    return updated || undefined;
   }
 }
 

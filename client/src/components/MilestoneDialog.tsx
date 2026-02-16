@@ -48,7 +48,7 @@ const MILESTONES: Record<MilestoneType, MilestoneInfo> = {
   },
   week16: {
     title: "Program Complete!",
-    description: "You've completed the 16-week Sexual Integrity program",
+    description: "You've completed the 16-week Integrity Protocol",
     icon: PartyPopper,
     color: "text-purple-500",
     bgColor: "bg-purple-100 dark:bg-purple-900/50",

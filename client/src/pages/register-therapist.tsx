@@ -105,7 +105,7 @@ export default function RegisterTherapist() {
               className="text-xl font-semibold tracking-tight"
               data-testid="text-logo"
             >
-              Sexual Integrity
+              The Integrity Protocol
             </span>
           </div>
         </Link>

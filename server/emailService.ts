@@ -325,3 +325,71 @@ export async function sendFeedbackNotification(
     return false;
   }
 }
+
+export async function sendRelapseAutopsyNotification(
+  mentorEmail: string,
+  mentorName: string | undefined,
+  clientName: string,
+  incidentType: string,
+  clientLink: string,
+  loginUrl?: string
+): Promise<boolean> {
+  try {
+    const gmail = await getUncachableGmailClient();
+    
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+    .highlight { background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; }
+    .button { display: inline-block; background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Relapse Autopsy Completed</h1>
+    </div>
+    <div class="content">
+      <p>Hello${mentorName ? ` ${mentorName}` : ''},</p>
+      <div class="highlight">
+        <strong>${clientName}</strong> has completed a <strong>Relapse Autopsy</strong> (${incidentType}) and needs your review and feedback.
+      </div>
+      <p>This is an important moment in their recovery. Please review their autopsy responses and provide supportive, constructive feedback as soon as possible.</p>
+      <p style="text-align: center;">
+        <a href="${clientLink}" class="button">Review Relapse Autopsy</a>
+      </p>
+      <p><strong>Remember:</strong> A relapse does not mean failure. Your timely feedback can help reinforce their commitment to recovery.</p>
+    </div>
+    ${getEmailFooter(loginUrl)}
+  </div>
+</body>
+</html>
+    `;
+
+    const rawMessage = createEmailMessage(
+      mentorEmail,
+      `Relapse Autopsy Completed: ${clientName} - Review Needed`,
+      htmlContent
+    );
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: rawMessage
+      }
+    });
+
+    console.log(`Relapse autopsy notification sent to ${mentorEmail} for ${clientName}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send relapse autopsy notification:', error);
+    return false;
+  }
+}

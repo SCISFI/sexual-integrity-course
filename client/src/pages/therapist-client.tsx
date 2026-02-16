@@ -7,10 +7,35 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertCircle, AlertTriangle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { getPromptForDate } from "@/data/journal-prompts";
+
+type RelapseAutopsyItem = {
+  id: string;
+  date: string;
+  lapseOrRelapse: string;
+  summary: string | null;
+  whenStarted: string | null;
+  duration: string | null;
+  context: string | null;
+  triggers: string | null;
+  emotions: string | null;
+  thoughts: string | null;
+  body: string | null;
+  boundariesBroken: string | null;
+  warningSigns: string | null;
+  decisionPoints: string | null;
+  immediateActions: string | null;
+  ruleChanges: string | null;
+  environmentChanges: string | null;
+  supportPlan: string | null;
+  next24HoursPlan: string | null;
+  status: string;
+  completedAt: string | null;
+  createdAt: string;
+};
 
 type ClientProgress = {
   completedWeeks: number[];
@@ -43,6 +68,7 @@ type ClientProgress = {
     checkinDateKey: string | null;
     createdAt: string;
   }>;
+  relapseAutopsies?: RelapseAutopsyItem[];
 };
 
 type ClientInfo = {
@@ -68,6 +94,7 @@ export default function TherapistClient() {
 
   const searchParams = new URLSearchParams(searchString);
   const reviewWeek = searchParams.get('reviewWeek') ? parseInt(searchParams.get('reviewWeek')!) : null;
+  const tabParam = searchParams.get('tab');
 
   const submitReviewMutation = useMutation({
     mutationFn: async ({ clientId, weekNumber, reviewNotes }: { clientId: string; weekNumber: number; reviewNotes: string }) => {
@@ -124,12 +151,19 @@ export default function TherapistClient() {
     },
   });
 
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   const client = clientsData?.clients?.find(c => c.id === clientId);
   const completedWeeks = progressData?.completedWeeks || [];
   const checkins = progressData?.checkins || [];
   const reflections = progressData?.reflections || [];
   const homeworkCompletions = progressData?.homeworkCompletions || [];
   const feedback = progressData?.feedback || [];
+  const clientRelapseAutopsies = progressData?.relapseAutopsies || [];
 
   const getWeekStatus = (weekNum: number) => {
     if (completedWeeks.includes(weekNum)) return "completed";
@@ -247,12 +281,20 @@ export default function TherapistClient() {
             )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="flex w-full flex-wrap gap-1">
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="progress">Progress</TabsTrigger>
                 <TabsTrigger value="checkins">Check-ins</TabsTrigger>
                 <TabsTrigger value="reflections">Reflections</TabsTrigger>
                 <TabsTrigger value="homework">Homework</TabsTrigger>
+                <TabsTrigger value="autopsies" className="relative">
+                  Autopsies
+                  {clientRelapseAutopsies.filter(a => a.status === "completed").length > 0 && (
+                    <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                      {clientRelapseAutopsies.filter(a => a.status === "completed").length}
+                    </span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="feedback">Feedback</TabsTrigger>
               </TabsList>
 
@@ -641,6 +683,187 @@ export default function TherapistClient() {
                               Last updated: {new Date(hw.updatedAt).toLocaleDateString()}
                             </p>
                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="autopsies" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5" />
+                      Relapse Autopsies
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {clientRelapseAutopsies.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-4">No relapse autopsies submitted.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {clientRelapseAutopsies.map((autopsy) => (
+                          <Card key={autopsy.id}>
+                            <CardContent className="py-4 space-y-4">
+                              <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium">{autopsy.date}</span>
+                                  <Badge variant={autopsy.lapseOrRelapse === "relapse" ? "destructive" : "secondary"}>
+                                    {autopsy.lapseOrRelapse === "relapse" ? "Relapse" : "Lapse"}
+                                  </Badge>
+                                  <Badge variant={autopsy.status === "completed" ? "default" : "outline"}>
+                                    {autopsy.status === "completed" ? "Submitted" : "Draft"}
+                                  </Badge>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setFeedbackWeek(null);
+                                    setFeedbackCheckinDate(null);
+                                    setNewFeedback("");
+                                    setActiveTab("feedback");
+                                  }}
+                                  data-testid={`button-feedback-autopsy-${autopsy.id}`}
+                                >
+                                  <MessageSquare className="mr-1 h-3 w-3" />
+                                  Give Feedback
+                                </Button>
+                              </div>
+
+                              {autopsy.summary && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Summary</p>
+                                  <p className="text-sm">{autopsy.summary}</p>
+                                </div>
+                              )}
+
+                              <div className="grid gap-3 md:grid-cols-2">
+                                {autopsy.whenStarted && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase mb-1">When Started</p>
+                                    <p className="text-sm">{autopsy.whenStarted}</p>
+                                  </div>
+                                )}
+                                {autopsy.duration && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Duration</p>
+                                    <p className="text-sm">{autopsy.duration}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {autopsy.context && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Context</p>
+                                  <p className="text-sm">{autopsy.context}</p>
+                                </div>
+                              )}
+
+                              {autopsy.triggers && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Triggers</p>
+                                  <p className="text-sm">{autopsy.triggers}</p>
+                                </div>
+                              )}
+
+                              {autopsy.emotions && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Emotions</p>
+                                  <p className="text-sm">{autopsy.emotions}</p>
+                                </div>
+                              )}
+
+                              {autopsy.thoughts && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Thoughts</p>
+                                  <p className="text-sm">{autopsy.thoughts}</p>
+                                </div>
+                              )}
+
+                              {autopsy.body && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Body State</p>
+                                  <p className="text-sm">{autopsy.body}</p>
+                                </div>
+                              )}
+
+                              {autopsy.boundariesBroken && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Boundaries Broken</p>
+                                  <p className="text-sm">{autopsy.boundariesBroken}</p>
+                                </div>
+                              )}
+
+                              {autopsy.warningSigns && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Warning Signs Ignored</p>
+                                  <p className="text-sm">{autopsy.warningSigns}</p>
+                                </div>
+                              )}
+
+                              {autopsy.decisionPoints && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Decision Points</p>
+                                  <p className="text-sm">{autopsy.decisionPoints}</p>
+                                </div>
+                              )}
+
+                              {autopsy.immediateActions && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Immediate Actions</p>
+                                  <p className="text-sm">{autopsy.immediateActions}</p>
+                                </div>
+                              )}
+
+                              {autopsy.ruleChanges && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Rule Changes</p>
+                                  <p className="text-sm">{autopsy.ruleChanges}</p>
+                                </div>
+                              )}
+
+                              {autopsy.environmentChanges && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Environment Changes</p>
+                                  <p className="text-sm">{autopsy.environmentChanges}</p>
+                                </div>
+                              )}
+
+                              {autopsy.supportPlan && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Support Plan</p>
+                                  <p className="text-sm">{autopsy.supportPlan}</p>
+                                </div>
+                              )}
+
+                              {autopsy.next24HoursPlan && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Next 24 Hours Plan</p>
+                                  <p className="text-sm">{autopsy.next24HoursPlan}</p>
+                                </div>
+                              )}
+
+                              {autopsy.completedAt && (
+                                <p className="text-xs text-muted-foreground">
+                                  Submitted: {new Date(autopsy.completedAt).toLocaleDateString()} {new Date(autopsy.completedAt).toLocaleTimeString()}
+                                </p>
+                              )}
+
+                              {feedback.filter(f => f.feedbackType === "general").length > 0 && (
+                                <div className="border-t pt-3 mt-3">
+                                  <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Feedback Given</p>
+                                  {feedback.filter(f => f.feedbackType === "general").map(f => (
+                                    <div key={f.id} className="text-sm bg-muted/50 rounded-md p-3 mb-2">
+                                      <p>{f.content}</p>
+                                      <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     )}

@@ -56,7 +56,7 @@ export default function UserManualPage() {
         <div className="space-y-8 print:space-y-6">
           <div className="text-center border-b pb-8 print:pb-4">
             <h1 className="text-4xl font-bold text-primary mb-2 print:text-3xl">
-              Sexual Integrity Program
+              The Integrity Protocol
             </h1>
             <h2 className="text-2xl text-muted-foreground mb-4 print:text-xl">
               16-Week Comprehensive User Guide

@@ -186,7 +186,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <div className="font-semibold leading-tight">
-                  Sexual Integrity Program
+                  The Integrity Protocol
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Private member dashboard

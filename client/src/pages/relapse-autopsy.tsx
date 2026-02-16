@@ -1,111 +1,260 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, Save, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle, Save, CheckCircle2, Plus, Clock, Loader2 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type AutopsyData = {
+  id?: string;
   date: string;
   lapseOrRelapse: "lapse" | "relapse";
   summary: string;
-
-  // Timeline
   whenStarted: string;
   duration: string;
   context: string;
-
-  // Triggers + states
   triggers: string;
   emotions: string;
   thoughts: string;
   body: string;
-
-  // Breakdowns
   boundariesBroken: string;
   warningSigns: string;
   decisionPoints: string;
-
-  // Repair plan
   immediateActions: string;
   ruleChanges: string;
   environmentChanges: string;
   supportPlan: string;
-
-  // Commitment
   next24HoursPlan: string;
+  status?: string;
+  completedAt?: string;
+  createdAt?: string;
 };
 
-const STORAGE_KEY = "relapse_autopsy_draft_v1";
+const emptyAutopsy: AutopsyData = {
+  date: new Date().toISOString().slice(0, 10),
+  lapseOrRelapse: "lapse",
+  summary: "",
+  whenStarted: "",
+  duration: "",
+  context: "",
+  triggers: "",
+  emotions: "",
+  thoughts: "",
+  body: "",
+  boundariesBroken: "",
+  warningSigns: "",
+  decisionPoints: "",
+  immediateActions: "",
+  ruleChanges: "",
+  environmentChanges: "",
+  supportPlan: "",
+  next24HoursPlan: "",
+};
 
 export default function RelapseAutopsyPage() {
-  const [status, setStatus] = useState<"idle" | "saved" | "completed">("idle");
+  const { toast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [data, setData] = useState<AutopsyData>(emptyAutopsy);
+  const [showForm, setShowForm] = useState(false);
 
-  const [data, setData] = useState<AutopsyData>(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        return JSON.parse(raw);
-      } catch {}
-    }
-    return {
-      date: new Date().toISOString().slice(0, 10),
-      lapseOrRelapse: "lapse",
-      summary: "",
-      whenStarted: "",
-      duration: "",
-      context: "",
-      triggers: "",
-      emotions: "",
-      thoughts: "",
-      body: "",
-      boundariesBroken: "",
-      warningSigns: "",
-      decisionPoints: "",
-      immediateActions: "",
-      ruleChanges: "",
-      environmentChanges: "",
-      supportPlan: "",
-      next24HoursPlan: "",
-    };
+  const { data: autopsiesData, isLoading } = useQuery<{ autopsies: AutopsyData[] }>({
+    queryKey: ['/api/relapse-autopsies'],
+  });
+
+  const autopsies = autopsiesData?.autopsies || [];
+
+  const createMutation = useMutation({
+    mutationFn: async (autopsyData: AutopsyData) => {
+      const res = await apiRequest("POST", "/api/relapse-autopsies", autopsyData);
+      if (!res.ok) throw new Error("Failed to create");
+      return res.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/relapse-autopsies'] });
+      setEditingId(result.autopsy.id);
+      toast({ title: "Draft created" });
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async ({ id, autopsyData }: { id: string; autopsyData: AutopsyData }) => {
+      const res = await apiRequest("PUT", `/api/relapse-autopsies/${id}`, autopsyData);
+      if (!res.ok) throw new Error("Failed to save");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/relapse-autopsies'] });
+      toast({ title: "Draft saved" });
+    },
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/relapse-autopsies/${id}/complete`);
+      if (!res.ok) throw new Error("Failed to complete");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/relapse-autopsies'] });
+      setShowForm(false);
+      setEditingId(null);
+      setData(emptyAutopsy);
+      toast({ title: "Relapse Autopsy submitted", description: "Your mentor has been notified and will provide feedback." });
+    },
   });
 
   function update<K extends keyof AutopsyData>(key: K, value: AutopsyData[K]) {
     setData((prev) => ({ ...prev, [key]: value }));
-    setStatus("idle");
   }
 
-  function saveDraft() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    setStatus("saved");
-    window.setTimeout(() => setStatus("idle"), 1200);
+  function startNew() {
+    setData(emptyAutopsy);
+    setEditingId(null);
+    setShowForm(true);
   }
 
-  function markComplete() {
-    // For now we just save and mark complete locally.
-    // Later we can POST to your server + attach to week/user.
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, completedAt: new Date().toISOString() }));
-    setStatus("completed");
+  function editExisting(autopsy: AutopsyData) {
+    setData(autopsy);
+    setEditingId(autopsy.id || null);
+    setShowForm(true);
+  }
+
+  function handleSave() {
+    if (editingId) {
+      saveMutation.mutate({ id: editingId, autopsyData: data });
+    } else {
+      createMutation.mutate(data);
+    }
+  }
+
+  function handleComplete() {
+    if (!editingId) {
+      createMutation.mutate(data, {
+        onSuccess: (result) => {
+          completeMutation.mutate(result.autopsy.id);
+        }
+      });
+      return;
+    }
+    saveMutation.mutate({ id: editingId, autopsyData: data }, {
+      onSuccess: () => {
+        completeMutation.mutate(editingId);
+      }
+    });
+  }
+
+  const isSaving = createMutation.isPending || saveMutation.isPending;
+  const isCompleting = completeMutation.isPending;
+
+  if (!showForm) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight" data-testid="text-autopsy-title">Relapse Autopsy</h1>
+            <p className="mt-2 text-muted-foreground">
+              No shame. No stories. Just facts, patterns, and corrective action.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={startNew} data-testid="button-new-autopsy">
+              <Plus className="mr-2 h-4 w-4" />
+              New Autopsy
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard">Back</Link>
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-md border border-destructive/40 bg-destructive/5 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
+            <div>
+              <div className="font-semibold text-destructive">If a relapse occurs</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                A relapse does <span className="font-semibold">not</span> remove you from the program.
+                Complete a <span className="font-semibold">Relapse Autopsy</span> and your mentor will review it and provide feedback.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="mt-6 space-y-3">
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        ) : autopsies.length === 0 ? (
+          <Card className="mt-6">
+            <CardContent className="py-8 text-center text-muted-foreground">
+              No relapse autopsies yet. If you experience a lapse or relapse, use the button above to start one.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="mt-6 space-y-3">
+            {autopsies.map((a) => (
+              <Card key={a.id} className="hover-elevate cursor-pointer" onClick={() => a.status === "draft" ? editExisting(a) : undefined}>
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3">
+                      {a.status === "completed" ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      ) : (
+                        <Clock className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                      )}
+                      <div>
+                        <div className="font-medium flex items-center gap-2 flex-wrap">
+                          {a.date}
+                          <Badge variant={a.lapseOrRelapse === "relapse" ? "destructive" : "secondary"}>
+                            {a.lapseOrRelapse === "relapse" ? "Relapse" : "Lapse"}
+                          </Badge>
+                          <Badge variant={a.status === "completed" ? "default" : "outline"}>
+                            {a.status === "completed" ? "Submitted" : "Draft"}
+                          </Badge>
+                        </div>
+                        {a.summary && (
+                          <p className="mt-1 text-sm text-muted-foreground line-clamp-1">{a.summary}</p>
+                        )}
+                      </div>
+                    </div>
+                    {a.status === "draft" && (
+                      <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); editExisting(a); }} data-testid={`button-edit-autopsy-${a.id}`}>
+                        Continue editing
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Relapse Autopsy</h1>
           <p className="mt-2 text-muted-foreground">
             No shame. No stories. Just facts, patterns, and corrective action.
           </p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/dashboard">Back</Link>
+        <Button variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setData(emptyAutopsy); }}>
+          Back to list
         </Button>
       </div>
 
-      {/* Warning box */}
-      <div className="mt-6 rounded-2xl border border-destructive/40 bg-destructive/5 p-4">
+      <div className="mt-6 rounded-md border border-destructive/40 bg-destructive/5 p-4">
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
           <div>
@@ -118,23 +267,17 @@ export default function RelapseAutopsyPage() {
         </div>
       </div>
 
-      {/* Controls */}
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button onClick={saveDraft} className="sm:w-auto">
-          <Save className="mr-2 h-4 w-4" />
+        <Button onClick={handleSave} disabled={isSaving} className="sm:w-auto" data-testid="button-save-draft">
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save draft
         </Button>
-        <Button variant="secondary" onClick={markComplete} className="sm:w-auto">
-          <CheckCircle2 className="mr-2 h-4 w-4" />
-          Mark complete
+        <Button variant="secondary" onClick={handleComplete} disabled={isCompleting || isSaving} className="sm:w-auto" data-testid="button-submit-autopsy">
+          {isCompleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+          Submit to Mentor
         </Button>
-        <div className="text-sm text-muted-foreground sm:ml-auto sm:self-center">
-          {status === "saved" && "Draft saved."}
-          {status === "completed" && "Marked complete."}
-        </div>
       </div>
 
-      {/* Section 1 */}
       <Card className="mt-6">
         <CardHeader>
           <CardTitle className="text-base">1) Incident summary</CardTitle>
@@ -142,44 +285,28 @@ export default function RelapseAutopsyPage() {
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
             <Label>Date</Label>
-            <Input value={data.date} onChange={(e) => update("date", e.target.value)} type="date" />
+            <Input value={data.date} onChange={(e) => update("date", e.target.value)} type="date" data-testid="input-autopsy-date" />
           </div>
-
           <div className="grid gap-2">
             <Label>Lapse or relapse?</Label>
             <div className="flex gap-3 text-sm">
               <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={data.lapseOrRelapse === "lapse"}
-                  onChange={() => update("lapseOrRelapse", "lapse")}
-                />
+                <input type="radio" checked={data.lapseOrRelapse === "lapse"} onChange={() => update("lapseOrRelapse", "lapse")} data-testid="radio-lapse" />
                 Lapse (brief slip)
               </label>
               <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={data.lapseOrRelapse === "relapse"}
-                  onChange={() => update("lapseOrRelapse", "relapse")}
-                />
+                <input type="radio" checked={data.lapseOrRelapse === "relapse"} onChange={() => update("lapseOrRelapse", "relapse")} data-testid="radio-relapse" />
                 Relapse (returned to old pattern)
               </label>
             </div>
           </div>
-
           <div className="grid gap-2">
             <Label>What happened? (facts only)</Label>
-            <Textarea
-              value={data.summary}
-              onChange={(e) => update("summary", e.target.value)}
-              placeholder="Write a short, factual summary. No self-attacks. No justification."
-              className="min-h-[110px]"
-            />
+            <Textarea value={data.summary} onChange={(e) => update("summary", e.target.value)} placeholder="Write a short, factual summary. No self-attacks. No justification." className="min-h-[110px]" data-testid="textarea-summary" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Section 2 */}
       <Card className="mt-4">
         <CardHeader>
           <CardTitle className="text-base">2) Timeline</CardTitle>
@@ -195,17 +322,11 @@ export default function RelapseAutopsyPage() {
           </div>
           <div className="grid gap-2">
             <Label>Where were you / what was happening?</Label>
-            <Textarea
-              value={data.context}
-              onChange={(e) => update("context", e.target.value)}
-              placeholder="Environment + situation. Example: alone, laptop in bed, late night, tired."
-              className="min-h-[90px]"
-            />
+            <Textarea value={data.context} onChange={(e) => update("context", e.target.value)} placeholder="Environment + situation. Example: alone, laptop in bed, late night, tired." className="min-h-[90px]" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Section 3 */}
       <Card className="mt-4">
         <CardHeader>
           <CardTitle className="text-base">3) Triggers and internal state</CardTitle>
@@ -230,7 +351,6 @@ export default function RelapseAutopsyPage() {
         </CardContent>
       </Card>
 
-      {/* Section 4 */}
       <Card className="mt-4">
         <CardHeader>
           <CardTitle className="text-base">4) Breakdown points</CardTitle>
@@ -251,7 +371,6 @@ export default function RelapseAutopsyPage() {
         </CardContent>
       </Card>
 
-      {/* Section 5 */}
       <Card className="mt-4">
         <CardHeader>
           <CardTitle className="text-base">5) Corrective action plan</CardTitle>
@@ -281,19 +400,15 @@ export default function RelapseAutopsyPage() {
       </Card>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Button onClick={saveDraft}>
-          <Save className="mr-2 h-4 w-4" />
+        <Button onClick={handleSave} disabled={isSaving} data-testid="button-save-draft-bottom">
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save draft
         </Button>
-        <Button variant="secondary" onClick={markComplete}>
-          <CheckCircle2 className="mr-2 h-4 w-4" />
-          Mark complete
+        <Button variant="secondary" onClick={handleComplete} disabled={isCompleting || isSaving} data-testid="button-submit-autopsy-bottom">
+          {isCompleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+          Submit to Mentor
         </Button>
       </div>
-
-      <p className="mt-6 text-xs text-muted-foreground">
-        Note: This page currently saves locally in your browser (draft). Next step is saving to your database per user/week.
-      </p>
     </div>
   );
 }

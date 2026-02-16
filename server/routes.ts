@@ -689,6 +689,88 @@ export async function registerRoutes(
   });
 
   // =======================================
+  // Relapse Autopsy endpoints (client)
+  // =======================================
+
+  app.get("/api/relapse-autopsies", requireRole("client"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const autopsies = await storage.getRelapseAutopsies(userId);
+      res.json({ autopsies });
+    } catch (error) {
+      console.error("Get relapse autopsies error:", error);
+      res.status(500).json({ message: "Failed to get relapse autopsies" });
+    }
+  });
+
+  app.post("/api/relapse-autopsies", requireRole("client"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const autopsy = await storage.createRelapseAutopsy(userId, req.body);
+      res.status(201).json({ autopsy });
+    } catch (error) {
+      console.error("Create relapse autopsy error:", error);
+      res.status(500).json({ message: "Failed to create relapse autopsy" });
+    }
+  });
+
+  app.put("/api/relapse-autopsies/:id", requireRole("client"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { id } = req.params;
+      const autopsy = await storage.updateRelapseAutopsy(id, userId, req.body);
+      if (!autopsy) {
+        return res.status(404).json({ message: "Relapse autopsy not found" });
+      }
+      res.json({ autopsy });
+    } catch (error) {
+      console.error("Update relapse autopsy error:", error);
+      res.status(500).json({ message: "Failed to update relapse autopsy" });
+    }
+  });
+
+  app.post("/api/relapse-autopsies/:id/complete", requireRole("client"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const user = req.user as any;
+      const { id } = req.params;
+      const autopsy = await storage.completeRelapseAutopsy(id, userId);
+      if (!autopsy) {
+        return res.status(404).json({ message: "Relapse autopsy not found" });
+      }
+
+      res.json({ autopsy });
+
+      try {
+        const therapists = await storage.getTherapistsForClient(userId);
+        if (therapists.length > 0) {
+          const { sendRelapseAutopsyNotification } = await import("./emailService");
+          const clientName = user.name || user.email || 'Client';
+          const loginUrl = `${req.protocol}://${req.get('host')}/login`;
+          for (const therapist of therapists) {
+            if (therapist.email) {
+              const clientLink = `${req.protocol}://${req.get('host')}/therapist/clients/${userId}?tab=autopsies`;
+              await sendRelapseAutopsyNotification(
+                therapist.email,
+                therapist.name || undefined,
+                clientName,
+                autopsy.lapseOrRelapse === "relapse" ? "Relapse" : "Lapse",
+                clientLink,
+                loginUrl
+              );
+            }
+          }
+        }
+      } catch (notifyError) {
+        console.error("Failed to send relapse autopsy notification:", notifyError);
+      }
+    } catch (error) {
+      console.error("Complete relapse autopsy error:", error);
+      res.status(500).json({ message: "Failed to complete relapse autopsy" });
+    }
+  });
+
+  // =======================================
   // Admin API endpoints
   // =======================================
 
@@ -1266,8 +1348,9 @@ export async function registerRoutes(
       const homeworkCompletions = await storage.getAllHomeworkCompletions(clientId);
       const feedback = await storage.getFeedbackForTherapist(therapistId, clientId);
       const exerciseAnswersData = await storage.getAllExerciseAnswers(clientId);
+      const relapseAutopsiesData = await storage.getRelapseAutopsies(clientId);
       
-      res.json({ completedWeeks, checkins, reflections, homeworkCompletions, feedback, exerciseAnswers: exerciseAnswersData });
+      res.json({ completedWeeks, checkins, reflections, homeworkCompletions, feedback, exerciseAnswers: exerciseAnswersData, relapseAutopsies: relapseAutopsiesData });
     } catch (error) {
       console.error("Get client progress error:", error);
       res.status(500).json({ message: "Failed to get client progress" });

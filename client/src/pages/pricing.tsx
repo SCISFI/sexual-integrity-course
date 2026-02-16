@@ -15,7 +15,7 @@ export default function PricingPage() {
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <Shield className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-semibold text-lg">Sexual Integrity</span>
+              <span className="font-semibold text-lg">The Integrity Protocol</span>
             </div>
           </Link>
           <div className="flex items-center gap-4">
@@ -93,7 +93,7 @@ export default function PricingPage() {
               </div>
               <CardTitle className="text-2xl">Client Access</CardTitle>
               <CardDescription>
-                Weekly access to the 16-week Sexual Integrity curriculum
+                Weekly access to the 16-week Integrity Protocol curriculum
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -201,7 +201,7 @@ export default function PricingPage() {
 
       <footer className="border-t mt-16 py-8">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>Sexual Integrity Curriculum - Supporting your journey toward wholeness</p>
+          <p>The Integrity Protocol - Supporting your journey toward wholeness</p>
         </div>
       </footer>
     </div>

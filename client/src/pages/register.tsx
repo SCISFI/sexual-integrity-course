@@ -24,7 +24,7 @@ export default function Register() {
               className="text-xl font-semibold tracking-tight"
               data-testid="text-logo"
             >
-              Sexual Integrity
+              The Integrity Protocol
             </span>
           </div>
         </Link>
@@ -54,7 +54,7 @@ export default function Register() {
                   <div className="flex-1">
                     <h3 className="font-semibold" data-testid="text-client-option">Client</h3>
                     <p className="text-sm text-muted-foreground">
-                      Begin your 16-week Sexual Integrity journey
+                      Begin your 16-week Integrity Protocol journey
                     </p>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground" />

@@ -114,7 +114,7 @@ export default function RegisterClient() {
               className="text-xl font-semibold tracking-tight"
               data-testid="text-logo"
             >
-              Sexual Integrity
+              The Integrity Protocol
             </span>
           </div>
         </Link>
@@ -134,7 +134,7 @@ export default function RegisterClient() {
               Client Registration
             </CardTitle>
             <CardDescription data-testid="text-register-description">
-              Begin your 16-week Sexual Integrity journey
+              Begin your 16-week Integrity Protocol journey
             </CardDescription>
           </CardHeader>
           <CardContent>

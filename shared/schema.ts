@@ -363,5 +363,43 @@ export const insertNotificationPreferenceSchema = createInsertSchema(notificatio
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
 
+// Relapse autopsies - client-submitted relapse analysis forms
+export const relapseAutopsies = pgTable("relapse_autopsies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  date: varchar("date", { length: 10 }).notNull(),
+  lapseOrRelapse: varchar("lapse_or_relapse", { length: 20 }).notNull(),
+  summary: text("summary").default(""),
+  whenStarted: text("when_started").default(""),
+  duration: text("duration").default(""),
+  context: text("context").default(""),
+  triggers: text("triggers").default(""),
+  emotions: text("emotions").default(""),
+  thoughts: text("thoughts").default(""),
+  body: text("body").default(""),
+  boundariesBroken: text("boundaries_broken").default(""),
+  warningSigns: text("warning_signs").default(""),
+  decisionPoints: text("decision_points").default(""),
+  immediateActions: text("immediate_actions").default(""),
+  ruleChanges: text("rule_changes").default(""),
+  environmentChanges: text("environment_changes").default(""),
+  supportPlan: text("support_plan").default(""),
+  next24HoursPlan: text("next_24_hours_plan").default(""),
+  status: varchar("status", { length: 20 }).notNull().default("draft"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertRelapseAutopsySchema = createInsertSchema(relapseAutopsies).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+});
+
+export type RelapseAutopsy = typeof relapseAutopsies.$inferSelect;
+export type InsertRelapseAutopsy = z.infer<typeof insertRelapseAutopsySchema>;
+
 // Export chat models
 export * from "./models/chat";

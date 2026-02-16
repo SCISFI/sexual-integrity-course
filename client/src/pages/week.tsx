@@ -166,7 +166,7 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
     ]
   },
   16: {
-    congrats: "Congratulations on completing the entire 16-week Sexual Integrity Program! This is a remarkable achievement. The work you've done takes tremendous courage and commitment.",
+    congrats: "Congratulations on completing the entire 16-week Integrity Protocol! This is a remarkable achievement. The work you've done takes tremendous courage and commitment.",
     learnings: [
       "You've integrated all the skills and insights from both phases",
       "You've created a vision for your continued growth and recovery",
@@ -653,7 +653,7 @@ export default function WeekPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <div className="font-semibold text-sm">Sexual Integrity Program</div>
+            <div className="font-semibold text-sm">The Integrity Protocol</div>
             <div className="text-xs text-muted-foreground">
               Week {weekNumber} of 16
             </div>
