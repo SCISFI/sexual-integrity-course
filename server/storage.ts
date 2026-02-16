@@ -10,7 +10,10 @@ import {
   therapistFeedback,
   passwordResetTokens,
   homeworkCompletions,
+  exerciseAnswers,
   weekReviews,
+  pushSubscriptions,
+  notificationPreferences,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -24,7 +27,10 @@ import {
   type TherapistFeedback,
   type PasswordResetToken,
   type HomeworkCompletion,
+  type ExerciseAnswer,
   type WeekReview,
+  type PushSubscription,
+  type NotificationPreference,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql } from "drizzle-orm";
@@ -107,6 +113,11 @@ export interface IStorage {
   // Password update
   updateUserPassword(userId: string, hashedPassword: string): Promise<User | undefined>;
 
+  // Exercise answers
+  getExerciseAnswers(userId: string, weekNumber: number): Promise<ExerciseAnswer | undefined>;
+  upsertExerciseAnswers(userId: string, weekNumber: number, answers: string): Promise<ExerciseAnswer>;
+  getAllExerciseAnswers(userId: string): Promise<ExerciseAnswer[]>;
+
   // Homework completions
   getHomeworkCompletion(userId: string, weekNumber: number): Promise<HomeworkCompletion | undefined>;
   upsertHomeworkCompletion(userId: string, weekNumber: number, completedItems: number[]): Promise<HomeworkCompletion>;
@@ -121,6 +132,16 @@ export interface IStorage {
   getAllWeekReviewsForClient(clientId: string): Promise<WeekReview[]>;
   getPendingReviewsForTherapist(therapistId: string): Promise<Array<{clientId: string; clientName: string; weekNumber: number; completedAt: Date}>>;
   getOverdueReviews(hoursThreshold: number): Promise<Array<{therapistId: string; therapistName: string; clientId: string; clientName: string; weekNumber: number; completedAt: Date; hoursPending: number}>>;
+
+  // Push subscriptions
+  savePushSubscription(userId: string, endpoint: string, p256dh: string, auth: string): Promise<PushSubscription>;
+  getPushSubscriptions(userId: string): Promise<PushSubscription[]>;
+  deletePushSubscription(userId: string, endpoint: string): Promise<void>;
+  getAllPushSubscriptionsForCheckinReminders(): Promise<Array<{userId: string; endpoint: string; p256dh: string; auth: string; checkinReminderTime: string}>>;
+
+  // Notification preferences
+  getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined>;
+  upsertNotificationPreferences(userId: string, data: Partial<{checkinReminderEnabled: boolean; checkinReminderTime: string; feedbackNotificationsEnabled: boolean; weeklyProgressEnabled: boolean}>): Promise<NotificationPreference>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -595,9 +616,45 @@ export class DatabaseStorage implements IStorage {
       .where(eq(homeworkCompletions.userId, userId));
   }
 
+  async getExerciseAnswers(userId: string, weekNumber: number): Promise<ExerciseAnswer | undefined> {
+    const [result] = await db
+      .select()
+      .from(exerciseAnswers)
+      .where(and(eq(exerciseAnswers.userId, userId), eq(exerciseAnswers.weekNumber, weekNumber)));
+    return result || undefined;
+  }
+
+  async getAllExerciseAnswers(userId: string): Promise<ExerciseAnswer[]> {
+    const results = await db
+      .select()
+      .from(exerciseAnswers)
+      .where(eq(exerciseAnswers.userId, userId))
+      .orderBy(exerciseAnswers.weekNumber);
+    return results;
+  }
+
+  async upsertExerciseAnswers(userId: string, weekNumber: number, answers: string): Promise<ExerciseAnswer> {
+    const existing = await this.getExerciseAnswers(userId, weekNumber);
+    if (existing) {
+      const [updated] = await db
+        .update(exerciseAnswers)
+        .set({ answers, updatedAt: new Date() })
+        .where(eq(exerciseAnswers.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(exerciseAnswers)
+        .values({ userId, weekNumber, answers })
+        .returning();
+      return created;
+    }
+  }
+
   async deleteUser(userId: string): Promise<void> {
     // Delete all related data for the user
     // Order matters due to foreign key constraints
+    await db.delete(exerciseAnswers).where(eq(exerciseAnswers.userId, userId));
     await db.delete(homeworkCompletions).where(eq(homeworkCompletions.userId, userId));
     await db.delete(weekReflections).where(eq(weekReflections.userId, userId));
     await db.delete(dailyCheckins).where(eq(dailyCheckins.userId, userId));
@@ -737,6 +794,70 @@ export class DatabaseStorage implements IStorage {
     // Sort by hours pending (most overdue first)
     results.sort((a, b) => b.hoursPending - a.hoursPending);
     return results;
+  }
+
+  async savePushSubscription(userId: string, endpoint: string, p256dh: string, auth: string): Promise<PushSubscription> {
+    const existing = await db.select().from(pushSubscriptions)
+      .where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)));
+    if (existing.length > 0) {
+      const [updated] = await db.update(pushSubscriptions)
+        .set({ p256dh, auth })
+        .where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)))
+        .returning();
+      return updated;
+    }
+    const [sub] = await db.insert(pushSubscriptions).values({ userId, endpoint, p256dh, auth }).returning();
+    return sub;
+  }
+
+  async getPushSubscriptions(userId: string): Promise<PushSubscription[]> {
+    return db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+  }
+
+  async deletePushSubscription(userId: string, endpoint: string): Promise<void> {
+    await db.delete(pushSubscriptions).where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)));
+  }
+
+  async getAllPushSubscriptionsForCheckinReminders(): Promise<Array<{userId: string; endpoint: string; p256dh: string; auth: string; checkinReminderTime: string}>> {
+    const results = await db.select({
+      userId: pushSubscriptions.userId,
+      endpoint: pushSubscriptions.endpoint,
+      p256dh: pushSubscriptions.p256dh,
+      auth: pushSubscriptions.auth,
+      checkinReminderTime: notificationPreferences.checkinReminderTime,
+    })
+    .from(pushSubscriptions)
+    .innerJoin(notificationPreferences, eq(pushSubscriptions.userId, notificationPreferences.userId))
+    .innerJoin(users, eq(pushSubscriptions.userId, users.id))
+    .where(and(
+      eq(notificationPreferences.checkinReminderEnabled, true),
+      eq(users.role, "client"),
+      eq(users.subscriptionStatus, "active")
+    ));
+    return results.map(r => ({
+      ...r,
+      checkinReminderTime: r.checkinReminderTime || "20:00",
+    }));
+  }
+
+  async getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined> {
+    const [pref] = await db.select().from(notificationPreferences).where(eq(notificationPreferences.userId, userId));
+    return pref;
+  }
+
+  async upsertNotificationPreferences(userId: string, data: Partial<{checkinReminderEnabled: boolean; checkinReminderTime: string; feedbackNotificationsEnabled: boolean; weeklyProgressEnabled: boolean}>): Promise<NotificationPreference> {
+    const existing = await this.getNotificationPreferences(userId);
+    if (existing) {
+      const [updated] = await db.update(notificationPreferences)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(notificationPreferences.userId, userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(notificationPreferences)
+      .values({ userId, ...data })
+      .returning();
+    return created;
   }
 }
 

@@ -4,6 +4,77 @@ import { storage } from "./storage";
 import { passport, hashPassword } from "./auth";
 import { registerSchema, loginSchema, registerTherapistSchema, registerClientSchema, type UserRole } from "@shared/schema";
 import { z } from "zod";
+import webpush from "web-push";
+
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    "mailto:support@integrityprotocol.app",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
+function startCheckinReminderScheduler() {
+  const sentToday = new Set<string>();
+  let lastDateKey = "";
+  
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const currentHour = now.getUTCHours().toString().padStart(2, '0');
+      const currentMinute = now.getUTCMinutes().toString().padStart(2, '0');
+      const currentTime = `${currentHour}:${currentMinute}`;
+      const dateKey = now.toISOString().split('T')[0];
+      
+      if (dateKey !== lastDateKey) {
+        sentToday.clear();
+        lastDateKey = dateKey;
+      }
+      
+      const subscriptions = await storage.getAllPushSubscriptionsForCheckinReminders();
+      
+      for (const sub of subscriptions) {
+        const reminderTime = sub.checkinReminderTime || "20:00";
+        const key = `${sub.userId}-${sub.endpoint}`;
+        
+        if (sentToday.has(key)) continue;
+        
+        const [reminderHour] = reminderTime.split(':');
+        const [currentHourParsed] = currentTime.split(':');
+        
+        if (reminderHour === currentHourParsed) {
+          sentToday.add(key);
+          
+          const existingCheckin = await storage.getDailyCheckin(sub.userId, dateKey);
+          if (existingCheckin) continue;
+          
+          try {
+            await webpush.sendNotification(
+              {
+                endpoint: sub.endpoint,
+                keys: { p256dh: sub.p256dh, auth: sub.auth },
+              },
+              JSON.stringify({
+                title: "Daily Check-in Reminder",
+                body: "Take a moment for your daily check-in. How are you doing today?",
+                url: "/daily-checkin",
+                tag: "checkin-reminder",
+              })
+            );
+          } catch (pushError: any) {
+            if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+              await storage.deletePushSubscription(sub.userId, sub.endpoint);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Check-in reminder scheduler error:", error);
+    }
+  }, 60000);
+  
+  console.log("Check-in reminder scheduler started (checking every minute)");
+}
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated()) {
@@ -291,6 +362,38 @@ export async function registerRoutes(
     }
   });
 
+  // Exercise answers
+  app.get("/api/progress/exercises/:week", requireAuth, async (req, res) => {
+    try {
+      const weekNumber = parseInt(req.params.week, 10);
+      if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 16) {
+        return res.status(400).json({ message: "Invalid week number" });
+      }
+      const userId = (req.user as any).id;
+      const exerciseData = await storage.getExerciseAnswers(userId, weekNumber);
+      res.json({ answers: exerciseData ? JSON.parse(exerciseData.answers || "{}") : {} });
+    } catch (error) {
+      console.error("Get exercise answers error:", error);
+      res.status(500).json({ message: "Failed to get exercise answers" });
+    }
+  });
+
+  app.put("/api/progress/exercises/:week", requireAuth, async (req, res) => {
+    try {
+      const weekNumber = parseInt(req.params.week, 10);
+      if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 16) {
+        return res.status(400).json({ message: "Invalid week number" });
+      }
+      const userId = (req.user as any).id;
+      const { answers } = req.body;
+      const result = await storage.upsertExerciseAnswers(userId, weekNumber, JSON.stringify(answers || {}));
+      res.json({ answers: JSON.parse(result.answers || "{}") });
+    } catch (error) {
+      console.error("Save exercise answers error:", error);
+      res.status(500).json({ message: "Failed to save exercise answers" });
+    }
+  });
+
   // Commitments
   app.get("/api/progress/commitment/:week", requireAuth, async (req, res) => {
     try {
@@ -570,6 +673,18 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Get checkin stats error:", error);
       res.status(500).json({ message: "Failed to get checkin statistics" });
+    }
+  });
+
+  // Client feedback endpoint
+  app.get("/api/my-feedback", requireRole("client"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const feedback = await storage.getClientFeedback(userId);
+      res.json({ feedback });
+    } catch (error) {
+      console.error("Fetch client feedback error:", error);
+      res.status(500).json({ message: "Failed to fetch feedback" });
     }
   });
 
@@ -927,6 +1042,7 @@ export async function registerRoutes(
       const reflections = await storage.getAllWeekReflections(clientId);
       const homeworkCompletions = await storage.getAllHomeworkCompletions(clientId);
       const feedback = await storage.getClientFeedback(clientId);
+      const exerciseAnswersData = await storage.getAllExerciseAnswers(clientId);
       
       // Get therapist info
       const therapists = await storage.getTherapistsForClient(clientId);
@@ -944,6 +1060,7 @@ export async function registerRoutes(
         reflections,
         homeworkCompletions,
         feedback,
+        exerciseAnswers: exerciseAnswersData,
         therapists 
       });
     } catch (error) {
@@ -1148,8 +1265,9 @@ export async function registerRoutes(
       const reflections = await storage.getAllWeekReflections(clientId);
       const homeworkCompletions = await storage.getAllHomeworkCompletions(clientId);
       const feedback = await storage.getFeedbackForTherapist(therapistId, clientId);
+      const exerciseAnswersData = await storage.getAllExerciseAnswers(clientId);
       
-      res.json({ completedWeeks, checkins, reflections, homeworkCompletions, feedback });
+      res.json({ completedWeeks, checkins, reflections, homeworkCompletions, feedback, exerciseAnswers: exerciseAnswersData });
     } catch (error) {
       console.error("Get client progress error:", error);
       res.status(500).json({ message: "Failed to get client progress" });
@@ -2106,6 +2224,83 @@ Write the feedback message now:`;
       res.status(500).json({ message: "Failed to reset password" });
     }
   });
+
+  // ===== Push Notification Routes =====
+
+  app.get("/api/vapid-public-key", (req, res) => {
+    res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || "" });
+  });
+
+  app.post("/api/push/subscribe", requireAuth, async (req, res) => {
+    try {
+      const { endpoint, keys } = req.body;
+      if (!endpoint || !keys?.p256dh || !keys?.auth) {
+        return res.status(400).json({ message: "Invalid subscription data" });
+      }
+      const userId = req.user!.id;
+      await storage.savePushSubscription(userId, endpoint, keys.p256dh, keys.auth);
+      await storage.upsertNotificationPreferences(userId, {});
+      res.json({ message: "Subscribed to notifications" });
+    } catch (error) {
+      console.error("Push subscribe error:", error);
+      res.status(500).json({ message: "Failed to subscribe" });
+    }
+  });
+
+  app.post("/api/push/unsubscribe", requireAuth, async (req, res) => {
+    try {
+      const { endpoint } = req.body;
+      if (!endpoint) {
+        return res.status(400).json({ message: "Endpoint required" });
+      }
+      const userId = req.user!.id;
+      await storage.deletePushSubscription(userId, endpoint);
+      res.json({ message: "Unsubscribed from notifications" });
+    } catch (error) {
+      console.error("Push unsubscribe error:", error);
+      res.status(500).json({ message: "Failed to unsubscribe" });
+    }
+  });
+
+  app.get("/api/push/status", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const subs = await storage.getPushSubscriptions(userId);
+      const prefs = await storage.getNotificationPreferences(userId);
+      res.json({
+        subscribed: subs.length > 0,
+        preferences: prefs || {
+          checkinReminderEnabled: true,
+          checkinReminderTime: "20:00",
+          feedbackNotificationsEnabled: true,
+          weeklyProgressEnabled: true,
+        },
+      });
+    } catch (error) {
+      console.error("Push status error:", error);
+      res.status(500).json({ message: "Failed to get notification status" });
+    }
+  });
+
+  app.put("/api/push/preferences", requireAuth, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { checkinReminderEnabled, checkinReminderTime, feedbackNotificationsEnabled, weeklyProgressEnabled } = req.body;
+      const prefs = await storage.upsertNotificationPreferences(userId, {
+        checkinReminderEnabled,
+        checkinReminderTime,
+        feedbackNotificationsEnabled,
+        weeklyProgressEnabled,
+      });
+      res.json(prefs);
+    } catch (error) {
+      console.error("Update preferences error:", error);
+      res.status(500).json({ message: "Failed to update preferences" });
+    }
+  });
+
+  // Start the check-in reminder scheduler
+  startCheckinReminderScheduler();
 
   return httpServer;
 }

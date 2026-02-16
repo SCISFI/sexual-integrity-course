@@ -279,6 +279,16 @@ export const homeworkCompletions = pgTable("homework_completions", {
   unique("homework_completions_user_week_unique").on(table.userId, table.weekNumber),
 ]);
 
+export const exerciseAnswers = pgTable("exercise_answers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  weekNumber: integer("week_number").notNull(),
+  answers: text("answers").default("{}"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  unique("exercise_answers_user_week_unique").on(table.userId, table.weekNumber),
+]);
+
 export const insertHomeworkCompletionSchema = createInsertSchema(homeworkCompletions).omit({
   id: true,
   updatedAt: true,
@@ -286,6 +296,14 @@ export const insertHomeworkCompletionSchema = createInsertSchema(homeworkComplet
 
 export type HomeworkCompletion = typeof homeworkCompletions.$inferSelect;
 export type InsertHomeworkCompletion = z.infer<typeof insertHomeworkCompletionSchema>;
+
+export const insertExerciseAnswerSchema = createInsertSchema(exerciseAnswers).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type ExerciseAnswer = typeof exerciseAnswers.$inferSelect;
+export type InsertExerciseAnswer = z.infer<typeof insertExerciseAnswerSchema>;
 
 // Week reviews - tracks therapist reviews of client week completions
 export const weekReviews = pgTable("week_reviews", {
@@ -306,6 +324,43 @@ export const insertWeekReviewSchema = createInsertSchema(weekReviews).omit({
 
 export type WeekReview = typeof weekReviews.$inferSelect;
 export type InsertWeekReview = z.infer<typeof insertWeekReviewSchema>;
+
+// Push notification subscriptions
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+
+// Notification preferences
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  checkinReminderEnabled: boolean("checkin_reminder_enabled").default(true),
+  checkinReminderTime: text("checkin_reminder_time").default("20:00"),
+  feedbackNotificationsEnabled: boolean("feedback_notifications_enabled").default(true),
+  weeklyProgressEnabled: boolean("weekly_progress_enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
 
 // Export chat models
 export * from "./models/chat";

@@ -78,3 +78,9 @@ Core tables include `users` (id, email, password, role, subscription status, etc
 -   **User Manual**: Downloadable PDF manual accessible via /user-manual route, linked from client dashboard Support Resources section.
 -   **HALT-BS Extended Check-in**: Daily check-in now tracks 6 vulnerability states (Hungry, Angry, Lonely, Tired, Bored, Stressed) instead of the original 4.
 -   **Week Page Design**: Professional visual styling with gradient hero sections, numbered topic badges, and progress indicators.
+-   **Exercise Answer Persistence**: All exercise fields (text inputs, textareas, selects, radio buttons) now auto-save to database via `exercise_answers` table with JSON storage, using debounced 1-second saves and save-on-unmount.
+-   **Client Feedback Viewing**: Clients can view mentor feedback directly on their dashboard with badges indicating feedback type and formatted timestamps.
+-   **Daily Check-in Tooltips**: All 8 daily check-in items have hover tooltips explaining what each item means and why it matters for recovery.
+-   **Mentor Journal Prompt Visibility**: Mentors and admins can now see the daily journal prompt that was shown to clients alongside their journal entries. Uses deterministic day-of-year calculation via `getPromptForDate()`.
+-   **Profile Dropdown Navigation**: All dashboards (client, mentor, admin) now use a profile dropdown menu instead of scattered icon buttons. Cancel account/subscription moved deeper into dropdown. Menu shows user name and email.
+-   **Web Push Notifications**: Browser push notification system with service worker (`client/public/sw.js`), VAPID key authentication, and per-user notification preferences. Features: daily check-in reminders with customizable time (UTC), mentor feedback alerts, opt-in/opt-out support. Scheduler runs every minute checking for due reminders. Tables: `push_subscriptions`, `notification_preferences`.

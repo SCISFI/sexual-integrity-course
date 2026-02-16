@@ -11,9 +11,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle, BarChart3, Clock, XCircle, Loader2, BookOpen } from "lucide-react";
+import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle, BarChart3, Clock, XCircle, Loader2, BookOpen, MessageSquare, ChevronDown, Settings, UserCircle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
+import { Badge } from "@/components/ui/badge";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
 import { apiRequest } from "@/lib/queryClient";
@@ -59,12 +69,23 @@ export default function Dashboard() {
     refetchOnMount: 'always',
   });
 
+  const { data: feedbackData } = useQuery<{ feedback: Array<{
+    id: string;
+    feedbackType: string;
+    content: string;
+    weekNumber: number | null;
+    createdAt: string;
+  }> }>({
+    queryKey: ['/api/my-feedback'],
+  });
+
   const completedWeeks = completionsData?.completedWeeks || [];
   const unlockedWeeks = unlockedWeeksData?.unlockedWeeks || [];
 
 
   // Check if user has completed onboarding (only for clients)
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   
   useEffect(() => {
     if (user && (user as any).role === "client") {
@@ -174,64 +195,87 @@ export default function Dashboard() {
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/analytics">
-              <Button variant="ghost" size="icon" title="My Analytics" data-testid="button-analytics">
-                <BarChart3 className="h-4 w-4" />
-              </Button>
-            </Link>
-
             <ThemeToggle />
 
-            <Link href="/change-password">
-              <Button variant="ghost" size="icon" title="Change Password" data-testid="button-change-password">
-                <Key className="h-4 w-4" />
-              </Button>
-            </Link>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" title="Cancel Account" data-testid="button-cancel-account">
-                  <XCircle className="h-4 w-4" />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" data-testid="button-profile-menu">
+                  <UserCircle className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">{(user as any)?.name || "Account"}</span>
+                  <ChevronDown className="h-3 w-3 ml-1" />
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel Your Account?</AlertDialogTitle>
-                  <AlertDialogDescription className="space-y-2">
-                    <p>Are you sure you want to cancel your account?</p>
-                    <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
-                      <p className="font-medium text-yellow-800 dark:text-yellow-200">Important:</p>
-                      <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
-                        <li>You will retain access to any weeks you have already paid for</li>
-                        <li>No refunds will be issued for previously purchased weeks</li>
-                        <li>You will not be able to purchase new weeks after cancellation</li>
-                      </ul>
-                    </div>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel data-testid="button-keep-account">Keep Account</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => cancelAccountMutation.mutate()}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    disabled={cancelAccountMutation.isPending}
-                    data-testid="button-confirm-cancel-account"
-                  >
-                    {cancelAccountMutation.isPending ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</>
-                    ) : (
-                      "Cancel Account"
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
-            <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
-              <LogOut className="h-4 w-4 mr-2" />
-              Log out
-            </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">{(user as any)?.name || "User"}</p>
+                    <p className="text-xs text-muted-foreground">{(user as any)?.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setLocation("/analytics")} data-testid="menu-analytics">
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  My Analytics
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/change-password")} data-testid="menu-change-password">
+                  <Key className="h-4 w-4 mr-2" />
+                  Change Password
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation("/user-manual")} data-testid="menu-user-manual">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  User Manual
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowCancelDialog(true)}
+                  className="text-destructive focus:text-destructive"
+                  data-testid="menu-cancel-account"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Cancel Account
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+
+          <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel Your Account?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <p>Are you sure you want to cancel your account?</p>
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">Important:</p>
+                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
+                      <li>You will retain access to any weeks you have already paid for</li>
+                      <li>No refunds will be issued for previously purchased weeks</li>
+                      <li>You will not be able to purchase new weeks after cancellation</li>
+                    </ul>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="button-keep-account">Keep Account</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => cancelAccountMutation.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={cancelAccountMutation.isPending}
+                  data-testid="button-confirm-cancel-account"
+                >
+                  {cancelAccountMutation.isPending ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</>
+                  ) : (
+                    "Cancel Account"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </header>
 
@@ -337,6 +381,52 @@ export default function Dashboard() {
         {/* Check-in Progress Dashboard */}
         <CheckinProgressDashboard />
 
+        {/* Mentor Feedback */}
+        <Card>
+          <CardHeader className="gap-3">
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Mentor Feedback
+            </CardTitle>
+            <CardDescription>
+              Personalized feedback from your mentor on your progress.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!feedbackData?.feedback || feedbackData.feedback.length === 0 ? (
+              <p className="text-sm text-muted-foreground" data-testid="text-no-feedback">
+                No feedback from your mentor yet. They'll provide personalized feedback as you progress through the program.
+              </p>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto" data-testid="section-mentor-feedback">
+                {[...feedbackData.feedback]
+                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  .map((fb) => (
+                    <div key={fb.id} className="rounded-lg border p-4" data-testid={`feedback-item-${fb.id}`}>
+                      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                        <Badge variant="secondary">
+                          {fb.feedbackType === "week_specific" && fb.weekNumber
+                            ? `Week ${fb.weekNumber}`
+                            : fb.feedbackType === "checkin"
+                            ? "Check-in"
+                            : "General"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(fb.createdAt).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{fb.content}</p>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Mentor Support */}
         <Card className="border-primary/30 bg-primary/5 dark:bg-primary/10">
           <CardHeader className="pb-2">
@@ -383,6 +473,9 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Notification Settings */}
+        <NotificationSettings />
 
         {/* Your Account */}
         <Card>

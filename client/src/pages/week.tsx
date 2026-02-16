@@ -195,10 +195,16 @@ export default function WeekPage() {
   const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
   const [homeworkLoaded, setHomeworkLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({});
+  const [exercisesLoaded, setExercisesLoaded] = useState(false);
+  const [exerciseSaveStatus, setExerciseSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reflectionAnswersRef = useRef<Record<string, string>>({});
   const homeworkCompletedRef = useRef<Record<number, boolean>>({});
+  const exerciseAnswersRef = useRef<Record<string, string>>({});
+  const exercisesDirtyRef = useRef(false);
+  const exerciseSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const weekIsLockedRef = useRef(false);
   const reflectionsDirtyRef = useRef(false);
   const homeworkDirtyRef = useRef(false);
@@ -257,6 +263,11 @@ export default function WeekPage() {
   // Fetch homework completions for this week
   const { data: homeworkData } = useQuery<{ completedItems: number[] }>({
     queryKey: ['/api/progress/homework', weekNumber],
+  });
+
+  // Fetch exercise answers for this week
+  const { data: exerciseData, isLoading: loadingExercises } = useQuery<{ answers: Record<string, string> }>({
+    queryKey: ['/api/progress/exercises', weekNumber],
   });
 
   // Fetch payment status for this week
@@ -344,6 +355,16 @@ export default function WeekPage() {
     }
   }, [homeworkData, homeworkLoaded]);
 
+  // Load exercise answers when data arrives
+  useEffect(() => {
+    if (exerciseData?.answers && !exercisesLoaded) {
+      setExerciseAnswers(exerciseData.answers);
+      exerciseAnswersRef.current = exerciseData.answers;
+      exercisesDirtyRef.current = false;
+      setExercisesLoaded(true);
+    }
+  }, [exerciseData, exercisesLoaded]);
+
   // Mutation to save reflections
   const saveReflectionMutation = useMutation({
     mutationFn: async (data: { q1?: string; q2?: string; q3?: string; q4?: string }) => {
@@ -417,18 +438,40 @@ export default function WeekPage() {
     },
   });
 
+  // Mutation to save exercise answers
+  const saveExerciseMutation = useMutation({
+    mutationFn: async (data: Record<string, string>) => {
+      const res = await apiRequest("PUT", `/api/progress/exercises/${weekNumber}`, { answers: data });
+      return res.json();
+    },
+    onMutate: () => {
+      setExerciseSaveStatus("saving");
+    },
+    onSuccess: () => {
+      setExerciseSaveStatus("saved");
+      setTimeout(() => setExerciseSaveStatus("idle"), 2000);
+    },
+    onError: () => {
+      setExerciseSaveStatus("idle");
+    },
+  });
+
   useEffect(() => {
     setAffirmComplete(false);
     setHomeworkCompleted({});
     setReflectionAnswers({});
     setReflectionsLoaded(false);
     setHomeworkLoaded(false);
+    setExerciseAnswers({});
+    setExercisesLoaded(false);
     setIsWeekCompleted(false);
     setShowCompletionDialog(false);
     reflectionAnswersRef.current = {};
     homeworkCompletedRef.current = {};
+    exerciseAnswersRef.current = {};
     reflectionsDirtyRef.current = false;
     homeworkDirtyRef.current = false;
+    exercisesDirtyRef.current = false;
   }, [weekNumber]);
 
   // Debounced save for reflections
@@ -463,6 +506,25 @@ export default function WeekPage() {
     }, 500);
   }, [weekNumber, weekIsLocked]);
 
+  // Debounced save for exercises
+  const debouncedSaveExercises = useCallback((answers: Record<string, string>) => {
+    if (weekIsLocked || loadingExercises) return;
+    if (exerciseSaveTimeoutRef.current) {
+      clearTimeout(exerciseSaveTimeoutRef.current);
+    }
+    exerciseSaveTimeoutRef.current = setTimeout(() => {
+      saveExerciseMutation.mutate(answers);
+    }, 1000);
+  }, [weekNumber, weekIsLocked, loadingExercises]);
+
+  const handleExerciseChange = useCallback((fieldKey: string, value: string) => {
+    const updated = { ...exerciseAnswersRef.current, [fieldKey]: value };
+    setExerciseAnswers(updated);
+    exerciseAnswersRef.current = updated;
+    exercisesDirtyRef.current = true;
+    debouncedSaveExercises(updated);
+  }, [debouncedSaveExercises]);
+
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
@@ -473,6 +535,9 @@ export default function WeekPage() {
       }
       if (saveStatusTimeoutRef.current) {
         clearTimeout(saveStatusTimeoutRef.current);
+      }
+      if (exerciseSaveTimeoutRef.current) {
+        clearTimeout(exerciseSaveTimeoutRef.current);
       }
 
       if (!weekIsLockedRef.current && reflectionsDirtyRef.current) {
@@ -501,6 +566,17 @@ export default function WeekPage() {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ completedItems }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+
+      if (!weekIsLockedRef.current && exercisesDirtyRef.current) {
+        const answers = exerciseAnswersRef.current;
+        fetch(`/api/progress/exercises/${weekNumber}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ answers }),
           keepalive: true,
         }).catch(() => {});
       }
@@ -858,16 +934,40 @@ export default function WeekPage() {
                   {weekContent.exercises && weekContent.exercises.length > 0 && (
                     <Card data-testid="section-exercises">
                       <CardHeader className="pb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50">
-                            <Target className="h-5 w-5 text-green-700 dark:text-green-400" />
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50">
+                              <Target className="h-5 w-5 text-green-700 dark:text-green-400" />
+                            </div>
+                            <div>
+                              <h2 className="text-xl font-semibold">Exercises</h2>
+                              <p className="text-sm text-muted-foreground">
+                                {weekContent.exercises.length} practical exercise{weekContent.exercises.length !== 1 ? 's' : ''}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h2 className="text-xl font-semibold">Exercises</h2>
-                            <p className="text-sm text-muted-foreground">
-                              {weekContent.exercises.length} practical exercise{weekContent.exercises.length !== 1 ? 's' : ''}
-                            </p>
-                          </div>
+                          {!weekIsLocked && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground" data-testid="exercise-save-indicator">
+                              {exerciseSaveStatus === "saving" && (
+                                <>
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  <span>Saving...</span>
+                                </>
+                              )}
+                              {exerciseSaveStatus === "saved" && (
+                                <>
+                                  <Cloud className="h-3 w-3 text-green-600" />
+                                  <span className="text-green-600">Saved</span>
+                                </>
+                              )}
+                              {exerciseSaveStatus === "idle" && exercisesLoaded && (
+                                <>
+                                  <Cloud className="h-3 w-3" />
+                                  <span>Auto-save on</span>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0 space-y-4">
@@ -901,22 +1001,33 @@ export default function WeekPage() {
                                     {field.type === "textarea" ? (
                                       <Textarea
                                         id={`${exercise.id}-${field.id}`}
-                                        placeholder={field.placeholder}
-                                        className="min-h-[120px] resize-none"
+                                        placeholder={weekIsLocked ? "This week has been completed." : field.placeholder}
+                                        className={`min-h-[120px] resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                        value={exerciseAnswers[`${exercise.id}-${field.id}`] || ""}
+                                        onChange={(e) => handleExerciseChange(`${exercise.id}-${field.id}`, e.target.value)}
+                                        disabled={weekIsLocked}
                                         data-testid={`input-exercise-${idx}-${fIdx}`}
                                       />
                                     ) : field.type === "number" ? (
                                       <Input
                                         id={`${exercise.id}-${field.id}`}
                                         type="number"
-                                        placeholder={field.placeholder}
+                                        placeholder={weekIsLocked ? "" : field.placeholder}
+                                        className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
+                                        value={exerciseAnswers[`${exercise.id}-${field.id}`] || ""}
+                                        onChange={(e) => handleExerciseChange(`${exercise.id}-${field.id}`, e.target.value)}
+                                        disabled={weekIsLocked}
                                         data-testid={`input-exercise-${idx}-${fIdx}`}
                                       />
                                     ) : (
                                       <Input
                                         id={`${exercise.id}-${field.id}`}
                                         type="text"
-                                        placeholder={field.placeholder}
+                                        placeholder={weekIsLocked ? "" : field.placeholder}
+                                        className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
+                                        value={exerciseAnswers[`${exercise.id}-${field.id}`] || ""}
+                                        onChange={(e) => handleExerciseChange(`${exercise.id}-${field.id}`, e.target.value)}
+                                        disabled={weekIsLocked}
                                         data-testid={`input-exercise-${idx}-${fIdx}`}
                                       />
                                     )}

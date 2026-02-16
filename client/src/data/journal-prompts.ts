@@ -31,13 +31,17 @@ export const JOURNAL_PROMPTS: string[] = [
   "How am I growing stronger than my urges?"
 ];
 
-export function getTodaysPrompt(): string {
-  // Use the day of year to rotate prompts
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff = now.getTime() - start.getTime();
+export function getPromptForDate(dateStr: string): string {
+  const date = new Date(dateStr + "T12:00:00");
+  const start = new Date(date.getFullYear(), 0, 0);
+  const diff = date.getTime() - start.getTime();
   const oneDay = 1000 * 60 * 60 * 24;
   const dayOfYear = Math.floor(diff / oneDay);
-  
   return JOURNAL_PROMPTS[dayOfYear % JOURNAL_PROMPTS.length];
+}
+
+export function getTodaysPrompt(): string {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  return getPromptForDate(dateStr);
 }

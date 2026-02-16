@@ -46,8 +46,18 @@ import {
   Key,
   DollarSign,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  UserCircle,
+  ChevronDown
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -339,14 +349,33 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Link href="/change-password">
-              <Button variant="ghost" size="icon" title="Change Password" data-testid="button-change-password">
-                <Key className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" data-testid="button-profile-menu">
+                  <UserCircle className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Admin</span>
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm font-medium">{(user as any)?.name || "Admin"}</p>
+                    <p className="text-xs text-muted-foreground">{(user as any)?.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setLocation("/change-password")} data-testid="menu-change-password">
+                  <Key className="h-4 w-4 mr-2" />
+                  Change Password
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>

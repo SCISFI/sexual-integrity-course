@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { getPromptForDate } from "@/data/journal-prompts";
 
 type ClientProgress = {
   completedWeeks: number[];
@@ -442,8 +443,10 @@ export default function TherapistClient() {
                             )}
                             {checkin.journalEntry && (
                               <div className="mt-2">
-                                <p className="text-xs text-muted-foreground">Journal</p>
-                                <p className="text-sm">{checkin.journalEntry}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Journal Prompt: <em>{getPromptForDate(checkin.dateKey)}</em>
+                                </p>
+                                <p className="text-sm mt-1">{checkin.journalEntry}</p>
                               </div>
                             )}
                           </div>

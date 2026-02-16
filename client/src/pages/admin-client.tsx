@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw, ListChecks, Send } from "lucide-react";
+import { getPromptForDate } from "@/data/journal-prompts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -281,8 +282,10 @@ export default function AdminClientPage() {
                         )}
                         {checkin.journalEntry && (
                           <div className="mt-2">
-                            <p className="text-xs text-muted-foreground">Journal</p>
-                            <p className="text-sm">{checkin.journalEntry}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Journal Prompt: <em>{getPromptForDate(checkin.dateKey)}</em>
+                            </p>
+                            <p className="text-sm mt-1">{checkin.journalEntry}</p>
                           </div>
                         )}
                       </div>

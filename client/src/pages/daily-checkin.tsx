@@ -15,7 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Loader2, Activity, Lightbulb, BarChart3 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Loader2, Activity, Lightbulb, BarChart3, HelpCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { getTodaysPrompt } from "@/data/journal-prompts";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
@@ -29,14 +30,14 @@ interface DailyCheckItem {
 
 // Unified daily check-in items - complete once per day
 const DAILY_ITEMS: DailyCheckItem[] = [
-  { id: "no-acting-out", category: "Recovery", label: "Did not engage in compulsive sexual behavior today" },
-  { id: "no-rituals", category: "Recovery", label: "Did not engage in ritualistic behaviors leading to acting out" },
-  { id: "triggers-managed", category: "Recovery", label: "Successfully managed triggers when they occurred" },
-  { id: "sleep", category: "Wellness", label: "Got adequate sleep (7-8 hours)", description: "Rest is crucial for self-regulation" },
-  { id: "exercise", category: "Wellness", label: "Got physical exercise or movement" },
-  { id: "connection", category: "Relationships", label: "Had meaningful connection with others" },
-  { id: "values-aligned", category: "Values", label: "Took at least one values-aligned action" },
-  { id: "honest", category: "Integrity", label: "Was honest in my interactions today" },
+  { id: "no-acting-out", category: "Recovery", label: "Did not engage in compulsive sexual behavior today", description: "This tracks your core recovery goal. Even partial days of sobriety matter and build momentum." },
+  { id: "no-rituals", category: "Recovery", label: "Did not engage in ritualistic behaviors leading to acting out", description: "Rituals are the habitual steps that precede acting out (e.g., browsing patterns, isolation). Catching them early breaks the cycle." },
+  { id: "triggers-managed", category: "Recovery", label: "Successfully managed triggers when they occurred", description: "Triggers are situations, emotions, or thoughts that create urges. Managing them means you used a coping strategy instead of reacting automatically." },
+  { id: "sleep", category: "Wellness", label: "Got adequate sleep (7-8 hours)", description: "Sleep deprivation weakens self-control and increases vulnerability to urges. Consistent rest is a foundation of recovery." },
+  { id: "exercise", category: "Wellness", label: "Got physical exercise or movement", description: "Physical activity reduces stress hormones, improves mood, and provides a healthy outlet for tension and restless energy." },
+  { id: "connection", category: "Relationships", label: "Had meaningful connection with others", description: "Isolation fuels compulsive behavior. Even brief genuine interactions with family, friends, or support groups protect your recovery." },
+  { id: "values-aligned", category: "Values", label: "Took at least one values-aligned action", description: "A values-aligned action is anything you did intentionally because it reflects who you want to be (e.g., being present with family, doing honest work, showing kindness). This concept is explored in depth in Weeks 11-13." },
+  { id: "honest", category: "Integrity", label: "Was honest in my interactions today", description: "Honesty is the opposite of the secrecy that sustains compulsive behavior. Tracking it helps build a habit of transparency in all areas of life." },
 ];
 
 const HALTBS_ITEMS = [
@@ -265,15 +266,24 @@ export default function DailyCheckinPage() {
                       data-testid={`checkbox-daily-${item.id}`}
                     />
                     <div className="flex-1">
-                      <label
-                        htmlFor={`daily-${item.id}`}
-                        className={`text-sm font-medium cursor-pointer ${dailyChecks[item.id] ? 'line-through text-muted-foreground' : ''}`}
-                      >
-                        {item.label}
-                      </label>
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground">{item.description}</p>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        <label
+                          htmlFor={`daily-${item.id}`}
+                          className={`text-sm font-medium cursor-pointer ${dailyChecks[item.id] ? 'line-through text-muted-foreground' : ''}`}
+                        >
+                          {item.label}
+                        </label>
+                        {item.description && (
+                          <Tooltip>
+                            <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0 cursor-help" data-testid={`tooltip-trigger-${item.id}`} />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-xs" data-testid={`tooltip-content-${item.id}`}>
+                              <p>{item.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

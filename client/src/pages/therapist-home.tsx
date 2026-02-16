@@ -6,7 +6,16 @@ import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, LogOut, Key, Search, CreditCard, Loader2, XCircle, ClipboardCheck, Clock } from "lucide-react";
+import { Users, LogOut, Key, Search, CreditCard, Loader2, XCircle, ClipboardCheck, Clock, UserCircle, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/lib/auth";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -51,7 +60,9 @@ type PendingReview = {
 export default function TherapistHome() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   const subscriptionConfirmedRef = useRef(false);
   const [reviewingItem, setReviewingItem] = useState<PendingReview | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -347,57 +358,80 @@ export default function TherapistHome() {
               Manage your assigned clients and monitor their progress
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/change-password">
-              <Button variant="ghost" size="icon" title="Change Password" data-testid="button-change-password">
-                <Key className="h-4 w-4" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" data-testid="button-profile-menu">
+                <UserCircle className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">{(user as any)?.name || "Account"}</span>
+                <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
-            </Link>
-            {!subscriptionCancelledButActive && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" title="Cancel Subscription" data-testid="button-cancel-subscription">
-                    <XCircle className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
-                    <AlertDialogDescription className="space-y-2">
-                      <p>Are you sure you want to cancel your subscription?</p>
-                      <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
-                        <p className="font-medium text-yellow-800 dark:text-yellow-200">Important:</p>
-                        <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
-                          <li>Your subscription will remain active until the end of your billing period</li>
-                          <li>No refunds will be issued for any unused time</li>
-                          <li>You will lose access to the dashboard after your billing period ends</li>
-                        </ul>
-                      </div>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel data-testid="button-keep-subscription">Keep Subscription</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => cancelSubscriptionMutation.mutate()}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      disabled={cancelSubscriptionMutation.isPending}
-                      data-testid="button-confirm-cancel"
-                    >
-                      {cancelSubscriptionMutation.isPending ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</>
-                      ) : (
-                        "Cancel Subscription"
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-          </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium">{(user as any)?.name || "Mentor"}</p>
+                  <p className="text-xs text-muted-foreground">{(user as any)?.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setLocation("/change-password")} data-testid="menu-change-password">
+                <Key className="h-4 w-4 mr-2" />
+                Change Password
+              </DropdownMenuItem>
+              {!subscriptionCancelledButActive && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setShowCancelDialog(true)}
+                    className="text-destructive focus:text-destructive"
+                    data-testid="menu-cancel-subscription"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Cancel Subscription
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
+                <LogOut className="h-4 w-4 mr-2" />
+                Log Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                  <p>Are you sure you want to cancel your subscription?</p>
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">Important:</p>
+                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
+                      <li>Your subscription will remain active until the end of your billing period</li>
+                      <li>No refunds will be issued for any unused time</li>
+                      <li>You will lose access to the dashboard after your billing period ends</li>
+                    </ul>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel data-testid="button-keep-subscription">Keep Subscription</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => cancelSubscriptionMutation.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={cancelSubscriptionMutation.isPending}
+                  data-testid="button-confirm-cancel"
+                >
+                  {cancelSubscriptionMutation.isPending ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</>
+                  ) : (
+                    "Cancel Subscription"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {/* Pending Reviews Section */}

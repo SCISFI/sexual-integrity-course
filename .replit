@@ -40,3 +40,10 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_database:1.0.0", "stripe:2.0.0", "javascript_openai_ai_integrations:2.0.0", "google-mail:1.0.0", "javascript_stripe:1.0.0", "javascript_gemini_ai_integrations:2.0.0"]
+
+[userenv]
+
+[userenv.shared]
+VAPID_PUBLIC_KEY = "BJvnuoiixCiXywGPZzbbLI4nzTyGhn3SRSCHjPB_bBt8hjRXmanmCVenuMToeo1Jc188CiuNE-R_0cl1qpv_gs0"
+VAPID_PRIVATE_KEY = "L7DTvxgeGJQNpvg-dkv_0zCCdqjDkAZaUm5CoQeREbs"
+VITE_VAPID_PUBLIC_KEY = "BJvnuoiixCiXywGPZzbbLI4nzTyGhn3SRSCHjPB_bBt8hjRXmanmCVenuMToeo1Jc188CiuNE-R_0cl1qpv_gs0"
