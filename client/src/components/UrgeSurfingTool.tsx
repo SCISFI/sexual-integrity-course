@@ -261,9 +261,9 @@ export function UrgeSurfingTool() {
           </div>
         </div>
 
-        {/* Crisis resources reminder */}
+        {/* Support reminder */}
         <div className="text-center text-xs text-muted-foreground border-t pt-4">
-          If urges persist, reach out. Text HOME to 741741 (Crisis Text Line) or call 988.
+          If urges persist, reach out to your mentor, accountability partner, or attend a recovery meeting.
         </div>
       </DialogContent>
     </Dialog>

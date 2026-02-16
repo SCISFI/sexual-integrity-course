@@ -476,8 +476,7 @@ export default function TherapistHome() {
                       <Button
                         size="sm"
                         onClick={() => {
-                          setReviewingItem(review);
-                          setReviewNotes("");
+                          setLocation(`/therapist/clients/${review.clientId}?reviewWeek=${review.weekNumber}`);
                         }}
                         className="w-full mt-2"
                         data-testid={`button-review-${review.clientId}-${review.weekNumber}`}

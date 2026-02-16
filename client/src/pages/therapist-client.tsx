@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation, useParams } from "wouter";
+import { useState, useEffect } from "react";
+import { useLocation, useParams, useSearch } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { getPromptForDate } from "@/data/journal-prompts";
@@ -40,6 +40,7 @@ type ClientProgress = {
     feedbackType: string;
     content: string;
     weekNumber: number | null;
+    checkinDateKey: string | null;
     createdAt: string;
   }>;
 };
@@ -56,11 +57,45 @@ type ClientInfo = {
 export default function TherapistClient() {
   const [, setLocation] = useLocation();
   const { id: clientId } = useParams<{ id: string }>();
+  const searchString = useSearch();
   const { toast } = useToast();
   const [newFeedback, setNewFeedback] = useState("");
   const [feedbackWeek, setFeedbackWeek] = useState<number | null>(null);
+  const [feedbackCheckinDate, setFeedbackCheckinDate] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("progress");
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState("");
+
+  const searchParams = new URLSearchParams(searchString);
+  const reviewWeek = searchParams.get('reviewWeek') ? parseInt(searchParams.get('reviewWeek')!) : null;
+
+  const submitReviewMutation = useMutation({
+    mutationFn: async ({ clientId, weekNumber, reviewNotes }: { clientId: string; weekNumber: number; reviewNotes: string }) => {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/review/${weekNumber}`, { reviewNotes });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to submit review");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/pending-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      setReviewNotes("");
+      toast({
+        title: "Review Submitted",
+        description: "The week has been marked as reviewed.",
+      });
+      setLocation("/therapist");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const { data: clientsData } = useQuery<{ clients: ClientInfo[] }>({
     queryKey: ['/api/therapist/clients'],
@@ -72,7 +107,7 @@ export default function TherapistClient() {
   });
 
   const feedbackMutation = useMutation({
-    mutationFn: async (data: { feedbackType: string; content: string; weekNumber?: number }) => {
+    mutationFn: async (data: { feedbackType: string; content: string; weekNumber?: number; checkinDateKey?: string }) => {
       const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, data);
       if (!res.ok) throw new Error("Failed to add feedback");
       return res.json();
@@ -81,6 +116,7 @@ export default function TherapistClient() {
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
       setNewFeedback("");
       setFeedbackWeek(null);
+      setFeedbackCheckinDate(null);
       toast({ title: "Feedback added successfully" });
     },
     onError: () => {
@@ -108,9 +144,10 @@ export default function TherapistClient() {
   const handleSubmitFeedback = () => {
     if (!newFeedback.trim()) return;
     feedbackMutation.mutate({
-      feedbackType: feedbackWeek ? 'week' : 'general',
+      feedbackType: feedbackCheckinDate ? 'checkin' : feedbackWeek ? 'week' : 'general',
       content: newFeedback,
       weekNumber: feedbackWeek || undefined,
+      checkinDateKey: feedbackCheckinDate || undefined,
     });
   };
 
@@ -134,6 +171,13 @@ export default function TherapistClient() {
 
   const handleAddFeedbackForWeek = (weekNumber: number) => {
     setFeedbackWeek(weekNumber);
+    setFeedbackCheckinDate(null);
+    setActiveTab("feedback");
+  };
+
+  const handleAddFeedbackForCheckin = (dateKey: string) => {
+    setFeedbackCheckinDate(dateKey);
+    setFeedbackWeek(null);
     setActiveTab("feedback");
   };
 
@@ -183,6 +227,24 @@ export default function TherapistClient() {
                 </div>
               </CardContent>
             </Card>
+
+            {reviewWeek && (
+              <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-amber-800 dark:text-amber-200">
+                        Reviewing Week {reviewWeek} for {client.name}
+                      </p>
+                      <p className="text-sm text-amber-700 dark:text-amber-300/80">
+                        Review their progress below, then scroll to the bottom to add notes and mark the review complete.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-6">
@@ -418,39 +480,66 @@ export default function TherapistClient() {
                       <p className="text-muted-foreground">No check-ins recorded yet.</p>
                     ) : (
                       <div className="space-y-4 max-h-96 overflow-y-auto">
-                        {checkins.slice(0, 30).map((checkin) => (
-                          <div
-                            key={checkin.id}
-                            className="rounded-lg border p-4"
-                            data-testid={`checkin-${checkin.dateKey}`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium">{checkin.dateKey}</span>
-                              <div className="flex gap-2">
-                                {checkin.moodLevel !== null && (
-                                  <Badge variant="outline">Mood: {checkin.moodLevel}/10</Badge>
-                                )}
-                                {checkin.urgeLevel !== null && (
-                                  <Badge variant="outline">Urge: {checkin.urgeLevel}/10</Badge>
-                                )}
+                        {checkins.slice(0, 30).map((checkin) => {
+                          const checkinFeedback = feedback.filter(fb => fb.checkinDateKey === checkin.dateKey);
+                          return (
+                            <div
+                              key={checkin.id}
+                              className="rounded-lg border p-4"
+                              data-testid={`checkin-${checkin.dateKey}`}
+                            >
+                              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                                <span className="font-medium">{checkin.dateKey}</span>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {checkin.moodLevel !== null && (
+                                    <Badge variant="outline">Mood: {checkin.moodLevel}/10</Badge>
+                                  )}
+                                  {checkin.urgeLevel !== null && (
+                                    <Badge variant="outline">Urge: {checkin.urgeLevel}/10</Badge>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAddFeedbackForCheckin(checkin.dateKey)}
+                                    data-testid={`button-checkin-feedback-${checkin.dateKey}`}
+                                  >
+                                    <MessageSquare className="mr-1 h-3 w-3" />
+                                    {checkinFeedback.length > 0 ? `Feedback (${checkinFeedback.length})` : "Give Feedback"}
+                                  </Button>
+                                </div>
                               </div>
+                              {checkin.eveningChecks && (
+                                <div className="mt-2">
+                                  <p className="text-xs text-muted-foreground">Daily Items</p>
+                                  <p className="text-sm">{checkin.eveningChecks}</p>
+                                </div>
+                              )}
+                              {checkin.journalEntry && (
+                                <div className="mt-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    Journal Prompt: <em>{getPromptForDate(checkin.dateKey)}</em>
+                                  </p>
+                                  <p className="text-sm mt-1">{checkin.journalEntry}</p>
+                                </div>
+                              )}
+                              {checkinFeedback.length > 0 && (
+                                <div className="mt-3 space-y-2">
+                                  {checkinFeedback.map(fb => (
+                                    <div key={fb.id} className="bg-muted/50 rounded p-3">
+                                      <div className="flex items-center justify-between mb-1">
+                                        <Badge variant="secondary">Mentor Feedback</Badge>
+                                        <span className="text-xs text-muted-foreground">
+                                          {new Date(fb.createdAt).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm">{fb.content}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            {checkin.eveningChecks && (
-                              <div className="mt-2">
-                                <p className="text-xs text-muted-foreground">Daily Items</p>
-                                <p className="text-sm">{checkin.eveningChecks}</p>
-                              </div>
-                            )}
-                            {checkin.journalEntry && (
-                              <div className="mt-2">
-                                <p className="text-xs text-muted-foreground">
-                                  Journal Prompt: <em>{getPromptForDate(checkin.dateKey)}</em>
-                                </p>
-                                <p className="text-sm mt-1">{checkin.journalEntry}</p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>
@@ -569,10 +658,11 @@ export default function TherapistClient() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {feedbackWeek && (
+                      {(feedbackWeek || feedbackCheckinDate) && (
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary">For Week {feedbackWeek}</Badge>
-                          <Button variant="ghost" size="sm" onClick={() => setFeedbackWeek(null)}>
+                          {feedbackWeek && <Badge variant="secondary">For Week {feedbackWeek}</Badge>}
+                          {feedbackCheckinDate && <Badge variant="secondary">For Check-in: {feedbackCheckinDate}</Badge>}
+                          <Button variant="ghost" size="sm" onClick={() => { setFeedbackWeek(null); setFeedbackCheckinDate(null); }}>
                             Clear
                           </Button>
                         </div>
@@ -631,9 +721,10 @@ export default function TherapistClient() {
                             className="rounded-lg border p-4"
                             data-testid={`feedback-${fb.id}`}
                           >
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
                               <div className="flex items-center gap-2">
                                 {fb.weekNumber && <Badge variant="outline">Week {fb.weekNumber}</Badge>}
+                                {fb.checkinDateKey && <Badge variant="outline">Check-in: {fb.checkinDateKey}</Badge>}
                                 <Badge variant="secondary">{fb.feedbackType}</Badge>
                               </div>
                               <span className="text-xs text-muted-foreground">
@@ -649,6 +740,55 @@ export default function TherapistClient() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {reviewWeek && (
+              <Card className="border-primary/30 bg-primary/5" data-testid="card-complete-review">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Complete Review - Week {reviewWeek}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                      Review Notes (optional)
+                    </label>
+                    <Textarea
+                      placeholder="Add any notes about this client's progress for this week..."
+                      value={reviewNotes}
+                      onChange={(e) => setReviewNotes(e.target.value)}
+                      className="min-h-24"
+                      data-testid="textarea-review-notes"
+                    />
+                  </div>
+                  <div className="flex gap-3 flex-wrap">
+                    <Button variant="outline" onClick={() => setLocation("/therapist")} data-testid="button-cancel-review">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (clientId && reviewWeek) {
+                          submitReviewMutation.mutate({
+                            clientId,
+                            weekNumber: reviewWeek,
+                            reviewNotes,
+                          });
+                        }
+                      }}
+                      disabled={submitReviewMutation.isPending}
+                      data-testid="button-mark-reviewed"
+                    >
+                      {submitReviewMutation.isPending ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</>
+                      ) : (
+                        "Mark Reviewed"
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
       </div>

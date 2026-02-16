@@ -215,6 +215,7 @@ export const therapistFeedback = pgTable("therapist_feedback", {
   therapistId: varchar("therapist_id").notNull().references(() => users.id),
   clientId: varchar("client_id").notNull().references(() => users.id),
   weekNumber: integer("week_number"),
+  checkinDateKey: varchar("checkin_date_key", { length: 10 }),
   feedbackType: varchar("feedback_type", { length: 50 }).notNull(), // 'general', 'week', 'checkin'
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),

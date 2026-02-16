@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
 import { CrisisResources } from "@/components/CrisisResources";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
+import { TextToSpeech } from "@/components/TextToSpeech";
 import { MilestoneDialog, isMilestoneWeek } from "@/components/MilestoneDialog";
 
 function safeNumber(v: unknown, fallback: number) {
@@ -844,10 +845,19 @@ export default function WeekPage() {
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent>
-                                <div className="pl-10 space-y-4 text-sm text-muted-foreground leading-relaxed">
-                                  {section.content.map((paragraph, pIdx) => (
-                                    <p key={pIdx}>{paragraph}</p>
-                                  ))}
+                                <div className="pl-10 space-y-4">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <TextToSpeech 
+                                      text={section.content.join('. ')} 
+                                      label={`Listen to "${section.title}"`} 
+                                    />
+                                    <span>Listen to this section</span>
+                                  </div>
+                                  <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
+                                    {section.content.map((paragraph, pIdx) => (
+                                      <p key={pIdx}>{paragraph}</p>
+                                    ))}
+                                  </div>
                                 </div>
                               </AccordionContent>
                             </AccordionItem>

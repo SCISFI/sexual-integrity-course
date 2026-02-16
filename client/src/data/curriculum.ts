@@ -228,7 +228,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What are your top 3 emotional triggers? When you feel these emotions, what happens next?"
+        question: "Think about the last time you acted out. Walk through what happened in the hours before - what were you feeling, thinking, and doing? What does this tell you about your pattern?"
       },
       {
         id: "q2",
@@ -828,7 +828,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     reflectionQuestions: [
       {
         id: "q1",
-        question: "How has shame affected your recovery efforts? Can you identify times when shame drove you back to the behavior?"
+        question: "Describe a moment when you felt the weight of shame most intensely. What did you do with that feeling? Looking back, what would a compassionate response have looked like?"
       },
       {
         id: "q2",
@@ -1029,7 +1029,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     reflectionQuestions: [
       {
         id: "q1",
-        question: "How has your behavior affected your closest relationships? What has been the cost?"
+        question: "If the people closest to you could see the version of you that you want to become, what would be different about how you show up for them?"
       },
       {
         id: "q2",
@@ -1281,7 +1281,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "q4",
-        question: "What boundaries do you need to set or strengthen to protect your recovery?"
+        question: "Think about a time you said 'yes' when you should have said 'no,' or stayed silent when you needed to speak up. What held you back, and what would you do differently now?"
       }
     ],
     exercises: [
@@ -1468,7 +1468,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "q3",
-        question: "What have you learned about yourself in Phase 1? What skills have been most helpful?"
+        question: "If you could go back and talk to yourself on Day 1 of this program, what would you say? What do you know now that you wish you knew then?"
       },
       {
         id: "q4",

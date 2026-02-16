@@ -1279,7 +1279,7 @@ export async function registerRoutes(
     try {
       const therapistId = (req.user as any).id;
       const { clientId } = req.params;
-      const { feedbackType, content, weekNumber } = req.body;
+      const { feedbackType, content, weekNumber, checkinDateKey } = req.body;
 
       if (!content || !feedbackType) {
         return res.status(400).json({ message: "Feedback type and content are required" });
@@ -1297,7 +1297,8 @@ export async function registerRoutes(
         clientId, 
         feedbackType, 
         content, 
-        weekNumber
+        weekNumber,
+        checkinDateKey
       );
       
       res.status(201).json({ feedback });
@@ -1346,6 +1347,8 @@ export async function registerRoutes(
       const completedWeeks = await storage.getCompletedWeeks(clientId);
       const checkins = await storage.getUserCheckinHistory(clientId, 14); // Last 14 days
       const reflections = await storage.getAllWeekReflections(clientId);
+      const allHomework = await storage.getAllHomeworkCompletions(clientId);
+      const allExercises = await storage.getAllExerciseAnswers(clientId);
       
       // Get specific week reflection if weekNumber provided
       let weekReflection: typeof reflections[0] | null = null;
@@ -1366,6 +1369,10 @@ export async function registerRoutes(
         .filter(c => c.journalEntry)
         .map(c => c.journalEntry)
         .slice(0, 3);
+      
+      // Analyze daily check-in honesty patterns
+      const checkinDaysWithJournal = recentCheckins.filter(c => c.journalEntry && c.journalEntry.trim().length > 10).length;
+      const totalCheckinDays = recentCheckins.length;
 
       // Generate AI feedback using Gemini
       if (!process.env.AI_INTEGRATIONS_GEMINI_API_KEY || !process.env.AI_INTEGRATIONS_GEMINI_BASE_URL) {
@@ -1409,17 +1416,78 @@ Completed weeks: ${completedWeeks.length} of 16
         });
       }
 
-      const prompt = `You are a supportive therapist providing feedback to a client in a Sexual Integrity recovery program. Based on the following client information, write a personalized, encouraging feedback message.
+      // Analyze homework and exercise completion for effort assessment
+      let effortAnalysis = '';
+      const weeksToCheck = weekNumber ? [weekNumber] : completedWeeks.slice(-3);
+      
+      for (const wk of weeksToCheck) {
+        const hw = allHomework.find(h => h.weekNumber === wk);
+        const ex = allExercises.find(e => e.weekNumber === wk);
+        const refl = reflections.find(r => r.weekNumber === wk);
+        
+        let weekIssues: string[] = [];
+        
+        // Check homework completion
+        if (hw) {
+          const items = JSON.parse(hw.completedItems || '[]');
+          // We don't know total items, but if they checked very few that's a flag
+          if (items.length === 0) {
+            weekIssues.push('No homework items completed');
+          }
+        } else {
+          weekIssues.push('No homework submission found');
+        }
+        
+        // Check exercise answers
+        if (ex) {
+          const answers = JSON.parse(ex.answers || '{}');
+          const filledFields = Object.values(answers).filter((v: any) => v && String(v).trim().length > 5);
+          const totalFields = Object.keys(answers).length;
+          if (totalFields > 0 && filledFields.length < totalFields * 0.5) {
+            weekIssues.push(`Only ${filledFields.length} of ${totalFields} exercise fields filled in with meaningful responses`);
+          } else if (totalFields === 0) {
+            weekIssues.push('No exercise responses submitted');
+          }
+        } else {
+          weekIssues.push('No exercise responses submitted');
+        }
+        
+        // Check reflection depth
+        if (refl) {
+          const responses = [refl.q1, refl.q2, refl.q3, refl.q4].filter(q => q && q.trim().length > 10);
+          if (responses.length < 2) {
+            weekIssues.push(`Only ${responses.length} of 4 reflection questions answered with depth`);
+          }
+        } else {
+          weekIssues.push('No reflection responses submitted');
+        }
+        
+        if (weekIssues.length > 0) {
+          effortAnalysis += `\nWeek ${wk} completion concerns:\n`;
+          weekIssues.forEach(issue => {
+            effortAnalysis += `- ${issue}\n`;
+          });
+        }
+      }
+      
+      // Check daily journal writing frequency
+      if (totalCheckinDays > 3 && checkinDaysWithJournal < totalCheckinDays * 0.3) {
+        effortAnalysis += `\nJournal writing: Only ${checkinDaysWithJournal} of ${totalCheckinDays} recent check-in days included journal entries.\n`;
+      }
+
+      const prompt = `You are a supportive mentor providing feedback to a client in a Sexual Integrity recovery program. Based on the following client information, write a personalized feedback message.
 
 ${contextInfo}
+${effortAnalysis ? `\nASSIGNMENT COMPLETION ANALYSIS:\n${effortAnalysis}` : ''}
 
 Guidelines:
 - Speak directly to the client using "you" language
 - Be direct yet encouraging and supportive
 - Reference specific details from their reflections or journal entries when available
-- Acknowledge their progress and effort
+- Acknowledge their progress and effort where genuine
+- If the assignment completion analysis shows incomplete work (skipped exercises, shallow reflections, missing homework), address this directly but compassionately. Emphasize that the assignments are designed to help them, and encourage fuller engagement. Do not ignore evidence of minimal effort.
 - Offer gentle guidance or suggestions based on their challenges
-- Keep the message focused and under 250 words
+- Keep the message focused and under 300 words
 - Do not provide medical advice or crisis intervention
 - End with an encouraging note about their continued journey
 

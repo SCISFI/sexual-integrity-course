@@ -100,7 +100,7 @@ export interface IStorage {
   resetWeekCompletion(userId: string, weekNumber: number): Promise<void>;
 
   // Therapist feedback
-  addTherapistFeedback(therapistId: string, clientId: string, feedbackType: string, content: string, weekNumber?: number): Promise<TherapistFeedback>;
+  addTherapistFeedback(therapistId: string, clientId: string, feedbackType: string, content: string, weekNumber?: number, checkinDateKey?: string): Promise<TherapistFeedback>;
   getClientFeedback(clientId: string): Promise<TherapistFeedback[]>;
   getFeedbackForTherapist(therapistId: string, clientId: string): Promise<TherapistFeedback[]>;
 
@@ -504,11 +504,12 @@ export class DatabaseStorage implements IStorage {
     clientId: string, 
     feedbackType: string, 
     content: string, 
-    weekNumber?: number
+    weekNumber?: number,
+    checkinDateKey?: string
   ): Promise<TherapistFeedback> {
     const [created] = await db
       .insert(therapistFeedback)
-      .values({ therapistId, clientId, feedbackType, content, weekNumber })
+      .values({ therapistId, clientId, feedbackType, content, weekNumber, checkinDateKey })
       .returning();
     return created;
   }

@@ -74,6 +74,7 @@ export default function Dashboard() {
     feedbackType: string;
     content: string;
     weekNumber: number | null;
+    checkinDateKey: string | null;
     createdAt: string;
   }> }>({
     queryKey: ['/api/my-feedback'],
@@ -295,6 +296,13 @@ export default function Dashboard() {
               <div className="flex flex-wrap gap-2">
                 {/* I'm Struggling button */}
                 <UrgeSurfingTool />
+                {/* Relapse Autopsy */}
+                <Link href="/relapse-autopsy">
+                  <Button variant="outline" className="border-amber-300 dark:border-amber-700" data-testid="button-relapse-autopsy">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Relapse Autopsy
+                  </Button>
+                </Link>
                 {/* Daily Check-in button */}
                 <Link href="/daily-checkin">
                   <Button variant="outline" data-testid="button-daily-checkin">
@@ -405,8 +413,10 @@ export default function Dashboard() {
                     <div key={fb.id} className="rounded-lg border p-4" data-testid={`feedback-item-${fb.id}`}>
                       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                         <Badge variant="secondary">
-                          {fb.feedbackType === "week_specific" && fb.weekNumber
+                          {fb.feedbackType === "week" && fb.weekNumber
                             ? `Week ${fb.weekNumber}`
+                            : fb.feedbackType === "checkin" && fb.checkinDateKey
+                            ? `Check-in: ${fb.checkinDateKey}`
                             : fb.feedbackType === "checkin"
                             ? "Check-in"
                             : "General"}
@@ -459,11 +469,6 @@ export default function Dashboard() {
               A setback does NOT remove you from the program. Use these tools to process and move forward.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link href="/relapse-autopsy">
-                <Button variant="outline" className="border-amber-300 dark:border-amber-700" data-testid="button-relapse-autopsy">
-                  Open Relapse Autopsy
-                </Button>
-              </Link>
               <Link href="/user-manual">
                 <Button variant="outline" className="border-amber-300 dark:border-amber-700" data-testid="button-user-manual">
                   <BookOpen className="mr-2 h-4 w-4" />

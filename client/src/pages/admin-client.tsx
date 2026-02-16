@@ -105,7 +105,7 @@ export default function AdminClientPage() {
   const handleSubmitFeedback = () => {
     if (!newFeedback.trim()) return;
     feedbackMutation.mutate({
-      feedbackType: feedbackWeek ? "week_specific" : "general",
+      feedbackType: feedbackWeek ? "week" : "general",
       content: newFeedback,
       weekNumber: feedbackWeek || undefined,
     });

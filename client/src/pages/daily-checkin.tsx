@@ -225,8 +225,8 @@ export default function DailyCheckinPage() {
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="py-4">
                 <p className="text-sm text-muted-foreground">
-                  Complete this check-in <strong>once per day</strong>, anytime that works for you. 
-                  Check the items that apply to your day so far. You can update it later if needed.
+                  Complete this check-in <strong>toward the end of your day</strong> for the most accurate reflection. 
+                  Reviewing your whole day helps you see patterns and build honest self-awareness.
                 </p>
               </CardContent>
             </Card>
@@ -411,7 +411,7 @@ export default function DailyCheckinPage() {
                   Daily Journal
                 </CardTitle>
                 <CardDescription>
-                  Optional: Write about your day, feelings, or insights
+                  Writing about your day builds self-awareness and strengthens recovery. Even a few sentences make a difference.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
