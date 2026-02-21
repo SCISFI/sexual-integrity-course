@@ -2452,6 +2452,12 @@ Write the feedback message now:`;
 
   // Start the check-in reminder scheduler
   startCheckinReminderScheduler();
-
+  // New DeepSeek Coach Route
+  app.post("/api/ai/coach", requireAuth, async (req, res) => {
+    const { message, weekNumber } = req.body;
+    const { getCoachResponse } = await import("./ai_coach");
+    const reply = await getCoachResponse(message, weekNumber || 1);
+    res.json({ reply });
+  });
   return httpServer;
 }

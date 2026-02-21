@@ -514,7 +514,69 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+        <IntegrityCoach />
       </main>
+      
+    </div>
+  );
+}
+export function IntegrityCoach() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [chat, setChat] = useState([{ role: "bot", content: "Hello! How can I support your journey today?" }]);
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+    const userMsg = { role: "user", content: input };
+    setChat(prev => [...prev, userMsg]);
+    setInput("");
+
+    try {
+      const response = await fetch("/api/ai/coach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input, weekNumber: 1 }),
+      });
+
+      const data = await response.json();
+      setChat(prev => [...prev, { role: "bot", content: data.reply }]);
+    } catch (error) {
+      setChat(prev => [...prev, { role: "bot", content: "Sorry, I'm having trouble connecting." }]);
+    }
+  };
+
+  return (
+    <div style={{ position: "fixed", bottom: "20px", right: "20px", zIndex: 1000 }}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)} 
+        style={{ padding: "15px", borderRadius: "50%", background: "#007bff", color: "white", border: "none", cursor: "pointer", boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}
+      >
+        💬 Coach
+      </button>
+
+      {isOpen && (
+        <div style={{ background: "white", border: "1px solid #ccc", width: "300px", height: "400px", position: "absolute", bottom: "70px", right: "0", display: "flex", flexDirection: "column", padding: "10px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" }}>
+          <div style={{ flex: 1, overflowY: "auto", marginBottom: "10px", fontSize: "14px" }}>
+            {chat.map((msg, i) => (
+              <div key={i} style={{ marginBottom: "8px", textAlign: msg.role === "bot" ? "left" : "right" }}>
+                <span style={{ padding: "6px 10px", borderRadius: "10px", background: msg.role === "bot" ? "#f0f0f0" : "#007bff", color: msg.role === "bot" ? "black" : "white", display: "inline-block" }}>
+                  {msg.content}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: "5px" }}>
+            <input 
+              style={{ flex: 1, padding: "8px", border: "1px solid #ddd", borderRadius: "5px" }}
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()} 
+              placeholder="Ask a question..." 
+            />
+            <button onClick={sendMessage} style={{ background: "#007bff", color: "white", border: "none", borderRadius: "5px", padding: "0 10px" }}>Send</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
