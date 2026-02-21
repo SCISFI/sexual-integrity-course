@@ -35,7 +35,7 @@ import {
   type RelapseAutopsy,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, lt, sql } from "drizzle-orm";
+import { eq, and, desc, lt, sql, inArray } from "drizzle-orm";
 import crypto from "crypto";
 
 export interface IStorage {
@@ -151,6 +151,8 @@ export interface IStorage {
   getRelapseAutopsies(userId: string): Promise<RelapseAutopsy[]>;
   getRelapseAutopsy(id: string): Promise<RelapseAutopsy | undefined>;
   completeRelapseAutopsy(id: string, userId: string): Promise<RelapseAutopsy | undefined>;
+  markAutopsyReviewed(id: string): Promise<RelapseAutopsy | undefined>;
+  getUnreviewedAutopsiesForClients(clientIds: string[]): Promise<Array<{userId: string; count: number}>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -921,6 +923,30 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(relapseAutopsies.id, id), eq(relapseAutopsies.userId, userId)))
       .returning();
     return updated || undefined;
+  }
+
+  async markAutopsyReviewed(id: string): Promise<RelapseAutopsy | undefined> {
+    const [updated] = await db.update(relapseAutopsies)
+      .set({ reviewedByTherapist: true, reviewedAt: new Date(), updatedAt: new Date() })
+      .where(eq(relapseAutopsies.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getUnreviewedAutopsiesForClients(clientIds: string[]): Promise<Array<{userId: string; count: number}>> {
+    if (clientIds.length === 0) return [];
+    const results = await db.select({
+      userId: relapseAutopsies.userId,
+      count: sql<number>`count(*)::int`,
+    })
+      .from(relapseAutopsies)
+      .where(and(
+        inArray(relapseAutopsies.userId, clientIds),
+        eq(relapseAutopsies.status, "completed"),
+        eq(relapseAutopsies.reviewedByTherapist, false),
+      ))
+      .groupBy(relapseAutopsies.userId);
+    return results;
   }
 }
 

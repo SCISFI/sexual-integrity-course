@@ -387,6 +387,8 @@ export const relapseAutopsies = pgTable("relapse_autopsies", {
   next24HoursPlan: text("next_24_hours_plan").default(""),
   status: varchar("status", { length: 20 }).notNull().default("draft"),
   completedAt: timestamp("completed_at"),
+  reviewedByTherapist: boolean("reviewed_by_therapist").default(false),
+  reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

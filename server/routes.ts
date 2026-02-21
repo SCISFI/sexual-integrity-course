@@ -1555,6 +1555,7 @@ export async function registerRoutes(
         );
         const exerciseAnswersData =
           await storage.getAllExerciseAnswers(clientId);
+        const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
 
         res.json({
           completedWeeks,
@@ -1563,6 +1564,7 @@ export async function registerRoutes(
           homeworkCompletions,
           feedback,
           exerciseAnswers: exerciseAnswersData,
+          relapseAutopsies,
         });
       } catch (error) {
         console.error("Get client progress error:", error);
@@ -1657,8 +1659,9 @@ export async function registerRoutes(
         // Gather client data for context
         const clientUser = await storage.getUser(clientId);
         const completedWeeks = await storage.getCompletedWeeks(clientId);
-        const checkins = await storage.getUserCheckinHistory(clientId, 14); // Last 14 days
+        const checkins = await storage.getUserCheckinHistory(clientId, 30);
         const reflections = await storage.getAllWeekReflections(clientId);
+        const relapseHistory = await storage.getRelapseAutopsies(clientId);
 
         // Get specific week reflection if weekNumber provided
         let weekReflection: (typeof reflections)[0] | null = null;
@@ -1668,7 +1671,7 @@ export async function registerRoutes(
         }
 
         // Build context for AI
-        const recentCheckins = checkins.slice(0, 7);
+        const recentCheckins = checkins.slice(0, 14);
         const avgMood =
           recentCheckins.length > 0
             ? recentCheckins
@@ -1683,6 +1686,28 @@ export async function registerRoutes(
                 .reduce((sum, c) => sum + (c.urgeLevel || 0), 0) /
               recentCheckins.filter((c) => c.urgeLevel).length
             : null;
+
+        // Trend analysis: compare first half to second half of recent data
+        const moodValues = recentCheckins.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
+        const urgeValues = recentCheckins.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
+        const olderMood = moodValues.slice(Math.floor(moodValues.length / 2));
+        const newerMood = moodValues.slice(0, Math.floor(moodValues.length / 2));
+        const olderUrge = urgeValues.slice(Math.floor(urgeValues.length / 2));
+        const newerUrge = urgeValues.slice(0, Math.floor(urgeValues.length / 2));
+        const moodTrend = newerMood.length > 0 && olderMood.length > 0
+          ? (newerMood.reduce((a,b) => a+b, 0) / newerMood.length > olderMood.reduce((a,b) => a+b, 0) / olderMood.length ? "improving" : "declining")
+          : "stable";
+        const urgeTrend = newerUrge.length > 0 && olderUrge.length > 0
+          ? (newerUrge.reduce((a,b) => a+b, 0) / newerUrge.length < olderUrge.reduce((a,b) => a+b, 0) / olderUrge.length ? "improving" : "increasing")
+          : "stable";
+
+        // Check-in consistency
+        const last14Days = Array.from({ length: 14 }, (_, i) => {
+          const d = new Date(); d.setDate(d.getDate() - i);
+          return d.toISOString().split('T')[0];
+        });
+        const checkinDates = new Set(checkins.map(c => c.dateKey));
+        const consistencyRate = Math.round(last14Days.filter(d => checkinDates.has(d)).length / 14 * 100);
 
         const journalEntries = recentCheckins
           .filter((c) => c.journalEntry)
@@ -1718,11 +1743,12 @@ Completed weeks: ${completedWeeks.length} of 16
 `;
 
         if (avgMood !== null) {
-          contextInfo += `Recent average mood: ${avgMood.toFixed(1)}/10\n`;
+          contextInfo += `Recent average mood: ${avgMood.toFixed(1)}/10 (trend: ${moodTrend})\n`;
         }
         if (avgUrge !== null) {
-          contextInfo += `Recent average urge level: ${avgUrge.toFixed(1)}/10\n`;
+          contextInfo += `Recent average urge level: ${avgUrge.toFixed(1)}/10 (trend: ${urgeTrend})\n`;
         }
+        contextInfo += `Check-in consistency (14 days): ${consistencyRate}%\n`;
 
         if (weekReflection) {
           contextInfo += `\nWeek ${weekNumber} Reflection:\n`;
@@ -1743,7 +1769,16 @@ Completed weeks: ${completedWeeks.length} of 16
           });
         }
 
-        const prompt = `You are a supportive therapist providing feedback to a client in a Sexual Integrity recovery program. Based on the following client information, write a personalized, encouraging feedback message.
+        // Relapse history context
+        const completedAutopsies = relapseHistory.filter(a => a.status === "completed");
+        if (completedAutopsies.length > 0) {
+          contextInfo += `\nRelapse/Lapse History (${completedAutopsies.length} total incidents):\n`;
+          completedAutopsies.slice(0, 3).forEach(a => {
+            contextInfo += `- ${a.date} (${a.lapseOrRelapse}): triggers="${a.triggers?.slice(0, 100) || 'N/A'}", warning signs="${a.warningSigns?.slice(0, 100) || 'N/A'}"\n`;
+          });
+        }
+
+        const prompt = `You are a supportive mentor providing feedback to a client in a Sexual Integrity recovery program. Based on the following client information, write a personalized, encouraging feedback message.
 
 ${contextInfo}
 
@@ -1751,7 +1786,8 @@ Guidelines:
 - Speak directly to the client using "you" language
 - Be direct yet encouraging and supportive
 - Reference specific details from their reflections or journal entries when available
-- Acknowledge their progress and effort
+- Acknowledge their progress and effort, referencing specific trends (mood improving/declining, urge trends, check-in consistency)
+- If there is relapse history, sensitively reference patterns and how the client's current progress relates to their recovery journey
 - Offer gentle guidance or suggestions based on their challenges
 - Keep the message focused and under 250 words
 - Do not provide medical advice or crisis intervention
@@ -2849,10 +2885,11 @@ Write the feedback message now:`;
       try {
         const { clientId, dateKey } = req.body;
 
-        // 1. Fetch the specific check-in and the 30-day history for context
-        const [history, user] = await Promise.all([
+        // 1. Fetch the specific check-in, history, and relapse data for context
+        const [history, user, relapseHistory] = await Promise.all([
           storage.getUserCheckinHistory(clientId, 30),
           storage.getUser(clientId),
+          storage.getRelapseAutopsies(clientId),
         ]);
 
         const specificCheckin = history.find((c) => c.dateKey === dateKey);
@@ -2863,14 +2900,44 @@ Write the feedback message now:`;
             .json({ message: "Check-in not found for this date." });
         }
 
-        // 2. Format the history into a simple summary the AI can understand
+        // 2. Format the history into a trend summary with analysis
         const trendSummary = history.map((h) => ({
           date: h.dateKey,
           mood: h.moodLevel,
           urge: h.urgeLevel,
         }));
 
-        // 3. AI Prompt (Using your existing Gemini integration)
+        // Trend analysis
+        const moodVals = history.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
+        const urgeVals = history.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
+        const olderMood = moodVals.slice(Math.floor(moodVals.length / 2));
+        const newerMood = moodVals.slice(0, Math.floor(moodVals.length / 2));
+        const olderUrge = urgeVals.slice(Math.floor(urgeVals.length / 2));
+        const newerUrge = urgeVals.slice(0, Math.floor(urgeVals.length / 2));
+        const moodDirection = newerMood.length > 0 && olderMood.length > 0
+          ? (newerMood.reduce((a,b) => a+b, 0) / newerMood.length > olderMood.reduce((a,b) => a+b, 0) / olderMood.length ? "improving" : "declining")
+          : "stable";
+        const urgeDirection = newerUrge.length > 0 && olderUrge.length > 0
+          ? (newerUrge.reduce((a,b) => a+b, 0) / newerUrge.length < olderUrge.reduce((a,b) => a+b, 0) / olderUrge.length ? "improving (decreasing)" : "worsening (increasing)")
+          : "stable";
+
+        // Relapse context
+        const completedAutopsies = relapseHistory.filter(a => a.status === "completed");
+        let relapseContext = "";
+        if (completedAutopsies.length > 0) {
+          relapseContext = `\nRELAPSE HISTORY (${completedAutopsies.length} incidents):
+${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): triggers="${a.triggers?.slice(0, 80) || 'N/A'}"`).join("\n")}`;
+        }
+
+        // Check-in consistency
+        const last14 = Array.from({ length: 14 }, (_, i) => {
+          const d = new Date(); d.setDate(d.getDate() - i);
+          return d.toISOString().split('T')[0];
+        });
+        const checkinSet = new Set(history.map(c => c.dateKey));
+        const consistency = Math.round(last14.filter(d => checkinSet.has(d)).length / 14 * 100);
+
+        // 3. AI Prompt with enhanced trend awareness
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({
           apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
@@ -2887,12 +2954,17 @@ Write the feedback message now:`;
 
         PAST 30-DAY TRENDS:
         ${JSON.stringify(trendSummary)}
+        - Mood trend: ${moodDirection}
+        - Urge trend: ${urgeDirection}
+        - Check-in consistency (14 days): ${consistency}%
+        ${relapseContext}
 
         INSTRUCTIONS:
         1. Write a 2-3 sentence encouraging comment.
-        2. Specifically reference how today's mood or urge compares to their past month's history.
-        3. Mention if today is an improvement, a relapse risk, or a steady trend.
-        4. End with a supportive action.
+        2. Specifically reference how today's mood or urge compares to their past month's trends (mention if improving, declining, or stable).
+        3. If there is relapse history, sensitively reference patterns and how today's check-in relates to known triggers or risk factors.
+        4. Mention check-in consistency if notably high or low.
+        5. End with a specific, supportive action.
       `;
 
         const response = await ai.models.generateContent({
@@ -2907,5 +2979,206 @@ Write the feedback message now:`;
       }
     },
   );
+  // Mark a relapse autopsy as reviewed by therapist
+  app.post(
+    "/api/therapist/clients/:clientId/autopsies/:autopsyId/review",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId, autopsyId } = req.params;
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const isAssigned = clients.some((c) => c.id === clientId);
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        const autopsy = await storage.getRelapseAutopsy(autopsyId);
+        if (!autopsy || autopsy.userId !== clientId) {
+          return res.status(404).json({ message: "Autopsy not found" });
+        }
+
+        const updated = await storage.markAutopsyReviewed(autopsyId);
+        res.json({ autopsy: updated });
+      } catch (error) {
+        console.error("Mark autopsy reviewed error:", error);
+        res.status(500).json({ message: "Failed to mark autopsy as reviewed" });
+      }
+    },
+  );
+
+  // Get unreviewed autopsy counts for therapist's clients (for dashboard badges)
+  app.get(
+    "/api/therapist/unreviewed-autopsies",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const clientIds = clients.map((c) => c.id);
+        const unreviewedArr = await storage.getUnreviewedAutopsiesForClients(clientIds);
+        const unreviewedCounts: Record<string, number> = {};
+        for (const item of unreviewedArr) {
+          unreviewedCounts[item.userId] = item.count;
+        }
+        res.json({ unreviewedCounts });
+      } catch (error) {
+        console.error("Get unreviewed autopsies error:", error);
+        res.status(500).json({ message: "Failed to get unreviewed autopsies" });
+      }
+    },
+  );
+
+  // Generate AI feedback draft for a relapse autopsy with trend analysis
+  app.post(
+    "/api/therapist/generate-autopsy-feedback",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId, autopsyId } = req.body;
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const isAssigned = clients.some((c) => c.id === clientId);
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Not authorized for this client" });
+        }
+
+        const [autopsy, allAutopsies, checkins, user] = await Promise.all([
+          storage.getRelapseAutopsy(autopsyId),
+          storage.getRelapseAutopsies(clientId),
+          storage.getUserCheckinHistory(clientId, 60),
+          storage.getUser(clientId),
+        ]);
+
+        if (!autopsy || autopsy.userId !== clientId) {
+          return res.status(404).json({ message: "Autopsy not found" });
+        }
+
+        const pastAutopsies = allAutopsies.filter(a => a.id !== autopsyId && a.status === "completed");
+
+        const trendAnalysis: string[] = [];
+
+        if (pastAutopsies.length > 0) {
+          trendAnalysis.push(`Total past relapses/lapses: ${pastAutopsies.length}`);
+
+          const triggerFrequency: Record<string, number> = {};
+          const allTriggers = [autopsy, ...pastAutopsies];
+          for (const a of allTriggers) {
+            if (a.triggers) {
+              const triggerWords = a.triggers.toLowerCase().split(/[,;\n]+/).map(t => t.trim()).filter(Boolean);
+              for (const t of triggerWords) {
+                triggerFrequency[t] = (triggerFrequency[t] || 0) + 1;
+              }
+            }
+          }
+          const recurring = Object.entries(triggerFrequency)
+            .filter(([, count]) => count > 1)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+          if (recurring.length > 0) {
+            trendAnalysis.push(`Recurring triggers: ${recurring.map(([t, c]) => `"${t}" (${c}x)`).join(", ")}`);
+          }
+
+          const lapseCount = pastAutopsies.filter(a => a.lapseOrRelapse === "lapse").length + (autopsy.lapseOrRelapse === "lapse" ? 1 : 0);
+          const relapseCount = pastAutopsies.filter(a => a.lapseOrRelapse === "relapse").length + (autopsy.lapseOrRelapse === "relapse" ? 1 : 0);
+          trendAnalysis.push(`Pattern: ${lapseCount} lapses, ${relapseCount} relapses`);
+
+          if (pastAutopsies.length >= 2) {
+            const sorted = [...pastAutopsies, autopsy].sort((a, b) => a.date.localeCompare(b.date));
+            const gaps: number[] = [];
+            for (let i = 1; i < sorted.length; i++) {
+              const diff = (new Date(sorted[i].date).getTime() - new Date(sorted[i-1].date).getTime()) / (1000 * 60 * 60 * 24);
+              gaps.push(diff);
+            }
+            const avgGap = Math.round(gaps.reduce((s, g) => s + g, 0) / gaps.length);
+            const latestGap = gaps[gaps.length - 1];
+            trendAnalysis.push(`Average days between incidents: ${avgGap}`);
+            if (latestGap < avgGap) {
+              trendAnalysis.push(`ALERT: Latest gap (${Math.round(latestGap)} days) is shorter than average — frequency may be increasing`);
+            } else if (latestGap > avgGap) {
+              trendAnalysis.push(`POSITIVE: Latest gap (${Math.round(latestGap)} days) is longer than average — showing improvement`);
+            }
+          }
+
+          const contextFreq: Record<string, number> = {};
+          for (const a of allTriggers) {
+            if (a.context) {
+              const words = a.context.toLowerCase().split(/[,;\n]+/).map(t => t.trim()).filter(Boolean);
+              for (const w of words) {
+                contextFreq[w] = (contextFreq[w] || 0) + 1;
+              }
+            }
+          }
+          const recurringContexts = Object.entries(contextFreq).filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1]).slice(0, 3);
+          if (recurringContexts.length > 0) {
+            trendAnalysis.push(`Recurring contexts/situations: ${recurringContexts.map(([c, n]) => `"${c}" (${n}x)`).join(", ")}`);
+          }
+        }
+
+        const recentMoodTrend = checkins.slice(0, 14).filter(c => c.moodLevel !== null);
+        const recentUrgeTrend = checkins.slice(0, 14).filter(c => c.urgeLevel !== null);
+        if (recentMoodTrend.length > 0) {
+          const avgMood = (recentMoodTrend.reduce((s, c) => s + (c.moodLevel || 0), 0) / recentMoodTrend.length).toFixed(1);
+          trendAnalysis.push(`Recent 14-day avg mood: ${avgMood}/10`);
+        }
+        if (recentUrgeTrend.length > 0) {
+          const avgUrge = (recentUrgeTrend.reduce((s, c) => s + (c.urgeLevel || 0), 0) / recentUrgeTrend.length).toFixed(1);
+          trendAnalysis.push(`Recent 14-day avg urge: ${avgUrge}/10`);
+        }
+
+        const { GoogleGenAI } = await import("@google/genai");
+        const ai = new GoogleGenAI({
+          apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
+          httpOptions: { baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
+        });
+
+        const prompt = `You are an expert recovery mentor providing feedback on a relapse autopsy for ${user?.name || "the client"}.
+
+THIS RELAPSE AUTOPSY (${autopsy.date}):
+- Type: ${autopsy.lapseOrRelapse}
+- Summary: "${autopsy.summary || "Not provided"}"
+- Triggers: "${autopsy.triggers || "Not provided"}"
+- Emotions: "${autopsy.emotions || "Not provided"}"
+- Thoughts: "${autopsy.thoughts || "Not provided"}"
+- Warning signs missed: "${autopsy.warningSigns || "Not provided"}"
+- Boundaries broken: "${autopsy.boundariesBroken || "Not provided"}"
+- Decision points: "${autopsy.decisionPoints || "Not provided"}"
+- Immediate actions planned: "${autopsy.immediateActions || "Not provided"}"
+- Rule changes: "${autopsy.ruleChanges || "Not provided"}"
+- Support plan: "${autopsy.supportPlan || "Not provided"}"
+- Next 24h plan: "${autopsy.next24HoursPlan || "Not provided"}"
+
+TREND ANALYSIS FROM PAST HISTORY:
+${trendAnalysis.length > 0 ? trendAnalysis.join("\n") : "This is the client's first reported incident."}
+
+PAST AUTOPSY SUMMARIES (most recent first):
+${pastAutopsies.slice(0, 5).map(a => `- ${a.date} (${a.lapseOrRelapse}): "${a.summary?.slice(0, 150) || "No summary"}"`).join("\n") || "None"}
+
+INSTRUCTIONS:
+1. Acknowledge the courage it takes to complete a relapse autopsy honestly.
+2. Specifically reference patterns or recurring triggers from past incidents if any exist.
+3. If frequency is increasing, address this directly but compassionately.
+4. Validate their identified warning signs and suggest additions based on patterns you see.
+5. Affirm their action plan and add specific, practical suggestions.
+6. Reference their mood/urge trends from check-in data if relevant.
+7. Keep the tone urgent but supportive — this needs immediate, caring attention.
+8. Under 300 words. Speak directly to the client using "you" language.
+9. Do not provide medical advice or crisis intervention.`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+
+        res.json({ draft: response.text });
+      } catch (error) {
+        console.error("Generate autopsy feedback error:", error);
+        res.status(500).json({ message: "Failed to generate autopsy feedback" });
+      }
+    },
+  );
+
   return httpServer;
 }

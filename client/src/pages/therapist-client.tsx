@@ -7,10 +7,39 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { getPromptForDate } from "@/data/journal-prompts";
+
+type RelapseAutopsyData = {
+  id: string;
+  userId: string;
+  date: string;
+  lapseOrRelapse: string;
+  summary: string | null;
+  whenStarted: string | null;
+  duration: string | null;
+  context: string | null;
+  triggers: string | null;
+  emotions: string | null;
+  thoughts: string | null;
+  body: string | null;
+  boundariesBroken: string | null;
+  warningSigns: string | null;
+  decisionPoints: string | null;
+  immediateActions: string | null;
+  ruleChanges: string | null;
+  environmentChanges: string | null;
+  supportPlan: string | null;
+  next24HoursPlan: string | null;
+  status: string;
+  completedAt: string | null;
+  reviewedByTherapist: boolean | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 type ClientProgress = {
   completedWeeks: number[];
@@ -43,6 +72,7 @@ type ClientProgress = {
     checkinDateKey: string | null;
     createdAt: string;
   }>;
+  relapseAutopsies?: RelapseAutopsyData[];
 };
 
 type ClientInfo = {
@@ -61,8 +91,10 @@ export default function TherapistClient() {
   const [newFeedback, setNewFeedback] = useState("");
   const [feedbackWeek, setFeedbackWeek] = useState<number | null>(null);
   const [feedbackDateKey, setFeedbackDateKey] = useState<string | null>(null);
+  const [feedbackAutopsyId, setFeedbackAutopsyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("progress");
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
+  const [expandedAutopsy, setExpandedAutopsy] = useState<string | null>(null);
 
   const { data: clientsData } = useQuery<{ clients: ClientInfo[] }>({
     queryKey: ['/api/therapist/clients'],
@@ -84,10 +116,27 @@ export default function TherapistClient() {
       setNewFeedback("");
       setFeedbackWeek(null);
       setFeedbackDateKey(null);
+      setFeedbackAutopsyId(null);
       toast({ title: "Feedback added successfully" });
     },
     onError: () => {
       toast({ title: "Failed to add feedback", variant: "destructive" });
+    },
+  });
+
+  const markReviewedMutation = useMutation({
+    mutationFn: async (autopsyId: string) => {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/autopsies/${autopsyId}/review`, {});
+      if (!res.ok) throw new Error("Failed to mark as reviewed");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-autopsies'] });
+      toast({ title: "Autopsy marked as reviewed" });
+    },
+    onError: () => {
+      toast({ title: "Failed to mark as reviewed", variant: "destructive" });
     },
   });
 
@@ -97,6 +146,8 @@ export default function TherapistClient() {
   const reflections = progressData?.reflections || [];
   const homeworkCompletions = progressData?.homeworkCompletions || [];
   const feedback = progressData?.feedback || [];
+  const relapseAutopsies = progressData?.relapseAutopsies || [];
+  const unreviewedAutopsies = relapseAutopsies.filter(a => a.status === "completed" && !a.reviewedByTherapist);
 
   const getWeekStatus = (weekNum: number) => {
     if (completedWeeks.includes(weekNum)) return "completed";
@@ -111,10 +162,10 @@ export default function TherapistClient() {
   const handleSubmitFeedback = () => {
     if (!newFeedback.trim()) return;
     feedbackMutation.mutate({
-      feedbackType: feedbackDateKey ? 'checkin' : (feedbackWeek ? 'week' : 'general'),
+      feedbackType: feedbackAutopsyId ? 'autopsy' : (feedbackDateKey ? 'checkin' : (feedbackWeek ? 'week' : 'general')),
       content: newFeedback,
       weekNumber: feedbackWeek || undefined,
-      checkinDateKey: feedbackDateKey || undefined,
+      checkinDateKey: feedbackDateKey || feedbackAutopsyId || undefined,
     });
   };
 
@@ -139,6 +190,7 @@ export default function TherapistClient() {
       if (dateKey) {
         setFeedbackDateKey(dateKey);
         setFeedbackWeek(null);
+        setFeedbackAutopsyId(null);
         setActiveTab("feedback");
       }
 
@@ -151,15 +203,47 @@ export default function TherapistClient() {
     }
   };
 
+  const handleGenerateAutopsyAIDraft = async (autopsyId: string) => {
+    if (!clientId) return;
+    setIsGeneratingDraft(true);
+    try {
+      const res = await apiRequest("POST", "/api/therapist/generate-autopsy-feedback", {
+        clientId,
+        autopsyId,
+      });
+      if (!res.ok) throw new Error("Failed to generate draft");
+      const data = await res.json();
+      setFeedbackAutopsyId(autopsyId);
+      setFeedbackWeek(null);
+      setFeedbackDateKey(null);
+      setNewFeedback(data.draft);
+      setActiveTab("feedback");
+      toast({ title: "AI draft generated with trend analysis - review before sending" });
+    } catch (error) {
+      toast({ title: "Failed to generate AI draft", variant: "destructive" });
+    } finally {
+      setIsGeneratingDraft(false);
+    }
+  };
+
   const handleAddFeedbackForWeek = (weekNumber: number) => {
     setFeedbackWeek(weekNumber);
     setFeedbackDateKey(null);
+    setFeedbackAutopsyId(null);
     setActiveTab("feedback");
   };
 
   const handleAddFeedbackForDate = (dateKey: string) => {
     setFeedbackDateKey(dateKey);
     setFeedbackWeek(null);
+    setFeedbackAutopsyId(null);
+    setActiveTab("feedback");
+  };
+
+  const handleAddFeedbackForAutopsy = (autopsyId: string) => {
+    setFeedbackAutopsyId(autopsyId);
+    setFeedbackWeek(null);
+    setFeedbackDateKey(null);
     setActiveTab("feedback");
   };
 
@@ -183,6 +267,31 @@ export default function TherapistClient() {
           </Card>
         ) : (
           <>
+            {unreviewedAutopsies.length > 0 && (
+              <div className="p-4 rounded-lg border-2 border-red-400 bg-red-50 dark:bg-red-950/50 dark:border-red-700 flex items-start gap-3" data-testid="banner-unreviewed-autopsies">
+                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-bold text-red-800 dark:text-red-200">
+                    Immediate Attention Required
+                  </p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    {client.name} has {unreviewedAutopsies.length} unreviewed relapse {unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} that need your review.
+                    Timely response is critical for recovery.
+                  </p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => setActiveTab("autopsies")}
+                    data-testid="button-go-to-autopsies"
+                  >
+                    <ShieldAlert className="mr-2 h-4 w-4" />
+                    Review Now
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -211,10 +320,18 @@ export default function TherapistClient() {
             </Card>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="progress" data-testid="tab-progress">Progress</TabsTrigger>
                 <TabsTrigger value="checkins" data-testid="tab-checkins">Check-ins</TabsTrigger>
+                <TabsTrigger value="autopsies" data-testid="tab-autopsies" className="relative">
+                  Autopsies
+                  {unreviewedAutopsies.length > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white animate-pulse" data-testid="badge-unreviewed-autopsies">
+                      {unreviewedAutopsies.length}
+                    </span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="reflections" data-testid="tab-reflections">Reflections</TabsTrigger>
                 <TabsTrigger value="homework" data-testid="tab-homework">Homework</TabsTrigger>
                 <TabsTrigger value="feedback" data-testid="tab-feedback">Feedback</TabsTrigger>
@@ -328,6 +445,14 @@ export default function TherapistClient() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
+                          {unreviewedAutopsies.length > 0 && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-300 dark:border-red-700">
+                              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
+                              <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                                {unreviewedAutopsies.length} unreviewed relapse {unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} — immediate review recommended.
+                              </p>
+                            </div>
+                          )}
                           {currentStreak >= 7 && (
                             <div className="flex items-start gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
                               <Flame className="h-4 w-4 text-green-600 mt-0.5" />
@@ -371,6 +496,9 @@ export default function TherapistClient() {
                           <div className="pt-2 text-sm text-muted-foreground">
                             <p>Program Progress: {completedWeeks.length}/16 weeks completed ({Math.round((completedWeeks.length / 16) * 100)}%)</p>
                             <p>Total Check-ins: {totalCheckins}</p>
+                            {relapseAutopsies.filter(a => a.status === "completed").length > 0 && (
+                              <p>Relapse/Lapse Reports: {relapseAutopsies.filter(a => a.status === "completed").length}</p>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -516,6 +644,166 @@ export default function TherapistClient() {
                 </Card>
               </TabsContent>
 
+              <TabsContent value="autopsies" className="space-y-4">
+                {unreviewedAutopsies.length > 0 && (
+                  <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-700 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
+                    <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                      {unreviewedAutopsies.length} unreviewed — these require immediate attention.
+                    </p>
+                  </div>
+                )}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ShieldAlert className="h-5 w-5" />
+                      Relapse Autopsies ({relapseAutopsies.filter(a => a.status === "completed").length} submitted)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {relapseAutopsies.filter(a => a.status === "completed").length === 0 ? (
+                      <p className="text-muted-foreground">No relapse autopsies submitted.</p>
+                    ) : (
+                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                        {relapseAutopsies
+                          .filter(a => a.status === "completed")
+                          .sort((a, b) => b.date.localeCompare(a.date))
+                          .map((autopsy) => {
+                            const isExpanded = expandedAutopsy === autopsy.id;
+                            const isUnreviewed = !autopsy.reviewedByTherapist;
+                            const autopsyFeedback = feedback.filter(f => f.checkinDateKey === autopsy.id);
+                            return (
+                              <div
+                                key={autopsy.id}
+                                className={`rounded-lg border-2 p-4 ${
+                                  isUnreviewed
+                                    ? "border-red-400 bg-red-50/50 dark:bg-red-950/30 dark:border-red-700"
+                                    : "border-green-300 bg-card dark:border-green-700"
+                                }`}
+                                data-testid={`autopsy-${autopsy.id}`}
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-3">
+                                    <span className="font-bold text-lg">{autopsy.date}</span>
+                                    <Badge variant={autopsy.lapseOrRelapse === "relapse" ? "destructive" : "secondary"}>
+                                      {autopsy.lapseOrRelapse === "relapse" ? "Relapse" : "Lapse"}
+                                    </Badge>
+                                    {isUnreviewed ? (
+                                      <Badge variant="destructive" className="animate-pulse">Needs Review</Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="border-green-300 text-green-700 dark:text-green-400">
+                                        <CheckCircle2 className="mr-1 h-3 w-3" /> Reviewed
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    {isUnreviewed && (
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={() => markReviewedMutation.mutate(autopsy.id)}
+                                        disabled={markReviewedMutation.isPending}
+                                        data-testid={`button-mark-reviewed-${autopsy.id}`}
+                                      >
+                                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                        {markReviewedMutation.isPending ? "..." : "Mark Reviewed"}
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8"
+                                      onClick={() => handleAddFeedbackForAutopsy(autopsy.id)}
+                                      data-testid={`button-feedback-autopsy-${autopsy.id}`}
+                                    >
+                                      <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
+                                    </Button>
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      className="h-8"
+                                      onClick={() => handleGenerateAutopsyAIDraft(autopsy.id)}
+                                      disabled={isGeneratingDraft}
+                                      data-testid={`button-ai-autopsy-${autopsy.id}`}
+                                    >
+                                      {isGeneratingDraft ? (
+                                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                                      )}
+                                      AI Insight
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {autopsy.summary && (
+                                  <p className="text-sm mb-3">{autopsy.summary}</p>
+                                )}
+
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setExpandedAutopsy(isExpanded ? null : autopsy.id)}
+                                  className="mb-2"
+                                  data-testid={`button-expand-autopsy-${autopsy.id}`}
+                                >
+                                  {isExpanded ? "Hide Details" : "Show Full Details"}
+                                </Button>
+
+                                {isExpanded && (
+                                  <div className="space-y-3 mt-2 p-3 bg-muted/30 rounded-md">
+                                    {[
+                                      { label: "When it started", value: autopsy.whenStarted },
+                                      { label: "Duration", value: autopsy.duration },
+                                      { label: "Context / Situation", value: autopsy.context },
+                                      { label: "Triggers", value: autopsy.triggers },
+                                      { label: "Emotions felt", value: autopsy.emotions },
+                                      { label: "Thoughts at the time", value: autopsy.thoughts },
+                                      { label: "Physical sensations", value: autopsy.body },
+                                      { label: "Boundaries broken", value: autopsy.boundariesBroken },
+                                      { label: "Warning signs missed", value: autopsy.warningSigns },
+                                      { label: "Decision points", value: autopsy.decisionPoints },
+                                      { label: "Immediate actions planned", value: autopsy.immediateActions },
+                                      { label: "Rule changes", value: autopsy.ruleChanges },
+                                      { label: "Environment changes", value: autopsy.environmentChanges },
+                                      { label: "Support plan", value: autopsy.supportPlan },
+                                      { label: "Next 24 hours plan", value: autopsy.next24HoursPlan },
+                                    ].filter(item => item.value).map((item, idx) => (
+                                      <div key={idx}>
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{item.label}</p>
+                                        <p className="text-sm mt-0.5">{item.value}</p>
+                                      </div>
+                                    ))}
+                                    {autopsy.completedAt && (
+                                      <p className="text-xs text-muted-foreground pt-2">
+                                        Submitted: {new Date(autopsy.completedAt).toLocaleString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {autopsyFeedback.length > 0 && (
+                                  <div className="mt-4 pt-3 border-t border-dashed">
+                                    <p className="text-xs font-bold text-primary mb-2 flex items-center">
+                                      <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response:
+                                    </p>
+                                    {autopsyFeedback.map(f => (
+                                      <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
+                                        <p>{f.content}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="reflections" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -628,12 +916,12 @@ export default function TherapistClient() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {(feedbackWeek || feedbackDateKey) && (
+                      {(feedbackWeek || feedbackDateKey || feedbackAutopsyId) && (
                         <div className="flex items-center gap-2 p-2 bg-secondary/20 rounded-md">
                           <Badge variant="secondary">
-                            Target: {feedbackDateKey ? `Check-in ${feedbackDateKey}` : `Week ${feedbackWeek}`}
+                            Target: {feedbackAutopsyId ? `Relapse Autopsy` : feedbackDateKey ? `Check-in ${feedbackDateKey}` : `Week ${feedbackWeek}`}
                           </Badge>
-                          <Button variant="ghost" size="sm" className="h-6" onClick={() => { setFeedbackWeek(null); setFeedbackDateKey(null); }}>
+                          <Button variant="ghost" size="sm" className="h-6" onClick={() => { setFeedbackWeek(null); setFeedbackDateKey(null); setFeedbackAutopsyId(null); }}>
                             Clear
                           </Button>
                         </div>

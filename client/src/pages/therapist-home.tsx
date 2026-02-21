@@ -6,7 +6,7 @@ import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, LogOut, Key, Search, CreditCard, Loader2, XCircle, ClipboardCheck, Clock, UserCircle, ChevronDown } from "lucide-react";
+import { Users, LogOut, Key, Search, CreditCard, Loader2, XCircle, ClipboardCheck, Clock, UserCircle, ChevronDown, AlertTriangle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -160,6 +160,12 @@ export default function TherapistHome() {
   });
 
   const pendingReviews = pendingReviewsData?.pendingReviews || [];
+
+  const { data: unreviewedAutopsiesData } = useQuery<{ unreviewedCounts: Record<string, number> }>({
+    queryKey: ['/api/therapist/unreviewed-autopsies'],
+    enabled: hasActiveSubscription,
+  });
+  const unreviewedCounts = unreviewedAutopsiesData?.unreviewedCounts || {};
 
   // Submit review mutation
   const submitReviewMutation = useMutation({
@@ -552,7 +558,17 @@ export default function TherapistHome() {
                           onClick={() => setLocation(`/therapist/clients/${client.id}`)}
                           data-testid={`row-client-${client.id}`}
                         >
-                          <td className="p-3 font-medium">{client.name}</td>
+                          <td className="p-3 font-medium">
+                            <span className="flex items-center gap-2">
+                              {client.name}
+                              {unreviewedCounts[String(client.id)] > 0 && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-950 px-2 py-0.5 text-xs font-bold text-red-700 dark:text-red-300" data-testid={`badge-autopsy-alert-${client.id}`}>
+                                  <AlertTriangle className="h-3 w-3" />
+                                  {unreviewedCounts[String(client.id)]} autopsy
+                                </span>
+                              )}
+                            </span>
+                          </td>
                           <td className="p-3 text-muted-foreground">{client.email}</td>
                           <td className="p-3">
                             Week {client.currentWeek} / 16
