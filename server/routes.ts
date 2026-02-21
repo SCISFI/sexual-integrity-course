@@ -23,7 +23,6 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 function startCheckinReminderScheduler() {
   const sentToday = new Set<string>();
   let lastDateKey = "";
-
   setInterval(async () => {
     try {
       const now = new Date();
@@ -31,33 +30,25 @@ function startCheckinReminderScheduler() {
       const currentMinute = now.getUTCMinutes().toString().padStart(2, "0");
       const currentTime = `${currentHour}:${currentMinute}`;
       const dateKey = now.toISOString().split("T")[0];
-
       if (dateKey !== lastDateKey) {
         sentToday.clear();
         lastDateKey = dateKey;
       }
-
       const subscriptions =
         await storage.getAllPushSubscriptionsForCheckinReminders();
-
       for (const sub of subscriptions) {
         const reminderTime = sub.checkinReminderTime || "20:00";
         const key = `${sub.userId}-${sub.endpoint}`;
-
         if (sentToday.has(key)) continue;
-
         const [reminderHour] = reminderTime.split(":");
         const [currentHourParsed] = currentTime.split(":");
-
         if (reminderHour === currentHourParsed) {
           sentToday.add(key);
-
           const existingCheckin = await storage.getDailyCheckin(
             sub.userId,
             dateKey,
           );
           if (existingCheckin) continue;
-
           try {
             await webpush.sendNotification(
               {
@@ -66,7 +57,7 @@ function startCheckinReminderScheduler() {
               },
               JSON.stringify({
                 title: "Daily Check-in Reminder",
-                body: "Take a moment for your daily check-in. How are you today?",
+                body: "Take a moment for your daily check-in.",
                 url: "/daily-checkin",
                 tag: "checkin-reminder",
               }),
@@ -79,11 +70,9 @@ function startCheckinReminderScheduler() {
         }
       }
     } catch (error) {
-      console.error("Check-in reminder scheduler error:", error);
+      console.error("Scheduler error:", error);
     }
   }, 60000);
-
-  console.log("Check-in reminder scheduler started (checking every minute)");
 }
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -105,7 +94,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express,
 ): Promise<Server> {
-  // Auth Endpoints
+  // Auth Logic
   app.post("/api/auth/login", (req, res, next) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success)
@@ -124,16 +113,6 @@ export async function registerRoutes(
     })(req, res, next);
   });
 
-  app.post("/api/auth/logout", (req, res) => {
-    req.logout((err) => {
-      if (err) return res.status(500).json({ message: "Logout failed" });
-      req.session.destroy(() => {
-        res.clearCookie("connect.sid");
-        res.json({ message: "Logged out" });
-      });
-    });
-  });
-
   app.get("/api/auth/me", (req, res) => {
     if (req.isAuthenticated() && req.user) {
       const { password: _, ...safeUser } = req.user;
@@ -142,7 +121,9 @@ export async function registerRoutes(
     res.status(401).json({ message: "Not authenticated" });
   });
 
-  // Admin View - Critical for the "Eye" Icon
+  // =======================================
+  // ADMIN API - RESTORED MENTOR VISIBILITY
+  // =======================================
   app.get("/api/admin/clients", requireRole("admin"), async (req, res) => {
     try {
       const clients = await storage.getUsersByRole("client");
@@ -162,7 +143,21 @@ export async function registerRoutes(
       );
       res.json({ clients: safeClients });
     } catch (error) {
-      res.status(500).json({ message: "Failed" });
+      res.status(500).json({ message: "Failed to get clients" });
+    }
+  });
+
+  // RESTORED: This is the route that shows Mentors/Therapists in the Admin panel
+  app.get("/api/admin/therapists", requireRole("admin"), async (req, res) => {
+    try {
+      const therapists = await storage.getUsersByRole("therapist");
+      const safeTherapists = therapists.map((t) => {
+        const { password: _, ...safe } = t;
+        return safe;
+      });
+      res.json({ therapists: safeTherapists });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get mentors" });
     }
   });
 
@@ -173,9 +168,7 @@ export async function registerRoutes(
       try {
         const { clientId } = req.params;
         const user = await storage.getUser(clientId);
-        if (!user || user.role !== "client")
-          return res.status(404).json({ message: "Client not found" });
-
+        if (!user) return res.status(404).json({ message: "Not found" });
         const completedWeeks = await storage.getCompletedWeeks(clientId);
         const checkins = await storage.getUserCheckinHistory(clientId, 60);
         const reflections = await storage.getAllWeekReflections(clientId);
@@ -184,14 +177,8 @@ export async function registerRoutes(
         const feedback = await storage.getClientFeedback(clientId);
         const exerciseAnswers = await storage.getAllExerciseAnswers(clientId);
         const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
-
         res.json({
-          client: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            startDate: user.startDate,
-          },
+          client: { id: user.id, name: user.name, email: user.email },
           completedWeeks,
           checkins,
           reflections,
@@ -201,12 +188,14 @@ export async function registerRoutes(
           relapseAutopsies,
         });
       } catch (error) {
-        res.status(500).json({ message: "Failed to load" });
+        res.status(500).json({ message: "Failed" });
       }
     },
   );
 
-  // Mentor Dashboards
+  // =======================================
+  // THERAPIST API
+  // =======================================
   app.get(
     "/api/therapist/clients",
     requireRole("therapist"),
@@ -214,11 +203,7 @@ export async function registerRoutes(
       try {
         const therapistId = (req.user as any).id;
         const clients = await storage.getClientsForTherapist(therapistId);
-        const enriched = clients.map((c) => {
-          const { password: _, ...safe } = c;
-          return { ...safe, currentWeek: 1 };
-        });
-        res.json({ clients: enriched });
+        res.json({ clients: clients.map(({ password: _, ...safe }) => safe) });
       } catch (error) {
         res.status(500).json({ message: "Failed" });
       }
@@ -235,7 +220,6 @@ export async function registerRoutes(
         const clients = await storage.getClientsForTherapist(therapistId);
         if (!clients.some((c) => c.id === clientId))
           return res.status(403).json({ message: "Unauthorized" });
-
         const completedWeeks = await storage.getCompletedWeeks(clientId);
         const checkins = await storage.getUserCheckinHistory(clientId, 30);
         const reflections = await storage.getAllWeekReflections(clientId);
@@ -247,7 +231,6 @@ export async function registerRoutes(
         );
         const exerciseAnswers = await storage.getAllExerciseAnswers(clientId);
         const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
-
         res.json({
           completedWeeks,
           checkins,
@@ -263,7 +246,7 @@ export async function registerRoutes(
     },
   );
 
-  // Specific AI Feedback Generation
+  // CONTEXTUAL AI FEEDBACK
   app.post(
     "/api/therapist/clients/:clientId/generate-feedback",
     requireRole("therapist"),
@@ -272,28 +255,23 @@ export async function registerRoutes(
         const therapistId = (req.user as any).id;
         const { clientId } = req.params;
         const { weekNumber, checkinDateKey, relapseAutopsyId } = req.body;
-
         const clients = await storage.getClientsForTherapist(therapistId);
         if (!clients.some((c) => c.id === clientId))
           return res.status(403).json({ message: "Unauthorized" });
-
         const clientUser = await storage.getUser(clientId);
         const autopsies = await storage.getRelapseAutopsies(clientId);
-
-        let contextInfo = `Client: ${clientUser?.name}\n`;
-        let focusTitle = "Review";
-
+        let context = `Client: ${clientUser?.name}\n`;
+        let focus = "General";
         if (relapseAutopsyId) {
           const autopsy = autopsies.find(
             (a) => a.id === parseInt(relapseAutopsyId),
           );
           if (autopsy) {
-            focusTitle = `RELAPSE AUTOPSY`;
-            contextInfo += `\nFOCUS: ${autopsy.lapseOrRelapse}. Situation: ${autopsy.situationDescription}. Plan: ${autopsy.preventionPlan}`;
+            focus = "Relapse Autopsy";
+            context += `Details: ${autopsy.situationDescription}. Plan: ${autopsy.preventionPlan}`;
           }
         }
-
-        const prompt = `You are a supportive mentor. Draft a professional 150-word feedback for this ${focusTitle}: ${contextInfo}. Focus on their prevention plan.`;
+        const prompt = `You are a mentor. Draft 150 words of feedback for this ${focus}: ${context}`;
         const { getCoachResponse } = await import("./ai_coach");
         const draft = await getCoachResponse(prompt, weekNumber || 1);
         res.json({ draft });
@@ -302,39 +280,6 @@ export async function registerRoutes(
       }
     },
   );
-
-  // Core App Functionality
-  app.get("/api/relapse-autopsies", requireRole("client"), async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const autopsies = await storage.getRelapseAutopsies(userId);
-      res.json({ autopsies });
-    } catch (error) {
-      res.status(500).json({ message: "Failed" });
-    }
-  });
-
-  app.post(
-    "/api/relapse-autopsies/:id/complete",
-    requireRole("client"),
-    async (req, res) => {
-      try {
-        const userId = (req.user as any).id;
-        const { id } = req.params;
-        const autopsy = await storage.completeRelapseAutopsy(id, userId);
-        res.json({ autopsy });
-      } catch (error) {
-        res.status(500).json({ message: "Failed" });
-      }
-    },
-  );
-
-  app.post("/api/ai/coach", requireAuth, async (req, res) => {
-    const { message, weekNumber } = req.body;
-    const { getCoachResponse } = await import("./ai_coach");
-    const reply = await getCoachResponse(message, weekNumber || 1);
-    res.json({ reply });
-  });
 
   startCheckinReminderScheduler();
   return httpServer;
