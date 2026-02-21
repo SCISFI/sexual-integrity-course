@@ -2941,7 +2941,7 @@ ${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): tr
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({
           apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-          httpOptions: { baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
+          httpOptions: { apiVersion: "", baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
         });
 
         const prompt = `
@@ -3131,7 +3131,7 @@ ${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): tr
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({
           apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-          httpOptions: { baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
+          httpOptions: { apiVersion: "", baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
         });
 
         const prompt = `You are an expert recovery mentor providing feedback on a relapse autopsy for ${user?.name || "the client"}.
