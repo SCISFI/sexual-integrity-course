@@ -1579,7 +1579,7 @@ export async function registerRoutes(
       try {
         const therapistId = (req.user as any).id;
         const { clientId } = req.params;
-        const { feedbackType, content, weekNumber } = req.body;
+        const { feedbackType, content, weekNumber, checkinDateKey } = req.body;
 
         if (!content || !feedbackType) {
           return res
@@ -1604,6 +1604,7 @@ export async function registerRoutes(
           feedbackType,
           content,
           weekNumber,
+          checkinDateKey,
         );
 
         res.status(201).json({ feedback });
