@@ -412,5 +412,33 @@ export async function registerRoutes(
   });
 
   startCheckinReminderScheduler();
+  // FIX FOR ADMIN "EYE" ICON ERROR
+  app.get("/api/admin/clients/:clientId/progress", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const user = await storage.getUser(clientId);
+      if (!user || user.role !== "client") return res.status(404).json({ message: "Client not found" });
+
+      const therapists = await storage.getTherapistsForClient(clientId);
+      const completedWeeks = await storage.getCompletedWeeks(clientId);
+      const checkins = await storage.getUserCheckinHistory(clientId, 60);
+      const reflections = await storage.getAllWeekReflections(clientId);
+      const homeworkCompletions = await storage.getAllHomeworkCompletions(clientId);
+      const feedback = await storage.getClientFeedback(clientId);
+      const exerciseAnswers = await storage.getAllExerciseAnswers(clientId);
+      const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
+
+      res.json({ 
+        client: { 
+          ...user, 
+          therapists: therapists ? therapists.map(t => ({ id: t.id, name: t.name, email: t.email })) : [] 
+        },
+        completedWeeks, checkins, reflections, homeworkCompletions, feedback, exerciseAnswers, relapseAutopsies 
+      });
+    } catch (error) { 
+      console.error("Admin Progress Error:", error);
+      res.status(500).json({ message: "Failed to load client data" }); 
+    }
+  });
   return httpServer;
 }
