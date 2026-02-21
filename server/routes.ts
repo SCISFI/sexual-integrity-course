@@ -2968,7 +2968,7 @@ ${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): tr
       `;
 
         const response = await ai.models.generateContent({
-          model: "gemini-2.0-flash", // Using your existing model config
+          model: "gemini-2.5-flash",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
 
@@ -3168,7 +3168,7 @@ INSTRUCTIONS:
 9. Do not provide medical advice or crisis intervention.`;
 
         const response = await ai.models.generateContent({
-          model: "gemini-2.0-flash",
+          model: "gemini-2.5-flash",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
 
