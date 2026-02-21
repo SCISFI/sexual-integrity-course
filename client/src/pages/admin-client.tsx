@@ -3,119 +3,193 @@ import { useParams, useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  User,
+  Activity,
+  Calendar,
+  FileText,
+  AlertCircle,
+} from "lucide-react";
 
 export default function AdminClientPage() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
 
-  // This fetches the data directly from the bridge we built in routes.ts
   const { data, isLoading, error } = useQuery<any>({
     queryKey: [`/api/admin/clients/${id}/progress`],
     enabled: !!id,
-    retry: 1,
   });
 
   if (isLoading)
     return (
-      <div className="p-8 text-center">
-        <Skeleton className="h-20 w-full mb-4" />
-        <p>Fetching Client Records...</p>
+      <div className="p-8">
+        <Skeleton className="h-64 w-full" />
       </div>
     );
 
-  if (error)
+  if (error || !data?.client)
     return (
       <div className="p-8 text-center">
-        <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-xl font-bold">Connection Error</h2>
-        <p className="text-muted-foreground">
-          The server is awake, but the data request failed.
-        </p>
-        <Button className="mt-4" onClick={() => window.location.reload()}>
-          Try Again
+        <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
+        <h2 className="text-xl font-bold">Error Loading Profile</h2>
+        <Button className="mt-4" onClick={() => setLocation("/admin")}>
+          Back to Dashboard
         </Button>
       </div>
     );
 
-  // Fallback values so the screen NEVER goes blank
-  const clientName = data?.client?.name || "Member";
-  const clientEmail = data?.client?.email || "No email on file";
-  const autopsies = data?.relapseAutopsies || [];
+  const {
+    client,
+    checkins = [],
+    reflections = [],
+    completedWeeks = [],
+    relapseAutopsies = [],
+  } = data;
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
-        <Button
-          variant="outline"
-          onClick={() => setLocation("/admin")}
-          className="bg-white"
-        >
+      <div className="mx-auto max-w-5xl space-y-6">
+        <Button variant="ghost" onClick={() => setLocation("/admin")}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
         </Button>
 
-        <Card className="border-t-4 border-t-primary">
+        <Card className="bg-white">
           <CardHeader className="flex flex-row items-center space-x-4">
-            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
               <User className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-2xl">{clientName}</CardTitle>
-              <p className="text-muted-foreground">{clientEmail}</p>
+              <CardTitle className="text-2xl">{client.name}</CardTitle>
+              <p className="text-muted-foreground">{client.email}</p>
             </div>
           </CardHeader>
         </Card>
 
-        <div className="space-y-4">
-          <h3 className="text-lg font-bold flex items-center">
-            Relapse Autopsies
-            <span className="ml-2 bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs">
-              {autopsies.length}
-            </span>
-          </h3>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-white border">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="checkins">Check-ins</TabsTrigger>
+            <TabsTrigger value="reflections">Reflections</TabsTrigger>
+            <TabsTrigger value="autopsies" className="text-red-600">
+              Autopsies ({relapseAutopsies.length})
+            </TabsTrigger>
+          </TabsList>
 
-          {autopsies.length === 0 ? (
+          <TabsContent value="overview" className="mt-4 space-y-4">
             <Card>
-              <CardContent className="py-10 text-center text-muted-foreground">
-                No autopsy records found for this client.
+              <CardContent className="pt-6">
+                <h3 className="font-bold mb-2">Program Progress</h3>
+                <p>Completed Weeks: {completedWeeks.length} / 16</p>
+                <div className="flex gap-2 mt-2">
+                  {Array.from({ length: 16 }, (_, i) => (
+                    <div
+                      key={i}
+                      className={`h-4 w-4 rounded-sm ${completedWeeks.includes(i + 1) ? "bg-green-500" : "bg-slate-200"}`}
+                    />
+                  ))}
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            autopsies.map((a: any) => (
-              <Card
-                key={a.id}
-                className="overflow-hidden border-l-4 border-l-red-500"
-              >
-                <CardHeader className="bg-slate-50/50 pb-2">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black text-red-600 tracking-tight">
-                      {a.lapseOrRelapse}
-                    </span>
-                    <span className="text-sm font-medium text-slate-500">
-                      {a.date}
-                    </span>
+          </TabsContent>
+
+          <TabsContent value="checkins" className="mt-4">
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="font-bold mb-4 flex items-center">
+                  <Activity className="mr-2 h-5 w-5" /> Recent Activity
+                </h3>
+                {checkins.length === 0 ? (
+                  <p className="text-muted-foreground">No recent check-ins.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {checkins.slice(0, 10).map((c: any) => (
+                      <div
+                        key={c.id}
+                        className="text-sm border-b pb-2 flex justify-between"
+                      >
+                        <span>{c.dateKey}</span>
+                        <span className="font-medium">
+                          Mood: {c.moodLevel} | Urge: {c.urgeLevel}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-3">
-                  <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase">
-                      Situation Description
-                    </p>
-                    <p className="text-slate-700 leading-relaxed">
-                      {a.situationDescription}
-                    </p>
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-md border border-green-100">
-                    <p className="text-xs font-bold text-green-600 uppercase">
-                      Prevention Plan
-                    </p>
-                    <p className="text-green-800 italic">{a.preventionPlan}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reflections" className="mt-4">
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="font-bold mb-4 flex items-center">
+                  <FileText className="mr-2 h-5 w-5" /> Weekly Insights
+                </h3>
+                {reflections.length === 0 ? (
+                  <p className="text-muted-foreground">
+                    No reflections submitted.
+                  </p>
+                ) : (
+                  reflections.map((r: any) => (
+                    <div key={r.id} className="mb-4 text-sm border-b pb-2">
+                      <p className="font-bold">Week {r.weekNumber}</p>
+                      <p className="italic">"{r.q1?.substring(0, 100)}..."</p>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="autopsies" className="mt-4">
+            <Card className="border-l-4 border-l-red-500">
+              <CardHeader>
+                <CardTitle className="text-red-700">
+                  Relapse Autopsy History
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {relapseAutopsies.length === 0 ? (
+                  <p className="text-muted-foreground">No autopsy records.</p>
+                ) : (
+                  relapseAutopsies.map((a: any) => (
+                    <div key={a.id} className="border-b pb-6 last:border-0">
+                      <div className="flex justify-between items-center mb-2">
+                        <Badge variant="destructive" className="uppercase">
+                          {a.lapseOrRelapse}
+                        </Badge>
+                        <span className="text-sm text-slate-500 font-medium">
+                          {a.date}
+                        </span>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-bold text-slate-400 uppercase">
+                            The Situation
+                          </p>
+                          <p className="text-slate-700">
+                            {a.situationDescription}
+                          </p>
+                        </div>
+                        <div className="bg-green-50 p-3 rounded border border-green-100">
+                          <p className="text-xs font-bold text-green-600 uppercase">
+                            The Prevention Plan
+                          </p>
+                          <p className="text-green-800 italic">
+                            {a.preventionPlan}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
