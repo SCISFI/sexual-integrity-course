@@ -173,16 +173,22 @@ export default function TherapistClient() {
     if (!clientId) return;
     setIsGeneratingDraft(true);
 
-    const endpoint = dateKey
-      ? `/api/therapist/generate-checkin-feedback`
-      : `/api/therapist/clients/${clientId}/generate-feedback`;
+    let endpoint: string;
+    let body: Record<string, any>;
+
+    if (feedbackAutopsyId) {
+      endpoint = `/api/therapist/generate-autopsy-feedback`;
+      body = { clientId, autopsyId: feedbackAutopsyId };
+    } else if (dateKey) {
+      endpoint = `/api/therapist/generate-checkin-feedback`;
+      body = { clientId, dateKey };
+    } else {
+      endpoint = `/api/therapist/clients/${clientId}/generate-feedback`;
+      body = { clientId, weekNumber: feedbackWeek };
+    }
 
     try {
-      const res = await apiRequest("POST", endpoint, {
-        clientId,
-        dateKey: dateKey || undefined,
-        weekNumber: !dateKey ? feedbackWeek : undefined,
-      });
+      const res = await apiRequest("POST", endpoint, body);
 
       if (!res.ok) throw new Error("Failed to generate draft");
       const data = await res.json();
@@ -195,30 +201,7 @@ export default function TherapistClient() {
       }
 
       setNewFeedback(data.draft);
-      toast({ title: "AI draft generated - review before sending" });
-    } catch (error) {
-      toast({ title: "Failed to generate AI draft", variant: "destructive" });
-    } finally {
-      setIsGeneratingDraft(false);
-    }
-  };
-
-  const handleGenerateAutopsyAIDraft = async (autopsyId: string) => {
-    if (!clientId) return;
-    setIsGeneratingDraft(true);
-    try {
-      const res = await apiRequest("POST", "/api/therapist/generate-autopsy-feedback", {
-        clientId,
-        autopsyId,
-      });
-      if (!res.ok) throw new Error("Failed to generate draft");
-      const data = await res.json();
-      setFeedbackAutopsyId(autopsyId);
-      setFeedbackWeek(null);
-      setFeedbackDateKey(null);
-      setNewFeedback(data.draft);
-      setActiveTab("feedback");
-      toast({ title: "AI draft generated with trend analysis - review before sending" });
+      toast({ title: feedbackAutopsyId ? "AI draft generated with relapse trend analysis - review before sending" : "AI draft generated - review before sending" });
     } catch (error) {
       toast({ title: "Failed to generate AI draft", variant: "destructive" });
     } finally {
@@ -717,21 +700,6 @@ export default function TherapistClient() {
                                       data-testid={`button-feedback-autopsy-${autopsy.id}`}
                                     >
                                       <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
-                                    </Button>
-                                    <Button
-                                      variant="secondary"
-                                      size="sm"
-                                      className="h-8"
-                                      onClick={() => handleGenerateAutopsyAIDraft(autopsy.id)}
-                                      disabled={isGeneratingDraft}
-                                      data-testid={`button-ai-autopsy-${autopsy.id}`}
-                                    >
-                                      {isGeneratingDraft ? (
-                                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                                      ) : (
-                                        <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                                      )}
-                                      AI Insight
                                     </Button>
                                   </div>
                                 </div>
