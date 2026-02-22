@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { getPromptForDate } from "@/data/journal-prompts";
+import { WEEK_CONTENT } from "@/data/curriculum";
 
 type RelapseAutopsyData = {
   id: string;
@@ -39,6 +40,12 @@ type RelapseAutopsyData = {
   reviewedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+type ItemReview = {
+  itemType: string;
+  itemKey: string;
+  reviewedAt: string | null;
 };
 
 type ClientProgress = {
@@ -72,7 +79,13 @@ type ClientProgress = {
     checkinDateKey: string | null;
     createdAt: string;
   }>;
+  exerciseAnswers?: Array<{
+    weekNumber: number;
+    answers: string;
+    updatedAt: string;
+  }>;
   relapseAutopsies?: RelapseAutopsyData[];
+  itemReviews?: ItemReview[];
 };
 
 type ClientInfo = {
@@ -92,6 +105,8 @@ export default function TherapistClient() {
   const [feedbackWeek, setFeedbackWeek] = useState<number | null>(null);
   const [feedbackDateKey, setFeedbackDateKey] = useState<string | null>(null);
   const [feedbackAutopsyId, setFeedbackAutopsyId] = useState<string | null>(null);
+  const [feedbackInsightType, setFeedbackInsightType] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("progress");
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [expandedAutopsy, setExpandedAutopsy] = useState<string | null>(null);
@@ -117,6 +132,7 @@ export default function TherapistClient() {
       setFeedbackWeek(null);
       setFeedbackDateKey(null);
       setFeedbackAutopsyId(null);
+      setFeedbackInsightType(null);
       toast({ title: "Feedback added successfully" });
     },
     onError: () => {
@@ -140,14 +156,85 @@ export default function TherapistClient() {
     },
   });
 
+  const markItemReviewedMutation = useMutation({
+    mutationFn: async (data: { itemType: string; itemKey: string }) => {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/review-item`, data);
+      if (!res.ok) throw new Error("Failed to mark as reviewed");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      toast({ title: "Marked as reviewed" });
+    },
+    onError: () => {
+      toast({ title: "Failed to mark as reviewed", variant: "destructive" });
+    },
+  });
+
+  const { data: summariesData } = useQuery<{ summaries: Array<{ weekNumber: number; createdAt: string | null }> }>({
+    queryKey: ['/api/therapist/clients', clientId, 'weekly-summaries'],
+    queryFn: async () => {
+      const res = await fetch(`/api/therapist/clients/${clientId}/weekly-summaries`, { credentials: 'include' });
+      if (!res.ok) return { summaries: [] };
+      return res.json();
+    },
+    enabled: !!clientId,
+  });
+
+  const existingSummaries = summariesData?.summaries || [];
+
+  const handleGenerateReport = async (weekNum: number) => {
+    setGeneratingReport(weekNum);
+    try {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/weekly-summary/${weekNum}`, {});
+      if (!res.ok) throw new Error("Failed to generate report");
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'weekly-summaries'] });
+      toast({ title: `Week ${weekNum} summary generated` });
+    } catch (error) {
+      toast({ title: "Failed to generate report", variant: "destructive" });
+    } finally {
+      setGeneratingReport(null);
+    }
+  };
+
+  const handleDownloadPDF = async (weekNum: number) => {
+    try {
+      const res = await fetch(`/api/therapist/clients/${clientId}/weekly-summary/${weekNum}/pdf`, { credentials: 'include' });
+      if (!res.ok) throw new Error("Failed to download PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `week-${weekNum}-summary.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: "Failed to download PDF", variant: "destructive" });
+    }
+  };
+
   const client = clientsData?.clients?.find(c => c.id === clientId);
   const completedWeeks = progressData?.completedWeeks || [];
   const checkins = progressData?.checkins || [];
   const reflections = progressData?.reflections || [];
   const homeworkCompletions = progressData?.homeworkCompletions || [];
   const feedback = progressData?.feedback || [];
+  const exerciseAnswers = progressData?.exerciseAnswers || [];
   const relapseAutopsies = progressData?.relapseAutopsies || [];
+  const itemReviews = progressData?.itemReviews || [];
   const unreviewedAutopsies = relapseAutopsies.filter(a => a.status === "completed" && !a.reviewedByTherapist);
+
+  const isItemReviewed = (itemType: string, itemKey: string) => {
+    return itemReviews.some(r => r.itemType === itemType && r.itemKey === itemKey);
+  };
+
+  const getUnreviewedCount = () => {
+    let count = 0;
+    checkins.forEach(c => { if (!isItemReviewed('checkin', c.dateKey)) count++; });
+    reflections.forEach(r => { if (!isItemReviewed('reflection', String(r.weekNumber))) count++; });
+    exerciseAnswers.forEach(e => { if (!isItemReviewed('exercise', String(e.weekNumber))) count++; });
+    return count;
+  };
 
   const getWeekStatus = (weekNum: number) => {
     if (completedWeeks.includes(weekNum)) return "completed";
@@ -161,11 +248,25 @@ export default function TherapistClient() {
 
   const handleSubmitFeedback = () => {
     if (!newFeedback.trim()) return;
+    let feedbackType = 'general';
+    let checkinDateKeyValue: string | undefined = undefined;
+    if (feedbackAutopsyId) {
+      feedbackType = 'autopsy';
+      checkinDateKeyValue = feedbackAutopsyId;
+    } else if (feedbackInsightType) {
+      feedbackType = 'general';
+      checkinDateKeyValue = `insight-${feedbackInsightType}`;
+    } else if (feedbackDateKey) {
+      feedbackType = 'checkin';
+      checkinDateKeyValue = feedbackDateKey;
+    } else if (feedbackWeek) {
+      feedbackType = 'week';
+    }
     feedbackMutation.mutate({
-      feedbackType: feedbackAutopsyId ? 'autopsy' : (feedbackDateKey ? 'checkin' : (feedbackWeek ? 'week' : 'general')),
+      feedbackType,
       content: newFeedback,
       weekNumber: feedbackWeek || undefined,
-      checkinDateKey: feedbackDateKey || feedbackAutopsyId || undefined,
+      checkinDateKey: checkinDateKeyValue,
     });
   };
 
@@ -213,6 +314,7 @@ export default function TherapistClient() {
     setFeedbackWeek(weekNumber);
     setFeedbackDateKey(null);
     setFeedbackAutopsyId(null);
+    setFeedbackInsightType(null);
     setActiveTab("feedback");
   };
 
@@ -220,6 +322,7 @@ export default function TherapistClient() {
     setFeedbackDateKey(dateKey);
     setFeedbackWeek(null);
     setFeedbackAutopsyId(null);
+    setFeedbackInsightType(null);
     setActiveTab("feedback");
   };
 
@@ -227,8 +330,20 @@ export default function TherapistClient() {
     setFeedbackAutopsyId(autopsyId);
     setFeedbackWeek(null);
     setFeedbackDateKey(null);
+    setFeedbackInsightType(null);
     setActiveTab("feedback");
   };
+
+  const handleAddFeedbackForInsight = (insightType: string) => {
+    setFeedbackInsightType(insightType);
+    setFeedbackWeek(null);
+    setFeedbackDateKey(null);
+    setFeedbackAutopsyId(null);
+    setNewFeedback("");
+    setActiveTab("feedback");
+  };
+
+  const sortedFeedback = [...feedback].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">
@@ -303,10 +418,17 @@ export default function TherapistClient() {
             </Card>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-7">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="progress" data-testid="tab-progress">Progress</TabsTrigger>
-                <TabsTrigger value="checkins" data-testid="tab-checkins">Check-ins</TabsTrigger>
+                <TabsTrigger value="checkins" data-testid="tab-checkins" className="relative">
+                  Check-ins
+                  {getUnreviewedCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-unreviewed-items">
+                      {getUnreviewedCount()}
+                    </span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="autopsies" data-testid="tab-autopsies" className="relative">
                   Autopsies
                   {unreviewedAutopsies.length > 0 && (
@@ -316,21 +438,27 @@ export default function TherapistClient() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="reflections" data-testid="tab-reflections">Reflections</TabsTrigger>
-                <TabsTrigger value="homework" data-testid="tab-homework">Homework</TabsTrigger>
                 <TabsTrigger value="feedback" data-testid="tab-feedback">Feedback</TabsTrigger>
+                <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
               </TabsList>
 
               <TabsContent value="analytics" className="space-y-4">
                 {(() => {
                   const sortedCheckins = [...checkins].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
                   const totalCheckins = sortedCheckins.length;
-                  const last14Days = Array.from({ length: 14 }, (_, i) => {
+
+                  // Task 9: Fix check-in percentage to use actual days since client start
+                  const daysSinceStart = client.startDate
+                    ? Math.max(1, Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24)))
+                    : 14;
+                  const daysForCompletion = Math.min(daysSinceStart, 14);
+                  const last14Days = Array.from({ length: daysForCompletion }, (_, i) => {
                     const date = new Date();
                     date.setDate(date.getDate() - i);
                     return date.toISOString().split('T')[0];
                   });
-                  const checkinsLast14 = sortedCheckins.filter(c => last14Days.includes(c.dateKey)).length;
-                  const completionRate = Math.round((checkinsLast14 / 14) * 100);
+                  const checkinsInPeriod = sortedCheckins.filter(c => last14Days.includes(c.dateKey)).length;
+                  const completionRate = Math.round((checkinsInPeriod / daysForCompletion) * 100);
 
                   let currentStreak = 0;
                   const uniqueDateSet = new Set(sortedCheckins.map(c => c.dateKey));
@@ -362,6 +490,16 @@ export default function TherapistClient() {
                   const newerAvg = newerHalf.length > 0 ? newerHalf.reduce((a, b) => a + b, 0) / newerHalf.length : 0;
                   const urgeTrend = newerHalf.length > 0 && olderHalf.length > 0 ? (olderAvg > newerAvg ? 'improving' : olderAvg < newerAvg ? 'increasing' : 'stable') : 'stable';
 
+                  const insightItems: Array<{type: string; color: string; icon: any; text: string; show: boolean}> = [
+                    { type: 'unreviewed-autopsies', color: 'red', icon: AlertTriangle, text: `${unreviewedAutopsies.length} unreviewed relapse ${unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} — immediate review recommended.`, show: unreviewedAutopsies.length > 0 },
+                    { type: 'strong-streak', color: 'green', icon: Flame, text: `Strong engagement with ${currentStreak}-day streak. Client is staying consistent with daily practice.`, show: currentStreak >= 7 },
+                    { type: 'low-streak', color: 'amber', icon: Clock, text: `Check-in consistency has dropped. Consider reaching out to encourage re-engagement.`, show: currentStreak < 3 && totalCheckins > 0 },
+                    { type: 'urge-improving', color: 'green', icon: TrendingDown, text: `Urge levels are trending down. The tools and techniques appear to be helping.`, show: urgeTrend === 'improving' },
+                    { type: 'urge-increasing', color: 'red', icon: TrendingUp, text: `Urge levels are increasing. Client may benefit from additional support or crisis resources.`, show: urgeTrend === 'increasing' },
+                    { type: 'no-checkins', color: 'muted', icon: Clock, text: `No check-in data yet. Client hasn't started tracking their daily progress.`, show: totalCheckins === 0 },
+                  ];
+                  const activeInsights = insightItems.filter(i => i.show);
+
                   return (
                     <>
                       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -381,7 +519,7 @@ export default function TherapistClient() {
                           <CardContent className="pt-6">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-sm text-muted-foreground">14-Day Completion</p>
+                                <p className="text-sm text-muted-foreground">{daysForCompletion}-Day Completion</p>
                                 <p className="text-2xl font-bold">{completionRate}%</p>
                               </div>
                               <Target className={`h-8 w-8 ${completionRate >= 70 ? 'text-green-500' : completionRate >= 40 ? 'text-amber-500' : 'text-muted-foreground'}`} />
@@ -393,7 +531,7 @@ export default function TherapistClient() {
                           <CardContent className="pt-6">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-sm text-muted-foreground">Avg Mood (14d)</p>
+                                <p className="text-sm text-muted-foreground">Avg Mood ({Math.min(totalCheckins, 14)}d)</p>
                                 <p className="text-2xl font-bold">{avgMood}/10</p>
                               </div>
                               <TrendingUp className="h-8 w-8 text-primary" />
@@ -428,54 +566,64 @@ export default function TherapistClient() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                          {unreviewedAutopsies.length > 0 && (
-                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-300 dark:border-red-700">
-                              <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
-                              <p className="text-sm text-red-700 dark:text-red-300 font-medium">
-                                {unreviewedAutopsies.length} unreviewed relapse {unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} — immediate review recommended.
-                              </p>
-                            </div>
-                          )}
-                          {currentStreak >= 7 && (
-                            <div className="flex items-start gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
-                              <Flame className="h-4 w-4 text-green-600 mt-0.5" />
-                              <p className="text-sm text-green-700 dark:text-green-300">
-                                Strong engagement with {currentStreak}-day streak. Client is staying consistent with daily practice.
-                              </p>
-                            </div>
-                          )}
-                          {currentStreak < 3 && totalCheckins > 0 && (
-                            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
-                              <Clock className="h-4 w-4 text-amber-600 mt-0.5" />
-                              <p className="text-sm text-amber-700 dark:text-amber-300">
-                                Check-in consistency has dropped. Consider reaching out to encourage re-engagement.
-                              </p>
-                            </div>
-                          )}
-                          {urgeTrend === 'improving' && (
-                            <div className="flex items-start gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
-                              <TrendingDown className="h-4 w-4 text-green-600 mt-0.5" />
-                              <p className="text-sm text-green-700 dark:text-green-300">
-                                Urge levels are trending down. The tools and techniques appear to be helping.
-                              </p>
-                            </div>
-                          )}
-                          {urgeTrend === 'increasing' && (
-                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
-                              <TrendingUp className="h-4 w-4 text-red-600 mt-0.5" />
-                              <p className="text-sm text-red-700 dark:text-red-300">
-                                Urge levels are increasing. Client may benefit from additional support or crisis resources.
-                              </p>
-                            </div>
-                          )}
-                          {totalCheckins === 0 && (
-                            <div className="flex items-start gap-2 p-3 rounded-lg bg-muted border">
-                              <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
-                              <p className="text-sm text-muted-foreground">
-                                No check-in data yet. Client hasn't started tracking their daily progress.
-                              </p>
-                            </div>
-                          )}
+                          {activeInsights.map((insight) => {
+                            const IconComp = insight.icon;
+                            const insightFeedback = feedback.filter(f => f.feedbackType === 'general' && f.checkinDateKey === `insight-${insight.type}`);
+                            const colorMap: Record<string, string> = {
+                              red: 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300',
+                              green: 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300',
+                              amber: 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
+                              muted: 'bg-muted border text-muted-foreground',
+                            };
+                            const iconColorMap: Record<string, string> = {
+                              red: 'text-red-600', green: 'text-green-600', amber: 'text-amber-600', muted: 'text-muted-foreground',
+                            };
+                            return (
+                              <div key={insight.type} className={`p-3 rounded-lg border ${colorMap[insight.color]}`}>
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-start gap-2">
+                                    <IconComp className={`h-4 w-4 mt-0.5 ${iconColorMap[insight.color]}`} />
+                                    <p className="text-sm font-medium">{insight.text}</p>
+                                  </div>
+                                  {activeInsights.length > 1 && (
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      {insightFeedback.length > 0 && (
+                                        <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700">
+                                          <CheckCircle2 className="h-3 w-3 mr-0.5" /> Feedback
+                                        </Badge>
+                                      )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2 text-xs"
+                                        onClick={() => {
+                                          setFeedbackInsightType(insight.type);
+                                          setFeedbackWeek(null);
+                                          setFeedbackDateKey(null);
+                                          setFeedbackAutopsyId(null);
+                                          setNewFeedback("");
+                                          setActiveTab("feedback");
+                                        }}
+                                        data-testid={`button-feedback-insight-${insight.type}`}
+                                      >
+                                        <MessageSquare className="h-3 w-3 mr-1" /> Respond
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                                {insightFeedback.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t border-dashed">
+                                    {insightFeedback.map(f => (
+                                      <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
+                                        <p>{f.content}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                           <div className="pt-2 text-sm text-muted-foreground">
                             <p>Program Progress: {completedWeeks.length}/16 weeks completed ({Math.round((completedWeeks.length / 16) * 100)}%)</p>
                             <p>Total Check-ins: {totalCheckins}</p>
@@ -502,32 +650,43 @@ export default function TherapistClient() {
                     {loadingProgress ? (
                       <Skeleton className="h-32 w-full" />
                     ) : (
-                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-                        {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
-                          const status = getWeekStatus(weekNum);
-                          return (
-                            <div
-                              key={weekNum}
-                              className={`flex flex-col items-center justify-center rounded-lg border p-3 ${
-                                status === "completed"
-                                  ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
-                                  : status === "available"
-                                    ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950"
-                                    : "border-muted bg-muted/30"
-                              }`}
-                              data-testid={`week-status-${weekNum}`}
-                            >
-                              <span className="text-xs text-muted-foreground">Week</span>
-                              <span className="font-bold">{weekNum}</span>
-                              {status === "completed" && (
-                                <CheckCircle2 className="mt-1 h-4 w-4 text-green-600 dark:text-green-400" />
-                              )}
-                              {status === "available" && (
-                                <Clock className="mt-1 h-4 w-4 text-amber-600 dark:text-amber-400" />
-                              )}
-                            </div>
-                          );
-                        })}
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                          {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
+                            const status = getWeekStatus(weekNum);
+                            const weekContent = WEEK_CONTENT[weekNum];
+                            const hw = homeworkCompletions.find(h => h.weekNumber === weekNum);
+                            const totalItems = weekContent?.homeworkChecklist?.length || 0;
+                            const completedItems = hw ? (Array.isArray(hw.completedItems) ? hw.completedItems.length : JSON.parse(hw.completedItems as any || '[]').length) : 0;
+                            return (
+                              <div
+                                key={weekNum}
+                                className={`flex flex-col items-center justify-center rounded-lg border p-3 ${
+                                  status === "completed"
+                                    ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
+                                    : status === "available"
+                                      ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950"
+                                      : "border-muted bg-muted/30"
+                                }`}
+                                data-testid={`week-status-${weekNum}`}
+                              >
+                                <span className="text-xs text-muted-foreground">Week</span>
+                                <span className="font-bold">{weekNum}</span>
+                                {status === "completed" && (
+                                  <CheckCircle2 className="mt-1 h-4 w-4 text-green-600 dark:text-green-400" />
+                                )}
+                                {status === "available" && (
+                                  <Clock className="mt-1 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                )}
+                                {totalItems > 0 && (status === "completed" || status === "available") && (
+                                  <span className={`text-[10px] mt-1 ${completedItems === totalItems ? 'text-green-600 dark:text-green-400 font-bold' : 'text-muted-foreground'}`}>
+                                    HW: {completedItems}/{totalItems}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -544,17 +703,46 @@ export default function TherapistClient() {
                       <p className="text-muted-foreground">No check-ins recorded yet.</p>
                     ) : (
                       <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                        {checkins.slice(0, 30).map((checkin) => {
+                        {[...checkins].sort((a, b) => b.dateKey.localeCompare(a.dateKey)).slice(0, 30).map((checkin) => {
                           const existingFeedback = feedback.filter(f => f.checkinDateKey === checkin.dateKey);
+                          const reviewed = isItemReviewed('checkin', checkin.dateKey);
                           return (
                             <div
                               key={checkin.id}
-                              className="rounded-lg border p-4 bg-card"
+                              className={`rounded-lg border p-4 bg-card ${!reviewed ? 'border-l-4 border-l-amber-400' : ''}`}
                               data-testid={`checkin-${checkin.dateKey}`}
                             >
                               <div className="flex items-center justify-between mb-2">
-                                <span className="font-bold text-lg">{checkin.dateKey}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-lg">{checkin.dateKey}</span>
+                                  {existingFeedback.length > 0 && (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                      <MessageSquare className="h-3 w-3 mr-0.5" /> Feedback ({existingFeedback.length})
+                                    </Badge>
+                                  )}
+                                  {reviewed ? (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                      <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-amber-400 text-amber-600">
+                                      Needs Review
+                                    </Badge>
+                                  )}
+                                </div>
                                 <div className="flex gap-2">
+                                  {!reviewed && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-8"
+                                      onClick={() => markItemReviewedMutation.mutate({ itemType: 'checkin', itemKey: checkin.dateKey })}
+                                      disabled={markItemReviewedMutation.isPending}
+                                      data-testid={`button-review-checkin-${checkin.dateKey}`}
+                                    >
+                                      <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Mark Reviewed
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -678,6 +866,11 @@ export default function TherapistClient() {
                                         <CheckCircle2 className="mr-1 h-3 w-3" /> Reviewed
                                       </Badge>
                                     )}
+                                    {autopsyFeedback.length > 0 && (
+                                      <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                        <MessageSquare className="h-3 w-3 mr-0.5" /> Feedback ({autopsyFeedback.length})
+                                      </Badge>
+                                    )}
                                   </div>
                                   <div className="flex gap-2">
                                     {isUnreviewed && (
@@ -777,97 +970,145 @@ export default function TherapistClient() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5" />
-                      Week Reflections
+                      Week Reflections & Exercises
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {reflections.length === 0 ? (
-                      <p className="text-muted-foreground">No reflections recorded yet.</p>
+                    {reflections.length === 0 && exerciseAnswers.length === 0 ? (
+                      <p className="text-muted-foreground">No reflections or exercises recorded yet.</p>
                     ) : (
                       <div className="space-y-4">
-                        {reflections.map((reflection) => (
-                          <div
-                            key={reflection.weekNumber}
-                            className="rounded-lg border p-4"
-                            data-testid={`reflection-week-${reflection.weekNumber}`}
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="font-medium">Week {reflection.weekNumber}</h4>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddFeedbackForWeek(reflection.weekNumber)}
-                                data-testid={`button-add-feedback-week-${reflection.weekNumber}`}
-                              >
-                                Add Feedback
-                              </Button>
-                            </div>
-                            <div className="space-y-3">
-                              {reflection.q1 && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Key insight from this week</p>
-                                  <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q1}</p>
-                                </div>
-                              )}
-                              {reflection.q2 && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground">What went well</p>
-                                  <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q2}</p>
-                                </div>
-                              )}
-                              {reflection.q3 && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Challenges faced</p>
-                                  <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q3}</p>
-                                </div>
-                              )}
-                              {reflection.q4 && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Goals for next week</p>
-                                  <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q4}</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                        {[...reflections].sort((a, b) => b.weekNumber - a.weekNumber).map((reflection) => {
+                          const weekFeedback = feedback.filter(f => f.feedbackType === 'week' && f.weekNumber === reflection.weekNumber);
+                          const reviewed = isItemReviewed('reflection', String(reflection.weekNumber));
+                          const weekExercise = exerciseAnswers.find(e => e.weekNumber === reflection.weekNumber);
+                          const exerciseReviewed = isItemReviewed('exercise', String(reflection.weekNumber));
+                          let parsedAnswers: Record<string, string> = {};
+                          try { parsedAnswers = weekExercise ? JSON.parse(weekExercise.answers) : {}; } catch {}
+                          const answerEntries = Object.entries(parsedAnswers).filter(([, v]) => v && String(v).trim());
 
-              <TabsContent value="homework" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ListChecks className="h-5 w-5" />
-                      Homework Progress
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {homeworkCompletions.length === 0 ? (
-                      <p className="text-muted-foreground">No homework tracked yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {homeworkCompletions
-                          .sort((a, b) => a.weekNumber - b.weekNumber)
-                          .map((hw) => (
-                          <div
-                            key={hw.weekNumber}
-                            className="rounded-lg border p-4"
-                            data-testid={`homework-week-${hw.weekNumber}`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium">Week {hw.weekNumber}</h4>
-                              <Badge variant="outline">
-                                {hw.completedItems.length} items completed
-                              </Badge>
+                          return (
+                            <div
+                              key={reflection.weekNumber}
+                              className={`rounded-lg border p-4 ${!reviewed ? 'border-l-4 border-l-amber-400' : ''}`}
+                              data-testid={`reflection-week-${reflection.weekNumber}`}
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-medium">Week {reflection.weekNumber}</h4>
+                                  {reviewed ? (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                      <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-amber-400 text-amber-600">
+                                      Needs Review
+                                    </Badge>
+                                  )}
+                                  {weekFeedback.length > 0 && (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                      <MessageSquare className="h-3 w-3 mr-0.5" /> Feedback ({weekFeedback.length})
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex gap-2">
+                                  {!reviewed && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => markItemReviewedMutation.mutate({ itemType: 'reflection', itemKey: String(reflection.weekNumber) })}
+                                      disabled={markItemReviewedMutation.isPending}
+                                      data-testid={`button-review-reflection-${reflection.weekNumber}`}
+                                    >
+                                      <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Mark Reviewed
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAddFeedbackForWeek(reflection.weekNumber)}
+                                    data-testid={`button-add-feedback-week-${reflection.weekNumber}`}
+                                  >
+                                    <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Add Feedback
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                {reflection.q1 && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Key insight from this week</p>
+                                    <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q1}</p>
+                                  </div>
+                                )}
+                                {reflection.q2 && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">What went well</p>
+                                    <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q2}</p>
+                                  </div>
+                                )}
+                                {reflection.q3 && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Challenges faced</p>
+                                    <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q3}</p>
+                                  </div>
+                                )}
+                                {reflection.q4 && (
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">Goals for next week</p>
+                                    <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q4}</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {answerEntries.length > 0 && (
+                                <div className="mt-4 pt-3 border-t">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Exercise Answers</p>
+                                    {!exerciseReviewed && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 text-xs"
+                                        onClick={() => markItemReviewedMutation.mutate({ itemType: 'exercise', itemKey: String(reflection.weekNumber) })}
+                                        disabled={markItemReviewedMutation.isPending}
+                                        data-testid={`button-review-exercise-${reflection.weekNumber}`}
+                                      >
+                                        <CheckSquare className="mr-1 h-3 w-3" /> Mark Exercises Reviewed
+                                      </Button>
+                                    )}
+                                    {exerciseReviewed && (
+                                      <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                        <CheckCircle2 className="h-3 w-3 mr-0.5" /> Exercises Reviewed
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="space-y-2">
+                                    {answerEntries.map(([key, value]) => (
+                                      <div key={key}>
+                                        <p className="text-xs text-muted-foreground">{key.replace(/-/g, ' ')}</p>
+                                        <p className="text-sm bg-muted/50 p-2 rounded">{value}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {weekFeedback.length > 0 && (
+                                <div className="mt-4 pt-3 border-t border-dashed">
+                                  <p className="text-xs font-bold text-primary mb-2 flex items-center">
+                                    <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response:
+                                  </p>
+                                  {weekFeedback.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(f => (
+                                    <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
+                                      <p>{f.content}</p>
+                                      <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              Last updated: {new Date(hw.updatedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>
@@ -884,12 +1125,12 @@ export default function TherapistClient() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {(feedbackWeek || feedbackDateKey || feedbackAutopsyId) && (
+                      {(feedbackWeek || feedbackDateKey || feedbackAutopsyId || feedbackInsightType) && (
                         <div className="flex items-center gap-2 p-2 bg-secondary/20 rounded-md">
                           <Badge variant="secondary">
-                            Target: {feedbackAutopsyId ? `Relapse Autopsy` : feedbackDateKey ? `Check-in ${feedbackDateKey}` : `Week ${feedbackWeek}`}
+                            Target: {feedbackAutopsyId ? `Relapse Autopsy` : feedbackInsightType ? `Insight: ${feedbackInsightType.replace(/-/g, ' ')}` : feedbackDateKey ? `Check-in ${feedbackDateKey}` : `Week ${feedbackWeek}`}
                           </Badge>
-                          <Button variant="ghost" size="sm" className="h-6" onClick={() => { setFeedbackWeek(null); setFeedbackDateKey(null); setFeedbackAutopsyId(null); }}>
+                          <Button variant="ghost" size="sm" className="h-6" onClick={() => { setFeedbackWeek(null); setFeedbackDateKey(null); setFeedbackAutopsyId(null); setFeedbackInsightType(null); }}>
                             Clear
                           </Button>
                         </div>
@@ -943,7 +1184,7 @@ export default function TherapistClient() {
                       <p className="text-muted-foreground">No feedback given yet.</p>
                     ) : (
                       <div className="space-y-4">
-                        {feedback.map((fb) => (
+                        {sortedFeedback.map((fb) => (
                           <div
                             key={fb.id}
                             className="rounded-lg border p-4"
@@ -952,7 +1193,8 @@ export default function TherapistClient() {
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 {fb.weekNumber && <Badge variant="outline">Week {fb.weekNumber}</Badge>}
-                                {fb.checkinDateKey && <Badge variant="outline">Check-in {fb.checkinDateKey}</Badge>}
+                                {fb.checkinDateKey && !fb.checkinDateKey.startsWith('insight-') && <Badge variant="outline">Check-in {fb.checkinDateKey}</Badge>}
+                                {fb.checkinDateKey?.startsWith('insight-') && <Badge variant="outline">Insight</Badge>}
                                 <Badge variant="secondary">{fb.feedbackType}</Badge>
                               </div>
                               <span className="text-xs text-muted-foreground">
@@ -964,6 +1206,84 @@ export default function TherapistClient() {
                         ))}
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="reports" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileBarChart className="h-5 w-5" />
+                      Weekly Summary Reports
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Generate AI-powered weekly summary reports with progress data, mood/urge trends, and personalized observations. Download as PDF.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
+                        const isCompleted = completedWeeks.some(w => w.weekNumber === weekNum);
+                        const existingSummary = existingSummaries.find(s => s.weekNumber === weekNum);
+                        const isGenerating = generatingReport === weekNum;
+                        const weekTitle = WEEK_CONTENT[weekNum]?.title || `Week ${weekNum}`;
+
+                        return (
+                          <div
+                            key={weekNum}
+                            className={`rounded-lg border p-4 ${isCompleted ? 'bg-card' : 'bg-muted/30 opacity-60'}`}
+                            data-testid={`report-week-${weekNum}`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <div>
+                                <span className="font-semibold text-sm">Week {weekNum}</span>
+                                <p className="text-xs text-muted-foreground truncate max-w-[180px]">{weekTitle}</p>
+                              </div>
+                              {existingSummary && (
+                                <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                  <CheckCircle2 className="h-3 w-3 mr-0.5" /> Ready
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              <Button
+                                size="sm"
+                                variant={existingSummary ? "outline" : "default"}
+                                onClick={() => handleGenerateReport(weekNum)}
+                                disabled={!isCompleted || isGenerating}
+                                className="text-xs flex-1"
+                                data-testid={`button-generate-report-${weekNum}`}
+                              >
+                                {isGenerating ? (
+                                  <>
+                                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                                    Generating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="mr-1 h-3 w-3" />
+                                    {existingSummary ? "Regenerate" : "Generate"}
+                                  </>
+                                )}
+                              </Button>
+                              {existingSummary && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDownloadPDF(weekNum)}
+                                  className="text-xs"
+                                  data-testid={`button-download-pdf-${weekNum}`}
+                                >
+                                  <Download className="mr-1 h-3 w-3" />
+                                  PDF
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>

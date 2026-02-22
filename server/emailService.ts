@@ -393,3 +393,72 @@ export async function sendRelapseAutopsyNotification(
     return false;
   }
 }
+
+export async function sendNudgeEmail(
+  clientEmail: string,
+  clientName: string | undefined,
+  encouragementMessage: string,
+  daysSinceLastCheckin: number,
+  loginUrl?: string
+): Promise<boolean> {
+  try {
+    const gmail = await getUncachableGmailClient();
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #0891b2; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+    .message { background-color: #ecfeff; border-left: 4px solid #0891b2; padding: 15px; margin: 20px 0; font-style: italic; }
+    .button { display: inline-block; background-color: #0891b2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+    .opt-out { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>We Miss You!</h1>
+    </div>
+    <div class="content">
+      <p>Hello${clientName ? ` ${clientName}` : ''},</p>
+      <p>We noticed it's been ${daysSinceLastCheckin} days since your last check-in. Your journey matters, and every step counts.</p>
+      <div class="message">
+        ${encouragementMessage}
+      </div>
+      <p>Your daily check-in takes just a few minutes and helps you stay connected to your recovery goals.</p>
+      <p style="text-align: center;">
+        <a href="${loginUrl || '#'}" class="button">Complete Today's Check-in</a>
+      </p>
+    </div>
+    ${getEmailFooter(loginUrl)}
+    <p class="opt-out">You can turn off these reminders in your notification settings on the app.</p>
+  </div>
+</body>
+</html>
+    `;
+
+    const rawMessage = createEmailMessage(
+      clientEmail,
+      `Check-in Reminder - The Integrity Protocol`,
+      htmlContent
+    );
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: rawMessage
+      }
+    });
+
+    console.log(`Nudge email sent to ${clientEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send nudge email:', error);
+    return false;
+  }
+}

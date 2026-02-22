@@ -32,6 +32,7 @@ export function usePushNotifications() {
       checkinReminderTime: string;
       feedbackNotificationsEnabled: boolean;
       weeklyProgressEnabled: boolean;
+      nudgeEnabled: boolean;
     };
   }>({
     queryKey: ["/api/push/status"],
@@ -92,6 +93,7 @@ export function usePushNotifications() {
       checkinReminderTime: string;
       feedbackNotificationsEnabled: boolean;
       weeklyProgressEnabled: boolean;
+      nudgeEnabled: boolean;
     }>) => {
       await apiRequest("PUT", "/api/push/preferences", prefs);
     },

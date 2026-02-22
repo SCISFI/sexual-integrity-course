@@ -15,6 +15,8 @@ import {
   pushSubscriptions,
   notificationPreferences,
   relapseAutopsies,
+  mentorItemReviews,
+  weeklySummaries,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -143,7 +145,7 @@ export interface IStorage {
 
   // Notification preferences
   getNotificationPreferences(userId: string): Promise<NotificationPreference | undefined>;
-  upsertNotificationPreferences(userId: string, data: Partial<{checkinReminderEnabled: boolean; checkinReminderTime: string; feedbackNotificationsEnabled: boolean; weeklyProgressEnabled: boolean}>): Promise<NotificationPreference>;
+  upsertNotificationPreferences(userId: string, data: Partial<{checkinReminderEnabled: boolean; checkinReminderTime: string; feedbackNotificationsEnabled: boolean; weeklyProgressEnabled: boolean; nudgeEnabled: boolean}>): Promise<NotificationPreference>;
 
   // Relapse autopsies
   createRelapseAutopsy(userId: string, data: Partial<RelapseAutopsy>): Promise<RelapseAutopsy>;
@@ -153,6 +155,18 @@ export interface IStorage {
   completeRelapseAutopsy(id: string, userId: string): Promise<RelapseAutopsy | undefined>;
   markAutopsyReviewed(id: string): Promise<RelapseAutopsy | undefined>;
   getUnreviewedAutopsiesForClients(clientIds: string[]): Promise<Array<{userId: string; count: number}>>;
+
+  // Mentor item reviews
+  markItemReviewed(therapistId: string, clientId: string, itemType: string, itemKey: string): Promise<void>;
+  getItemReviews(therapistId: string, clientId: string): Promise<Array<{itemType: string; itemKey: string; reviewedAt: Date | null}>>;
+
+  // Weekly summaries
+  saveWeeklySummary(therapistId: string, clientId: string, weekNumber: number, summaryContent: string): Promise<void>;
+  getWeeklySummary(clientId: string, weekNumber: number): Promise<{summaryContent: string; createdAt: Date | null} | undefined>;
+  getWeeklySummaries(clientId: string): Promise<Array<{weekNumber: number; createdAt: Date | null}>>;
+
+  // Inactive clients for nudge system
+  getInactiveClients(daysSince: number): Promise<Array<{id: string; email: string; firstName: string | null; lastName: string | null; lastCheckinDate: string | null}>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -857,7 +871,7 @@ export class DatabaseStorage implements IStorage {
     return pref;
   }
 
-  async upsertNotificationPreferences(userId: string, data: Partial<{checkinReminderEnabled: boolean; checkinReminderTime: string; feedbackNotificationsEnabled: boolean; weeklyProgressEnabled: boolean}>): Promise<NotificationPreference> {
+  async upsertNotificationPreferences(userId: string, data: Partial<{checkinReminderEnabled: boolean; checkinReminderTime: string; feedbackNotificationsEnabled: boolean; weeklyProgressEnabled: boolean; nudgeEnabled: boolean}>): Promise<NotificationPreference> {
     const existing = await this.getNotificationPreferences(userId);
     if (existing) {
       const [updated] = await db.update(notificationPreferences)
@@ -947,6 +961,106 @@ export class DatabaseStorage implements IStorage {
       ))
       .groupBy(relapseAutopsies.userId);
     return results;
+  }
+  async markItemReviewed(therapistId: string, clientId: string, itemType: string, itemKey: string): Promise<void> {
+    await db.insert(mentorItemReviews)
+      .values({ therapistId, clientId, itemType, itemKey })
+      .onConflictDoUpdate({
+        target: [mentorItemReviews.therapistId, mentorItemReviews.clientId, mentorItemReviews.itemType, mentorItemReviews.itemKey],
+        set: { reviewedAt: new Date() },
+      });
+  }
+
+  async getItemReviews(therapistId: string, clientId: string): Promise<Array<{itemType: string; itemKey: string; reviewedAt: Date | null}>> {
+    const results = await db.select({
+      itemType: mentorItemReviews.itemType,
+      itemKey: mentorItemReviews.itemKey,
+      reviewedAt: mentorItemReviews.reviewedAt,
+    })
+      .from(mentorItemReviews)
+      .where(and(
+        eq(mentorItemReviews.therapistId, therapistId),
+        eq(mentorItemReviews.clientId, clientId),
+      ));
+    return results;
+  }
+  async getInactiveClients(daysSince: number): Promise<Array<{id: string; email: string; firstName: string | null; lastName: string | null; lastCheckinDate: string | null}>> {
+    const allClients = await db.select().from(users).where(eq(users.role, "client"));
+    const cutoff = new Date(Date.now() - daysSince * 86400000);
+
+    const results: Array<{id: string; email: string; firstName: string | null; lastName: string | null; lastCheckinDate: string | null}> = [];
+
+    for (const client of allClients) {
+      if (!client.isActive) continue;
+
+      const clientCheckins = await db.select()
+        .from(dailyCheckins)
+        .where(eq(dailyCheckins.userId, client.id))
+        .orderBy(desc(dailyCheckins.checkinDate))
+        .limit(1);
+
+      if (clientCheckins.length === 0) {
+        const createdAt = client.createdAt ? new Date(client.createdAt) : new Date();
+        if (createdAt < cutoff) {
+          results.push({
+            id: client.id,
+            email: client.email,
+            firstName: client.firstName,
+            lastName: client.lastName,
+            lastCheckinDate: null,
+          });
+        }
+        continue;
+      }
+
+      const lastCheckin = clientCheckins[0];
+      const lastDate = lastCheckin.checkinDate instanceof Date
+        ? lastCheckin.checkinDate
+        : new Date(String(lastCheckin.checkinDate));
+
+      if (lastDate < cutoff) {
+        results.push({
+          id: client.id,
+          email: client.email,
+          firstName: client.firstName,
+          lastName: client.lastName,
+          lastCheckinDate: lastDate.toISOString().slice(0, 10),
+        });
+      }
+    }
+
+    return results;
+  }
+
+  async saveWeeklySummary(therapistId: string, clientId: string, weekNumber: number, summaryContent: string): Promise<void> {
+    await db.insert(weeklySummaries)
+      .values({ therapistId, clientId, weekNumber, summaryContent })
+      .onConflictDoUpdate({
+        target: [weeklySummaries.clientId, weeklySummaries.weekNumber],
+        set: { summaryContent, therapistId, createdAt: new Date() },
+      });
+  }
+
+  async getWeeklySummary(clientId: string, weekNumber: number): Promise<{summaryContent: string; createdAt: Date | null} | undefined> {
+    const [result] = await db.select({
+      summaryContent: weeklySummaries.summaryContent,
+      createdAt: weeklySummaries.createdAt,
+    })
+      .from(weeklySummaries)
+      .where(and(
+        eq(weeklySummaries.clientId, clientId),
+        eq(weeklySummaries.weekNumber, weekNumber),
+      ));
+    return result || undefined;
+  }
+
+  async getWeeklySummaries(clientId: string): Promise<Array<{weekNumber: number; createdAt: Date | null}>> {
+    return db.select({
+      weekNumber: weeklySummaries.weekNumber,
+      createdAt: weeklySummaries.createdAt,
+    })
+      .from(weeklySummaries)
+      .where(eq(weeklySummaries.clientId, clientId));
   }
 }
 

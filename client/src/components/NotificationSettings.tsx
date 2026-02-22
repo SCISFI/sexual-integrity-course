@@ -170,6 +170,22 @@ export function NotificationSettings() {
               />
             </div>
 
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Inactivity Encouragement Emails</p>
+                <p className="text-xs text-muted-foreground">
+                  Receive a supportive email if you miss check-ins for 3+ days
+                </p>
+              </div>
+              <Switch
+                checked={preferences?.nudgeEnabled ?? true}
+                onCheckedChange={(checked) =>
+                  updatePreferences({ nudgeEnabled: checked })
+                }
+                data-testid="switch-nudge-emails"
+              />
+            </div>
+
             <div className="pt-2 border-t">
               <Button
                 variant="outline"

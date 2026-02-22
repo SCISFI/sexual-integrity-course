@@ -11,6 +11,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import webpush from "web-push";
+import { generateWeeklySummaryPDF } from "./pdf-service";
 
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
@@ -18,6 +19,80 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY,
   );
+}
+
+function startNudgeScheduler() {
+  const nudgedToday = new Set<string>();
+  let lastNudgeDate = "";
+
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const dateKey = now.toISOString().split("T")[0];
+      const currentHour = now.getUTCHours();
+
+      if (currentHour !== 14) return;
+
+      if (dateKey !== lastNudgeDate) {
+        nudgedToday.clear();
+        lastNudgeDate = dateKey;
+      }
+
+      const inactiveClients = await storage.getInactiveClients(3);
+
+      for (const client of inactiveClients) {
+        if (nudgedToday.has(client.id)) continue;
+        nudgedToday.add(client.id);
+
+        const prefs = await storage.getNotificationPreferences(client.id);
+        if (prefs && !prefs.nudgeEnabled) continue;
+
+        const daysSince = client.lastCheckinDate
+          ? Math.floor((Date.now() - new Date(client.lastCheckinDate).getTime()) / 86400000)
+          : 7;
+
+        try {
+          const { GoogleGenAI } = await import("@google/genai");
+          const ai = new GoogleGenAI({
+            apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+            httpOptions: {
+              apiVersion: "",
+              baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+            },
+          });
+
+          const prompt = `Write a short, warm, encouraging message (2-3 sentences) for someone in a recovery program who hasn't checked in for ${daysSince} days. Be supportive, not judgmental. Don't mention specific details about their program. Focus on the value of showing up and the strength it takes to continue. Do not provide medical advice.`;
+
+          const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+          });
+
+          const encouragement = response.text || "Every day is a new opportunity. We're here for you whenever you're ready to check in.";
+
+          const loginUrl = process.env.REPLIT_DEV_DOMAIN
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}/login`
+            : process.env.REPLIT_DOMAINS
+              ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}/login`
+              : undefined;
+
+          const { sendNudgeEmail } = await import("./emailService");
+          await sendNudgeEmail(
+            client.email,
+            client.firstName || undefined,
+            encouragement,
+            daysSince,
+            loginUrl,
+          );
+        } catch (nudgeError) {
+          console.error(`Failed to send nudge to ${client.email}:`, nudgeError);
+        }
+      }
+    } catch (error) {
+      console.error("Nudge scheduler error:", error);
+    }
+  }, 60000);
+  console.log("Inactivity nudge scheduler started (checking every minute at 14:00 UTC)");
 }
 
 function startCheckinReminderScheduler() {
@@ -1556,6 +1631,7 @@ export async function registerRoutes(
         const exerciseAnswersData =
           await storage.getAllExerciseAnswers(clientId);
         const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
+        const itemReviews = await storage.getItemReviews(therapistId, clientId);
 
         res.json({
           completedWeeks,
@@ -1565,10 +1641,393 @@ export async function registerRoutes(
           feedback,
           exerciseAnswers: exerciseAnswersData,
           relapseAutopsies,
+          itemReviews,
         });
       } catch (error) {
         console.error("Get client progress error:", error);
         res.status(500).json({ message: "Failed to get client progress" });
+      }
+    },
+  );
+
+  // Mark item as reviewed by mentor
+  app.post(
+    "/api/therapist/clients/:clientId/review-item",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+        const { itemType, itemKey } = req.body;
+
+        if (!itemType || !itemKey) {
+          return res.status(400).json({ message: "itemType and itemKey are required" });
+        }
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const isAssigned = clients.some((c) => c.id === clientId);
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        await storage.markItemReviewed(therapistId, clientId, itemType, itemKey);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Mark item reviewed error:", error);
+        res.status(500).json({ message: "Failed to mark item as reviewed" });
+      }
+    },
+  );
+
+  const WEEK_TITLES: Record<number, string> = {
+    1: "Welcome & Understanding CSBD",
+    2: "Understanding Your Cycle & Triggers",
+    3: "Cognitive Restructuring",
+    4: "Self-Regulation & Impulse Management",
+    5: "Understanding Shame & Guilt",
+    6: "Relationships, Attachment & Intimacy",
+    7: "Problem-Solving & Communication",
+    8: "Relapse Prevention - Part 1",
+    9: "Introduction to ACT & Psychological Flexibility",
+    10: "Cognitive Defusion",
+    11: "Values Clarification",
+    12: "Acceptance & Mindfulness",
+    13: "Committed Action",
+    14: "Self-as-Context & Identity",
+    15: "Comprehensive Relapse Prevention",
+    16: "Integration & Moving Forward",
+  };
+
+  app.post(
+    "/api/therapist/clients/:clientId/weekly-summary/:weekNumber",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+        const weekNumber = parseInt(req.params.weekNumber);
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const isAssigned = clients.some((c) => c.id === clientId);
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        const client = await storage.getUser(clientId);
+        const therapist = await storage.getUser(therapistId);
+        if (!client || !therapist) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        const checkins = await storage.getCheckins(clientId);
+        const weekReflection = await storage.getWeekReflection(clientId, weekNumber);
+        const homeworkCompletions = await storage.getHomeworkCompletions(clientId, weekNumber);
+        const feedbackList = await storage.getFeedbackForClient(clientId);
+        const relapseHistory = await storage.getRelapseAutopsies(clientId);
+
+        const weekCheckins = checkins.filter((c) => {
+          const dateStr = c.checkinDate instanceof Date ? c.checkinDate.toISOString().slice(0, 10) : String(c.checkinDate).slice(0, 10);
+          const checkinTime = new Date(dateStr).getTime();
+          const startDate = client.weekStartDate ? new Date(client.weekStartDate) : new Date(client.createdAt || Date.now());
+          const weekStart = new Date(startDate.getTime() + (weekNumber - 1) * 7 * 86400000);
+          const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
+          return checkinTime >= weekStart.getTime() && checkinTime < weekEnd.getTime();
+        });
+
+        const avgMood = weekCheckins.length > 0
+          ? Math.round(weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) / weekCheckins.length * 10) / 10
+          : 0;
+        const avgUrge = weekCheckins.length > 0
+          ? Math.round(weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) / weekCheckins.length * 10) / 10
+          : 0;
+
+        const hwTotal = 11;
+        const hwDone = homeworkCompletions?.length || 0;
+
+        let contextInfo = `Client: ${client.firstName || ""} ${client.lastName || ""}\nWeek ${weekNumber}: ${WEEK_TITLES[weekNumber] || "Unknown"}\n`;
+        contextInfo += `Check-ins: ${weekCheckins.length}/7 days, Avg Mood: ${avgMood}/10, Avg Urge: ${avgUrge}/10\n`;
+        contextInfo += `Homework: ${hwDone}/${hwTotal} completed\n`;
+
+        if (weekReflection) {
+          contextInfo += `\nWeek Reflection:\n`;
+          if (weekReflection.q1) contextInfo += `- Key learning: "${weekReflection.q1}"\n`;
+          if (weekReflection.q2) contextInfo += `- What went well: "${weekReflection.q2}"\n`;
+          if (weekReflection.q3) contextInfo += `- Challenges: "${weekReflection.q3}"\n`;
+          if (weekReflection.q4) contextInfo += `- Goals for next week: "${weekReflection.q4}"\n`;
+        }
+
+        const journalEntries = weekCheckins.filter(c => c.journalEntry).map(c => c.journalEntry);
+        if (journalEntries.length > 0) {
+          contextInfo += `\nJournal entries:\n`;
+          journalEntries.forEach((entry) => {
+            contextInfo += `- "${entry?.slice(0, 200)}"\n`;
+          });
+        }
+
+        const weekFeedback = feedbackList.filter(f => f.weekNumber === weekNumber);
+        if (weekFeedback.length > 0) {
+          contextInfo += `\nMentor feedback given this week: ${weekFeedback.length} messages\n`;
+        }
+
+        const completedAutopsies = relapseHistory.filter(a => a.status === "completed");
+        if (completedAutopsies.length > 0) {
+          contextInfo += `\nRelapse/Lapse History: ${completedAutopsies.length} total incidents\n`;
+        }
+
+        const { GoogleGenAI } = await import("@google/genai");
+        const ai = new GoogleGenAI({
+          apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+          httpOptions: {
+            apiVersion: "",
+            baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+          },
+        });
+
+        const prompt = `You are a professional mentor writing a weekly progress summary report for a client in a Sexual Integrity recovery program. This summary will be included in a formal PDF report.
+
+${contextInfo}
+
+Write a comprehensive but concise weekly summary (200-300 words) that includes:
+1. A brief overview of the client's engagement this week (check-in consistency, homework completion)
+2. Key observations from their reflections and journal entries
+3. Notable mood/urge patterns
+4. Strengths demonstrated this week
+5. Areas to focus on next week
+6. An encouraging closing statement
+
+Tone: Professional, warm, and supportive. Write in third person ("The client..." or use their name).
+Do not provide medical advice. This is an educational program, not therapy.
+
+Write the summary now:`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+
+        const summaryContent = response.text || "Unable to generate summary.";
+
+        await storage.saveWeeklySummary(therapistId, clientId, weekNumber, summaryContent);
+
+        res.json({ summaryContent });
+      } catch (error) {
+        console.error("Generate weekly summary error:", error);
+        res.status(500).json({ message: "Failed to generate weekly summary" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/therapist/clients/:clientId/weekly-summary/:weekNumber",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+        const weekNumber = parseInt(req.params.weekNumber);
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const isAssigned = clients.some((c) => c.id === clientId);
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        const summary = await storage.getWeeklySummary(clientId, weekNumber);
+        if (!summary) {
+          return res.status(404).json({ message: "No summary found" });
+        }
+
+        res.json(summary);
+      } catch (error) {
+        console.error("Get weekly summary error:", error);
+        res.status(500).json({ message: "Failed to get weekly summary" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/therapist/clients/:clientId/weekly-summary/:weekNumber/pdf",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+        const weekNumber = parseInt(req.params.weekNumber);
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const isAssigned = clients.some((c) => c.id === clientId);
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        const summary = await storage.getWeeklySummary(clientId, weekNumber);
+        if (!summary) {
+          return res.status(404).json({ message: "No summary generated yet" });
+        }
+
+        const client = await storage.getUser(clientId);
+        const therapist = await storage.getUser(therapistId);
+        if (!client || !therapist) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        const checkins = await storage.getCheckins(clientId);
+        const homeworkCompletions = await storage.getHomeworkCompletions(clientId, weekNumber);
+
+        const startDate = client.weekStartDate ? new Date(client.weekStartDate) : new Date(client.createdAt || Date.now());
+        const weekCheckins = checkins.filter((c) => {
+          const dateStr = c.checkinDate instanceof Date ? c.checkinDate.toISOString().slice(0, 10) : String(c.checkinDate).slice(0, 10);
+          const checkinTime = new Date(dateStr).getTime();
+          const weekStart = new Date(startDate.getTime() + (weekNumber - 1) * 7 * 86400000);
+          const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
+          return checkinTime >= weekStart.getTime() && checkinTime < weekEnd.getTime();
+        });
+
+        const avgMood = weekCheckins.length > 0
+          ? Math.round(weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) / weekCheckins.length * 10) / 10
+          : 0;
+        const avgUrge = weekCheckins.length > 0
+          ? Math.round(weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) / weekCheckins.length * 10) / 10
+          : 0;
+
+        const hwTotal = 11;
+        const hwDone = homeworkCompletions?.length || 0;
+
+        const pdfBuffer = await generateWeeklySummaryPDF({
+          clientName: `${client.firstName || ""} ${client.lastName || ""}`.trim() || client.email,
+          weekNumber,
+          weekTitle: WEEK_TITLES[weekNumber] || `Week ${weekNumber}`,
+          summaryContent: summary.summaryContent,
+          checkinStats: {
+            totalDays: 7,
+            completedDays: weekCheckins.length,
+            avgMood,
+            avgUrge,
+          },
+          homeworkCompletion: `${hwDone}/${hwTotal}`,
+          hasReflection: true,
+          mentorName: `${therapist.firstName || ""} ${therapist.lastName || ""}`.trim() || therapist.email,
+          generatedDate: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+        });
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="week-${weekNumber}-summary-${client.firstName || "client"}.pdf"`);
+        res.send(pdfBuffer);
+      } catch (error) {
+        console.error("Download PDF error:", error);
+        res.status(500).json({ message: "Failed to generate PDF" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/therapist/clients/:clientId/weekly-summaries",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const isAssigned = clients.some((c) => c.id === clientId);
+        if (!isAssigned) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        const summaries = await storage.getWeeklySummaries(clientId);
+        res.json({ summaries });
+      } catch (error) {
+        console.error("Get weekly summaries error:", error);
+        res.status(500).json({ message: "Failed to get summaries" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/client/weekly-summary/:weekNumber/pdf",
+    requireRole("client"),
+    async (req, res) => {
+      try {
+        const clientId = (req.user as any).id;
+        const weekNumber = parseInt(req.params.weekNumber);
+
+        const summary = await storage.getWeeklySummary(clientId, weekNumber);
+        if (!summary) {
+          return res.status(404).json({ message: "No summary available" });
+        }
+
+        const client = await storage.getUser(clientId);
+        if (!client) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        const therapists = await storage.getTherapistsForClient(clientId);
+        let mentorName = "N/A";
+        if (therapists.length > 0) {
+          const therapist = therapists[0];
+          mentorName = `${therapist.firstName || ""} ${therapist.lastName || ""}`.trim() || therapist.email;
+        }
+
+        const checkins = await storage.getCheckins(clientId);
+        const homeworkCompletions = await storage.getHomeworkCompletions(clientId, weekNumber);
+
+        const startDate = client.weekStartDate ? new Date(client.weekStartDate) : new Date(client.createdAt || Date.now());
+        const weekCheckins = checkins.filter((c) => {
+          const dateStr = c.checkinDate instanceof Date ? c.checkinDate.toISOString().slice(0, 10) : String(c.checkinDate).slice(0, 10);
+          const checkinTime = new Date(dateStr).getTime();
+          const weekStart = new Date(startDate.getTime() + (weekNumber - 1) * 7 * 86400000);
+          const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
+          return checkinTime >= weekStart.getTime() && checkinTime < weekEnd.getTime();
+        });
+
+        const avgMood = weekCheckins.length > 0
+          ? Math.round(weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) / weekCheckins.length * 10) / 10
+          : 0;
+        const avgUrge = weekCheckins.length > 0
+          ? Math.round(weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) / weekCheckins.length * 10) / 10
+          : 0;
+
+        const hwTotal = 11;
+        const hwDone = homeworkCompletions?.length || 0;
+
+        const pdfBuffer = await generateWeeklySummaryPDF({
+          clientName: `${client.firstName || ""} ${client.lastName || ""}`.trim() || client.email,
+          weekNumber,
+          weekTitle: WEEK_TITLES[weekNumber] || `Week ${weekNumber}`,
+          summaryContent: summary.summaryContent,
+          checkinStats: {
+            totalDays: 7,
+            completedDays: weekCheckins.length,
+            avgMood,
+            avgUrge,
+          },
+          homeworkCompletion: `${hwDone}/${hwTotal}`,
+          hasReflection: true,
+          mentorName,
+          generatedDate: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+        });
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="week-${weekNumber}-summary.pdf"`);
+        res.send(pdfBuffer);
+      } catch (error) {
+        console.error("Client download PDF error:", error);
+        res.status(500).json({ message: "Failed to generate PDF" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/client/weekly-summaries",
+    requireRole("client"),
+    async (req, res) => {
+      try {
+        const clientId = (req.user as any).id;
+        const summaries = await storage.getWeeklySummaries(clientId);
+        res.json({ summaries });
+      } catch (error) {
+        console.error("Client get summaries error:", error);
+        res.status(500).json({ message: "Failed to get summaries" });
       }
     },
   );
@@ -2845,6 +3304,7 @@ Write the feedback message now:`;
           checkinReminderTime: "20:00",
           feedbackNotificationsEnabled: true,
           weeklyProgressEnabled: true,
+          nudgeEnabled: true,
         },
       });
     } catch (error) {
@@ -2861,12 +3321,14 @@ Write the feedback message now:`;
         checkinReminderTime,
         feedbackNotificationsEnabled,
         weeklyProgressEnabled,
+        nudgeEnabled,
       } = req.body;
       const prefs = await storage.upsertNotificationPreferences(userId, {
         checkinReminderEnabled,
         checkinReminderTime,
         feedbackNotificationsEnabled,
         weeklyProgressEnabled,
+        nudgeEnabled,
       });
       res.json(prefs);
     } catch (error) {
@@ -2877,6 +3339,7 @@ Write the feedback message now:`;
 
   // Start the check-in reminder scheduler
   startCheckinReminderScheduler();
+  startNudgeScheduler();
   // NEW: SMART AI FEEDBACK GENERATOR
   app.post(
     "/api/therapist/generate-checkin-feedback",

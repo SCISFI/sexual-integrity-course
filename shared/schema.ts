@@ -352,6 +352,7 @@ export const notificationPreferences = pgTable("notification_preferences", {
   checkinReminderTime: text("checkin_reminder_time").default("20:00"),
   feedbackNotificationsEnabled: boolean("feedback_notifications_enabled").default(true),
   weeklyProgressEnabled: boolean("weekly_progress_enabled").default(true),
+  nudgeEnabled: boolean("nudge_enabled").default(true),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
@@ -362,6 +363,34 @@ export const insertNotificationPreferenceSchema = createInsertSchema(notificatio
 
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
+
+// Weekly summary reports
+export const weeklySummaries = pgTable("weekly_summaries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  therapistId: varchar("therapist_id").notNull().references(() => users.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  weekNumber: integer("week_number").notNull(),
+  summaryContent: text("summary_content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  unique("weekly_summaries_client_week_unique").on(table.clientId, table.weekNumber),
+]);
+
+export type WeeklySummary = typeof weeklySummaries.$inferSelect;
+
+// Mentor item reviews - tracks individual review of check-ins, reflections, exercises
+export const mentorItemReviews = pgTable("mentor_item_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  therapistId: varchar("therapist_id").notNull().references(() => users.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  itemType: varchar("item_type", { length: 30 }).notNull(), // 'checkin', 'reflection', 'exercise'
+  itemKey: varchar("item_key", { length: 50 }).notNull(), // dateKey for checkins, weekNumber for reflections/exercises
+  reviewedAt: timestamp("reviewed_at").defaultNow(),
+}, (table) => [
+  unique("mentor_item_reviews_unique").on(table.therapistId, table.clientId, table.itemType, table.itemKey),
+]);
+
+export type MentorItemReview = typeof mentorItemReviews.$inferSelect;
 
 // Relapse autopsies - client-submitted relapse analysis forms
 export const relapseAutopsies = pgTable("relapse_autopsies", {
