@@ -209,6 +209,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <div className="mx-auto max-w-6xl px-6 py-2 text-xs text-red-600">
+        BUILD MARKER: therapist-home.tsx is rendering (remove me after test)
+      </div>
       {isStaff && (
         <Card className="mb-6">
           <CardHeader>
