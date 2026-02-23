@@ -11,7 +11,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Calendar, Lock, LogOut, Mail, User, ClipboardCheck, Key, CheckCircle, Eye, AlertTriangle, BarChart3, Clock, XCircle, Loader2, BookOpen, MessageSquare, ChevronDown, Settings, UserCircle } from "lucide-react";
+import {
+  Calendar,
+  Lock,
+  LogOut,
+  Mail,
+  User,
+  ClipboardCheck,
+  Key,
+  CheckCircle,
+  Eye,
+  AlertTriangle,
+  BarChart3,
+  Clock,
+  XCircle,
+  Loader2,
+  BookOpen,
+  MessageSquare,
+  ChevronDown,
+  Settings,
+  UserCircle,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,40 +74,55 @@ export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  // -----------------------------------------------------
+  // Staff-only Draft Assistant UI state (v2 Hybrid)
+  // -----------------------------------------------------
+  const isStaff = user?.role === "admin" || user?.role === "therapist";
 
+  const [draftClientId, setDraftClientId] = useState("");
+  const [draftFocus, setDraftFocus] = useState("");
+  const [draftTone, setDraftTone] = useState<"neutral" | "direct" | "warm">(
+    "neutral",
+  );
+  const [draftConstraints, setDraftConstraints] = useState(
+    "Avoid shame language. No diagnosis. No risk scoring.",
+  );
+  const [draftText, setDraftText] = useState("");
+  const [draftLoading, setDraftLoading] = useState(false);
   // Fetch completed weeks from the API
   const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
-    queryKey: ['/api/progress/completions'],
+    queryKey: ["/api/progress/completions"],
     staleTime: 0,
-    refetchOnMount: 'always',
+    refetchOnMount: "always",
   });
 
   // Fetch unlocked weeks based on start date
   const { data: unlockedWeeksData } = useQuery<{ unlockedWeeks: number[] }>({
-    queryKey: ['/api/progress/unlocked-weeks'],
+    queryKey: ["/api/progress/unlocked-weeks"],
     staleTime: 0,
-    refetchOnMount: 'always',
+    refetchOnMount: "always",
   });
 
-  const { data: feedbackData } = useQuery<{ feedback: Array<{
-    id: string;
-    feedbackType: string;
-    content: string;
-    weekNumber: number | null;
-    checkinDateKey: string | null;
-    createdAt: string;
-  }> }>({
-    queryKey: ['/api/my-feedback'],
+  const { data: feedbackData } = useQuery<{
+    feedback: Array<{
+      id: string;
+      feedbackType: string;
+      content: string;
+      weekNumber: number | null;
+      checkinDateKey: string | null;
+      createdAt: string;
+    }>;
+  }>({
+    queryKey: ["/api/my-feedback"],
   });
 
   const completedWeeks = completionsData?.completedWeeks || [];
   const unlockedWeeks = unlockedWeeksData?.unlockedWeeks || [];
 
-
   // Check if user has completed onboarding (only for clients)
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  
+
   useEffect(() => {
     if (user && (user as any).role === "client") {
       const onboardingKey = `onboarding_completed_${(user as any).id}`;
@@ -133,7 +168,8 @@ export default function Dashboard() {
     onSuccess: () => {
       toast({
         title: "Account Cancelled",
-        description: "Your account has been cancelled. You will retain access to any previously paid weeks. No refunds will be issued.",
+        description:
+          "Your account has been cancelled. You will retain access to any previously paid weeks. No refunds will be issued.",
       });
       setLocation("/login");
     },
@@ -173,9 +209,78 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {isStaff && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Therapist Draft Assistant (Private)</CardTitle>
+            <CardDescription>
+              Staff-only drafts. Not client-visible. Review and edit before use.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-3">
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Client ID</div>
+              <input
+                className="w-full rounded-md border px-3 py-2 text-sm"
+                value={draftClientId}
+                onChange={(e) => setDraftClientId(e.target.value)}
+                placeholder="Paste the client ID here"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Focus</div>
+              <input
+                className="w-full rounded-md border px-3 py-2 text-sm"
+                value={draftFocus}
+                onChange={(e) => setDraftFocus(e.target.value)}
+                placeholder="Session opener, accountability questions, follow-up email..."
+              />
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Tone</div>
+              <select
+                className="w-full rounded-md border px-3 py-2 text-sm"
+                value={draftTone}
+                onChange={(e) => setDraftTone(e.target.value as any)}
+              >
+                <option value="neutral">Neutral</option>
+                <option value="direct">Direct</option>
+                <option value="warm">Warm</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium">Constraints</div>
+              <input
+                className="w-full rounded-md border px-3 py-2 text-sm"
+                value={draftConstraints}
+                onChange={(e) => setDraftConstraints(e.target.value)}
+              />
+            </div>
+
+            <Button onClick={generateStaffDraft} disabled={draftLoading}>
+              {draftLoading ? "Generating..." : "Generate Draft"}
+            </Button>
+
+            {draftText && (
+              <textarea
+                className="w-full min-h-[200px] rounded-md border px-3 py-2 text-sm"
+                value={draftText}
+                readOnly
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
       {/* Onboarding Modal for first-time users */}
-      <OnboardingModal open={showOnboarding} onComplete={handleOnboardingComplete} />
-      
+      <OnboardingModal
+        open={showOnboarding}
+        onComplete={handleOnboardingComplete}
+      />
+
       {/* Header */}
       <header className="border-b">
         <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between gap-3">
@@ -202,27 +307,42 @@ export default function Dashboard() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" data-testid="button-profile-menu">
                   <UserCircle className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">{(user as any)?.name || "Account"}</span>
+                  <span className="hidden sm:inline">
+                    {(user as any)?.name || "Account"}
+                  </span>
                   <ChevronDown className="h-3 w-3 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium">{(user as any)?.name || "User"}</p>
-                    <p className="text-xs text-muted-foreground">{(user as any)?.email}</p>
+                    <p className="text-sm font-medium">
+                      {(user as any)?.name || "User"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {(user as any)?.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setLocation("/analytics")} data-testid="menu-analytics">
+                <DropdownMenuItem
+                  onClick={() => setLocation("/analytics")}
+                  data-testid="menu-analytics"
+                >
                   <BarChart3 className="h-4 w-4 mr-2" />
                   My Analytics
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation("/change-password")} data-testid="menu-change-password">
+                <DropdownMenuItem
+                  onClick={() => setLocation("/change-password")}
+                  data-testid="menu-change-password"
+                >
                   <Key className="h-4 w-4 mr-2" />
                   Change Password
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation("/user-manual")} data-testid="menu-user-manual">
+                <DropdownMenuItem
+                  onClick={() => setLocation("/user-manual")}
+                  data-testid="menu-user-manual"
+                >
                   <BookOpen className="h-4 w-4 mr-2" />
                   User Manual
                 </DropdownMenuItem>
@@ -236,7 +356,10 @@ export default function Dashboard() {
                   Cancel Account
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  data-testid="menu-logout"
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   Log Out
                 </DropdownMenuItem>
@@ -244,24 +367,39 @@ export default function Dashboard() {
             </DropdownMenu>
           </div>
 
-          <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialog
+            open={showCancelDialog}
+            onOpenChange={setShowCancelDialog}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Cancel Your Account?</AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
                   <p>Are you sure you want to cancel your account?</p>
                   <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">Important:</p>
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                      Important:
+                    </p>
                     <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
-                      <li>You will retain access to any weeks you have already paid for</li>
-                      <li>No refunds will be issued for previously purchased weeks</li>
-                      <li>You will not be able to purchase new weeks after cancellation</li>
+                      <li>
+                        You will retain access to any weeks you have already
+                        paid for
+                      </li>
+                      <li>
+                        No refunds will be issued for previously purchased weeks
+                      </li>
+                      <li>
+                        You will not be able to purchase new weeks after
+                        cancellation
+                      </li>
                     </ul>
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel data-testid="button-keep-account">Keep Account</AlertDialogCancel>
+                <AlertDialogCancel data-testid="button-keep-account">
+                  Keep Account
+                </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => cancelAccountMutation.mutate()}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -269,7 +407,10 @@ export default function Dashboard() {
                   data-testid="button-confirm-cancel-account"
                 >
                   {cancelAccountMutation.isPending ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</>
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Cancelling...
+                    </>
                   ) : (
                     "Cancel Account"
                   )}
@@ -298,7 +439,11 @@ export default function Dashboard() {
                 <UrgeSurfingTool />
                 {/* Relapse Autopsy */}
                 <Link href="/relapse-autopsy">
-                  <Button variant="outline" className="border-amber-300 dark:border-amber-700" data-testid="button-relapse-autopsy">
+                  <Button
+                    variant="outline"
+                    className="border-amber-300 dark:border-amber-700"
+                    data-testid="button-relapse-autopsy"
+                  >
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     Relapse Autopsy
                   </Button>
@@ -311,8 +456,13 @@ export default function Dashboard() {
                   </Button>
                 </Link>
                 {/* Resume button */}
-                <Button onClick={resumeCurrentWeek} data-testid="button-resume-week">
-                  {completedWeeks.includes(nextAvailableWeek) ? `Review Week ${nextAvailableWeek}` : `Continue Week ${nextAvailableWeek}`}
+                <Button
+                  onClick={resumeCurrentWeek}
+                  data-testid="button-resume-week"
+                >
+                  {completedWeeks.includes(nextAvailableWeek)
+                    ? `Review Week ${nextAvailableWeek}`
+                    : `Continue Week ${nextAvailableWeek}`}
                 </Button>
               </div>
             </div>
@@ -338,7 +488,9 @@ export default function Dashboard() {
                   <div
                     key={w.week}
                     className={`rounded-lg border p-4 flex items-center justify-between ${
-                      isCompleted ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900" : ""
+                      isCompleted
+                        ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
+                        : ""
                     }`}
                     data-testid={`week-row-${w.week}`}
                   >
@@ -353,26 +505,38 @@ export default function Dashboard() {
                         {isCompleted
                           ? "Completed"
                           : isUnlocked
-                          ? "Available"
-                          : "Locked"}
+                            ? "Available"
+                            : "Locked"}
                       </div>
                     </div>
 
                     {isCompleted ? (
                       <Link href={`/week/${w.week}`}>
-                        <Button variant="outline" className="gap-2" data-testid={`button-review-week-${w.week}`}>
+                        <Button
+                          variant="outline"
+                          className="gap-2"
+                          data-testid={`button-review-week-${w.week}`}
+                        >
                           <Eye className="h-4 w-4" />
                           Review
                         </Button>
                       </Link>
                     ) : isAvailable ? (
                       <Link href={`/week/${w.week}`}>
-                        <Button variant="default" data-testid={`button-continue-week-${w.week}`}>
+                        <Button
+                          variant="default"
+                          data-testid={`button-continue-week-${w.week}`}
+                        >
                           Continue
                         </Button>
                       </Link>
                     ) : (
-                      <Button variant="outline" disabled className="gap-2" data-testid={`button-locked-week-${w.week}`}>
+                      <Button
+                        variant="outline"
+                        disabled
+                        className="gap-2"
+                        data-testid={`button-locked-week-${w.week}`}
+                      >
                         <Lock className="h-4 w-4" />
                         Locked
                       </Button>
@@ -381,8 +545,6 @@ export default function Dashboard() {
                 );
               })}
             </div>
-
-
           </CardContent>
         </Card>
 
@@ -402,34 +564,54 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {!feedbackData?.feedback || feedbackData.feedback.length === 0 ? (
-              <p className="text-sm text-muted-foreground" data-testid="text-no-feedback">
-                No feedback from your mentor yet. They'll provide personalized feedback as you progress through the program.
+              <p
+                className="text-sm text-muted-foreground"
+                data-testid="text-no-feedback"
+              >
+                No feedback from your mentor yet. They'll provide personalized
+                feedback as you progress through the program.
               </p>
             ) : (
-              <div className="space-y-4 max-h-96 overflow-y-auto" data-testid="section-mentor-feedback">
+              <div
+                className="space-y-4 max-h-96 overflow-y-auto"
+                data-testid="section-mentor-feedback"
+              >
                 {[...feedbackData.feedback]
-                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  .sort(
+                    (a, b) =>
+                      new Date(b.createdAt).getTime() -
+                      new Date(a.createdAt).getTime(),
+                  )
                   .map((fb) => (
-                    <div key={fb.id} className="rounded-lg border p-4" data-testid={`feedback-item-${fb.id}`}>
+                    <div
+                      key={fb.id}
+                      className="rounded-lg border p-4"
+                      data-testid={`feedback-item-${fb.id}`}
+                    >
                       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                         <Badge variant="secondary">
                           {fb.feedbackType === "week" && fb.weekNumber
                             ? `Week ${fb.weekNumber}`
                             : fb.feedbackType === "checkin" && fb.checkinDateKey
-                            ? `Check-in: ${fb.checkinDateKey}`
-                            : fb.feedbackType === "checkin"
-                            ? "Check-in"
-                            : "General"}
+                              ? `Check-in: ${fb.checkinDateKey}`
+                              : fb.feedbackType === "checkin"
+                                ? "Check-in"
+                                : "General"}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(fb.createdAt).toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {new Date(fb.createdAt).toLocaleDateString(
+                            undefined,
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
                         </span>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">{fb.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {fb.content}
+                      </p>
                     </div>
                   ))}
               </div>
@@ -447,7 +629,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-3">
-              You have a dedicated mentor monitoring your progress throughout this program. They review your check-ins, reflections, and homework—and will provide personalized feedback to support your recovery.
+              You have a dedicated mentor monitoring your progress throughout
+              this program. They review your check-ins, reflections, and
+              homework—and will provide personalized feedback to support your
+              recovery.
             </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
               <Clock className="h-4 w-4" />
@@ -466,11 +651,16 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-amber-700 dark:text-amber-300/80 mb-4">
-              A setback does NOT remove you from the program. Use these tools to process and move forward.
+              A setback does NOT remove you from the program. Use these tools to
+              process and move forward.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/user-manual">
-                <Button variant="outline" className="border-amber-300 dark:border-amber-700" data-testid="button-user-manual">
+                <Button
+                  variant="outline"
+                  className="border-amber-300 dark:border-amber-700"
+                  data-testid="button-user-manual"
+                >
                   <BookOpen className="mr-2 h-4 w-4" />
                   User Manual
                 </Button>
@@ -516,19 +706,20 @@ export default function Dashboard() {
         </Card>
         <IntegrityCoach />
       </main>
-      
     </div>
   );
 }
 export function IntegrityCoach() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [chat, setChat] = useState([{ role: "bot", content: "Hello! How can I support your journey today?" }]);
+  const [chat, setChat] = useState([
+    { role: "bot", content: "Hello! How can I support your journey today?" },
+  ]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
     const userMsg = { role: "user", content: input };
-    setChat(prev => [...prev, userMsg]);
+    setChat((prev) => [...prev, userMsg]);
     setInput("");
 
     try {
@@ -539,41 +730,106 @@ export function IntegrityCoach() {
       });
 
       const data = await response.json();
-      setChat(prev => [...prev, { role: "bot", content: data.reply }]);
+      setChat((prev) => [...prev, { role: "bot", content: data.reply }]);
     } catch (error) {
-      setChat(prev => [...prev, { role: "bot", content: "Sorry, I'm having trouble connecting." }]);
+      setChat((prev) => [
+        ...prev,
+        { role: "bot", content: "Sorry, I'm having trouble connecting." },
+      ]);
     }
   };
 
   return (
-    <div style={{ position: "fixed", bottom: "20px", right: "20px", zIndex: 1000 }}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)} 
-        style={{ padding: "15px", borderRadius: "50%", background: "#007bff", color: "white", border: "none", cursor: "pointer", boxShadow: "0 4px 10px rgba(0,0,0,0.2)" }}
+    <div
+      style={{ position: "fixed", bottom: "20px", right: "20px", zIndex: 1000 }}
+    >
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          padding: "15px",
+          borderRadius: "50%",
+          background: "#007bff",
+          color: "white",
+          border: "none",
+          cursor: "pointer",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+        }}
       >
         💬 Coach
       </button>
 
       {isOpen && (
-        <div style={{ background: "white", border: "1px solid #ccc", width: "300px", height: "400px", position: "absolute", bottom: "70px", right: "0", display: "flex", flexDirection: "column", padding: "10px", borderRadius: "10px", boxShadow: "0 4px 15px rgba(0,0,0,0.1)" }}>
-          <div style={{ flex: 1, overflowY: "auto", marginBottom: "10px", fontSize: "14px" }}>
+        <div
+          style={{
+            background: "white",
+            border: "1px solid #ccc",
+            width: "300px",
+            height: "400px",
+            position: "absolute",
+            bottom: "70px",
+            right: "0",
+            display: "flex",
+            flexDirection: "column",
+            padding: "10px",
+            borderRadius: "10px",
+            boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              marginBottom: "10px",
+              fontSize: "14px",
+            }}
+          >
             {chat.map((msg, i) => (
-              <div key={i} style={{ marginBottom: "8px", textAlign: msg.role === "bot" ? "left" : "right" }}>
-                <span style={{ padding: "6px 10px", borderRadius: "10px", background: msg.role === "bot" ? "#f0f0f0" : "#007bff", color: msg.role === "bot" ? "black" : "white", display: "inline-block" }}>
+              <div
+                key={i}
+                style={{
+                  marginBottom: "8px",
+                  textAlign: msg.role === "bot" ? "left" : "right",
+                }}
+              >
+                <span
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: "10px",
+                    background: msg.role === "bot" ? "#f0f0f0" : "#007bff",
+                    color: msg.role === "bot" ? "black" : "white",
+                    display: "inline-block",
+                  }}
+                >
                   {msg.content}
                 </span>
               </div>
             ))}
           </div>
           <div style={{ display: "flex", gap: "5px" }}>
-            <input 
-              style={{ flex: 1, padding: "8px", border: "1px solid #ddd", borderRadius: "5px" }}
-              value={input} 
-              onChange={(e) => setInput(e.target.value)} 
-              onKeyDown={(e) => e.key === 'Enter' && sendMessage()} 
-              placeholder="Ask a question..." 
+            <input
+              style={{
+                flex: 1,
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "5px",
+              }}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+              placeholder="Ask a question..."
             />
-            <button onClick={sendMessage} style={{ background: "#007bff", color: "white", border: "none", borderRadius: "5px", padding: "0 10px" }}>Send</button>
+            <button
+              onClick={sendMessage}
+              style={{
+                background: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                padding: "0 10px",
+              }}
+            >
+              Send
+            </button>
           </div>
         </div>
       )}
