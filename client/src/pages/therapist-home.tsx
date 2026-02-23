@@ -392,7 +392,9 @@ export default function TherapistHome() {
       <div className="min-h-screen bg-background px-6 py-8">
         <div className="mx-auto max-w-2xl">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold">Mentor Dashboard</h1>
+            <h1 className="text-2xl font-bold">
+              Mentor Dashboard -- Build Test
+            </h1>
             <Button
               variant="outline"
               onClick={handleLogout}
