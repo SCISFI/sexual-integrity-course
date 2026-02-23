@@ -258,6 +258,14 @@ export default function TherapistHome() {
   });
   const unreviewedCounts = unreviewedAutopsiesData?.unreviewedCounts || {};
 
+  const { data: unreviewedItemsData } = useQuery<{
+    unreviewedItemCounts: Record<string, number>;
+  }>({
+    queryKey: ["/api/therapist/unreviewed-items"],
+    enabled: hasActiveSubscription,
+  });
+  const unreviewedItemCounts = unreviewedItemsData?.unreviewedItemCounts || {};
+
   // Submit review mutation
   const submitReviewMutation = useMutation({
     mutationFn: async ({
@@ -748,8 +756,16 @@ export default function TherapistHome() {
                           data-testid={`row-client-${client.id}`}
                         >
                           <td className="p-3 font-medium">
-                            <span className="flex items-center gap-2">
+                            <span className="flex items-center gap-2 flex-wrap">
                               {client.name}
+                              {unreviewedItemCounts[String(client.id)] > 0 && (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300"
+                                  data-testid={`badge-unreviewed-items-${client.id}`}
+                                >
+                                  {unreviewedItemCounts[String(client.id)]} to review
+                                </span>
+                              )}
                               {unreviewedCounts[String(client.id)] > 0 && (
                                 <span
                                   className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-950 px-2 py-0.5 text-xs font-bold text-red-700 dark:text-red-300"

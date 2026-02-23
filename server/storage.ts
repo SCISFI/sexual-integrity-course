@@ -160,6 +160,7 @@ export interface IStorage {
   // Mentor item reviews
   markItemReviewed(therapistId: string, clientId: string, itemType: string, itemKey: string): Promise<void>;
   getItemReviews(therapistId: string, clientId: string): Promise<Array<{itemType: string; itemKey: string; reviewedAt: Date | null}>>;
+  getUnreviewedItemCountsForClients(therapistId: string, clientIds: string[]): Promise<Record<string, number>>;
 
   // Weekly summaries
   saveWeeklySummary(therapistId: string, clientId: string, weekNumber: number, summaryContent: string): Promise<void>;
@@ -994,6 +995,58 @@ export class DatabaseStorage implements IStorage {
       ));
     return results;
   }
+  async getUnreviewedItemCountsForClients(therapistId: string, clientIds: string[]): Promise<Record<string, number>> {
+    if (clientIds.length === 0) return {};
+
+    // Batch: get all reviews for this therapist across all clients
+    const allReviews = await db.select({
+      clientId: mentorItemReviews.clientId,
+      itemType: mentorItemReviews.itemType,
+      itemKey: mentorItemReviews.itemKey,
+    })
+      .from(mentorItemReviews)
+      .where(and(
+        eq(mentorItemReviews.therapistId, therapistId),
+        inArray(mentorItemReviews.clientId, clientIds),
+      ));
+    const reviewedSet = new Set(allReviews.map(r => `${r.clientId}:${r.itemType}:${r.itemKey}`));
+
+    // Batch: get all check-ins for these clients
+    const allCheckins = await db.select({ userId: dailyCheckins.userId, dateKey: dailyCheckins.dateKey })
+      .from(dailyCheckins)
+      .where(inArray(dailyCheckins.userId, clientIds));
+
+    // Batch: get all reflections for these clients
+    const allReflections = await db.select({ userId: weekReflections.userId, weekNumber: weekReflections.weekNumber })
+      .from(weekReflections)
+      .where(inArray(weekReflections.userId, clientIds));
+
+    // Batch: get all exercises for these clients
+    const allExercises = await db.select({ userId: exerciseAnswers.userId, weekNumber: exerciseAnswers.weekNumber })
+      .from(exerciseAnswers)
+      .where(inArray(exerciseAnswers.userId, clientIds));
+
+    const counts: Record<string, number> = {};
+
+    for (const c of allCheckins) {
+      if (!reviewedSet.has(`${c.userId}:checkin:${c.dateKey}`)) {
+        counts[c.userId] = (counts[c.userId] || 0) + 1;
+      }
+    }
+    for (const r of allReflections) {
+      if (!reviewedSet.has(`${r.userId}:reflection:${r.weekNumber}`)) {
+        counts[r.userId] = (counts[r.userId] || 0) + 1;
+      }
+    }
+    for (const e of allExercises) {
+      if (!reviewedSet.has(`${e.userId}:exercise:${e.weekNumber}`)) {
+        counts[e.userId] = (counts[e.userId] || 0) + 1;
+      }
+    }
+
+    return counts;
+  }
+
   async getInactiveClients(daysSince: number): Promise<Array<{id: string; email: string; firstName: string | null; lastName: string | null; lastCheckinDate: string | null}>> {
     const allClients = await db.select().from(users).where(eq(users.role, "client"));
     const cutoff = new Date(Date.now() - daysSince * 86400000);

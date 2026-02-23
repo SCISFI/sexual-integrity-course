@@ -2257,6 +2257,18 @@ Write the summary now:`;
           checkinDateKey,
         );
 
+        // Auto-mark the corresponding item as reviewed
+        try {
+          if (feedbackType === 'checkin' && checkinDateKey) {
+            await storage.markItemReviewed(therapistId, clientId, 'checkin', checkinDateKey);
+          } else if (feedbackType === 'week' && weekNumber) {
+            await storage.markItemReviewed(therapistId, clientId, 'reflection', String(weekNumber));
+            await storage.markItemReviewed(therapistId, clientId, 'exercise', String(weekNumber));
+          }
+        } catch (reviewErr) {
+          console.error("Auto-mark reviewed error (non-fatal):", reviewErr);
+        }
+
         res.status(201).json({ feedback });
 
         // Send email notification to the client
@@ -3753,6 +3765,24 @@ ${completedAutopsies
       } catch (error) {
         console.error("Get unreviewed autopsies error:", error);
         res.status(500).json({ message: "Failed to get unreviewed autopsies" });
+      }
+    },
+  );
+
+  // Get unreviewed item counts (check-ins, reflections, exercises) per client
+  app.get(
+    "/api/therapist/unreviewed-items",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const clients = await storage.getClientsForTherapist(therapistId);
+        const clientIds = clients.map((c) => c.id);
+        const counts = await storage.getUnreviewedItemCountsForClients(therapistId, clientIds);
+        res.json({ unreviewedItemCounts: counts });
+      } catch (error) {
+        console.error("Get unreviewed items error:", error);
+        res.status(500).json({ message: "Failed to get unreviewed item counts" });
       }
     },
   );
