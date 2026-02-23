@@ -48,7 +48,10 @@ function startNudgeScheduler() {
         if (prefs && !prefs.nudgeEnabled) continue;
 
         const daysSince = client.lastCheckinDate
-          ? Math.floor((Date.now() - new Date(client.lastCheckinDate).getTime()) / 86400000)
+          ? Math.floor(
+              (Date.now() - new Date(client.lastCheckinDate).getTime()) /
+                86400000,
+            )
           : 7;
 
         try {
@@ -68,7 +71,9 @@ function startNudgeScheduler() {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
           });
 
-          const encouragement = response.text || "Every day is a new opportunity. We're here for you whenever you're ready to check in.";
+          const encouragement =
+            response.text ||
+            "Every day is a new opportunity. We're here for you whenever you're ready to check in.";
 
           const loginUrl = process.env.REPLIT_DEV_DOMAIN
             ? `https://${process.env.REPLIT_DEV_DOMAIN}/login`
@@ -92,7 +97,9 @@ function startNudgeScheduler() {
       console.error("Nudge scheduler error:", error);
     }
   }, 60000);
-  console.log("Inactivity nudge scheduler started (checking every minute at 14:00 UTC)");
+  console.log(
+    "Inactivity nudge scheduler started (checking every minute at 14:00 UTC)",
+  );
 }
 
 function startCheckinReminderScheduler() {
@@ -225,7 +232,53 @@ export async function registerRoutes(
       res.status(500).json({ message: "Registration failed" });
     }
   });
+  // =====================================================
+  // Staff-only AI Draft Assistant (v2 Hybrid)
+  // =====================================================
 
+  app.post(
+    "/api/staff/clients/:clientId/ai-draft",
+    requireRole("admin", "therapist"), // adjust later if needed
+    async (req, res) => {
+      try {
+        const staffUser = req.user as any;
+        const clientId = req.params.clientId;
+
+        const focusRaw = (req.body?.focus ?? "").toString().trim();
+        const toneRaw = (req.body?.tone ?? "").toString().trim();
+        const constraintsRaw = (req.body?.constraints ?? "").toString().trim();
+
+        if (!clientId) {
+          return res.status(400).json({ message: "clientId is required" });
+        }
+
+        if (!focusRaw) {
+          return res.status(400).json({ message: "focus is required" });
+        }
+
+        const { generateStaffDraft } = await import("./aiService");
+
+        const draftText = await generateStaffDraft({
+          focus: focusRaw,
+          tone: toneRaw || "neutral",
+          constraints:
+            constraintsRaw ||
+            "Avoid shame language. No diagnosis. No risk scoring.",
+        });
+
+        return res.json({
+          draftText,
+          disclaimer:
+            "Staff-only draft. Not client-visible. Review and edit before use.",
+        });
+      } catch (error) {
+        console.error("Staff AI draft error:", error);
+        return res
+          .status(500)
+          .json({ message: "Failed to generate staff draft" });
+      }
+    },
+  );
   // Register as therapist
   app.post("/api/auth/register/therapist", async (req, res) => {
     try {
@@ -597,11 +650,9 @@ export async function registerRoutes(
           typeof item === "number" && Number.isInteger(item) && item >= 0,
       );
       if (!validItems) {
-        return res
-          .status(400)
-          .json({
-            message: "completedItems must be an array of non-negative integers",
-          });
+        return res.status(400).json({
+          message: "completedItems must be an array of non-negative integers",
+        });
       }
       const homework = await storage.upsertHomeworkCompletion(
         userId,
@@ -1047,12 +1098,9 @@ export async function registerRoutes(
 
           // Validate reassignment target is not the same as the therapist being deleted
           if (reassignToTherapistId === therapistId) {
-            return res
-              .status(400)
-              .json({
-                message:
-                  "Cannot reassign clients to the therapist being deleted",
-              });
+            return res.status(400).json({
+              message: "Cannot reassign clients to the therapist being deleted",
+            });
           }
 
           // Verify reassignment target exists and is a therapist
@@ -1661,7 +1709,9 @@ export async function registerRoutes(
         const { itemType, itemKey } = req.body;
 
         if (!itemType || !itemKey) {
-          return res.status(400).json({ message: "itemType and itemKey are required" });
+          return res
+            .status(400)
+            .json({ message: "itemType and itemKey are required" });
         }
 
         const clients = await storage.getClientsForTherapist(therapistId);
@@ -1670,7 +1720,12 @@ export async function registerRoutes(
           return res.status(403).json({ message: "Not authorized" });
         }
 
-        await storage.markItemReviewed(therapistId, clientId, itemType, itemKey);
+        await storage.markItemReviewed(
+          therapistId,
+          clientId,
+          itemType,
+          itemKey,
+        );
         res.json({ success: true });
       } catch (error) {
         console.error("Mark item reviewed error:", error);
@@ -1720,26 +1775,52 @@ export async function registerRoutes(
         }
 
         const checkins = await storage.getCheckins(clientId);
-        const weekReflection = await storage.getWeekReflection(clientId, weekNumber);
-        const homeworkCompletions = await storage.getHomeworkCompletions(clientId, weekNumber);
+        const weekReflection = await storage.getWeekReflection(
+          clientId,
+          weekNumber,
+        );
+        const homeworkCompletions = await storage.getHomeworkCompletions(
+          clientId,
+          weekNumber,
+        );
         const feedbackList = await storage.getFeedbackForClient(clientId);
         const relapseHistory = await storage.getRelapseAutopsies(clientId);
 
         const weekCheckins = checkins.filter((c) => {
-          const dateStr = c.checkinDate instanceof Date ? c.checkinDate.toISOString().slice(0, 10) : String(c.checkinDate).slice(0, 10);
+          const dateStr =
+            c.checkinDate instanceof Date
+              ? c.checkinDate.toISOString().slice(0, 10)
+              : String(c.checkinDate).slice(0, 10);
           const checkinTime = new Date(dateStr).getTime();
-          const startDate = client.weekStartDate ? new Date(client.weekStartDate) : new Date(client.createdAt || Date.now());
-          const weekStart = new Date(startDate.getTime() + (weekNumber - 1) * 7 * 86400000);
+          const startDate = client.weekStartDate
+            ? new Date(client.weekStartDate)
+            : new Date(client.createdAt || Date.now());
+          const weekStart = new Date(
+            startDate.getTime() + (weekNumber - 1) * 7 * 86400000,
+          );
           const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
-          return checkinTime >= weekStart.getTime() && checkinTime < weekEnd.getTime();
+          return (
+            checkinTime >= weekStart.getTime() &&
+            checkinTime < weekEnd.getTime()
+          );
         });
 
-        const avgMood = weekCheckins.length > 0
-          ? Math.round(weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) / weekCheckins.length * 10) / 10
-          : 0;
-        const avgUrge = weekCheckins.length > 0
-          ? Math.round(weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) / weekCheckins.length * 10) / 10
-          : 0;
+        const avgMood =
+          weekCheckins.length > 0
+            ? Math.round(
+                (weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) /
+                  weekCheckins.length) *
+                  10,
+              ) / 10
+            : 0;
+        const avgUrge =
+          weekCheckins.length > 0
+            ? Math.round(
+                (weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) /
+                  weekCheckins.length) *
+                  10,
+              ) / 10
+            : 0;
 
         const hwTotal = 11;
         const hwDone = homeworkCompletions?.length || 0;
@@ -1750,13 +1831,19 @@ export async function registerRoutes(
 
         if (weekReflection) {
           contextInfo += `\nWeek Reflection:\n`;
-          if (weekReflection.q1) contextInfo += `- Key learning: "${weekReflection.q1}"\n`;
-          if (weekReflection.q2) contextInfo += `- What went well: "${weekReflection.q2}"\n`;
-          if (weekReflection.q3) contextInfo += `- Challenges: "${weekReflection.q3}"\n`;
-          if (weekReflection.q4) contextInfo += `- Goals for next week: "${weekReflection.q4}"\n`;
+          if (weekReflection.q1)
+            contextInfo += `- Key learning: "${weekReflection.q1}"\n`;
+          if (weekReflection.q2)
+            contextInfo += `- What went well: "${weekReflection.q2}"\n`;
+          if (weekReflection.q3)
+            contextInfo += `- Challenges: "${weekReflection.q3}"\n`;
+          if (weekReflection.q4)
+            contextInfo += `- Goals for next week: "${weekReflection.q4}"\n`;
         }
 
-        const journalEntries = weekCheckins.filter(c => c.journalEntry).map(c => c.journalEntry);
+        const journalEntries = weekCheckins
+          .filter((c) => c.journalEntry)
+          .map((c) => c.journalEntry);
         if (journalEntries.length > 0) {
           contextInfo += `\nJournal entries:\n`;
           journalEntries.forEach((entry) => {
@@ -1764,12 +1851,16 @@ export async function registerRoutes(
           });
         }
 
-        const weekFeedback = feedbackList.filter(f => f.weekNumber === weekNumber);
+        const weekFeedback = feedbackList.filter(
+          (f) => f.weekNumber === weekNumber,
+        );
         if (weekFeedback.length > 0) {
           contextInfo += `\nMentor feedback given this week: ${weekFeedback.length} messages\n`;
         }
 
-        const completedAutopsies = relapseHistory.filter(a => a.status === "completed");
+        const completedAutopsies = relapseHistory.filter(
+          (a) => a.status === "completed",
+        );
         if (completedAutopsies.length > 0) {
           contextInfo += `\nRelapse/Lapse History: ${completedAutopsies.length} total incidents\n`;
         }
@@ -1807,7 +1898,12 @@ Write the summary now:`;
 
         const summaryContent = response.text || "Unable to generate summary.";
 
-        await storage.saveWeeklySummary(therapistId, clientId, weekNumber, summaryContent);
+        await storage.saveWeeklySummary(
+          therapistId,
+          clientId,
+          weekNumber,
+          summaryContent,
+        );
 
         res.json({ summaryContent });
       } catch (error) {
@@ -1872,29 +1968,54 @@ Write the summary now:`;
         }
 
         const checkins = await storage.getCheckins(clientId);
-        const homeworkCompletions = await storage.getHomeworkCompletions(clientId, weekNumber);
+        const homeworkCompletions = await storage.getHomeworkCompletions(
+          clientId,
+          weekNumber,
+        );
 
-        const startDate = client.weekStartDate ? new Date(client.weekStartDate) : new Date(client.createdAt || Date.now());
+        const startDate = client.weekStartDate
+          ? new Date(client.weekStartDate)
+          : new Date(client.createdAt || Date.now());
         const weekCheckins = checkins.filter((c) => {
-          const dateStr = c.checkinDate instanceof Date ? c.checkinDate.toISOString().slice(0, 10) : String(c.checkinDate).slice(0, 10);
+          const dateStr =
+            c.checkinDate instanceof Date
+              ? c.checkinDate.toISOString().slice(0, 10)
+              : String(c.checkinDate).slice(0, 10);
           const checkinTime = new Date(dateStr).getTime();
-          const weekStart = new Date(startDate.getTime() + (weekNumber - 1) * 7 * 86400000);
+          const weekStart = new Date(
+            startDate.getTime() + (weekNumber - 1) * 7 * 86400000,
+          );
           const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
-          return checkinTime >= weekStart.getTime() && checkinTime < weekEnd.getTime();
+          return (
+            checkinTime >= weekStart.getTime() &&
+            checkinTime < weekEnd.getTime()
+          );
         });
 
-        const avgMood = weekCheckins.length > 0
-          ? Math.round(weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) / weekCheckins.length * 10) / 10
-          : 0;
-        const avgUrge = weekCheckins.length > 0
-          ? Math.round(weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) / weekCheckins.length * 10) / 10
-          : 0;
+        const avgMood =
+          weekCheckins.length > 0
+            ? Math.round(
+                (weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) /
+                  weekCheckins.length) *
+                  10,
+              ) / 10
+            : 0;
+        const avgUrge =
+          weekCheckins.length > 0
+            ? Math.round(
+                (weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) /
+                  weekCheckins.length) *
+                  10,
+              ) / 10
+            : 0;
 
         const hwTotal = 11;
         const hwDone = homeworkCompletions?.length || 0;
 
         const pdfBuffer = await generateWeeklySummaryPDF({
-          clientName: `${client.firstName || ""} ${client.lastName || ""}`.trim() || client.email,
+          clientName:
+            `${client.firstName || ""} ${client.lastName || ""}`.trim() ||
+            client.email,
           weekNumber,
           weekTitle: WEEK_TITLES[weekNumber] || `Week ${weekNumber}`,
           summaryContent: summary.summaryContent,
@@ -1906,12 +2027,21 @@ Write the summary now:`;
           },
           homeworkCompletion: `${hwDone}/${hwTotal}`,
           hasReflection: true,
-          mentorName: `${therapist.firstName || ""} ${therapist.lastName || ""}`.trim() || therapist.email,
-          generatedDate: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+          mentorName:
+            `${therapist.firstName || ""} ${therapist.lastName || ""}`.trim() ||
+            therapist.email,
+          generatedDate: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
         });
 
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename="week-${weekNumber}-summary-${client.firstName || "client"}.pdf"`);
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="week-${weekNumber}-summary-${client.firstName || "client"}.pdf"`,
+        );
         res.send(pdfBuffer);
       } catch (error) {
         console.error("Download PDF error:", error);
@@ -1965,33 +2095,60 @@ Write the summary now:`;
         let mentorName = "N/A";
         if (therapists.length > 0) {
           const therapist = therapists[0];
-          mentorName = `${therapist.firstName || ""} ${therapist.lastName || ""}`.trim() || therapist.email;
+          mentorName =
+            `${therapist.firstName || ""} ${therapist.lastName || ""}`.trim() ||
+            therapist.email;
         }
 
         const checkins = await storage.getCheckins(clientId);
-        const homeworkCompletions = await storage.getHomeworkCompletions(clientId, weekNumber);
+        const homeworkCompletions = await storage.getHomeworkCompletions(
+          clientId,
+          weekNumber,
+        );
 
-        const startDate = client.weekStartDate ? new Date(client.weekStartDate) : new Date(client.createdAt || Date.now());
+        const startDate = client.weekStartDate
+          ? new Date(client.weekStartDate)
+          : new Date(client.createdAt || Date.now());
         const weekCheckins = checkins.filter((c) => {
-          const dateStr = c.checkinDate instanceof Date ? c.checkinDate.toISOString().slice(0, 10) : String(c.checkinDate).slice(0, 10);
+          const dateStr =
+            c.checkinDate instanceof Date
+              ? c.checkinDate.toISOString().slice(0, 10)
+              : String(c.checkinDate).slice(0, 10);
           const checkinTime = new Date(dateStr).getTime();
-          const weekStart = new Date(startDate.getTime() + (weekNumber - 1) * 7 * 86400000);
+          const weekStart = new Date(
+            startDate.getTime() + (weekNumber - 1) * 7 * 86400000,
+          );
           const weekEnd = new Date(weekStart.getTime() + 7 * 86400000);
-          return checkinTime >= weekStart.getTime() && checkinTime < weekEnd.getTime();
+          return (
+            checkinTime >= weekStart.getTime() &&
+            checkinTime < weekEnd.getTime()
+          );
         });
 
-        const avgMood = weekCheckins.length > 0
-          ? Math.round(weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) / weekCheckins.length * 10) / 10
-          : 0;
-        const avgUrge = weekCheckins.length > 0
-          ? Math.round(weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) / weekCheckins.length * 10) / 10
-          : 0;
+        const avgMood =
+          weekCheckins.length > 0
+            ? Math.round(
+                (weekCheckins.reduce((s, c) => s + (c.moodLevel || 5), 0) /
+                  weekCheckins.length) *
+                  10,
+              ) / 10
+            : 0;
+        const avgUrge =
+          weekCheckins.length > 0
+            ? Math.round(
+                (weekCheckins.reduce((s, c) => s + (c.urgeLevel || 0), 0) /
+                  weekCheckins.length) *
+                  10,
+              ) / 10
+            : 0;
 
         const hwTotal = 11;
         const hwDone = homeworkCompletions?.length || 0;
 
         const pdfBuffer = await generateWeeklySummaryPDF({
-          clientName: `${client.firstName || ""} ${client.lastName || ""}`.trim() || client.email,
+          clientName:
+            `${client.firstName || ""} ${client.lastName || ""}`.trim() ||
+            client.email,
           weekNumber,
           weekTitle: WEEK_TITLES[weekNumber] || `Week ${weekNumber}`,
           summaryContent: summary.summaryContent,
@@ -2004,11 +2161,18 @@ Write the summary now:`;
           homeworkCompletion: `${hwDone}/${hwTotal}`,
           hasReflection: true,
           mentorName,
-          generatedDate: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+          generatedDate: new Date().toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
         });
 
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename="week-${weekNumber}-summary.pdf"`);
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="week-${weekNumber}-summary.pdf"`,
+        );
         res.send(pdfBuffer);
       } catch (error) {
         console.error("Client download PDF error:", error);
@@ -2052,11 +2216,9 @@ Write the summary now:`;
         const clients = await storage.getClientsForTherapist(therapistId);
         const isAssigned = clients.some((c) => c.id === clientId);
         if (!isAssigned) {
-          return res
-            .status(403)
-            .json({
-              message: "Not authorized to provide feedback for this client",
-            });
+          return res.status(403).json({
+            message: "Not authorized to provide feedback for this client",
+          });
         }
 
         const feedback = await storage.addTherapistFeedback(
@@ -2147,26 +2309,47 @@ Write the summary now:`;
             : null;
 
         // Trend analysis: compare first half to second half of recent data
-        const moodValues = recentCheckins.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
-        const urgeValues = recentCheckins.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
+        const moodValues = recentCheckins
+          .filter((c) => c.moodLevel !== null)
+          .map((c) => c.moodLevel!);
+        const urgeValues = recentCheckins
+          .filter((c) => c.urgeLevel !== null)
+          .map((c) => c.urgeLevel!);
         const olderMood = moodValues.slice(Math.floor(moodValues.length / 2));
-        const newerMood = moodValues.slice(0, Math.floor(moodValues.length / 2));
+        const newerMood = moodValues.slice(
+          0,
+          Math.floor(moodValues.length / 2),
+        );
         const olderUrge = urgeValues.slice(Math.floor(urgeValues.length / 2));
-        const newerUrge = urgeValues.slice(0, Math.floor(urgeValues.length / 2));
-        const moodTrend = newerMood.length > 0 && olderMood.length > 0
-          ? (newerMood.reduce((a,b) => a+b, 0) / newerMood.length > olderMood.reduce((a,b) => a+b, 0) / olderMood.length ? "improving" : "declining")
-          : "stable";
-        const urgeTrend = newerUrge.length > 0 && olderUrge.length > 0
-          ? (newerUrge.reduce((a,b) => a+b, 0) / newerUrge.length < olderUrge.reduce((a,b) => a+b, 0) / olderUrge.length ? "improving" : "increasing")
-          : "stable";
+        const newerUrge = urgeValues.slice(
+          0,
+          Math.floor(urgeValues.length / 2),
+        );
+        const moodTrend =
+          newerMood.length > 0 && olderMood.length > 0
+            ? newerMood.reduce((a, b) => a + b, 0) / newerMood.length >
+              olderMood.reduce((a, b) => a + b, 0) / olderMood.length
+              ? "improving"
+              : "declining"
+            : "stable";
+        const urgeTrend =
+          newerUrge.length > 0 && olderUrge.length > 0
+            ? newerUrge.reduce((a, b) => a + b, 0) / newerUrge.length <
+              olderUrge.reduce((a, b) => a + b, 0) / olderUrge.length
+              ? "improving"
+              : "increasing"
+            : "stable";
 
         // Check-in consistency
         const last14Days = Array.from({ length: 14 }, (_, i) => {
-          const d = new Date(); d.setDate(d.getDate() - i);
-          return d.toISOString().split('T')[0];
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          return d.toISOString().split("T")[0];
         });
-        const checkinDates = new Set(checkins.map(c => c.dateKey));
-        const consistencyRate = Math.round(last14Days.filter(d => checkinDates.has(d)).length / 14 * 100);
+        const checkinDates = new Set(checkins.map((c) => c.dateKey));
+        const consistencyRate = Math.round(
+          (last14Days.filter((d) => checkinDates.has(d)).length / 14) * 100,
+        );
 
         const journalEntries = recentCheckins
           .filter((c) => c.journalEntry)
@@ -2178,12 +2361,10 @@ Write the summary now:`;
           !process.env.AI_INTEGRATIONS_GEMINI_API_KEY ||
           !process.env.AI_INTEGRATIONS_GEMINI_BASE_URL
         ) {
-          return res
-            .status(503)
-            .json({
-              message:
-                "AI feedback generation is not available. Please contact support.",
-            });
+          return res.status(503).json({
+            message:
+              "AI feedback generation is not available. Please contact support.",
+          });
         }
 
         const { GoogleGenAI } = await import("@google/genai");
@@ -2229,11 +2410,13 @@ Completed weeks: ${completedWeeks.length} of 16
         }
 
         // Relapse history context
-        const completedAutopsies = relapseHistory.filter(a => a.status === "completed");
+        const completedAutopsies = relapseHistory.filter(
+          (a) => a.status === "completed",
+        );
         if (completedAutopsies.length > 0) {
           contextInfo += `\nRelapse/Lapse History (${completedAutopsies.length} total incidents):\n`;
-          completedAutopsies.slice(0, 3).forEach(a => {
-            contextInfo += `- ${a.date} (${a.lapseOrRelapse}): triggers="${a.triggers?.slice(0, 100) || 'N/A'}", warning signs="${a.warningSigns?.slice(0, 100) || 'N/A'}"\n`;
+          completedAutopsies.slice(0, 3).forEach((a) => {
+            contextInfo += `- ${a.date} (${a.lapseOrRelapse}): triggers="${a.triggers?.slice(0, 100) || "N/A"}", warning signs="${a.warningSigns?.slice(0, 100) || "N/A"}"\n`;
           });
         }
 
@@ -2379,50 +2562,83 @@ Write the feedback message now:`;
     },
   );
 
-  // =======================================
-  // AI Encouragement API
-  // =======================================
+  // =====================================================
+  // AI (v2 Hybrid) — Client AI Disabled + Safe Prompt Library
+  // =====================================================
+  //
+  // v2 decision:
+  // - No client-facing AI coaching endpoints.
+  // - Clients may access a non-personalized Prompt Library.
+  // - Any AI assistance must be staff-only drafts (added separately).
 
-  // Get AI encouragement for current week
-  app.get("/api/ai/encouragement", requireAuth, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const weekNumber = parseInt(req.query.week as string) || 1;
-
-      // Get user's current check-in data for context
-      const today = new Date().toISOString().split("T")[0];
-      const checkin = await storage.getDailyCheckin(user.id, today);
-      const completedWeeks = await storage.getCompletedWeeks(user.id);
-
-      const { getAIEncouragement } = await import("./aiService");
-      const encouragement = await getAIEncouragement(weekNumber, {
-        mood: checkin?.moodLevel ?? undefined,
-        urgeLevel: checkin?.urgeLevel ?? undefined,
-        completedWeeks: completedWeeks,
-      });
-
-      res.json({ encouragement, weekNumber });
-    } catch (error) {
-      console.error("AI encouragement error:", error);
-      res.status(500).json({ message: "Failed to get AI encouragement" });
-    }
+  // Client-facing AI endpoints are intentionally removed in v2
+  // so the app does not "respond" to disclosures or interpret user content.
+  app.get("/api/ai/encouragement", requireAuth, (_req, res) => {
+    return res.status(410).json({
+      error: "Removed in v2",
+      message:
+        "Client-facing AI coaching is disabled. Use /api/prompts/library instead.",
+    });
   });
 
-  // Get AI technique reminder
-  app.get("/api/ai/technique", requireAuth, async (req, res) => {
-    try {
-      const weekNumber = parseInt(req.query.week as string) || 1;
-      const techniqueName = req.query.technique as string | undefined;
-
-      const { getAITechniqueReminder } = await import("./aiService");
-      const reminder = await getAITechniqueReminder(weekNumber, techniqueName);
-
-      res.json({ reminder, weekNumber });
-    } catch (error) {
-      console.error("AI technique reminder error:", error);
-      res.status(500).json({ message: "Failed to get technique reminder" });
-    }
+  app.get("/api/ai/technique", requireAuth, (_req, res) => {
+    return res.status(410).json({
+      error: "Removed in v2",
+      message:
+        "Client-facing AI coaching is disabled. Use /api/prompts/library instead.",
+    });
   });
+
+  // Client-safe Prompt Library (non-personalized, no inference)
+  app.get("/api/prompts/library", requireAuth, (_req, res) => {
+    return res.json({
+      version: "v2",
+      disclaimer:
+        "Structured reflection prompts. Not therapy. Not crisis support.",
+      prompts: [
+        {
+          id: "reset_5",
+          title: "5-Minute Reset",
+          body: "Pause. Breathe slowly for 60 seconds. Name the urge without fighting it. Then choose one small integrity action you can do in the next 5 minutes.",
+        },
+        {
+          id: "values_check",
+          title: "Values Check",
+          body: "What kind of man do I want to be in the next hour? What choice aligns with that—even if I don’t feel like it?",
+        },
+        {
+          id: "connection_plan",
+          title: "Connection Plan",
+          body: "Who is one safe person I can connect with today? What is a low-pressure message I can send in the next 3 minutes?",
+        },
+        {
+          id: "urge_map",
+          title: "Urge Map",
+          body: "What happened right before the urge? (place, time, emotion, stress level). What do I actually need right now—rest, reassurance, connection, or structure?",
+        },
+        {
+          id: "repair_step",
+          title: "Repair Step",
+          body: "What is one repair action I can take today—apology, honesty, a boundary, or a practical responsibility?",
+        },
+        {
+          id: "next_right_thing",
+          title: "Next Right Thing",
+          body: "List three possible integrity actions. Pick the smallest one you will actually do within 10 minutes. Do it now.",
+        },
+        {
+          id: "environment_shift",
+          title: "Environment Shift",
+          body: "Change your environment for 10 minutes: stand up, move rooms, go outside, or start a simple task. Momentum beats debate.",
+        },
+      ],
+    });
+  });
+
+  // NOTE: Staff-only AI draft endpoint will be added separately.
+  // It must be role-gated and assignment-gated (staff only, never client-visible).
+  // Example target endpoint (do not add yet until role check is confirmed):
+  // POST /api/staff/clients/:clientId/ai-draft
 
   // =======================================
   // Week access API (for time-based unlocking)
@@ -2574,11 +2790,9 @@ Write the feedback message now:`;
             query: "name:'Therapist Monthly Subscription'",
           });
           if (products.data.length === 0) {
-            return res
-              .status(500)
-              .json({
-                message: "Therapist subscription product not found in Stripe",
-              });
+            return res.status(500).json({
+              message: "Therapist subscription product not found in Stripe",
+            });
           }
           const prices = await stripe.prices.list({
             product: products.data[0].id,
@@ -2586,11 +2800,9 @@ Write the feedback message now:`;
             limit: 1,
           });
           if (prices.data.length === 0) {
-            return res
-              .status(500)
-              .json({
-                message: "Therapist subscription price not found in Stripe",
-              });
+            return res.status(500).json({
+              message: "Therapist subscription price not found in Stripe",
+            });
           }
           priceId = prices.data[0].id;
         }
@@ -2635,12 +2847,10 @@ Write the feedback message now:`;
 
         // Check if account is cancelled - prevent future purchases
         if (user.subscriptionStatus === "cancelled") {
-          return res
-            .status(403)
-            .json({
-              message:
-                "Your account has been cancelled. You cannot purchase additional weeks.",
-            });
+          return res.status(403).json({
+            message:
+              "Your account has been cancelled. You cannot purchase additional weeks.",
+          });
         }
 
         if (!weekNumber) {
@@ -3371,40 +3581,66 @@ Write the feedback message now:`;
         }));
 
         // Trend analysis
-        const moodVals = history.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
-        const urgeVals = history.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
+        const moodVals = history
+          .filter((c) => c.moodLevel !== null)
+          .map((c) => c.moodLevel!);
+        const urgeVals = history
+          .filter((c) => c.urgeLevel !== null)
+          .map((c) => c.urgeLevel!);
         const olderMood = moodVals.slice(Math.floor(moodVals.length / 2));
         const newerMood = moodVals.slice(0, Math.floor(moodVals.length / 2));
         const olderUrge = urgeVals.slice(Math.floor(urgeVals.length / 2));
         const newerUrge = urgeVals.slice(0, Math.floor(urgeVals.length / 2));
-        const moodDirection = newerMood.length > 0 && olderMood.length > 0
-          ? (newerMood.reduce((a,b) => a+b, 0) / newerMood.length > olderMood.reduce((a,b) => a+b, 0) / olderMood.length ? "improving" : "declining")
-          : "stable";
-        const urgeDirection = newerUrge.length > 0 && olderUrge.length > 0
-          ? (newerUrge.reduce((a,b) => a+b, 0) / newerUrge.length < olderUrge.reduce((a,b) => a+b, 0) / olderUrge.length ? "improving (decreasing)" : "worsening (increasing)")
-          : "stable";
+        const moodDirection =
+          newerMood.length > 0 && olderMood.length > 0
+            ? newerMood.reduce((a, b) => a + b, 0) / newerMood.length >
+              olderMood.reduce((a, b) => a + b, 0) / olderMood.length
+              ? "improving"
+              : "declining"
+            : "stable";
+        const urgeDirection =
+          newerUrge.length > 0 && olderUrge.length > 0
+            ? newerUrge.reduce((a, b) => a + b, 0) / newerUrge.length <
+              olderUrge.reduce((a, b) => a + b, 0) / olderUrge.length
+              ? "improving (decreasing)"
+              : "worsening (increasing)"
+            : "stable";
 
         // Relapse context
-        const completedAutopsies = relapseHistory.filter(a => a.status === "completed");
+        const completedAutopsies = relapseHistory.filter(
+          (a) => a.status === "completed",
+        );
         let relapseContext = "";
         if (completedAutopsies.length > 0) {
           relapseContext = `\nRELAPSE HISTORY (${completedAutopsies.length} incidents):
-${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): triggers="${a.triggers?.slice(0, 80) || 'N/A'}"`).join("\n")}`;
+${completedAutopsies
+  .slice(0, 3)
+  .map(
+    (a) =>
+      `- ${a.date} (${a.lapseOrRelapse}): triggers="${a.triggers?.slice(0, 80) || "N/A"}"`,
+  )
+  .join("\n")}`;
         }
 
         // Check-in consistency
         const last14 = Array.from({ length: 14 }, (_, i) => {
-          const d = new Date(); d.setDate(d.getDate() - i);
-          return d.toISOString().split('T')[0];
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          return d.toISOString().split("T")[0];
         });
-        const checkinSet = new Set(history.map(c => c.dateKey));
-        const consistency = Math.round(last14.filter(d => checkinSet.has(d)).length / 14 * 100);
+        const checkinSet = new Set(history.map((c) => c.dateKey));
+        const consistency = Math.round(
+          (last14.filter((d) => checkinSet.has(d)).length / 14) * 100,
+        );
 
         // 3. AI Prompt with enhanced trend awareness
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({
           apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-          httpOptions: { apiVersion: "", baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
+          httpOptions: {
+            apiVersion: "",
+            baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+          },
         });
 
         const prompt = `
@@ -3480,7 +3716,8 @@ ${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): tr
         const therapistId = (req.user as any).id;
         const clients = await storage.getClientsForTherapist(therapistId);
         const clientIds = clients.map((c) => c.id);
-        const unreviewedArr = await storage.getUnreviewedAutopsiesForClients(clientIds);
+        const unreviewedArr =
+          await storage.getUnreviewedAutopsiesForClients(clientIds);
         const unreviewedCounts: Record<string, number> = {};
         for (const item of unreviewedArr) {
           unreviewedCounts[item.userId] = item.count;
@@ -3505,7 +3742,9 @@ ${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): tr
         const clients = await storage.getClientsForTherapist(therapistId);
         const isAssigned = clients.some((c) => c.id === clientId);
         if (!isAssigned) {
-          return res.status(403).json({ message: "Not authorized for this client" });
+          return res
+            .status(403)
+            .json({ message: "Not authorized for this client" });
         }
 
         const [autopsy, allAutopsies, checkins, user] = await Promise.all([
@@ -3519,18 +3758,26 @@ ${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): tr
           return res.status(404).json({ message: "Autopsy not found" });
         }
 
-        const pastAutopsies = allAutopsies.filter(a => a.id !== autopsyId && a.status === "completed");
+        const pastAutopsies = allAutopsies.filter(
+          (a) => a.id !== autopsyId && a.status === "completed",
+        );
 
         const trendAnalysis: string[] = [];
 
         if (pastAutopsies.length > 0) {
-          trendAnalysis.push(`Total past relapses/lapses: ${pastAutopsies.length}`);
+          trendAnalysis.push(
+            `Total past relapses/lapses: ${pastAutopsies.length}`,
+          );
 
           const triggerFrequency: Record<string, number> = {};
           const allTriggers = [autopsy, ...pastAutopsies];
           for (const a of allTriggers) {
             if (a.triggers) {
-              const triggerWords = a.triggers.toLowerCase().split(/[,;\n]+/).map(t => t.trim()).filter(Boolean);
+              const triggerWords = a.triggers
+                .toLowerCase()
+                .split(/[,;\n]+/)
+                .map((t) => t.trim())
+                .filter(Boolean);
               for (const t of triggerWords) {
                 triggerFrequency[t] = (triggerFrequency[t] || 0) + 1;
               }
@@ -3541,60 +3788,101 @@ ${completedAutopsies.slice(0, 3).map(a => `- ${a.date} (${a.lapseOrRelapse}): tr
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
           if (recurring.length > 0) {
-            trendAnalysis.push(`Recurring triggers: ${recurring.map(([t, c]) => `"${t}" (${c}x)`).join(", ")}`);
+            trendAnalysis.push(
+              `Recurring triggers: ${recurring.map(([t, c]) => `"${t}" (${c}x)`).join(", ")}`,
+            );
           }
 
-          const lapseCount = pastAutopsies.filter(a => a.lapseOrRelapse === "lapse").length + (autopsy.lapseOrRelapse === "lapse" ? 1 : 0);
-          const relapseCount = pastAutopsies.filter(a => a.lapseOrRelapse === "relapse").length + (autopsy.lapseOrRelapse === "relapse" ? 1 : 0);
-          trendAnalysis.push(`Pattern: ${lapseCount} lapses, ${relapseCount} relapses`);
+          const lapseCount =
+            pastAutopsies.filter((a) => a.lapseOrRelapse === "lapse").length +
+            (autopsy.lapseOrRelapse === "lapse" ? 1 : 0);
+          const relapseCount =
+            pastAutopsies.filter((a) => a.lapseOrRelapse === "relapse").length +
+            (autopsy.lapseOrRelapse === "relapse" ? 1 : 0);
+          trendAnalysis.push(
+            `Pattern: ${lapseCount} lapses, ${relapseCount} relapses`,
+          );
 
           if (pastAutopsies.length >= 2) {
-            const sorted = [...pastAutopsies, autopsy].sort((a, b) => a.date.localeCompare(b.date));
+            const sorted = [...pastAutopsies, autopsy].sort((a, b) =>
+              a.date.localeCompare(b.date),
+            );
             const gaps: number[] = [];
             for (let i = 1; i < sorted.length; i++) {
-              const diff = (new Date(sorted[i].date).getTime() - new Date(sorted[i-1].date).getTime()) / (1000 * 60 * 60 * 24);
+              const diff =
+                (new Date(sorted[i].date).getTime() -
+                  new Date(sorted[i - 1].date).getTime()) /
+                (1000 * 60 * 60 * 24);
               gaps.push(diff);
             }
-            const avgGap = Math.round(gaps.reduce((s, g) => s + g, 0) / gaps.length);
+            const avgGap = Math.round(
+              gaps.reduce((s, g) => s + g, 0) / gaps.length,
+            );
             const latestGap = gaps[gaps.length - 1];
             trendAnalysis.push(`Average days between incidents: ${avgGap}`);
             if (latestGap < avgGap) {
-              trendAnalysis.push(`ALERT: Latest gap (${Math.round(latestGap)} days) is shorter than average — frequency may be increasing`);
+              trendAnalysis.push(
+                `ALERT: Latest gap (${Math.round(latestGap)} days) is shorter than average — frequency may be increasing`,
+              );
             } else if (latestGap > avgGap) {
-              trendAnalysis.push(`POSITIVE: Latest gap (${Math.round(latestGap)} days) is longer than average — showing improvement`);
+              trendAnalysis.push(
+                `POSITIVE: Latest gap (${Math.round(latestGap)} days) is longer than average — showing improvement`,
+              );
             }
           }
 
           const contextFreq: Record<string, number> = {};
           for (const a of allTriggers) {
             if (a.context) {
-              const words = a.context.toLowerCase().split(/[,;\n]+/).map(t => t.trim()).filter(Boolean);
+              const words = a.context
+                .toLowerCase()
+                .split(/[,;\n]+/)
+                .map((t) => t.trim())
+                .filter(Boolean);
               for (const w of words) {
                 contextFreq[w] = (contextFreq[w] || 0) + 1;
               }
             }
           }
-          const recurringContexts = Object.entries(contextFreq).filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1]).slice(0, 3);
+          const recurringContexts = Object.entries(contextFreq)
+            .filter(([, c]) => c > 1)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
           if (recurringContexts.length > 0) {
-            trendAnalysis.push(`Recurring contexts/situations: ${recurringContexts.map(([c, n]) => `"${c}" (${n}x)`).join(", ")}`);
+            trendAnalysis.push(
+              `Recurring contexts/situations: ${recurringContexts.map(([c, n]) => `"${c}" (${n}x)`).join(", ")}`,
+            );
           }
         }
 
-        const recentMoodTrend = checkins.slice(0, 14).filter(c => c.moodLevel !== null);
-        const recentUrgeTrend = checkins.slice(0, 14).filter(c => c.urgeLevel !== null);
+        const recentMoodTrend = checkins
+          .slice(0, 14)
+          .filter((c) => c.moodLevel !== null);
+        const recentUrgeTrend = checkins
+          .slice(0, 14)
+          .filter((c) => c.urgeLevel !== null);
         if (recentMoodTrend.length > 0) {
-          const avgMood = (recentMoodTrend.reduce((s, c) => s + (c.moodLevel || 0), 0) / recentMoodTrend.length).toFixed(1);
+          const avgMood = (
+            recentMoodTrend.reduce((s, c) => s + (c.moodLevel || 0), 0) /
+            recentMoodTrend.length
+          ).toFixed(1);
           trendAnalysis.push(`Recent 14-day avg mood: ${avgMood}/10`);
         }
         if (recentUrgeTrend.length > 0) {
-          const avgUrge = (recentUrgeTrend.reduce((s, c) => s + (c.urgeLevel || 0), 0) / recentUrgeTrend.length).toFixed(1);
+          const avgUrge = (
+            recentUrgeTrend.reduce((s, c) => s + (c.urgeLevel || 0), 0) /
+            recentUrgeTrend.length
+          ).toFixed(1);
           trendAnalysis.push(`Recent 14-day avg urge: ${avgUrge}/10`);
         }
 
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({
           apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-          httpOptions: { apiVersion: "", baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
+          httpOptions: {
+            apiVersion: "",
+            baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+          },
         });
 
         const prompt = `You are an expert recovery mentor providing feedback on a relapse autopsy for ${user?.name || "the client"}.
@@ -3617,7 +3905,15 @@ TREND ANALYSIS FROM PAST HISTORY:
 ${trendAnalysis.length > 0 ? trendAnalysis.join("\n") : "This is the client's first reported incident."}
 
 PAST AUTOPSY SUMMARIES (most recent first):
-${pastAutopsies.slice(0, 5).map(a => `- ${a.date} (${a.lapseOrRelapse}): "${a.summary?.slice(0, 150) || "No summary"}"`).join("\n") || "None"}
+${
+  pastAutopsies
+    .slice(0, 5)
+    .map(
+      (a) =>
+        `- ${a.date} (${a.lapseOrRelapse}): "${a.summary?.slice(0, 150) || "No summary"}"`,
+    )
+    .join("\n") || "None"
+}
 
 INSTRUCTIONS:
 1. Acknowledge the courage it takes to complete a relapse autopsy honestly.
@@ -3638,7 +3934,9 @@ INSTRUCTIONS:
         res.json({ draft: response.text });
       } catch (error) {
         console.error("Generate autopsy feedback error:", error);
-        res.status(500).json({ message: "Failed to generate autopsy feedback" });
+        res
+          .status(500)
+          .json({ message: "Failed to generate autopsy feedback" });
       }
     },
   );
