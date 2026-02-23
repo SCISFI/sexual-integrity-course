@@ -107,6 +107,7 @@ export interface IStorage {
   addTherapistFeedback(therapistId: string, clientId: string, feedbackType: string, content: string, weekNumber?: number, checkinDateKey?: string): Promise<TherapistFeedback>;
   getClientFeedback(clientId: string): Promise<TherapistFeedback[]>;
   getFeedbackForTherapist(therapistId: string, clientId: string): Promise<TherapistFeedback[]>;
+  updateFeedbackContent(feedbackId: string, content: string, editedBy: string): Promise<TherapistFeedback | undefined>;
 
   // Password reset tokens
   createPasswordResetToken(userId: string): Promise<PasswordResetToken>;
@@ -537,6 +538,15 @@ export class DatabaseStorage implements IStorage {
       .values({ therapistId, clientId, feedbackType, content, weekNumber, checkinDateKey })
       .returning();
     return created;
+  }
+
+  async updateFeedbackContent(feedbackId: string, content: string, editedBy: string): Promise<TherapistFeedback | undefined> {
+    const [updated] = await db
+      .update(therapistFeedback)
+      .set({ content, editedAt: new Date(), editedBy })
+      .where(eq(therapistFeedback.id, feedbackId))
+      .returning();
+    return updated;
   }
 
   async getClientFeedback(clientId: string): Promise<TherapistFeedback[]> {

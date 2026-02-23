@@ -111,6 +111,8 @@ export default function Dashboard() {
       weekNumber: number | null;
       checkinDateKey: string | null;
       createdAt: string;
+      editedAt: string | null;
+      editedBy: string | null;
     }>;
   }>({
     queryKey: ["/api/my-feedback"],
@@ -601,6 +603,11 @@ export default function Dashboard() {
                                 ? "Check-in"
                                 : "General"}
                         </Badge>
+                        {fb.editedAt && (
+                          <span className="text-[10px] text-muted-foreground italic">
+                            Edited by Admin &middot; {new Date(fb.editedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                          </span>
+                        )}
                         <span className="text-xs text-muted-foreground">
                           {new Date(fb.createdAt).toLocaleDateString(
                             undefined,

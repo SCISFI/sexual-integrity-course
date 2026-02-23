@@ -1524,6 +1524,33 @@ export async function registerRoutes(
     },
   );
 
+  // Admin edit any feedback comment
+  app.put(
+    "/api/admin/feedback/:feedbackId",
+    requireRole("admin"),
+    async (req, res) => {
+      try {
+        const adminId = (req.user as any).id;
+        const { feedbackId } = req.params;
+        const editSchema = z.object({ content: z.string().min(1, "Content is required").max(10000) });
+        const parsed = editSchema.safeParse(req.body);
+        if (!parsed.success) {
+          return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid input" });
+        }
+
+        const updated = await storage.updateFeedbackContent(feedbackId, parsed.data.content.trim(), adminId);
+        if (!updated) {
+          return res.status(404).json({ message: "Feedback not found" });
+        }
+
+        res.json({ feedback: updated });
+      } catch (error) {
+        console.error("Admin edit feedback error:", error);
+        res.status(500).json({ message: "Failed to update feedback" });
+      }
+    },
+  );
+
   // Waive week fee for client
   app.post("/api/admin/waivers", requireRole("admin"), async (req, res) => {
     try {

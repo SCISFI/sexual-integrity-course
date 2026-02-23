@@ -219,6 +219,8 @@ export const therapistFeedback = pgTable("therapist_feedback", {
   feedbackType: varchar("feedback_type", { length: 50 }).notNull(), // 'general', 'week', 'checkin'
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  editedAt: timestamp("edited_at"),
+  editedBy: varchar("edited_by").references(() => users.id),
 });
 
 export type TherapistFeedback = typeof therapistFeedback.$inferSelect;

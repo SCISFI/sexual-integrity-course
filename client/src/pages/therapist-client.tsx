@@ -78,6 +78,8 @@ type ClientProgress = {
     weekNumber: number | null;
     checkinDateKey: string | null;
     createdAt: string;
+    editedAt: string | null;
+    editedBy: string | null;
   }>;
   exerciseAnswers?: Array<{
     weekNumber: number;
@@ -1196,6 +1198,11 @@ export default function TherapistClient() {
                                 {fb.checkinDateKey && !fb.checkinDateKey.startsWith('insight-') && <Badge variant="outline">Check-in {fb.checkinDateKey}</Badge>}
                                 {fb.checkinDateKey?.startsWith('insight-') && <Badge variant="outline">Insight</Badge>}
                                 <Badge variant="secondary">{fb.feedbackType}</Badge>
+                                {fb.editedAt && (
+                                  <span className="text-[10px] text-muted-foreground italic">
+                                    Edited by Admin &middot; {new Date(fb.editedAt).toLocaleDateString()}
+                                  </span>
+                                )}
                               </div>
                               <span className="text-xs text-muted-foreground">
                                 {new Date(fb.createdAt).toLocaleDateString()}

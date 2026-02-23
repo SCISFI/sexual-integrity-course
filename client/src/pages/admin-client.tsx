@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw, ListChecks, Send } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw, ListChecks, Send, Pencil, X, Save } from "lucide-react";
 import { getPromptForDate } from "@/data/journal-prompts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -49,6 +49,8 @@ type ClientProgress = {
     content: string;
     weekNumber: number | null;
     createdAt: string;
+    editedAt: string | null;
+    editedBy: string | null;
   }>;
   therapists: Array<{ id: string; name: string | null; email: string }>;
 };
@@ -60,6 +62,8 @@ export default function AdminClientPage() {
   const [resetWeekNumber, setResetWeekNumber] = useState<number | null>(null);
   const [newFeedback, setNewFeedback] = useState("");
   const [feedbackWeek, setFeedbackWeek] = useState<number | null>(null);
+  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
 
   const { data, isLoading, error } = useQuery<ClientProgress>({
     queryKey: ['/api/admin/clients', clientId, 'progress'],
@@ -99,6 +103,23 @@ export default function AdminClientPage() {
     },
     onError: () => {
       toast({ title: "Failed to add feedback", variant: "destructive" });
+    },
+  });
+
+  const editFeedbackMutation = useMutation({
+    mutationFn: async (data: { feedbackId: string; content: string }) => {
+      const res = await apiRequest("PUT", `/api/admin/feedback/${data.feedbackId}`, { content: data.content });
+      if (!res.ok) throw new Error("Failed to update feedback");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/clients', clientId, 'progress'] });
+      setEditingFeedbackId(null);
+      setEditingContent("");
+      toast({ title: "Feedback updated successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update feedback", variant: "destructive" });
     },
   });
 
@@ -442,12 +463,58 @@ export default function AdminClientPage() {
                           <div className="flex items-center gap-2">
                             {fb.weekNumber && <Badge variant="outline">Week {fb.weekNumber}</Badge>}
                             <Badge variant="secondary">{fb.feedbackType}</Badge>
+                            {fb.editedAt && (
+                              <span className="text-[10px] text-muted-foreground italic" data-testid={`edited-indicator-${fb.id}`}>
+                                Edited by Admin &middot; {new Date(fb.editedAt).toLocaleDateString()}
+                              </span>
+                            )}
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(fb.createdAt).toLocaleDateString()}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(fb.createdAt).toLocaleDateString()}
+                            </span>
+                            {editingFeedbackId !== fb.id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => { setEditingFeedbackId(fb.id); setEditingContent(fb.content); }}
+                                data-testid={`button-edit-feedback-${fb.id}`}
+                              >
+                                <Pencil className="h-3 w-3 mr-1" /> Edit
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm">{fb.content}</p>
+                        {editingFeedbackId === fb.id ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editingContent}
+                              onChange={(e) => setEditingContent(e.target.value)}
+                              rows={4}
+                              data-testid={`textarea-edit-feedback-${fb.id}`}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => { setEditingFeedbackId(null); setEditingContent(""); }}
+                                data-testid={`button-cancel-edit-${fb.id}`}
+                              >
+                                <X className="h-3 w-3 mr-1" /> Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => editFeedbackMutation.mutate({ feedbackId: fb.id, content: editingContent })}
+                                disabled={editFeedbackMutation.isPending || !editingContent.trim()}
+                                data-testid={`button-save-edit-${fb.id}`}
+                              >
+                                <Save className="h-3 w-3 mr-1" /> Save
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm">{fb.content}</p>
+                        )}
                       </div>
                     ))}
                   </div>
