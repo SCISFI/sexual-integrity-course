@@ -6,7 +6,20 @@ import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, LogOut, Key, Search, CreditCard, Loader2, XCircle, ClipboardCheck, Clock, UserCircle, ChevronDown, AlertTriangle } from "lucide-react";
+import {
+  Users,
+  LogOut,
+  Key,
+  Search,
+  CreditCard,
+  Loader2,
+  XCircle,
+  ClipboardCheck,
+  Clock,
+  UserCircle,
+  ChevronDown,
+  AlertTriangle,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,44 +77,109 @@ export default function TherapistHome() {
   const { toast } = useToast();
   const { user } = useAuth();
   const subscriptionConfirmedRef = useRef(false);
-  const [reviewingItem, setReviewingItem] = useState<PendingReview | null>(null);
+  const [reviewingItem, setReviewingItem] = useState<PendingReview | null>(
+    null,
+  );
   const [reviewNotes, setReviewNotes] = useState("");
+  // -----------------------------------------------------
+  // Staff-only Draft Assistant (Private) - UI state
+  // -----------------------------------------------------
+  const isStaff = user?.role === "admin" || user?.role === "therapist";
 
+  const [draftClientId, setDraftClientId] = useState("");
+  const [draftFocus, setDraftFocus] = useState("");
+  const [draftTone, setDraftTone] = useState<"neutral" | "direct" | "warm">(
+    "neutral",
+  );
+  const [draftConstraints, setDraftConstraints] = useState(
+    "Avoid shame language. No diagnosis. No risk scoring.",
+  );
+  const [draftText, setDraftText] = useState("");
+  const [draftLoading, setDraftLoading] = useState(false);
+
+  async function generateStaffDraft() {
+    if (!draftClientId.trim()) {
+      toast({
+        title: "Client ID required",
+        description: "Enter a client ID to generate a draft.",
+      });
+      return;
+    }
+    if (!draftFocus.trim()) {
+      toast({
+        title: "Focus required",
+        description: "Enter what you want the draft to be about.",
+      });
+      return;
+    }
+
+    setDraftLoading(true);
+    setDraftText("");
+
+    try {
+      const res = await apiRequest(
+        "POST",
+        `/api/staff/clients/${encodeURIComponent(draftClientId.trim())}/ai-draft`,
+        {
+          focus: draftFocus.trim(),
+          tone: draftTone,
+          constraints: draftConstraints.trim(),
+        },
+      );
+
+      const data = await res.json();
+      setDraftText(data?.draftText || "");
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Draft failed",
+        description: "Could not generate a draft. Check server logs.",
+      });
+    } finally {
+      setDraftLoading(false);
+    }
+  }
   // Handle subscription success callback
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    const paymentStatus = searchParams.get('payment');
-    
-    if (paymentStatus === 'success' && !subscriptionConfirmedRef.current) {
+    const paymentStatus = searchParams.get("payment");
+
+    if (paymentStatus === "success" && !subscriptionConfirmedRef.current) {
       subscriptionConfirmedRef.current = true;
       toast({
         title: "Subscription Activated",
         description: "Welcome! Your mentor subscription is now active.",
       });
       // Clear URL and refresh subscription data
-      window.history.replaceState({}, '', '/therapist-home');
-      queryClient.invalidateQueries({ queryKey: ['/api/payments/subscription'] });
-    } else if (paymentStatus === 'cancelled') {
-      window.history.replaceState({}, '', '/therapist-home');
+      window.history.replaceState({}, "", "/therapist-home");
+      queryClient.invalidateQueries({
+        queryKey: ["/api/payments/subscription"],
+      });
+    } else if (paymentStatus === "cancelled") {
+      window.history.replaceState({}, "", "/therapist-home");
     }
   }, [toast]);
 
   // Check subscription status
-  const { data: subscriptionData, isLoading: loadingSubscription } = useQuery<{ 
-    subscription: any; 
+  const { data: subscriptionData, isLoading: loadingSubscription } = useQuery<{
+    subscription: any;
     allFeesWaived: boolean;
     cancelAtPeriodEnd?: boolean;
     periodEnd?: string | null;
   }>({
-    queryKey: ['/api/payments/subscription'],
+    queryKey: ["/api/payments/subscription"],
     staleTime: 0,
-    refetchOnMount: 'always',
+    refetchOnMount: "always",
   });
 
   // Subscription checkout mutation
   const subscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/payments/checkout/subscription", {});
+      const res = await apiRequest(
+        "POST",
+        "/api/payments/checkout/subscription",
+        {},
+      );
       return res.json();
     },
     onSuccess: (data) => {
@@ -121,17 +199,23 @@ export default function TherapistHome() {
   // Cancel subscription mutation
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/account/cancel-subscription", {});
+      const res = await apiRequest(
+        "POST",
+        "/api/account/cancel-subscription",
+        {},
+      );
       return res.json();
     },
     onSuccess: (data) => {
       toast({
         title: "Subscription Cancelled",
-        description: data.accessEndsAt 
+        description: data.accessEndsAt
           ? `Your subscription will remain active until ${new Date(data.accessEndsAt).toLocaleDateString()}. No refunds will be issued.`
           : "Your subscription has been cancelled. No refunds will be issued.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/payments/subscription'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/payments/subscription"],
+      });
     },
     onError: () => {
       toast({
@@ -142,35 +226,54 @@ export default function TherapistHome() {
     },
   });
 
-  const hasActiveSubscription = subscriptionData?.subscription?.status === 'active' || 
-                                 subscriptionData?.subscription?.status === 'trialing' ||
-                                 subscriptionData?.allFeesWaived === true;
+  const hasActiveSubscription =
+    subscriptionData?.subscription?.status === "active" ||
+    subscriptionData?.subscription?.status === "trialing" ||
+    subscriptionData?.allFeesWaived === true;
 
-  const subscriptionCancelledButActive = hasActiveSubscription && subscriptionData?.cancelAtPeriodEnd === true;
+  const subscriptionCancelledButActive =
+    hasActiveSubscription && subscriptionData?.cancelAtPeriodEnd === true;
 
-  const { data: clientsData, isLoading } = useQuery<{ clients: ClientWithProgress[] }>({
-    queryKey: ['/api/therapist/clients'],
+  const { data: clientsData, isLoading } = useQuery<{
+    clients: ClientWithProgress[];
+  }>({
+    queryKey: ["/api/therapist/clients"],
     enabled: hasActiveSubscription, // Only fetch clients if subscribed or fees waived
   });
 
   // Fetch pending reviews
-  const { data: pendingReviewsData, isLoading: loadingPendingReviews } = useQuery<{ pendingReviews: PendingReview[] }>({
-    queryKey: ['/api/therapist/pending-reviews'],
-    enabled: hasActiveSubscription,
-  });
+  const { data: pendingReviewsData, isLoading: loadingPendingReviews } =
+    useQuery<{ pendingReviews: PendingReview[] }>({
+      queryKey: ["/api/therapist/pending-reviews"],
+      enabled: hasActiveSubscription,
+    });
 
   const pendingReviews = pendingReviewsData?.pendingReviews || [];
 
-  const { data: unreviewedAutopsiesData } = useQuery<{ unreviewedCounts: Record<string, number> }>({
-    queryKey: ['/api/therapist/unreviewed-autopsies'],
+  const { data: unreviewedAutopsiesData } = useQuery<{
+    unreviewedCounts: Record<string, number>;
+  }>({
+    queryKey: ["/api/therapist/unreviewed-autopsies"],
     enabled: hasActiveSubscription,
   });
   const unreviewedCounts = unreviewedAutopsiesData?.unreviewedCounts || {};
 
   // Submit review mutation
   const submitReviewMutation = useMutation({
-    mutationFn: async ({ clientId, weekNumber, reviewNotes }: { clientId: string; weekNumber: number; reviewNotes: string }) => {
-      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/review/${weekNumber}`, { reviewNotes });
+    mutationFn: async ({
+      clientId,
+      weekNumber,
+      reviewNotes,
+    }: {
+      clientId: string;
+      weekNumber: number;
+      reviewNotes: string;
+    }) => {
+      const res = await apiRequest(
+        "POST",
+        `/api/therapist/clients/${clientId}/review/${weekNumber}`,
+        { reviewNotes },
+      );
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || "Failed to submit review");
@@ -178,7 +281,9 @@ export default function TherapistHome() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/therapist/pending-reviews'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/therapist/pending-reviews"],
+      });
       setReviewingItem(null);
       setReviewNotes("");
       toast({
@@ -213,22 +318,27 @@ export default function TherapistHome() {
   };
 
   const allClients = clientsData?.clients || [];
-  
+
   // Filter clients based on search query
   const clients = searchQuery.trim()
-    ? allClients.filter(c => 
-        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchQuery.toLowerCase())
+    ? allClients.filter(
+        (c) =>
+          c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.email.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : allClients;
 
   const getClientStatus = (client: ClientWithProgress) => {
     if (!client.startDate) return "Pending";
-    const daysSinceStart = Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24));
+    const daysSinceStart = Math.floor(
+      (Date.now() - new Date(client.startDate).getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
     const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
-    
+
     if (client.completedWeeks.length >= expectedWeek) return "On Track";
-    if (client.completedWeeks.length < expectedWeek - 1) return "Needs Attention";
+    if (client.completedWeeks.length < expectedWeek - 1)
+      return "Needs Attention";
     return "Active";
   };
 
@@ -250,7 +360,13 @@ export default function TherapistHome() {
     const statusA = getClientStatus(a);
     const statusB = getClientStatus(b);
     const priority = (status: string) =>
-      status === "Needs Attention" ? 0 : status === "Active" ? 1 : status === "On Track" ? 2 : 3;
+      status === "Needs Attention"
+        ? 0
+        : status === "Active"
+          ? 1
+          : status === "On Track"
+            ? 2
+            : 3;
     return priority(statusA) - priority(statusB);
   });
 
@@ -277,25 +393,41 @@ export default function TherapistHome() {
         <div className="mx-auto max-w-2xl">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl font-bold">Mentor Dashboard</h1>
-            <Button variant="outline" onClick={handleLogout} data-testid="button-logout">
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </Button>
           </div>
-          
+
           <Card data-testid="card-subscription-required">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <CreditCard className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="mb-2 text-xl font-semibold">Subscription Required</h3>
+              <h3 className="mb-2 text-xl font-semibold">
+                Subscription Required
+              </h3>
               <div className="mb-4 rounded-lg border-2 border-green-600/30 dark:border-green-500/30 bg-green-600/10 dark:bg-green-500/10 px-4 py-2">
-                <Badge className="bg-green-600 dark:bg-green-600 text-white" data-testid="badge-first-month-free">
+                <Badge
+                  className="bg-green-600 dark:bg-green-600 text-white"
+                  data-testid="badge-first-month-free"
+                >
                   First Month FREE
                 </Badge>
               </div>
               <p className="max-w-md text-muted-foreground mb-6">
-                Start with a <span className="font-semibold text-foreground">30-day free trial</span>, then <span className="font-semibold text-foreground">$49/month</span> to access the mentor dashboard, manage your clients, and monitor their progress through the 16-week program.
+                Start with a{" "}
+                <span className="font-semibold text-foreground">
+                  30-day free trial
+                </span>
+                , then{" "}
+                <span className="font-semibold text-foreground">$49/month</span>{" "}
+                to access the mentor dashboard, manage your clients, and monitor
+                their progress through the 16-week program.
               </p>
               <div className="space-y-4">
                 <ul className="text-left text-sm text-muted-foreground space-y-2 mb-6">
@@ -347,19 +479,29 @@ export default function TherapistHome() {
       <div className="mx-auto max-w-5xl space-y-6">
         {/* Cancellation pending banner */}
         {subscriptionCancelledButActive && subscriptionData?.periodEnd && (
-          <div className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg" data-testid="banner-subscription-ending">
+          <div
+            className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg"
+            data-testid="banner-subscription-ending"
+          >
             <p className="font-medium text-yellow-800 dark:text-yellow-200">
               Subscription Cancelled
             </p>
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              Your subscription will end on {new Date(subscriptionData.periodEnd).toLocaleDateString()}. You will retain full access until then. No refunds will be issued.
+              Your subscription will end on{" "}
+              {new Date(subscriptionData.periodEnd).toLocaleDateString()}. You
+              will retain full access until then. No refunds will be issued.
             </p>
           </div>
         )}
-        
+
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold" data-testid="text-therapist-title">Mentor Dashboard</h1>
+            <h1
+              className="text-2xl font-bold"
+              data-testid="text-therapist-title"
+            >
+              Mentor Dashboard
+            </h1>
             <p className="text-muted-foreground">
               Manage your assigned clients and monitor their progress
             </p>
@@ -368,19 +510,28 @@ export default function TherapistHome() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" data-testid="button-profile-menu">
                 <UserCircle className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">{(user as any)?.name || "Account"}</span>
+                <span className="hidden sm:inline">
+                  {(user as any)?.name || "Account"}
+                </span>
                 <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">{(user as any)?.name || "Mentor"}</p>
-                  <p className="text-xs text-muted-foreground">{(user as any)?.email}</p>
+                  <p className="text-sm font-medium">
+                    {(user as any)?.name || "Mentor"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {(user as any)?.email}
+                  </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setLocation("/change-password")} data-testid="menu-change-password">
+              <DropdownMenuItem
+                onClick={() => setLocation("/change-password")}
+                data-testid="menu-change-password"
+              >
                 <Key className="h-4 w-4 mr-2" />
                 Change Password
               </DropdownMenuItem>
@@ -398,31 +549,47 @@ export default function TherapistHome() {
                 </>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
+              <DropdownMenuItem
+                onClick={handleLogout}
+                data-testid="menu-logout"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
                 Log Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialog
+            open={showCancelDialog}
+            onOpenChange={setShowCancelDialog}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
                   <p>Are you sure you want to cancel your subscription?</p>
                   <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">Important:</p>
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                      Important:
+                    </p>
                     <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
-                      <li>Your subscription will remain active until the end of your billing period</li>
+                      <li>
+                        Your subscription will remain active until the end of
+                        your billing period
+                      </li>
                       <li>No refunds will be issued for any unused time</li>
-                      <li>You will lose access to the dashboard after your billing period ends</li>
+                      <li>
+                        You will lose access to the dashboard after your billing
+                        period ends
+                      </li>
                     </ul>
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel data-testid="button-keep-subscription">Keep Subscription</AlertDialogCancel>
+                <AlertDialogCancel data-testid="button-keep-subscription">
+                  Keep Subscription
+                </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => cancelSubscriptionMutation.mutate()}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -430,7 +597,10 @@ export default function TherapistHome() {
                   data-testid="button-confirm-cancel"
                 >
                   {cancelSubscriptionMutation.isPending ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</>
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Cancelling...
+                    </>
                   ) : (
                     "Cancel Subscription"
                   )}
@@ -447,7 +617,11 @@ export default function TherapistHome() {
               <ClipboardCheck className="h-5 w-5" />
               Pending Reviews
               {pendingReviews.length > 0 && (
-                <Badge variant="destructive" className="ml-2" data-testid="badge-pending-reviews-count">
+                <Badge
+                  variant="destructive"
+                  className="ml-2"
+                  data-testid="badge-pending-reviews-count"
+                >
                   {pendingReviews.length}
                 </Badge>
               )}
@@ -461,14 +635,21 @@ export default function TherapistHome() {
                 ))}
               </div>
             ) : pendingReviews.length === 0 ? (
-              <div className="py-6 text-center text-muted-foreground" data-testid="text-no-pending-reviews">
+              <div
+                className="py-6 text-center text-muted-foreground"
+                data-testid="text-no-pending-reviews"
+              >
                 <ClipboardCheck className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p>All caught up! No pending reviews.</p>
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {pendingReviews.map((review) => (
-                  <Card key={`${review.clientId}-${review.weekNumber}`} className="p-4" data-testid={`card-review-${review.clientId}-${review.weekNumber}`}>
+                  <Card
+                    key={`${review.clientId}-${review.weekNumber}`}
+                    className="p-4"
+                    data-testid={`card-review-${review.clientId}-${review.weekNumber}`}
+                  >
                     <div className="space-y-2">
                       <div className="font-medium">{review.clientName}</div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -482,7 +663,9 @@ export default function TherapistHome() {
                       <Button
                         size="sm"
                         onClick={() => {
-                          setLocation(`/therapist/clients/${review.clientId}?reviewWeek=${review.weekNumber}`);
+                          setLocation(
+                            `/therapist/clients/${review.clientId}?reviewWeek=${review.weekNumber}`,
+                          );
                         }}
                         className="w-full mt-2"
                         data-testid={`button-review-${review.clientId}-${review.weekNumber}`}
@@ -534,7 +717,9 @@ export default function TherapistHome() {
               <div className="py-8 text-center text-muted-foreground">
                 <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p>No clients assigned to you yet.</p>
-                <p className="text-sm">Contact your administrator to get clients assigned.</p>
+                <p className="text-sm">
+                  Contact your administrator to get clients assigned.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -555,21 +740,28 @@ export default function TherapistHome() {
                         <tr
                           key={client.id}
                           className="border-b hover-elevate cursor-pointer"
-                          onClick={() => setLocation(`/therapist/clients/${client.id}`)}
+                          onClick={() =>
+                            setLocation(`/therapist/clients/${client.id}`)
+                          }
                           data-testid={`row-client-${client.id}`}
                         >
                           <td className="p-3 font-medium">
                             <span className="flex items-center gap-2">
                               {client.name}
                               {unreviewedCounts[String(client.id)] > 0 && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-950 px-2 py-0.5 text-xs font-bold text-red-700 dark:text-red-300" data-testid={`badge-autopsy-alert-${client.id}`}>
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-950 px-2 py-0.5 text-xs font-bold text-red-700 dark:text-red-300"
+                                  data-testid={`badge-autopsy-alert-${client.id}`}
+                                >
                                   <AlertTriangle className="h-3 w-3" />
                                   {unreviewedCounts[String(client.id)]} autopsy
                                 </span>
                               )}
                             </span>
                           </td>
-                          <td className="p-3 text-muted-foreground">{client.email}</td>
+                          <td className="p-3 text-muted-foreground">
+                            {client.email}
+                          </td>
                           <td className="p-3">
                             Week {client.currentWeek} / 16
                             <span className="ml-2 text-xs text-muted-foreground">
@@ -585,10 +777,9 @@ export default function TherapistHome() {
                             </Badge>
                           </td>
                           <td className="p-3 text-muted-foreground">
-                            {client.startDate 
+                            {client.startDate
                               ? new Date(client.startDate).toLocaleDateString()
-                              : "Not set"
-                            }
+                              : "Not set"}
                           </td>
                         </tr>
                       );
@@ -602,7 +793,15 @@ export default function TherapistHome() {
       </div>
 
       {/* Review Dialog */}
-      <Dialog open={!!reviewingItem} onOpenChange={(open) => { if (!open) { setReviewingItem(null); setReviewNotes(""); } }}>
+      <Dialog
+        open={!!reviewingItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReviewingItem(null);
+            setReviewNotes("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Review Week Completion</DialogTitle>
@@ -623,7 +822,13 @@ export default function TherapistHome() {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setReviewingItem(null); setReviewNotes(""); }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReviewingItem(null);
+                setReviewNotes("");
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -640,7 +845,10 @@ export default function TherapistHome() {
               data-testid="button-mark-reviewed"
             >
               {submitReviewMutation.isPending ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</>
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
               ) : (
                 "Mark Reviewed"
               )}
