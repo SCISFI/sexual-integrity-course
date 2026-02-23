@@ -130,6 +130,7 @@ export default function TherapistClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
       setNewFeedback("");
       setFeedbackWeek(null);
       setFeedbackDateKey(null);
@@ -151,6 +152,7 @@ export default function TherapistClient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-autopsies'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
       toast({ title: "Autopsy marked as reviewed" });
     },
     onError: () => {
@@ -166,6 +168,7 @@ export default function TherapistClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
       toast({ title: "Marked as reviewed" });
     },
     onError: () => {

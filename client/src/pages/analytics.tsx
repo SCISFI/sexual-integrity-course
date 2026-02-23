@@ -126,34 +126,65 @@ function TrendChart({ data, color, label, height = 120 }: { data: (number | null
   );
 }
 
-function getInsight(stats: CheckinStats): string {
+const MIN_ENTRIES_FOR_TREND = 5;
+const MCID_THRESHOLD = 2.0;
+
+type TrendDirection = "increasing" | "decreasing" | "stable" | "consistently_same" | "insufficient_data";
+
+function computeTrend(values: (number | null)[]): TrendDirection {
+  const filtered = values.filter((v): v is number => v !== null);
+  if (filtered.length < MIN_ENTRIES_FOR_TREND) return "insufficient_data";
+  if (filtered.every(v => v === filtered[0])) return "consistently_same";
+
+  const mid = Math.floor(filtered.length / 2);
+  const firstHalf = filtered.slice(0, mid);
+  const secondHalf = filtered.slice(mid);
+  const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+  const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+  const diff = secondAvg - firstAvg;
+
+  if (Math.abs(diff) < MCID_THRESHOLD) return "stable";
+  return diff > 0 ? "increasing" : "decreasing";
+}
+
+function getInsight(stats: CheckinStats, moodTrend: TrendDirection, urgeTrend: TrendDirection, isViewingOther: boolean): string {
   const insights: string[] = [];
-  
+  const you = isViewingOther ? "Client's" : "Your";
+  const your = isViewingOther ? "Their" : "Your";
+
+  if (moodTrend === "insufficient_data" || urgeTrend === "insufficient_data") {
+    return `${isViewingOther ? "More" : "Keep"} check${isViewingOther ? "-ins are needed" : "ing in daily"} to build enough data for meaningful trend analysis (at least ${MIN_ENTRIES_FOR_TREND} entries).`;
+  }
+
   if (stats.currentStreak >= 14) {
-    insights.push("You've maintained a two-week streak! This level of consistency is building lasting neural pathways.");
+    insights.push(`${isViewingOther ? "A" : "You've maintained a"} two-week streak! This level of consistency is building lasting neural pathways.`);
   } else if (stats.currentStreak >= 7) {
-    insights.push("A week-long streak shows real commitment. Your brain is adapting to this new routine.");
+    insights.push(`${isViewingOther ? "A" : "A"} week-long streak shows real commitment. ${your} brain is adapting to this new routine.`);
   } else if (stats.currentStreak >= 3) {
     insights.push("Three days of consistency is when habits start forming. Keep going!");
   }
-  
-  if (stats.averageUrge < 4 && stats.totalCheckins >= 7) {
-    insights.push("Your urge levels are staying low - a sign of growing control.");
-  } else if (stats.averageUrge > 6) {
-    insights.push("Higher urge levels are normal, especially early on. Each check-in builds awareness.");
+
+  if (moodTrend === "increasing") {
+    insights.push(`${you} mood has been meaningfully improving — a positive sign of progress.`);
+  } else if (moodTrend === "decreasing") {
+    insights.push(`${you} mood has dipped recently. This is common and awareness is the first step to turning it around.`);
   }
-  
-  if (stats.averageMood >= 6) {
-    insights.push("Your mood is generally positive, which supports recovery.");
+
+  if (urgeTrend === "decreasing") {
+    insights.push(`${you} urge levels are meaningfully decreasing — coping strategies are working.`);
+  } else if (urgeTrend === "increasing") {
+    insights.push(`Urge levels have increased. ${isViewingOther ? "Consider discussing" : "Consider reviewing"} coping tools or ${isViewingOther ? "additional" : "reaching out for"} support.`);
+  } else if ((urgeTrend === "stable" || urgeTrend === "consistently_same") && stats.averageUrge < 4) {
+    insights.push(`${you} urge levels are consistently low — a sign of growing control.`);
   }
-  
+
   if (stats.dailyCompletionRate >= 80) {
-    insights.push("Excellent consistency! You're checking in most days.");
+    insights.push(`Excellent consistency! ${isViewingOther ? "Checking" : "You're checking"} in most days.`);
   } else if (stats.dailyCompletionRate < 50 && stats.totalCheckins > 5) {
-    insights.push("More frequent check-ins help you stay aware of patterns. Try to check in daily.");
+    insights.push("More frequent check-ins help stay aware of patterns. Try to check in daily.");
   }
-  
-  return insights.length > 0 ? insights[0] : "Keep checking in daily to build your data and see meaningful trends.";
+
+  return insights.length > 0 ? insights[0] : `${you} data is stable. ${isViewingOther ? "Encourage daily" : "Keep"} check${isViewingOther ? "-ins" : "ing in daily"} to track the journey.`;
 }
 
 export default function AnalyticsPage({ params }: { params?: { clientId?: string } }) {
@@ -229,18 +260,8 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
   const moodData = stats?.recentCheckins.map(c => c.mood) || [];
   const urgeData = stats?.recentCheckins.map(c => c.urge) || [];
   
-  // Calculate trends
-  const recentMoods = moodData.filter(m => m !== null).slice(-3);
-  const olderMoods = moodData.filter(m => m !== null).slice(0, -3);
-  const moodTrending = recentMoods.length > 0 && olderMoods.length > 0
-    ? (recentMoods.reduce((a, b) => a! + b!, 0)! / recentMoods.length) > (olderMoods.reduce((a, b) => a! + b!, 0)! / olderMoods.length)
-    : null;
-
-  const recentUrges = urgeData.filter(u => u !== null).slice(-3);
-  const olderUrges = urgeData.filter(u => u !== null).slice(0, -3);
-  const urgeTrending = recentUrges.length > 0 && olderUrges.length > 0
-    ? (recentUrges.reduce((a, b) => a! + b!, 0)! / recentUrges.length) < (olderUrges.reduce((a, b) => a! + b!, 0)! / olderUrges.length)
-    : null;
+  const moodTrend = computeTrend(moodData);
+  const urgeTrend = computeTrend(urgeData);
 
   return (
     <div className="min-h-screen bg-background">
@@ -278,8 +299,8 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
               <div className="flex items-start gap-3">
                 <LineChart className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-cyan-700 dark:text-cyan-300 mb-1">Your Progress Insight</p>
-                  <p className="text-sm text-cyan-600 dark:text-cyan-400">{getInsight(stats)}</p>
+                  <p className="font-medium text-cyan-700 dark:text-cyan-300 mb-1">{isViewingOtherClient ? 'Client Progress Insight' : 'Your Progress Insight'}</p>
+                  <p className="text-sm text-cyan-600 dark:text-cyan-400">{getInsight(stats, moodTrend, urgeTrend, isViewingOtherClient)}</p>
                 </div>
               </div>
             </CardContent>
@@ -332,9 +353,14 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-emerald-600 dark:text-emerald-400">Avg Mood</p>
-                    {moodTrending !== null && (
-                      <Badge variant="outline" className={`text-xs ${moodTrending ? 'text-green-600 border-green-300' : 'text-red-600 border-red-300'}`}>
-                        {moodTrending ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                    {moodTrend === "increasing" && (
+                      <Badge variant="outline" className="text-xs text-green-600 border-green-300">
+                        <TrendingUp className="h-3 w-3" />
+                      </Badge>
+                    )}
+                    {moodTrend === "decreasing" && (
+                      <Badge variant="outline" className="text-xs text-red-600 border-red-300">
+                        <TrendingDown className="h-3 w-3" />
                       </Badge>
                     )}
                   </div>
@@ -355,9 +381,14 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-purple-600 dark:text-purple-400">Avg Urge</p>
-                    {urgeTrending !== null && (
-                      <Badge variant="outline" className={`text-xs ${urgeTrending ? 'text-green-600 border-green-300' : 'text-red-600 border-red-300'}`}>
-                        {urgeTrending ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
+                    {urgeTrend === "decreasing" && (
+                      <Badge variant="outline" className="text-xs text-green-600 border-green-300">
+                        <TrendingDown className="h-3 w-3" />
+                      </Badge>
+                    )}
+                    {urgeTrend === "increasing" && (
+                      <Badge variant="outline" className="text-xs text-red-600 border-red-300">
+                        <TrendingUp className="h-3 w-3" />
                       </Badge>
                     )}
                   </div>

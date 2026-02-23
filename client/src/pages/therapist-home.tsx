@@ -14,8 +14,6 @@ import {
   CreditCard,
   Loader2,
   XCircle,
-  ClipboardCheck,
-  Clock,
   UserCircle,
   ChevronDown,
   AlertTriangle,
@@ -32,15 +30,6 @@ import { useAuth } from "@/lib/auth";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,13 +52,6 @@ type ClientWithProgress = {
   lastActivity: string | null;
 };
 
-type PendingReview = {
-  clientId: string;
-  clientName: string;
-  weekNumber: number;
-  completedAt: string;
-};
-
 export default function TherapistHome() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -77,10 +59,6 @@ export default function TherapistHome() {
   const { toast } = useToast();
   const { user } = useAuth();
   const subscriptionConfirmedRef = useRef(false);
-  const [reviewingItem, setReviewingItem] = useState<PendingReview | null>(
-    null,
-  );
-  const [reviewNotes, setReviewNotes] = useState("");
   // -----------------------------------------------------
   // Staff-only Draft Assistant (Private) - UI state
   // -----------------------------------------------------
@@ -241,15 +219,6 @@ export default function TherapistHome() {
     enabled: hasActiveSubscription, // Only fetch clients if subscribed or fees waived
   });
 
-  // Fetch pending reviews
-  const { data: pendingReviewsData, isLoading: loadingPendingReviews } =
-    useQuery<{ pendingReviews: PendingReview[] }>({
-      queryKey: ["/api/therapist/pending-reviews"],
-      enabled: hasActiveSubscription,
-    });
-
-  const pendingReviews = pendingReviewsData?.pendingReviews || [];
-
   const { data: unreviewedAutopsiesData } = useQuery<{
     unreviewedCounts: Record<string, number>;
   }>({
@@ -265,65 +234,6 @@ export default function TherapistHome() {
     enabled: hasActiveSubscription,
   });
   const unreviewedItemCounts = unreviewedItemsData?.unreviewedItemCounts || {};
-
-  // Submit review mutation
-  const submitReviewMutation = useMutation({
-    mutationFn: async ({
-      clientId,
-      weekNumber,
-      reviewNotes,
-    }: {
-      clientId: string;
-      weekNumber: number;
-      reviewNotes: string;
-    }) => {
-      const res = await apiRequest(
-        "POST",
-        `/api/therapist/clients/${clientId}/review/${weekNumber}`,
-        { reviewNotes },
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to submit review");
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/therapist/pending-reviews"],
-      });
-      setReviewingItem(null);
-      setReviewNotes("");
-      toast({
-        title: "Review Submitted",
-        description: "The week has been marked as reviewed.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Helper to format time ago
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffDays > 0) {
-      return diffDays === 1 ? "1 day ago" : `${diffDays} days ago`;
-    } else if (diffHours > 0) {
-      return diffHours === 1 ? "1 hour ago" : `${diffHours} hours ago`;
-    } else {
-      return "Just now";
-    }
-  };
 
   const allClients = clientsData?.clients || [];
 
@@ -620,76 +530,6 @@ export default function TherapistHome() {
           </AlertDialog>
         </div>
 
-        {/* Pending Reviews Section */}
-        <Card data-testid="card-pending-reviews">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardCheck className="h-5 w-5" />
-              Pending Reviews
-              {pendingReviews.length > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="ml-2"
-                  data-testid="badge-pending-reviews-count"
-                >
-                  {pendingReviews.length}
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingPendingReviews ? (
-              <div className="space-y-3">
-                {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
-            ) : pendingReviews.length === 0 ? (
-              <div
-                className="py-6 text-center text-muted-foreground"
-                data-testid="text-no-pending-reviews"
-              >
-                <ClipboardCheck className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                <p>All caught up! No pending reviews.</p>
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {pendingReviews.map((review) => (
-                  <Card
-                    key={`${review.clientId}-${review.weekNumber}`}
-                    className="p-4"
-                    data-testid={`card-review-${review.clientId}-${review.weekNumber}`}
-                  >
-                    <div className="space-y-2">
-                      <div className="font-medium">{review.clientName}</div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>Week {review.weekNumber}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatTimeAgo(review.completedAt)}
-                        </span>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setLocation(
-                            `/therapist/clients/${review.clientId}?reviewWeek=${review.weekNumber}`,
-                          );
-                        }}
-                        className="w-full mt-2"
-                        data-testid={`button-review-${review.clientId}-${review.weekNumber}`}
-                      >
-                        Review Now
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -810,70 +650,6 @@ export default function TherapistHome() {
         </Card>
       </div>
 
-      {/* Review Dialog */}
-      <Dialog
-        open={!!reviewingItem}
-        onOpenChange={(open) => {
-          if (!open) {
-            setReviewingItem(null);
-            setReviewNotes("");
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Review Week Completion</DialogTitle>
-            <DialogDescription>
-              {reviewingItem?.clientName} - Week {reviewingItem?.weekNumber}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              Review Notes (optional)
-            </label>
-            <Textarea
-              placeholder="Add any notes about this client's progress..."
-              value={reviewNotes}
-              onChange={(e) => setReviewNotes(e.target.value)}
-              className="min-h-24"
-              data-testid="textarea-review-notes"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setReviewingItem(null);
-                setReviewNotes("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (reviewingItem) {
-                  submitReviewMutation.mutate({
-                    clientId: reviewingItem.clientId,
-                    weekNumber: reviewingItem.weekNumber,
-                    reviewNotes,
-                  });
-                }
-              }}
-              disabled={submitReviewMutation.isPending}
-              data-testid="button-mark-reviewed"
-            >
-              {submitReviewMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Mark Reviewed"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
