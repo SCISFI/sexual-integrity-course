@@ -633,6 +633,17 @@ export default function TherapistClient() {
                               <p>Relapse/Lapse Reports: {relapseAutopsies.filter(a => a.status === "completed").length}</p>
                             )}
                           </div>
+                          <div className="pt-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setLocation(`/analytics/${clientId}`)}
+                              data-testid="button-view-full-analytics"
+                            >
+                              <BarChart3 className="mr-2 h-4 w-4" />
+                              View Full Analytics Page
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     </>

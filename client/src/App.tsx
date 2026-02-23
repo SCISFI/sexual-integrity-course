@@ -47,6 +47,7 @@ function Router() {
       <Route path="/week/:weekNumber" component={WeekPage} />
       <Route path="/daily-checkin" component={DailyCheckinPage} />
       <Route path="/analytics" component={AnalyticsPage} />
+      <Route path="/analytics/:clientId" component={AnalyticsPage} />
       <Route path="/user-manual" component={UserManualPage} />
       <Route path="/therapist/clients/:id" component={TherapistClient} />
       <Route path="/checkin" component={Checkin} />

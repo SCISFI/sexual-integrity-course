@@ -156,20 +156,50 @@ function getInsight(stats: CheckinStats): string {
   return insights.length > 0 ? insights[0] : "Keep checking in daily to build your data and see meaningful trends.";
 }
 
-export default function AnalyticsPage() {
+export default function AnalyticsPage({ params }: { params?: { clientId?: string } }) {
   const { user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
 
+  const viewingClientId = params?.clientId;
+  const isViewingOtherClient = !!viewingClientId && viewingClientId !== user?.id;
+  const isMentor = user?.role === 'therapist';
+  const isAdmin = user?.role === 'admin';
+
+  const statsUrl = isViewingOtherClient
+    ? (isMentor ? `/api/therapist/clients/${viewingClientId}/checkin-stats` : `/api/admin/clients/${viewingClientId}/checkin-stats`)
+    : '/api/progress/checkin-stats';
+
+  const completionsUrl = isViewingOtherClient
+    ? (isMentor ? `/api/therapist/clients/${viewingClientId}/completions` : `/api/admin/clients/${viewingClientId}/completions-data`)
+    : '/api/progress/completions';
+
   const { data: stats, isLoading } = useQuery<CheckinStats>({
-    queryKey: ['/api/progress/checkin-stats'],
+    queryKey: [statsUrl],
     staleTime: 60000,
     enabled: !!user,
   });
 
   const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
-    queryKey: ['/api/progress/completions'],
+    queryKey: [completionsUrl],
     enabled: !!user,
   });
+
+  const { data: clientData } = useQuery<{ name?: string; email?: string }>({
+    queryKey: ['/api/therapist/clients', viewingClientId, 'progress'],
+    enabled: !!viewingClientId && isMentor,
+    select: (data: any) => ({ name: data?.client?.name, email: data?.client?.email }),
+  });
+
+  const { data: adminClientData } = useQuery<{ name?: string; email?: string }>({
+    queryKey: ['/api/admin/users'],
+    enabled: !!viewingClientId && isAdmin,
+    select: (data: any) => {
+      const found = data?.users?.find((u: any) => u.id === viewingClientId);
+      return found ? { name: found.name, email: found.email } : {};
+    },
+  });
+
+  const viewedClientName = isMentor ? clientData?.name : adminClientData?.name;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -217,8 +247,8 @@ export default function AnalyticsPage() {
       <header className="border-b">
         <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="icon" data-testid="button-back-dashboard">
+            <Link href={isViewingOtherClient ? (isMentor ? `/therapist/clients/${viewingClientId}` : `/admin/clients/${viewingClientId}`) : "/dashboard"}>
+              <Button variant="ghost" size="icon" data-testid="button-back">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
@@ -227,8 +257,12 @@ export default function AnalyticsPage() {
                 <BarChart3 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <div className="font-semibold leading-tight">My Analytics</div>
-                <div className="text-xs text-muted-foreground">Track your recovery progress</div>
+                <div className="font-semibold leading-tight">
+                  {isViewingOtherClient ? `${viewedClientName || 'Client'}'s Analytics` : 'My Analytics'}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {isViewingOtherClient ? 'Client recovery progress' : 'Track your recovery progress'}
+                </div>
               </div>
             </div>
           </div>

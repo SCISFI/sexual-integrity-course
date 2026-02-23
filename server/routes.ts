@@ -799,133 +799,126 @@ export async function registerRoutes(
   });
 
   // Get check-in statistics for progress dashboard
-  app.get("/api/progress/checkin-stats", requireAuth, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const checkins = await storage.getUserCheckinHistory(userId, 365); // Get up to a year of data
+  function computeCheckinStats(checkins: Array<{ dateKey: string; moodLevel: number | null; urgeLevel: number | null }>) {
+    if (checkins.length === 0) {
+      return {
+        totalCheckins: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        averageMood: 0,
+        averageUrge: 0,
+        dailyCompletionRate: 0,
+        recentCheckins: [],
+      };
+    }
 
-      if (checkins.length === 0) {
-        return res.json({
-          totalCheckins: 0,
-          currentStreak: 0,
-          longestStreak: 0,
-          averageMood: 0,
-          averageUrge: 0,
-          dailyCompletionRate: 0,
-          recentCheckins: [],
-        });
-      }
+    const sortedDates = checkins.map((c) => c.dateKey).sort().reverse();
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 1;
+    const today = new Date().toISOString().split("T")[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-      // Calculate streaks
-      const sortedDates = checkins
-        .map((c) => c.dateKey)
-        .sort()
-        .reverse();
-      let currentStreak = 0;
-      let longestStreak = 0;
-      let tempStreak = 1;
-      const today = new Date().toISOString().split("T")[0];
-      const yesterday = new Date(Date.now() - 86400000)
-        .toISOString()
-        .split("T")[0];
-
-      // Check if there's a checkin today or yesterday to start streak
-      if (sortedDates[0] === today || sortedDates[0] === yesterday) {
-        currentStreak = 1;
-        for (let i = 1; i < sortedDates.length; i++) {
-          const prevDate = new Date(sortedDates[i - 1]);
-          const currDate = new Date(sortedDates[i]);
-          const diffDays = Math.round(
-            (prevDate.getTime() - currDate.getTime()) / 86400000,
-          );
-          if (diffDays === 1) {
-            currentStreak++;
-          } else {
-            break;
-          }
-        }
-      }
-
-      // Calculate longest streak
+    if (sortedDates[0] === today || sortedDates[0] === yesterday) {
+      currentStreak = 1;
       for (let i = 1; i < sortedDates.length; i++) {
         const prevDate = new Date(sortedDates[i - 1]);
         const currDate = new Date(sortedDates[i]);
-        const diffDays = Math.round(
-          (prevDate.getTime() - currDate.getTime()) / 86400000,
-        );
-        if (diffDays === 1) {
-          tempStreak++;
-        } else {
-          longestStreak = Math.max(longestStreak, tempStreak);
-          tempStreak = 1;
-        }
+        const diffDays = Math.round((prevDate.getTime() - currDate.getTime()) / 86400000);
+        if (diffDays === 1) { currentStreak++; } else { break; }
       }
-      longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
+    }
 
-      // Calculate averages
-      const moodValues = checkins
-        .filter((c) => c.moodLevel !== null)
-        .map((c) => c.moodLevel!);
-      const urgeValues = checkins
-        .filter((c) => c.urgeLevel !== null)
-        .map((c) => c.urgeLevel!);
-      const averageMood =
-        moodValues.length > 0
-          ? Math.round(
-              (moodValues.reduce((a, b) => a + b, 0) / moodValues.length) * 10,
-            ) / 10
-          : 0;
-      const averageUrge =
-        urgeValues.length > 0
-          ? Math.round(
-              (urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length) * 10,
-            ) / 10
-          : 0;
+    for (let i = 1; i < sortedDates.length; i++) {
+      const prevDate = new Date(sortedDates[i - 1]);
+      const currDate = new Date(sortedDates[i]);
+      const diffDays = Math.round((prevDate.getTime() - currDate.getTime()) / 86400000);
+      if (diffDays === 1) { tempStreak++; } else { longestStreak = Math.max(longestStreak, tempStreak); tempStreak = 1; }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
 
-      // Daily completion rate - percentage of days with check-ins
-      // Uses a 14-day window, but caps at days since first check-in for new users
-      const nowDate = new Date();
-      const oldestCheckinDate = checkins[0]?.dateKey
-        ? new Date(checkins[0].dateKey)
-        : nowDate;
-      const daysSinceStart = Math.max(
-        1,
-        Math.ceil(
-          (nowDate.getTime() - oldestCheckinDate.getTime()) / 86400000,
-        ) + 1,
-      );
-      const windowSize = Math.min(14, daysSinceStart);
+    const moodValues = checkins.filter((c) => c.moodLevel !== null).map((c) => c.moodLevel!);
+    const urgeValues = checkins.filter((c) => c.urgeLevel !== null).map((c) => c.urgeLevel!);
+    const averageMood = moodValues.length > 0 ? Math.round((moodValues.reduce((a, b) => a + b, 0) / moodValues.length) * 10) / 10 : 0;
+    const averageUrge = urgeValues.length > 0 ? Math.round((urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length) * 10) / 10 : 0;
 
-      const windowStart = new Date();
-      windowStart.setDate(windowStart.getDate() - windowSize + 1);
-      const recentDates = new Set(
-        checkins
-          .filter((c) => new Date(c.dateKey) >= windowStart)
-          .map((c) => c.dateKey),
-      );
-      const dailyCompletionRate = Math.round(
-        (recentDates.size / windowSize) * 100,
-      );
+    const nowDate = new Date();
+    const oldestCheckinDate = checkins[0]?.dateKey ? new Date(checkins[0].dateKey) : nowDate;
+    const daysSinceStart = Math.max(1, Math.ceil((nowDate.getTime() - oldestCheckinDate.getTime()) / 86400000) + 1);
+    const windowSize = Math.min(14, daysSinceStart);
 
-      // Get last 14 days for trend charts
-      const recentCheckins = checkins.slice(-14).map((c) => ({
-        date: c.dateKey,
-        mood: c.moodLevel,
-        urge: c.urgeLevel,
-      }));
+    const windowStart = new Date();
+    windowStart.setDate(windowStart.getDate() - windowSize + 1);
+    const recentDates = new Set(checkins.filter((c) => new Date(c.dateKey) >= windowStart).map((c) => c.dateKey));
+    const dailyCompletionRate = Math.round((recentDates.size / windowSize) * 100);
 
-      res.json({
-        totalCheckins: checkins.length,
-        currentStreak,
-        longestStreak,
-        averageMood,
-        averageUrge,
-        dailyCompletionRate,
-        recentCheckins,
-      });
+    const recentCheckins = checkins.slice(-14).map((c) => ({ date: c.dateKey, mood: c.moodLevel, urge: c.urgeLevel }));
+
+    return { totalCheckins: checkins.length, currentStreak, longestStreak, averageMood, averageUrge, dailyCompletionRate, recentCheckins };
+  }
+
+  app.get("/api/progress/checkin-stats", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const checkins = await storage.getUserCheckinHistory(userId, 365);
+      res.json(computeCheckinStats(checkins));
     } catch (error) {
       console.error("Get checkin stats error:", error);
       res.status(500).json({ message: "Failed to get checkin statistics" });
+    }
+  });
+
+  app.get("/api/therapist/clients/:clientId/checkin-stats", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const { clientId } = req.params;
+      const clients = await storage.getClientsForTherapist(therapistId);
+      if (!clients.some((c) => c.id === clientId)) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      const checkins = await storage.getUserCheckinHistory(clientId, 365);
+      res.json(computeCheckinStats(checkins));
+    } catch (error) {
+      console.error("Get client checkin stats error:", error);
+      res.status(500).json({ message: "Failed to get checkin statistics" });
+    }
+  });
+
+  app.get("/api/therapist/clients/:clientId/completions", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const { clientId } = req.params;
+      const clients = await storage.getClientsForTherapist(therapistId);
+      if (!clients.some((c) => c.id === clientId)) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      const completedWeeks = await storage.getCompletedWeeks(clientId);
+      res.json({ completedWeeks });
+    } catch (error) {
+      console.error("Get client completions error:", error);
+      res.status(500).json({ message: "Failed to get completions" });
+    }
+  });
+
+  app.get("/api/admin/clients/:clientId/checkin-stats", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const checkins = await storage.getUserCheckinHistory(clientId, 365);
+      res.json(computeCheckinStats(checkins));
+    } catch (error) {
+      console.error("Get admin client checkin stats error:", error);
+      res.status(500).json({ message: "Failed to get checkin statistics" });
+    }
+  });
+
+  app.get("/api/admin/clients/:clientId/completions-data", requireRole("admin"), async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const completedWeeks = await storage.getCompletedWeeks(clientId);
+      res.json({ completedWeeks });
+    } catch (error) {
+      console.error("Get admin client completions error:", error);
+      res.status(500).json({ message: "Failed to get completions" });
     }
   });
 
@@ -2330,66 +2323,14 @@ Write the summary now:`;
             reflections.find((r) => r.weekNumber === weekNumber) || null;
         }
 
-        // Build context for AI
+        // Build context for AI using pre-computed trend analysis
+        const { analyzeTrends, formatTrendReportForAI } = await import("./trendAnalysis");
+        const trendReport = analyzeTrends(
+          checkins.map((c) => ({ moodLevel: c.moodLevel ?? null, urgeLevel: c.urgeLevel ?? null, dateKey: c.dateKey }))
+        );
+        const trendStatsBlock = formatTrendReportForAI(trendReport);
+
         const recentCheckins = checkins.slice(0, 14);
-        const avgMood =
-          recentCheckins.length > 0
-            ? recentCheckins
-                .filter((c) => c.moodLevel)
-                .reduce((sum, c) => sum + (c.moodLevel || 0), 0) /
-              recentCheckins.filter((c) => c.moodLevel).length
-            : null;
-        const avgUrge =
-          recentCheckins.length > 0
-            ? recentCheckins
-                .filter((c) => c.urgeLevel)
-                .reduce((sum, c) => sum + (c.urgeLevel || 0), 0) /
-              recentCheckins.filter((c) => c.urgeLevel).length
-            : null;
-
-        // Trend analysis: compare first half to second half of recent data
-        const moodValues = recentCheckins
-          .filter((c) => c.moodLevel !== null)
-          .map((c) => c.moodLevel!);
-        const urgeValues = recentCheckins
-          .filter((c) => c.urgeLevel !== null)
-          .map((c) => c.urgeLevel!);
-        const olderMood = moodValues.slice(Math.floor(moodValues.length / 2));
-        const newerMood = moodValues.slice(
-          0,
-          Math.floor(moodValues.length / 2),
-        );
-        const olderUrge = urgeValues.slice(Math.floor(urgeValues.length / 2));
-        const newerUrge = urgeValues.slice(
-          0,
-          Math.floor(urgeValues.length / 2),
-        );
-        const moodTrend =
-          newerMood.length > 0 && olderMood.length > 0
-            ? newerMood.reduce((a, b) => a + b, 0) / newerMood.length >
-              olderMood.reduce((a, b) => a + b, 0) / olderMood.length
-              ? "improving"
-              : "declining"
-            : "stable";
-        const urgeTrend =
-          newerUrge.length > 0 && olderUrge.length > 0
-            ? newerUrge.reduce((a, b) => a + b, 0) / newerUrge.length <
-              olderUrge.reduce((a, b) => a + b, 0) / olderUrge.length
-              ? "improving"
-              : "increasing"
-            : "stable";
-
-        // Check-in consistency
-        const last14Days = Array.from({ length: 14 }, (_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          return d.toISOString().split("T")[0];
-        });
-        const checkinDates = new Set(checkins.map((c) => c.dateKey));
-        const consistencyRate = Math.round(
-          (last14Days.filter((d) => checkinDates.has(d)).length / 14) * 100,
-        );
-
         const journalEntries = recentCheckins
           .filter((c) => c.journalEntry)
           .map((c) => c.journalEntry)
@@ -2419,15 +2360,9 @@ Write the summary now:`;
 
         let contextInfo = `Client: ${clientName}
 Completed weeks: ${completedWeeks.length} of 16
-`;
 
-        if (avgMood !== null) {
-          contextInfo += `Recent average mood: ${avgMood.toFixed(1)}/10 (trend: ${moodTrend})\n`;
-        }
-        if (avgUrge !== null) {
-          contextInfo += `Recent average urge level: ${avgUrge.toFixed(1)}/10 (trend: ${urgeTrend})\n`;
-        }
-        contextInfo += `Check-in consistency (14 days): ${consistencyRate}%\n`;
+${trendStatsBlock}
+`;
 
         if (weekReflection) {
           contextInfo += `\nWeek ${weekNumber} Reflection:\n`;
@@ -2467,7 +2402,8 @@ Guidelines:
 - Speak directly to the client using "you" language
 - Be direct yet encouraging and supportive
 - Reference specific details from their reflections or journal entries when available
-- Acknowledge their progress and effort, referencing specific trends (mood improving/declining, urge trends, check-in consistency)
+- Acknowledge their progress and effort based ONLY on the pre-computed statistics provided above
+- CRITICAL: Do NOT contradict the statistics. If mood/urge is described as "stable" or "consistently at X", do NOT describe it as improving or declining. If data is "insufficient", say more data is needed.
 - If there is relapse history, sensitively reference patterns and how the client's current progress relates to their recovery journey
 - Offer gentle guidance or suggestions based on their challenges
 - Keep the message focused and under 250 words
@@ -3612,40 +3548,13 @@ Write the feedback message now:`;
             .json({ message: "Check-in not found for this date." });
         }
 
-        // 2. Format the history into a trend summary with analysis
-        const trendSummary = history.map((h) => ({
-          date: h.dateKey,
-          mood: h.moodLevel,
-          urge: h.urgeLevel,
-        }));
+        // 2. Pre-compute trend analysis using utility
+        const { analyzeTrends, formatTrendReportForAI } = await import("./trendAnalysis");
+        const checkinTrendReport = analyzeTrends(
+          history.map((c) => ({ moodLevel: c.moodLevel ?? null, urgeLevel: c.urgeLevel ?? null, dateKey: c.dateKey }))
+        );
+        const checkinTrendStatsBlock = formatTrendReportForAI(checkinTrendReport);
 
-        // Trend analysis
-        const moodVals = history
-          .filter((c) => c.moodLevel !== null)
-          .map((c) => c.moodLevel!);
-        const urgeVals = history
-          .filter((c) => c.urgeLevel !== null)
-          .map((c) => c.urgeLevel!);
-        const olderMood = moodVals.slice(Math.floor(moodVals.length / 2));
-        const newerMood = moodVals.slice(0, Math.floor(moodVals.length / 2));
-        const olderUrge = urgeVals.slice(Math.floor(urgeVals.length / 2));
-        const newerUrge = urgeVals.slice(0, Math.floor(urgeVals.length / 2));
-        const moodDirection =
-          newerMood.length > 0 && olderMood.length > 0
-            ? newerMood.reduce((a, b) => a + b, 0) / newerMood.length >
-              olderMood.reduce((a, b) => a + b, 0) / olderMood.length
-              ? "improving"
-              : "declining"
-            : "stable";
-        const urgeDirection =
-          newerUrge.length > 0 && olderUrge.length > 0
-            ? newerUrge.reduce((a, b) => a + b, 0) / newerUrge.length <
-              olderUrge.reduce((a, b) => a + b, 0) / olderUrge.length
-              ? "improving (decreasing)"
-              : "worsening (increasing)"
-            : "stable";
-
-        // Relapse context
         const completedAutopsies = relapseHistory.filter(
           (a) => a.status === "completed",
         );
@@ -3661,18 +3570,7 @@ ${completedAutopsies
   .join("\n")}`;
         }
 
-        // Check-in consistency
-        const last14 = Array.from({ length: 14 }, (_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          return d.toISOString().split("T")[0];
-        });
-        const checkinSet = new Set(history.map((c) => c.dateKey));
-        const consistency = Math.round(
-          (last14.filter((d) => checkinSet.has(d)).length / 14) * 100,
-        );
-
-        // 3. AI Prompt with enhanced trend awareness
+        // 3. AI Prompt with pre-computed trend awareness
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({
           apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
@@ -3690,19 +3588,16 @@ ${completedAutopsies
         - Urge: ${specificCheckin.urgeLevel}/10
         - Journal: "${specificCheckin.journalEntry || "No entry"}"
 
-        PAST 30-DAY TRENDS:
-        ${JSON.stringify(trendSummary)}
-        - Mood trend: ${moodDirection}
-        - Urge trend: ${urgeDirection}
-        - Check-in consistency (14 days): ${consistency}%
+        ${checkinTrendStatsBlock}
         ${relapseContext}
 
         INSTRUCTIONS:
         1. Write a 2-3 sentence encouraging comment.
-        2. Specifically reference how today's mood or urge compares to their past month's trends (mention if improving, declining, or stable).
-        3. If there is relapse history, sensitively reference patterns and how today's check-in relates to known triggers or risk factors.
-        4. Mention check-in consistency if notably high or low.
-        5. End with a specific, supportive action.
+        2. Reference how today's mood or urge compares to the pre-computed statistics above.
+        3. CRITICAL: Do NOT contradict the statistics. If a metric is described as "stable" or "consistently at X", do NOT say it is improving or declining. If data is "insufficient", state that more data is needed.
+        4. If there is relapse history, sensitively reference patterns and how today's check-in relates to known triggers or risk factors.
+        5. Mention check-in consistency if notably high or low.
+        6. End with a specific, supportive action.
       `;
 
         const response = await ai.models.generateContent({
@@ -3912,26 +3807,12 @@ ${completedAutopsies
           }
         }
 
-        const recentMoodTrend = checkins
-          .slice(0, 14)
-          .filter((c) => c.moodLevel !== null);
-        const recentUrgeTrend = checkins
-          .slice(0, 14)
-          .filter((c) => c.urgeLevel !== null);
-        if (recentMoodTrend.length > 0) {
-          const avgMood = (
-            recentMoodTrend.reduce((s, c) => s + (c.moodLevel || 0), 0) /
-            recentMoodTrend.length
-          ).toFixed(1);
-          trendAnalysis.push(`Recent 14-day avg mood: ${avgMood}/10`);
-        }
-        if (recentUrgeTrend.length > 0) {
-          const avgUrge = (
-            recentUrgeTrend.reduce((s, c) => s + (c.urgeLevel || 0), 0) /
-            recentUrgeTrend.length
-          ).toFixed(1);
-          trendAnalysis.push(`Recent 14-day avg urge: ${avgUrge}/10`);
-        }
+        const { analyzeTrends, formatTrendReportForAI } = await import("./trendAnalysis");
+        const autopsyTrendReport = analyzeTrends(
+          checkins.map((c) => ({ moodLevel: c.moodLevel ?? null, urgeLevel: c.urgeLevel ?? null, dateKey: c.dateKey }))
+        );
+        const autopsyTrendStatsBlock = formatTrendReportForAI(autopsyTrendReport);
+        trendAnalysis.push(autopsyTrendStatsBlock);
 
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({
@@ -3979,9 +3860,10 @@ INSTRUCTIONS:
 4. Validate their identified warning signs and suggest additions based on patterns you see.
 5. Affirm their action plan and add specific, practical suggestions.
 6. Reference their mood/urge trends from check-in data if relevant.
-7. Keep the tone urgent but supportive — this needs immediate, caring attention.
-8. Under 300 words. Speak directly to the client using "you" language.
-9. Do not provide medical advice or crisis intervention.`;
+7. CRITICAL: Do NOT contradict the pre-computed statistics in the TREND ANALYSIS section. If a metric is described as "stable" or "consistently at X", do NOT say it is improving or declining.
+8. Keep the tone urgent but supportive — this needs immediate, caring attention.
+9. Under 300 words. Speak directly to the client using "you" language.
+10. Do not provide medical advice or crisis intervention.`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",

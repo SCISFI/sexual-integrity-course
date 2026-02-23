@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw, ListChecks, Send, Pencil, X, Save } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw, ListChecks, Send, Pencil, X, Save, BarChart3 } from "lucide-react";
 import { getPromptForDate } from "@/data/journal-prompts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -203,6 +203,15 @@ export default function AdminClientPage() {
                 <Badge variant="secondary">All Fees Waived</Badge>
               )}
               <Badge variant="outline">{completedWeeks.length} / 16 Weeks Completed</Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation(`/analytics/${clientId}`)}
+                data-testid="button-view-analytics"
+              >
+                <BarChart3 className="mr-2 h-4 w-4" />
+                View Analytics
+              </Button>
             </div>
           </CardContent>
         </Card>
