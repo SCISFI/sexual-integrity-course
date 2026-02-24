@@ -1,0 +1,176 @@
+Good catch.
+
+You’re right.
+
+For most men, Week One doesn’t begin with curiosity.
+It begins with **exposure, discovery, confrontation, or emotional distance from a partner**.
+
+If the crisis moment isn’t named, the man feels half-understood.
+
+Below is a clean, implementation-ready prompt you can give your app designer. It is specific, directive, and structured for product execution.
+
+---
+
+## 📌 Prompt for App Designer
+
+We need to revise Week 1 to explicitly anchor the content in the partner/spouse crisis moment that brought most users here.
+
+This is not optional. It is central to engagement and retention.
+
+### Objective
+
+Position Week 1 as a response to relational rupture — not just compulsive behavior.
+
+Most users arrive after:
+
+* Being discovered
+* Confessing
+* Being confronted
+* Being threatened with separation
+* Experiencing emotional distance from their partner
+
+Week 1 must name this clearly.
+
+---
+
+## 🔹 Required Structural Changes
+
+### 1. Insert a New Opening Section (Above All Clinical Content)
+
+Title:
+
+**“If You’re Here Because Something Broke…”**
+
+Content should:
+
+* Directly acknowledge discovery or confrontation
+* Validate the emotional shock of a partner’s reaction
+* Normalize panic, fear, and relational instability
+* Avoid blaming the partner
+* Avoid shaming the user
+* Emphasize that crisis can become clarity
+
+Tone:
+Direct. Calm. Grounded. Not dramatic.
+
+Example anchor language:
+
+* “If your partner discovered something…”
+* “If trust was shaken…”
+* “If you’re here because someone you love is hurting…”
+
+Close the section with:
+
+> “This program is not just about stopping behavior.
+> It is about rebuilding integrity in relationship.”
+
+---
+
+### 2. Add a Relational Reflection Block
+
+Insert immediately after the addiction cycle section.
+
+Title:
+
+**“Relational Impact”**
+
+Prompt users to reflect on:
+
+* How has this affected my partner?
+* What has this done to trust?
+* What has this done to emotional safety?
+* What do I imagine my partner is feeling right now?
+
+Important:
+Do not make this accusatory.
+Make it awareness-based.
+
+---
+
+### 3. Add a Partner-Focused Exercise
+
+Title:
+
+**“Rebuilding Begins With Understanding”**
+
+Short exercise:
+
+* What does my partner need most right now?
+* What am I afraid they will never feel again?
+* What would rebuilding trust require from me?
+
+This should not turn into apology scripting.
+It should promote ownership and emotional awareness.
+
+---
+
+### 4. Tie Crisis to the Loneliness Framework
+
+Add a bridging paragraph:
+
+Most men interpret discovery as the problem.
+
+But the real problem began long before discovery — in isolation.
+
+Position crisis as:
+
+Isolation exposed.
+
+---
+
+### 5. Update Week 1 Commitment Statement
+
+Replace generic commitment with:
+
+> “I am willing to confront my patterns and rebuild integrity in my relationships.”
+
+The checkbox remains sacred.
+No automation changes.
+
+---
+
+## 🔹 UX Requirements
+
+* This crisis section must appear before diagnostic language.
+* Avoid overwhelming with text.
+* Use short paragraphs and white space.
+* Avoid clinical jargon in the opening section.
+* Keep tone steady and regulated.
+
+---
+
+## 🔹 Clinical Guardrails
+
+* Do not assign blame to partner.
+* Do not promise relationship repair.
+* Do not imply reconciliation is guaranteed.
+* Keep responsibility with the user.
+
+---
+
+## End Goal
+
+Week 1 should feel like:
+
+Recognition
+Ownership
+Relational awareness
+Hope grounded in responsibility
+
+Not:
+
+Education
+Diagnosis
+Information
+
+---
+
+If you implement this correctly, the user should feel:
+
+“I am here because something broke.
+This program understands that.
+And it knows what to do next.”
+
+---
+
+If you'd like, I can also draft the exact relational opening text so your designer doesn’t have to interpret tone.

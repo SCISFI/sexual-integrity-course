@@ -1,0 +1,44 @@
+You are absolutely right, and that is a massive blind spot we just uncovered. The original notes mentioned replacing the clinical definition with "If You're Here, It's Probably Because..." to meet him where he is. But meeting him where he is means acknowledging the fallout. Men rarely tackle this in a vacuum; they tackle it because the collateral damage finally hit the person sleeping next to them.
+
+Anchoring the hook to that specific crisis moment—the discovery, the confession, the ultimatum—gives Week 1 the exact gravity it needs.
+
+Here is a comprehensive prompt you can hand directly to your app designer to ensure this is executed perfectly:
+
+---
+
+### UI/UX Design Brief: Week 1 Crisis Hook ("The Catalyst")
+
+**Context for Designer:** This screen is the critical hook for Week 1 of "The Integrity Protocol". The target audience is men dealing with problematic sexual behavior who have just experienced a major relationship crisis (discovery, betrayal, ultimatum) involving their spouse or partner.
+
+**The Goal:** We need a visually arresting UI component (a hero section or a standalone card) that immediately follows the opening. It must visually represent the weight of the relationship crisis without using cheesy stock photos of fighting couples or people crying. It needs to feel sobering, private, and deeply resonant.
+
+**Vibe & Tone:** High-stakes, secure, empathetic but unflinching. Use our established dark mode or muted "slate" palette.
+
+**Design Requirements:**
+
+* **Layout:** A distinct, elevated card or a stark, full-width section with heavy padding/white space to force the user to slow down and read it.
+* **Typography:** The headline should be bold and commanding. The subtext should use a highly readable, slightly muted font to lower the cognitive load.
+* **Iconography/Visuals:** Do NOT use stock photography. Instead, use a minimalist, conceptual line-art graphic.
+* *Ideas:* Two subtle, divergent lines; a minimalist representation of a ring; a fractured circle; or simply a stark, empty chair. It should symbolize connection under severe strain.
+
+
+* **Interactive Element:** A slow-fade or delayed reveal for the text could work well here to build tension, but keep it subtle.
+
+**The Copy to Insert into the Design:**
+
+> **Headline:** The Crisis Point.
+> 
+> 
+> **Body:** If you are here, it’s probably because the hiding stopped working. The browser history, the promises, the isolation—it finally collided with the person closest to you.
+> 
+> 
+> You aren't just here to fix a habit. You are here because of the look in her eyes when the truth broke through.
+> **Button/Call to Action:** "Acknowledge the Catalyst" (This button transitions them to the first reflection).
+
+---
+
+### Why this prompt works for your designer:
+
+It gives them the exact emotional constraints they need. Designers often default to standard "wellness" tropes (like mountains or abstract calm colors) or overly dramatic "depression" tropes (dark rooms, sad faces). This explicitly tells them to aim for a premium, serious, and conceptual middle ground.
+
+Since I have the ability to generate images, would you like me to run a version of this prompt through my image generator so you have a visual concept to hand your designer alongside the text?
