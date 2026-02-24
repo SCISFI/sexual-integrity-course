@@ -180,6 +180,23 @@ export default function TherapistClient() {
     },
   });
 
+  const submitWeekReviewMutation = useMutation({
+    mutationFn: async (weekNumber: number) => {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/review/${weekNumber}`, { reviewNotes: "" });
+      if (!res.ok) throw new Error("Failed to submit week review");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/pending-reviews'] });
+      toast({ title: "Week reviewed successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to submit week review", variant: "destructive" });
+    },
+  });
+
   const { data: summariesData } = useQuery<{ summaries: Array<{ weekNumber: number; createdAt: string | null }> }>({
     queryKey: ['/api/therapist/clients', clientId, 'weekly-summaries'],
     queryFn: async () => {
@@ -704,26 +721,30 @@ export default function TherapistClient() {
                             const hw = homeworkCompletions.find(h => h.weekNumber === weekNum);
                             const totalItems = weekContent?.homeworkChecklist?.length || 0;
                             const completedItems = hw ? (Array.isArray(hw.completedItems) ? hw.completedItems.length : JSON.parse(hw.completedItems as any || '[]').length) : 0;
+                            const needsReview = status === "completed" && !reviewedWeekNumbers.has(weekNum);
                             return (
                               <div
                                 key={weekNum}
                                 className={`flex flex-col items-center justify-center rounded-lg border p-3 ${
-                                  status === "completed"
-                                    ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
-                                    : status === "available"
-                                      ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950"
-                                      : "border-muted bg-muted/30"
+                                  needsReview
+                                    ? "border-amber-400 border-2 bg-amber-50 dark:border-amber-500 dark:bg-amber-950 ring-1 ring-amber-300 dark:ring-amber-600"
+                                    : status === "completed"
+                                      ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
+                                      : status === "available"
+                                        ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950"
+                                        : "border-muted bg-muted/30"
                                 }`}
                                 data-testid={`week-status-${weekNum}`}
                               >
                                 <span className="text-xs text-muted-foreground">Week</span>
                                 <span className="font-bold">{weekNum}</span>
-                                {status === "completed" && (
+                                {needsReview ? (
+                                  <Eye className="mt-1 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                ) : status === "completed" ? (
                                   <CheckCircle2 className="mt-1 h-4 w-4 text-green-600 dark:text-green-400" />
-                                )}
-                                {status === "available" && (
+                                ) : status === "available" ? (
                                   <Clock className="mt-1 h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                )}
+                                ) : null}
                                 {totalItems > 0 && (status === "completed" || status === "available") && (
                                   <span className={`text-[10px] mt-1 ${completedItems === totalItems ? 'text-green-600 dark:text-green-400 font-bold' : 'text-muted-foreground'}`}>
                                     HW: {completedItems}/{totalItems}
@@ -733,6 +754,56 @@ export default function TherapistClient() {
                             );
                           })}
                         </div>
+
+                        {pendingWeekReviewCount > 0 && (
+                          <Card className="border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-950/30">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-base flex items-center gap-2">
+                                <Eye className="h-4 w-4 text-amber-600" />
+                                Weeks Needing Review ({pendingWeekReviewCount})
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                {completedWeeks.filter(w => !reviewedWeekNumbers.has(w)).sort((a, b) => a - b).map(weekNum => {
+                                  const weekContent = WEEK_CONTENT[weekNum];
+                                  const hasReflection = reflections.some(r => r.weekNumber === weekNum);
+                                  const hasExercise = exerciseAnswers.some(e => e.weekNumber === weekNum);
+                                  return (
+                                    <div key={weekNum} className="flex items-center justify-between rounded-lg border bg-card p-3" data-testid={`pending-review-week-${weekNum}`}>
+                                      <div className="flex items-center gap-3">
+                                        <span className="font-bold text-sm">Week {weekNum}</span>
+                                        <span className="text-xs text-muted-foreground">{weekContent?.title || ""}</span>
+                                        <div className="flex gap-1">
+                                          {hasReflection && <Badge variant="outline" className="text-[10px] h-5">Reflection</Badge>}
+                                          {hasExercise && <Badge variant="outline" className="text-[10px] h-5">Exercise</Badge>}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => setActiveTab("reflections")}
+                                          data-testid={`button-view-week-${weekNum}`}
+                                        >
+                                          <FileText className="mr-1 h-3.5 w-3.5" /> View Work
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => submitWeekReviewMutation.mutate(weekNum)}
+                                          disabled={submitWeekReviewMutation.isPending}
+                                          data-testid={`button-review-week-${weekNum}`}
+                                        >
+                                          <CheckSquare className="mr-1 h-3.5 w-3.5" /> Mark Reviewed
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
                       </div>
                     )}
                   </CardContent>
