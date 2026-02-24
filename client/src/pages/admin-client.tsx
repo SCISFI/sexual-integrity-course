@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, RotateCcw, ListChecks, Send, Pencil, X, Save, BarChart3 } from "lucide-react";
 import { getPromptForDate } from "@/data/journal-prompts";
+import { WEEK_CONTENT } from "@/data/curriculum";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -347,30 +348,21 @@ export default function AdminClientPage() {
                       >
                         <h4 className="font-medium mb-3">Week {reflection.weekNumber}</h4>
                         <div className="space-y-3">
-                          {reflection.q1 && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Key insight</p>
-                              <p className="text-sm">{reflection.q1}</p>
-                            </div>
-                          )}
-                          {reflection.q2 && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">What went well</p>
-                              <p className="text-sm">{reflection.q2}</p>
-                            </div>
-                          )}
-                          {reflection.q3 && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Challenges faced</p>
-                              <p className="text-sm">{reflection.q3}</p>
-                            </div>
-                          )}
-                          {reflection.q4 && (
-                            <div>
-                              <p className="text-xs text-muted-foreground">Goals for next week</p>
-                              <p className="text-sm">{reflection.q4}</p>
-                            </div>
-                          )}
+                          {(() => {
+                            const weekData = WEEK_CONTENT[reflection.weekNumber];
+                            const rqs = weekData?.reflectionQuestions || [];
+                            const defaultLabels = ["Key insight", "What went well", "Challenges faced", "Goals for next week"];
+                            return [reflection.q1, reflection.q2, reflection.q3, reflection.q4].map((answer, idx) => {
+                              if (!answer) return null;
+                              const label = rqs[idx]?.question || defaultLabels[idx];
+                              return (
+                                <div key={idx}>
+                                  <p className="text-xs text-muted-foreground">{label}</p>
+                                  <p className="text-sm">{answer}</p>
+                                </div>
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
                     ))}

@@ -1056,30 +1056,21 @@ export default function TherapistClient() {
                                 </div>
                               </div>
                               <div className="space-y-3">
-                                {reflection.q1 && (
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Key insight from this week</p>
-                                    <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q1}</p>
-                                  </div>
-                                )}
-                                {reflection.q2 && (
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">What went well</p>
-                                    <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q2}</p>
-                                  </div>
-                                )}
-                                {reflection.q3 && (
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Challenges faced</p>
-                                    <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q3}</p>
-                                  </div>
-                                )}
-                                {reflection.q4 && (
-                                  <div>
-                                    <p className="text-xs text-muted-foreground">Goals for next week</p>
-                                    <p className="text-sm bg-muted/50 p-2 rounded">{reflection.q4}</p>
-                                  </div>
-                                )}
+                                {(() => {
+                                  const weekData = WEEK_CONTENT[reflection.weekNumber];
+                                  const rqs = weekData?.reflectionQuestions || [];
+                                  const defaultLabels = ["Key insight from this week", "What went well", "Challenges faced", "Goals for next week"];
+                                  return [reflection.q1, reflection.q2, reflection.q3, reflection.q4].map((answer, idx) => {
+                                    if (!answer) return null;
+                                    const label = rqs[idx]?.question || defaultLabels[idx];
+                                    return (
+                                      <div key={idx}>
+                                        <p className="text-xs text-muted-foreground">{label}</p>
+                                        <p className="text-sm bg-muted/50 p-2 rounded">{answer}</p>
+                                      </div>
+                                    );
+                                  });
+                                })()}
                               </div>
 
                               {answerEntries.length > 0 && (
@@ -1105,12 +1096,26 @@ export default function TherapistClient() {
                                     )}
                                   </div>
                                   <div className="space-y-2">
-                                    {answerEntries.map(([key, value]) => (
-                                      <div key={key}>
-                                        <p className="text-xs text-muted-foreground">{key.replace(/-/g, ' ')}</p>
-                                        <p className="text-sm bg-muted/50 p-2 rounded">{value}</p>
-                                      </div>
-                                    ))}
+                                    {answerEntries.map(([key, value]) => {
+                                      const weekData = WEEK_CONTENT[reflection.weekNumber];
+                                      let fieldLabel = key.replace(/-/g, ' ');
+                                      if (weekData?.exercises) {
+                                        for (const ex of weekData.exercises) {
+                                          for (const f of ex.fields) {
+                                            if (`${ex.id}-${f.id}` === key) {
+                                              fieldLabel = f.label;
+                                              break;
+                                            }
+                                          }
+                                        }
+                                      }
+                                      return (
+                                        <div key={key}>
+                                          <p className="text-xs text-muted-foreground">{fieldLabel}</p>
+                                          <p className="text-sm bg-muted/50 p-2 rounded">{value}</p>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}
