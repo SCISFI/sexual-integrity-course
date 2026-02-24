@@ -423,10 +423,10 @@ export default function TherapistClient() {
             </Card>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="progress" data-testid="tab-progress">Progress</TabsTrigger>
-                <TabsTrigger value="checkins" data-testid="tab-checkins" className="relative">
+              <TabsList className="flex w-full overflow-x-auto flex-nowrap">
+                <TabsTrigger value="analytics" data-testid="tab-analytics" className="flex-1">Analytics</TabsTrigger>
+                <TabsTrigger value="progress" data-testid="tab-progress" className="flex-1">Progress</TabsTrigger>
+                <TabsTrigger value="checkins" data-testid="tab-checkins" className="relative flex-1">
                   Check-ins
                   {getUnreviewedCount() > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-unreviewed-items">
@@ -434,7 +434,7 @@ export default function TherapistClient() {
                     </span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="autopsies" data-testid="tab-autopsies" className="relative">
+                <TabsTrigger value="autopsies" data-testid="tab-autopsies" className="relative flex-1">
                   Autopsies
                   {unreviewedAutopsies.length > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white animate-pulse" data-testid="badge-unreviewed-autopsies">
@@ -442,9 +442,9 @@ export default function TherapistClient() {
                     </span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="reflections" data-testid="tab-reflections">Reflections</TabsTrigger>
-                <TabsTrigger value="feedback" data-testid="tab-feedback">Feedback</TabsTrigger>
-                <TabsTrigger value="reports" data-testid="tab-reports">Reports</TabsTrigger>
+                <TabsTrigger value="reflections" data-testid="tab-reflections" className="flex-1">Reflections</TabsTrigger>
+                <TabsTrigger value="feedback" data-testid="tab-feedback" className="flex-1">Feedback</TabsTrigger>
+                <TabsTrigger value="reports" data-testid="tab-reports" className="flex-1">Reports</TabsTrigger>
               </TabsList>
 
               <TabsContent value="analytics" className="space-y-4">
