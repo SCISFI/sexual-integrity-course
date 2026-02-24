@@ -195,6 +195,26 @@ export default function Dashboard() {
     return completedWeeks.length > 0 ? Math.max(...completedWeeks) : 1;
   }, [unlockedWeeks, completedWeeks]);
 
+  const generateStaffDraft = async () => {
+    if (!draftClientId || !draftFocus) return;
+    setDraftLoading(true);
+    setDraftText("");
+    try {
+      const res = await apiRequest("POST", "/api/ai/staff-draft", {
+        clientId: draftClientId,
+        focus: draftFocus,
+        tone: draftTone,
+        constraints: draftConstraints,
+      });
+      const data = await res.json();
+      setDraftText(data.draft || "No draft generated.");
+    } catch (err) {
+      setDraftText("Failed to generate draft. Please try again.");
+    } finally {
+      setDraftLoading(false);
+    }
+  };
+
   const resumeCurrentWeek = () => {
     setLocation(`/week/${nextAvailableWeek}`);
   };
@@ -202,7 +222,10 @@ export default function Dashboard() {
   if (isLoading || isAuthenticating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading…</div>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -211,9 +234,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-6xl px-6 py-2 text-xs text-red-600">
-        BUILD MARKER: therapist-home.tsx is rendering (remove me after test)
-      </div>
       {isStaff && (
         <Card className="mb-6">
           <CardHeader>
@@ -428,6 +448,16 @@ export default function Dashboard() {
 
       {/* Main */}
       <main className="mx-auto max-w-4xl px-4 py-6 space-y-6">
+        {/* Welcome greeting */}
+        <div data-testid="text-welcome-greeting">
+          <h1 className="text-2xl font-bold">
+            Welcome back, {(user as any)?.name?.split(' ')[0] || 'there'}
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Here's your program progress and daily tools.
+          </p>
+        </div>
+
         {/* My Program */}
         <Card>
           <CardHeader className="gap-3">

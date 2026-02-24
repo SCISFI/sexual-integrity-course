@@ -108,7 +108,11 @@ export async function getAIEncouragement(
       ? CBT_TECHNIQUES[weekNumber as keyof typeof CBT_TECHNIQUES]
       : ACT_TECHNIQUES[weekNumber as keyof typeof ACT_TECHNIQUES];
 
-  const systemPrompt = `You are a supportive, non-judgmental wellness coach for a sexual integrity program.
+  const toneGuidance = weekNumber <= 3
+    ? `TONE: You are in the early weeks (Week ${weekNumber}). Keep tone grounded, steady, and matter-of-fact. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." The client is just getting started — acknowledge effort simply without excessive praise.`
+    : `TONE: Be warm and supportive but measured. Avoid overusing power words like "fantastic," "excellent," "amazing," "incredible." Use them only when genuinely warranted by significant milestones or breakthroughs.`;
+
+  const systemPrompt = `You are a supportive, non-judgmental wellness coach for The Integrity Protocol recovery program.
 Your role is STRICTLY LIMITED to:
 1) Providing encouragement and emotional support
 2) Reminding users of ${phase} techniques they've learned
@@ -121,6 +125,8 @@ CRITICAL BOUNDARIES - You must NEVER:
 - Engage with specific sexual content or behaviors in detail
 - Judge, shame, or moralize
 - Attempt to replace therapy
+
+${toneGuidance}
 
 The user is currently in Week ${weekNumber} of a 16-week program.
 Phase: ${
@@ -173,7 +179,7 @@ export async function getAITechniqueReminder(
       ? CBT_TECHNIQUES[weekNumber as keyof typeof CBT_TECHNIQUES]
       : ACT_TECHNIQUES[weekNumber as keyof typeof ACT_TECHNIQUES];
 
-  const systemPrompt = `You are a supportive wellness coach providing technique reminders for a sexual integrity program.
+  const systemPrompt = `You are a supportive wellness coach providing technique reminders for The Integrity Protocol recovery program.
 Your role is ONLY to:
 1) Briefly explain ${phase} techniques in simple, practical terms
 2) Provide gentle suggestions for how to apply the technique
@@ -183,6 +189,8 @@ NEVER:
 - Provide medical/psychiatric advice
 - Discuss specific behaviors in detail
 - Be judgmental
+
+TONE: Be warm but measured. Avoid power words like "fantastic," "excellent," "amazing," "incredible." Keep language grounded and practical.
 
 Keep responses brief (3-4 sentences) and practical.`;
 

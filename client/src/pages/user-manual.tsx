@@ -77,7 +77,7 @@ export default function UserManualPage() {
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <p>
-                  The Sexual Integrity Program is a 16-week, clinically-informed curriculum designed to help
+                  The Integrity Protocol is a 16-week, clinically-informed curriculum designed to help
                   individuals understand and overcome Compulsive Sexual Behavior Disorder (CSBD). The program
                   is divided into two phases:
                 </p>

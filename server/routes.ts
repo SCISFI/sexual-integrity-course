@@ -64,7 +64,7 @@ function startNudgeScheduler() {
             },
           });
 
-          const prompt = `Write a short, warm, encouraging message (2-3 sentences) for someone in a recovery program who hasn't checked in for ${daysSince} days. Be supportive, not judgmental. Don't mention specific details about their program. Focus on the value of showing up and the strength it takes to continue. Do not provide medical advice.`;
+          const prompt = `Write a short, warm message (2-3 sentences) for someone in The Integrity Protocol recovery program who hasn't checked in for ${daysSince} days. Be supportive, not judgmental. Don't mention specific details about their program. Focus on the value of showing up and the strength it takes to continue. Do not provide medical advice. TONE: Keep language grounded and measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." Simple, honest encouragement only.`;
 
           const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -76,9 +76,9 @@ function startNudgeScheduler() {
             "Every day is a new opportunity. We're here for you whenever you're ready to check in.";
 
           const loginUrl = process.env.REPLIT_DEV_DOMAIN
-            ? `https://${process.env.REPLIT_DEV_DOMAIN}/login`
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}/login?redirect=/daily-checkin`
             : process.env.REPLIT_DOMAINS
-              ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}/login`
+              ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}/login?redirect=/daily-checkin`
               : undefined;
 
           const { sendNudgeEmail } = await import("./emailService");
@@ -1894,7 +1894,7 @@ export async function registerRoutes(
           },
         });
 
-        const prompt = `You are a professional mentor writing a weekly progress summary report for a client in a Sexual Integrity recovery program. This summary will be included in a formal PDF report.
+        const prompt = `You are a professional mentor writing a weekly progress summary report for a client in The Integrity Protocol recovery program. This summary will be included in a formal PDF report.
 
 ${contextInfo}
 
@@ -1907,6 +1907,7 @@ Write a comprehensive but concise weekly summary (200-300 words) that includes:
 6. An encouraging closing statement
 
 Tone: Professional, warm, and supportive. Write in third person ("The client..." or use their name).
+${Number(weekNumber) <= 3 ? 'IMPORTANT: This is an early week (Week ' + weekNumber + '). Keep tone grounded and steady. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." The client is just beginning — acknowledge effort simply without excessive praise.' : 'Avoid overusing power words like "fantastic," "excellent," "amazing." Use them only when genuinely warranted by significant progress.'}
 Do not provide medical advice. This is an educational program, not therapy.
 
 Write the summary now:`;
@@ -2257,6 +2258,24 @@ Write the summary now:`;
           } else if (feedbackType === 'week' && weekNumber) {
             await storage.markItemReviewed(therapistId, clientId, 'reflection', String(weekNumber));
             await storage.markItemReviewed(therapistId, clientId, 'exercise', String(weekNumber));
+            // Also mark all check-ins within this week's date range as reviewed
+            try {
+              const clientData = await storage.getUser(clientId);
+              if (clientData?.startDate) {
+                const startMs = new Date(clientData.startDate).getTime();
+                const weekStartMs = startMs + (weekNumber - 1) * 7 * 86400000;
+                const weekEndMs = weekStartMs + 7 * 86400000;
+                const allCheckins = await storage.getUserCheckinHistory(clientId, 365);
+                for (const c of allCheckins) {
+                  const cMs = new Date(c.dateKey).getTime();
+                  if (cMs >= weekStartMs && cMs < weekEndMs) {
+                    await storage.markItemReviewed(therapistId, clientId, 'checkin', c.dateKey);
+                  }
+                }
+              }
+            } catch (weekCheckinErr) {
+              console.error("Auto-mark week check-ins error (non-fatal):", weekCheckinErr);
+            }
           }
         } catch (reviewErr) {
           console.error("Auto-mark reviewed error (non-fatal):", reviewErr);
@@ -2394,7 +2413,7 @@ ${trendStatsBlock}
           });
         }
 
-        const prompt = `You are a supportive mentor providing feedback to a client in a Sexual Integrity recovery program. Based on the following client information, write a personalized, encouraging feedback message.
+        const prompt = `You are a supportive mentor providing feedback to a client in The Integrity Protocol recovery program. Based on the following client information, write a personalized, encouraging feedback message.
 
 ${contextInfo}
 
@@ -2409,6 +2428,7 @@ Guidelines:
 - Keep the message focused and under 250 words
 - Do not provide medical advice or crisis intervention
 - End with an encouraging note about their continued journey
+${Number(weekNumber) <= 3 ? '- TONE: This is an early week (Week ' + weekNumber + '). Keep tone grounded and steady. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." Acknowledge effort simply.' : '- TONE: Be warm and supportive but measured. Avoid overusing power words like "fantastic," "excellent," "amazing." Reserve them for genuinely significant milestones.'}
 
 Write the feedback message now:`;
 
@@ -2486,6 +2506,28 @@ Write the feedback message now:`;
           weekNum,
           reviewNotes || "",
         );
+
+        // Auto-mark all items for this week as reviewed
+        try {
+          await storage.markItemReviewed(therapistId, clientId, 'reflection', String(weekNum));
+          await storage.markItemReviewed(therapistId, clientId, 'exercise', String(weekNum));
+          const clientData = await storage.getUser(clientId);
+          if (clientData?.startDate) {
+            const startMs = new Date(clientData.startDate).getTime();
+            const weekStartMs = startMs + (weekNum - 1) * 7 * 86400000;
+            const weekEndMs = weekStartMs + 7 * 86400000;
+            const allCheckins = await storage.getUserCheckinHistory(clientId, 365);
+            for (const c of allCheckins) {
+              const cMs = new Date(c.dateKey).getTime();
+              if (cMs >= weekStartMs && cMs < weekEndMs) {
+                await storage.markItemReviewed(therapistId, clientId, 'checkin', c.dateKey);
+              }
+            }
+          }
+        } catch (reviewMarkErr) {
+          console.error("Auto-mark items reviewed error (non-fatal):", reviewMarkErr);
+        }
+
         res.status(201).json({ review });
       } catch (error) {
         console.error("Submit week review error:", error);
@@ -3598,6 +3640,7 @@ ${completedAutopsies
         4. If there is relapse history, sensitively reference patterns and how today's check-in relates to known triggers or risk factors.
         5. Mention check-in consistency if notably high or low.
         6. End with a specific, supportive action.
+        7. TONE: Be warm but measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." Keep language grounded and steady. Acknowledge effort simply.
       `;
 
         const response = await ai.models.generateContent({
@@ -3863,7 +3906,8 @@ INSTRUCTIONS:
 7. CRITICAL: Do NOT contradict the pre-computed statistics in the TREND ANALYSIS section. If a metric is described as "stable" or "consistently at X", do NOT say it is improving or declining.
 8. Keep the tone urgent but supportive — this needs immediate, caring attention.
 9. Under 300 words. Speak directly to the client using "you" language.
-10. Do not provide medical advice or crisis intervention.`;
+10. Do not provide medical advice or crisis intervention.
+11. TONE: Be warm but measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible." Keep language grounded and honest. This is a relapse autopsy — be compassionate without being patronizing.`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",

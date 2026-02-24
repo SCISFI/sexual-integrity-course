@@ -420,7 +420,7 @@ export default function TherapistHome() {
               className="text-2xl font-bold"
               data-testid="text-therapist-title"
             >
-              Mentor Dashboard
+              Welcome back, {(user as any)?.name?.split(' ')[0] || 'Mentor'}
             </h1>
             <p className="text-muted-foreground">
               Manage your assigned clients and monitor their progress

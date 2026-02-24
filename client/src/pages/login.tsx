@@ -29,7 +29,12 @@ export default function Login() {
 
   useEffect(() => {
     if (shouldRedirect && user) {
-      // Redirect based on role
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get("redirect");
+      if (redirectTo && redirectTo.startsWith("/")) {
+        setLocation(redirectTo);
+        return;
+      }
       const role = (user as any).role;
       if (role === "admin") {
         setLocation("/admin");

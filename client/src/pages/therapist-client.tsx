@@ -449,21 +449,20 @@ export default function TherapistClient() {
 
               <TabsContent value="analytics" className="space-y-4">
                 {(() => {
+                  const sortedByDateAsc = [...checkins].sort((a, b) => a.dateKey.localeCompare(b.dateKey));
                   const sortedCheckins = [...checkins].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
                   const totalCheckins = sortedCheckins.length;
 
-                  // Task 9: Fix check-in percentage to use actual days since client start
-                  const daysSinceStart = client.startDate
-                    ? Math.max(1, Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24)))
-                    : 14;
-                  const daysForCompletion = Math.min(daysSinceStart, 14);
-                  const last14Days = Array.from({ length: daysForCompletion }, (_, i) => {
-                    const date = new Date();
-                    date.setDate(date.getDate() - i);
-                    return date.toISOString().split('T')[0];
-                  });
-                  const checkinsInPeriod = sortedCheckins.filter(c => last14Days.includes(c.dateKey)).length;
-                  const completionRate = Math.round((checkinsInPeriod / daysForCompletion) * 100);
+                  const MIN_ENTRIES = 5;
+                  const MCID = 2.0;
+
+                  const oldestCheckinDate = sortedByDateAsc[0]?.dateKey ? new Date(sortedByDateAsc[0].dateKey) : new Date();
+                  const daysSinceFirst = Math.max(1, Math.ceil((Date.now() - oldestCheckinDate.getTime()) / 86400000) + 1);
+                  const windowSize = Math.min(14, daysSinceFirst);
+                  const windowStart = new Date();
+                  windowStart.setDate(windowStart.getDate() - windowSize + 1);
+                  const recentDates = new Set(checkins.filter(c => new Date(c.dateKey) >= windowStart).map(c => c.dateKey));
+                  const completionRate = Math.round((recentDates.size / windowSize) * 100);
 
                   let currentStreak = 0;
                   const uniqueDateSet = new Set(sortedCheckins.map(c => c.dateKey));
@@ -483,24 +482,29 @@ export default function TherapistClient() {
                     }
                   }
 
-                  const recentCheckins = sortedCheckins.slice(0, 14);
-                  const moodValues = recentCheckins.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
-                  const urgeValues = recentCheckins.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
+                  const moodValues = sortedByDateAsc.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
+                  const urgeValues = sortedByDateAsc.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
                   const avgMood = moodValues.length > 0 ? (moodValues.reduce((a, b) => a + b, 0) / moodValues.length).toFixed(1) : '--';
                   const avgUrge = urgeValues.length > 0 ? (urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length).toFixed(1) : '--';
 
-                  const olderHalf = urgeValues.slice(Math.floor(urgeValues.length / 2));
-                  const newerHalf = urgeValues.slice(0, Math.floor(urgeValues.length / 2));
-                  const olderAvg = olderHalf.length > 0 ? olderHalf.reduce((a, b) => a + b, 0) / olderHalf.length : 0;
-                  const newerAvg = newerHalf.length > 0 ? newerHalf.reduce((a, b) => a + b, 0) / newerHalf.length : 0;
-                  const urgeTrend = newerHalf.length > 0 && olderHalf.length > 0 ? (olderAvg > newerAvg ? 'improving' : olderAvg < newerAvg ? 'increasing' : 'stable') : 'stable';
+                  function computeTrendLocal(values: number[]): 'increasing' | 'decreasing' | 'stable' | 'consistently_same' | 'insufficient_data' {
+                    if (values.length < MIN_ENTRIES) return 'insufficient_data';
+                    if (values.every(v => v === values[0])) return 'consistently_same';
+                    const mid = Math.floor(values.length / 2);
+                    const firstAvg = values.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+                    const secondAvg = values.slice(mid).reduce((a, b) => a + b, 0) / (values.length - mid);
+                    const diff = secondAvg - firstAvg;
+                    if (Math.abs(diff) < MCID) return 'stable';
+                    return diff > 0 ? 'increasing' : 'decreasing';
+                  }
+                  const urgeTrend = computeTrendLocal(urgeValues);
 
                   const insightItems: Array<{type: string; color: string; icon: any; text: string; show: boolean}> = [
                     { type: 'unreviewed-autopsies', color: 'red', icon: AlertTriangle, text: `${unreviewedAutopsies.length} unreviewed relapse ${unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} — immediate review recommended.`, show: unreviewedAutopsies.length > 0 },
                     { type: 'strong-streak', color: 'green', icon: Flame, text: `Strong engagement with ${currentStreak}-day streak. Client is staying consistent with daily practice.`, show: currentStreak >= 7 },
                     { type: 'low-streak', color: 'amber', icon: Clock, text: `Check-in consistency has dropped. Consider reaching out to encourage re-engagement.`, show: currentStreak < 3 && totalCheckins > 0 },
-                    { type: 'urge-improving', color: 'green', icon: TrendingDown, text: `Urge levels are trending down. The tools and techniques appear to be helping.`, show: urgeTrend === 'improving' },
-                    { type: 'urge-increasing', color: 'red', icon: TrendingUp, text: `Urge levels are increasing. Client may benefit from additional support or crisis resources.`, show: urgeTrend === 'increasing' },
+                    { type: 'urge-improving', color: 'green', icon: TrendingDown, text: `Urge levels are meaningfully decreasing. The tools and techniques appear to be helping.`, show: urgeTrend === 'decreasing' },
+                    { type: 'urge-increasing', color: 'red', icon: TrendingUp, text: `Urge levels are meaningfully increasing. Client may benefit from additional support or crisis resources.`, show: urgeTrend === 'increasing' },
                     { type: 'no-checkins', color: 'muted', icon: Clock, text: `No check-in data yet. Client hasn't started tracking their daily progress.`, show: totalCheckins === 0 },
                   ];
                   const activeInsights = insightItems.filter(i => i.show);
