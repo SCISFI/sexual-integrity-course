@@ -88,6 +88,7 @@ type ClientProgress = {
   }>;
   relapseAutopsies?: RelapseAutopsyData[];
   itemReviews?: ItemReview[];
+  weekReviews?: Array<{ weekNumber: number }>;
 };
 
 type ClientInfo = {
@@ -230,15 +231,23 @@ export default function TherapistClient() {
   const exerciseAnswers = progressData?.exerciseAnswers || [];
   const relapseAutopsies = progressData?.relapseAutopsies || [];
   const itemReviews = progressData?.itemReviews || [];
+  const weekReviews = progressData?.weekReviews || [];
   const unreviewedAutopsies = relapseAutopsies.filter(a => a.status === "completed" && !a.reviewedByTherapist);
+  const reviewedWeekNumbers = new Set(weekReviews.map(r => r.weekNumber));
+  const pendingWeekReviewCount = completedWeeks.filter(w => !reviewedWeekNumbers.has(w)).length;
 
   const isItemReviewed = (itemType: string, itemKey: string) => {
     return itemReviews.some(r => r.itemType === itemType && r.itemKey === itemKey);
   };
 
-  const getUnreviewedCount = () => {
+  const getUnreviewedCheckinCount = () => {
     let count = 0;
     checkins.forEach(c => { if (!isItemReviewed('checkin', c.dateKey)) count++; });
+    return count;
+  };
+
+  const getUnreviewedReflectionCount = () => {
+    let count = 0;
     reflections.forEach(r => { if (!isItemReviewed('reflection', String(r.weekNumber))) count++; });
     exerciseAnswers.forEach(e => { if (!isItemReviewed('exercise', String(e.weekNumber))) count++; });
     return count;
@@ -428,12 +437,19 @@ export default function TherapistClient() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="flex w-full overflow-x-auto flex-nowrap">
                 <TabsTrigger value="analytics" data-testid="tab-analytics" className="flex-1">Analytics</TabsTrigger>
-                <TabsTrigger value="progress" data-testid="tab-progress" className="flex-1">Progress</TabsTrigger>
+                <TabsTrigger value="progress" data-testid="tab-progress" className="relative flex-1">
+                  Progress
+                  {pendingWeekReviewCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-pending-week-reviews">
+                      {pendingWeekReviewCount}
+                    </span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="checkins" data-testid="tab-checkins" className="relative flex-1">
                   Check-ins
-                  {getUnreviewedCount() > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-unreviewed-items">
-                      {getUnreviewedCount()}
+                  {getUnreviewedCheckinCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-unreviewed-checkins">
+                      {getUnreviewedCheckinCount()}
                     </span>
                   )}
                 </TabsTrigger>
@@ -445,7 +461,14 @@ export default function TherapistClient() {
                     </span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="reflections" data-testid="tab-reflections" className="flex-1">Reflections</TabsTrigger>
+                <TabsTrigger value="reflections" data-testid="tab-reflections" className="relative flex-1">
+                  Reflections
+                  {getUnreviewedReflectionCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-unreviewed-reflections">
+                      {getUnreviewedReflectionCount()}
+                    </span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="feedback" data-testid="tab-feedback" className="flex-1">Feedback</TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports" className="flex-1">Reports</TabsTrigger>
               </TabsList>

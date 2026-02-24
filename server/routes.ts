@@ -1705,6 +1705,7 @@ export async function registerRoutes(
           await storage.getAllExerciseAnswers(clientId);
         const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
         const itemReviews = await storage.getItemReviews(therapistId, clientId);
+        const weekReviews = await storage.getAllWeekReviewsForClient(clientId);
 
         res.json({
           completedWeeks,
@@ -1715,6 +1716,7 @@ export async function registerRoutes(
           exerciseAnswers: exerciseAnswersData,
           relapseAutopsies,
           itemReviews,
+          weekReviews,
         });
       } catch (error) {
         console.error("Get client progress error:", error);
