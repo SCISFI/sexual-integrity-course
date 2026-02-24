@@ -237,7 +237,7 @@ export default function Dashboard() {
       {isStaff && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Therapist Draft Assistant (Private)</CardTitle>
+            <CardTitle>Mentor Draft Assistant (Private)</CardTitle>
             <CardDescription>
               Staff-only drafts. Not client-visible. Review and edit before use.
             </CardDescription>
@@ -451,7 +451,7 @@ export default function Dashboard() {
         {/* Welcome greeting */}
         <div data-testid="text-welcome-greeting">
           <h1 className="text-2xl font-bold">
-            Welcome back, {(user as any)?.name?.split(' ')[0] || 'there'}
+            Welcome back, {(user as any)?.name || 'there'}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Here's your program progress and daily tools.

@@ -528,7 +528,7 @@ export default function TherapistClient() {
                           <CardContent className="pt-6">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-sm text-muted-foreground">{daysForCompletion}-Day Completion</p>
+                                <p className="text-sm text-muted-foreground">{windowSize}-Day Completion</p>
                                 <p className="text-2xl font-bold">{completionRate}%</p>
                               </div>
                               <Target className={`h-8 w-8 ${completionRate >= 70 ? 'text-green-500' : completionRate >= 40 ? 'text-amber-500' : 'text-muted-foreground'}`} />
@@ -555,7 +555,7 @@ export default function TherapistClient() {
                                 <p className="text-sm text-muted-foreground">Avg Urge Level</p>
                                 <p className="text-2xl font-bold">{avgUrge}/10</p>
                               </div>
-                              {urgeTrend === 'improving' ? (
+                              {urgeTrend === 'decreasing' ? (
                                 <TrendingDown className="h-8 w-8 text-green-500" />
                               ) : urgeTrend === 'increasing' ? (
                                 <TrendingUp className="h-8 w-8 text-red-500" />
@@ -1249,7 +1249,7 @@ export default function TherapistClient() {
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
-                        const isCompleted = completedWeeks.some(w => w.weekNumber === weekNum);
+                        const isCompleted = completedWeeks.includes(weekNum);
                         const existingSummary = existingSummaries.find(s => s.weekNumber === weekNum);
                         const isGenerating = generatingReport === weekNum;
                         const weekTitle = WEEK_CONTENT[weekNum]?.title || `Week ${weekNum}`;
