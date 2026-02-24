@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine } from "lucide-react";
-import { WEEK_CONTENT, WEEK_TITLES } from "@/data/curriculum";
+import { WEEK_CONTENT, WEEK_TITLES, type Exercise } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
 import { CrisisResources } from "@/components/CrisisResources";
@@ -41,11 +41,11 @@ function safeNumber(v: unknown, fallback: number) {
 
 const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> = {
   1: {
-    congrats: "You've taken an incredibly brave first step by completing Week 1. Beginning this journey takes real courage, and you should be proud of yourself.",
+    congrats: "You showed up. You were honest. That's not a small thing — it's the foundation everything else is built on.",
     learnings: [
-      "You learned what Compulsive Sexual Behavior Disorder (CSBD) actually is - a recognized clinical condition, not a moral failure",
-      "You understood the addiction cycle: preoccupation → ritualization → acting out → despair",
-      "You began clarifying your personal motivation for change and recovery"
+      "You named what brought you here — not just the behavior, but the relational impact",
+      "You recognized the cycle and isolation as the hidden drivers",
+      "You made a commitment — not just to yourself, but to what you're rebuilding"
     ]
   },
   2: {
@@ -548,14 +548,15 @@ export default function WeekPage() {
   // Calculate progress based on completed reflections and exercises per teaching section
   const totalTeachingSections = weekContent?.teaching?.length || 0;
   const totalReflections = weekContent?.reflectionQuestions?.length || 0;
-  const totalExercises = weekContent?.exercises?.length || 0;
+  const nonNullExercises = weekContent?.exercises?.filter((e): e is Exercise => e !== null) || [];
+  const totalExercises = nonNullExercises.length;
   const totalProgressItems = totalReflections + totalExercises;
   
   const completedReflections = weekContent?.reflectionQuestions?.filter(
     (q) => (reflectionAnswers[q.id] || "").trim().length > 0
   ).length || 0;
   
-  const completedExercises = weekContent?.exercises?.filter((exercise) =>
+  const completedExercises = nonNullExercises.filter((exercise) =>
     exercise.fields.every((field) => 
       (exerciseAnswers[`${exercise.id}-${field.id}`] || "").trim().length > 0
     )

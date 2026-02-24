@@ -29,7 +29,7 @@ export interface WeekContent {
   overview: string;
   teaching: TeachingSection[];
   reflectionQuestions: ReflectionQuestion[];
-  exercises: Exercise[];
+  exercises: (Exercise | null)[];
   homeworkChecklist: string[];
 }
 
@@ -39,18 +39,18 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     title: "The Moment You Stop Pretending",
     phase: 1,
     phaseName: "Foundation & Stabilization",
-    overview: "This week is about honesty. Not the dramatic kind — the quiet kind. Understanding the cycle that's been running you, naming what this actually is, and deciding whether you're willing to do something different.",
+    overview: "This week is about honesty. Not the dramatic kind — the quiet kind. Naming what brought you here, understanding the cycle that's been running you, and deciding whether you're willing to do something different — not just for yourself.",
     teaching: [
       {
         id: "if-youre-here",
-        title: "If You're Here, It's Probably Because…",
+        title: "If You're Here, It's Probably Because Something Broke",
         content: [
-          "Before we define anything, let's be honest.",
-          "You're probably here because you've promised yourself you would stop — and didn't. You've cleared browser history. You've minimized what happened. You've felt relief in the moment and shame afterward. You've thought, \"This is the last time.\" You've wondered, \"Why can't I control this?\"",
-          "You may be successful. Disciplined. Respected. High-functioning. And still stuck.",
-          "This isn't about intelligence. It isn't about morality. It isn't about willpower. It's about a cycle. And cycles don't break with promises. They break with understanding and interruption.",
-          "Compulsive Sexual Behavior Disorder (CSBD) is recognized in the ICD-11 as an impulse control disorder. Approximately 3–6% of the general population meets the criteria. That means tens of millions of people worldwide struggle with this same pattern. You are not alone. You are not uniquely broken.",
-          "This program is not about perfection. It's about progress. Every person who has walked this path started exactly where you are right now — uncertain, maybe skeptical, but willing to try. The fact that you're here means your capacity for honesty is already working in your favor."
+          "Maybe she found something. Maybe you finally told her. Maybe the look on her face is still with you — and you don't know how to un-see it.",
+          "You're not here because you woke up one day and decided to do some self-improvement. You're here because something happened. Something real. And someone you love is living with the fallout right now.",
+          "You may be successful. Disciplined. Respected. High-functioning. And still stuck. If your professional life is built on discipline and control — but this area is not — that contradiction deserves attention. Not judgment. Attention.",
+          "You've probably promised yourself you would stop — and didn't. You've cleared browser history. You've minimized what happened. You've thought, \"This is the last time.\" None of that worked. Because this isn't about intelligence or willpower. It's about a cycle. And cycles don't break with promises. They break with understanding and interruption.",
+          "Compulsive Sexual Behavior Disorder (CSBD) is recognized in the ICD-11 as an impulse control disorder. Approximately 3–6% of the general population meets the criteria — tens of millions of people. You are not alone. You are not uniquely broken. And this is not a moral failure. It's a clinical condition that responds to structured intervention.",
+          "This program doesn't just work on you. It works on what you broke — and whether it can be rebuilt. That's the weight of this. You should feel it. But you should also know: every person who has walked this path started exactly where you are right now."
         ]
       },
       {
@@ -70,9 +70,9 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
         title: "The Hidden Driver: Isolation",
         content: [
           "Most acting out happens alone. Most shame is carried alone. Most escalation happens in secrecy.",
+          "Discovery didn't create the problem. Discovery exposed it. Your behavior has always lived in relationship — even when it was secret. The hiding, the compartmentalizing, the double life — that was never just about you. Someone else was living in the gap between who you appeared to be and who you actually were.",
           "This program is not just about stopping behavior. It is about increasing connection density. Integrity does not grow in isolation. It grows in exposure.",
-          "If nothing changes except your behavior, relapse is likely. If your relational world changes, your patterns weaken.",
-          "Over the coming weeks, you will learn how to increase relational exposure, build emotional literacy, strengthen meaningful bonds, and increase accountability density.",
+          "If nothing changes except your behavior, relapse is likely. If your relational world changes, your patterns weaken. Over the coming weeks, you will learn how to increase relational exposure, build emotional literacy, strengthen meaningful bonds, and increase accountability density.",
           "We are not just reducing behavior. We are reducing loneliness. That distinction changes everything about how recovery works.",
           "The men who succeed in this program are not the ones with the most willpower. They are the ones who let themselves be known."
         ]
@@ -84,9 +84,9 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           "This is not about having a high sex drive. This is not about sexual thoughts. This is not about enjoying sex. This program is pro-freedom, not anti-sex.",
           "This is about: loss of control, secrecy, escalation, continued behavior despite cost, and using sex as the primary way to manage uncomfortable emotions.",
           "If your behavior is hidden, escalating, and costing you something — it deserves attention. Not judgment. Attention.",
+          "The clearest way to see the difference: Healthy sexuality is integrated, chosen, and relational. Compulsive sexuality is isolated, compulsive, and secret. One builds trust. The other erodes it.",
           "The goal is not to eliminate your sexuality. The goal is to free you from compulsive patterns so you can experience sexuality that is genuinely chosen, genuinely connecting, and genuinely satisfying.",
-          "Healthy sexuality enhances life and relationships, is rooted in choice, connects to personal values, and brings genuine satisfaction. Compulsive behavior damages relationships, is driven by urge, conflicts with values, and brings temporary relief followed by shame.",
-          "Recovery isn't about becoming someone who doesn't have sexual desires. It's about becoming someone whose sexual choices align with their values and enhance their life."
+          "Recovery isn't about becoming someone who doesn't have sexual desires. It's about becoming someone whose sexual choices align with their values and enhance their life — and their relationships."
         ]
       },
       {
@@ -109,15 +109,15 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           "Shame fuels secrecy. Secrecy fuels isolation. Isolation fuels the cycle. This is why shame is not motivation — it is fuel for the very behavior you're trying to stop.",
           "Here is the difference in practice. Shame: \"I'm a disgusting person.\" Accountability: \"I engaged in behavior that doesn't reflect my values, and I'm taking steps to change.\" Shame: \"No one could love me if they knew.\" Accountability: \"I've been hiding parts of my life, and I'm choosing to be more honest.\" Shame: \"I'll never change — this is just who I am.\" Accountability: \"Change is hard, but my past doesn't determine my future.\"",
           "This program will move you from shame to accountability. Accountability says: \"I am responsible for my behavior. I am not my behavior.\" That distinction is critical.",
-          "Learning to reframe shame into accountability is a practical skill, not just a mindset shift. Throughout this program, you'll practice catching shame statements and translating them into action-oriented responses. This single skill can break the cycle's fuel supply.",
-          "Most men do not fail recovery because they relapse. They fail because they return to secrecy. You are here. That already breaks secrecy."
+          "Most men do not fail recovery because they relapse. They fail because they return to secrecy. You are here. That already breaks secrecy.",
+          "You've started to see the cycle. You've named the isolation. But your brain has formed powerful reinforcement pathways that operate beneath your awareness. Next week, we map the exact cycle you run on autopilot — and show you where your exit ramps are."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "Why now? What brought you here at this moment — not last year, not next year, but now?"
+        question: "What brought you here? What was the moment — the conversation, the discovery, the look — that made this real?"
       },
       {
         id: "q2",
@@ -129,7 +129,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "q4",
-        question: "What has this pattern cost you — emotionally, relationally, professionally? Be specific."
+        question: "What has this pattern cost you — and the people closest to you? Be specific about the relational damage, not just the personal cost."
       },
       {
         id: "q5",
@@ -163,44 +163,20 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
             label: "What have you tried before? Where did you return to secrecy?",
             type: "textarea",
             placeholder: "Describe previous attempts at change..."
+          },
+          {
+            id: "relational-impact",
+            label: "How has this affected the people closest to you? What do you imagine your partner is feeling right now?",
+            type: "textarea",
+            placeholder: "Describe the relational impact honestly..."
           }
         ]
       },
-      {
-        id: "map-your-cycle",
-        title: "Map Your Cycle",
-        instructions: "Using the 4-stage cycle, describe your personal version of each stage. The more specific you are, the earlier you'll recognize it when it starts.",
-        fields: [
-          {
-            id: "preoccupation",
-            label: "Your Preoccupation: What does it look like when your mind starts fixating? What thoughts or feelings signal this stage?",
-            type: "textarea",
-            placeholder: "Describe your personal preoccupation patterns..."
-          },
-          {
-            id: "ritualization",
-            label: "Your Ritualization: What preparatory steps do you take? What behaviors bridge thinking and acting out?",
-            type: "textarea",
-            placeholder: "Describe your ritualization behaviors..."
-          },
-          {
-            id: "acting-out",
-            label: "Your Acting Out: What specific behaviors constitute acting out for you?",
-            type: "textarea",
-            placeholder: "Describe your acting out behaviors..."
-          },
-          {
-            id: "despair",
-            label: "Your Despair: What do you feel and think afterward? How does this set up the next cycle?",
-            type: "textarea",
-            placeholder: "Describe your despair response..."
-          }
-        ]
-      },
+      null,
       {
         id: "connection-inventory",
         title: "Connection Inventory",
-        instructions: "Isolation is the hidden driver. This exercise helps you see your current connection landscape honestly — and identify where to build.",
+        instructions: "Isolation is the hidden driver. This exercise helps you see your current connection landscape honestly — not to force action, but to surface awareness.",
         fields: [
           {
             id: "who-knows",
@@ -209,97 +185,37 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
             placeholder: "List the people who know, if any..."
           },
           {
-            id: "when-alone",
-            label: "When do you feel most alone? What situations or times of day increase your sense of isolation?",
+            id: "who-hiding-from",
+            label: "Who are you spending the most energy hiding this from? What would they think if they knew?",
             type: "textarea",
-            placeholder: "Describe your isolation patterns..."
+            placeholder: "Describe who you're hiding from and what you fear..."
           },
           {
-            id: "one-person",
-            label: "Name one person you could potentially talk to about your struggle. What would it take?",
+            id: "barrier-to-connection",
+            label: "What would have to be true for you to let one person in? What's the barrier?",
             type: "textarea",
-            placeholder: "Identify someone you might open up to..."
+            placeholder: "Identify what stands between you and honesty..."
           }
         ]
       },
+      null,
+      null,
       {
-        id: "cost-inventory",
-        title: "The Cost Inventory",
-        instructions: "This exercise asks you to be honest about what this pattern has already taken from you — and what you'd gain back.",
+        id: "your-commitment",
+        title: "Your Commitment",
+        instructions: "This is not symbolic. This is the first behavioral intervention. Writing a commitment creates accountability — even if no one else reads it.",
         fields: [
           {
-            id: "costs",
-            label: "What has this behavior cost you? Consider relationships, career, self-respect, time, money, health, spiritual life.",
+            id: "commitment-statement",
+            label: "In your own words, write your commitment to this process. You can use this as a starting point: \"I am here because something needs to change. Not just for me — for the people I've hurt by staying hidden. I am willing to be honest, even when it's hard.\"",
             type: "textarea",
-            placeholder: "List everything this pattern has cost you..."
+            placeholder: "Write your commitment in your own words..."
           },
           {
-            id: "vision",
-            label: "What does your life look like with sexual integrity? Describe the relationships, confidence, freedom, and peace you'd experience.",
+            id: "one-thing-different",
+            label: "What is one specific thing you will do differently this week?",
             type: "textarea",
-            placeholder: "Describe the life you want to build..."
-          }
-        ]
-      },
-      {
-        id: "triggers-inventory",
-        title: "My Triggers Inventory",
-        instructions: "Begin identifying the internal and external triggers that start your cycle. You'll continue building this list throughout the program, but starting now gives you early awareness.",
-        fields: [
-          {
-            id: "internal-triggers",
-            label: "Internal Triggers: What emotions, thoughts, or mental states make you vulnerable? (e.g., loneliness, boredom, stress, anger, feeling unappreciated, anxiety)",
-            type: "textarea",
-            placeholder: "List your internal triggers..."
-          },
-          {
-            id: "external-triggers",
-            label: "External Triggers: What situations, places, times of day, or circumstances increase your risk? (e.g., being home alone, late night, business travel, certain apps)",
-            type: "textarea",
-            placeholder: "List your external triggers..."
-          }
-        ]
-      },
-      {
-        id: "shame-to-accountability",
-        title: "Shame to Accountability Reframe",
-        instructions: "Write down 3 shame statements you commonly tell yourself. Then rewrite each one as an accountability statement — one that acknowledges the behavior without attacking your identity.",
-        fields: [
-          {
-            id: "shame-1",
-            label: "Shame statement #1:",
-            type: "textarea",
-            placeholder: "e.g., \"I'm a disgusting person who can't control himself.\""
-          },
-          {
-            id: "reframe-1",
-            label: "Accountability reframe #1:",
-            type: "textarea",
-            placeholder: "e.g., \"I've engaged in behavior that doesn't align with my values, and I'm actively working to change.\""
-          },
-          {
-            id: "shame-2",
-            label: "Shame statement #2:",
-            type: "textarea",
-            placeholder: "Write another shame statement you tell yourself..."
-          },
-          {
-            id: "reframe-2",
-            label: "Accountability reframe #2:",
-            type: "textarea",
-            placeholder: "Rewrite it as an accountability statement..."
-          },
-          {
-            id: "shame-3",
-            label: "Shame statement #3:",
-            type: "textarea",
-            placeholder: "Write a third shame statement..."
-          },
-          {
-            id: "reframe-3",
-            label: "Accountability reframe #3:",
-            type: "textarea",
-            placeholder: "Rewrite it as an accountability statement..."
+            placeholder: "Name one concrete action..."
           }
         ]
       }
@@ -307,14 +223,10 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     homeworkChecklist: [
       "Read all Week 1 material",
       "Complete \"My Story in Brief\" exercise",
-      "Complete \"Map Your Cycle\" exercise",
-      "Complete \"Connection Inventory\" exercise",
       "Complete all 6 reflection questions",
-      "Complete \"The Cost Inventory\" exercise",
-      "Complete \"My Triggers Inventory\" exercise",
-      "Complete \"Shame to Accountability Reframe\" exercise",
-      "Begin daily self-monitoring (use Daily Check-In)",
-      "Identify one person you could potentially talk to about your struggle"
+      "Complete \"Connection Inventory\" exercise",
+      "Write your commitment statement",
+      "Begin daily self-monitoring (use Daily Check-In)"
     ]
   },
 
