@@ -235,6 +235,22 @@ export default function TherapistHome() {
   });
   const unreviewedItemCounts = unreviewedItemsData?.unreviewedItemCounts || {};
 
+  const { data: pendingReviewsData } = useQuery<{
+    pendingReviews: Array<{ clientId: string; weekNumber: number }>;
+  }>({
+    queryKey: ["/api/therapist/pending-reviews"],
+    enabled: hasActiveSubscription,
+  });
+  const pendingReviewCounts: Record<string, number> = {};
+  for (const pr of pendingReviewsData?.pendingReviews || []) {
+    pendingReviewCounts[pr.clientId] = (pendingReviewCounts[pr.clientId] || 0) + 1;
+  }
+
+  const combinedReviewCounts: Record<string, number> = { ...unreviewedItemCounts };
+  for (const [clientId, count] of Object.entries(pendingReviewCounts)) {
+    combinedReviewCounts[clientId] = (combinedReviewCounts[clientId] || 0) + count;
+  }
+
   const allClients = clientsData?.clients || [];
 
   // Filter clients based on search query
@@ -598,12 +614,12 @@ export default function TherapistHome() {
                           <td className="p-3 font-medium">
                             <span className="flex items-center gap-2 flex-wrap">
                               {client.name}
-                              {unreviewedItemCounts[String(client.id)] > 0 && (
+                              {combinedReviewCounts[String(client.id)] > 0 && (
                                 <span
                                   className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300"
                                   data-testid={`badge-unreviewed-items-${client.id}`}
                                 >
-                                  {unreviewedItemCounts[String(client.id)]} to review
+                                  {combinedReviewCounts[String(client.id)]} to review
                                 </span>
                               )}
                               {unreviewedCounts[String(client.id)] > 0 && (
