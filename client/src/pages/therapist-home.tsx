@@ -17,6 +17,9 @@ import {
   UserCircle,
   ChevronDown,
   AlertTriangle,
+  ChevronRight,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,7 +42,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 type ClientWithProgress = {
@@ -59,9 +61,6 @@ export default function TherapistHome() {
   const { toast } = useToast();
   const { user } = useAuth();
   const subscriptionConfirmedRef = useRef(false);
-  // -----------------------------------------------------
-  // Staff-only Draft Assistant (Private) - UI state
-  // -----------------------------------------------------
   const isStaff = user?.role === "admin" || user?.role === "therapist";
 
   const [draftClientId, setDraftClientId] = useState("");
@@ -117,7 +116,7 @@ export default function TherapistHome() {
       setDraftLoading(false);
     }
   }
-  // Handle subscription success callback
+
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const paymentStatus = searchParams.get("payment");
@@ -128,7 +127,6 @@ export default function TherapistHome() {
         title: "Subscription Activated",
         description: "Welcome! Your mentor subscription is now active.",
       });
-      // Clear URL and refresh subscription data
       window.history.replaceState({}, "", "/therapist-home");
       queryClient.invalidateQueries({
         queryKey: ["/api/payments/subscription"],
@@ -138,7 +136,6 @@ export default function TherapistHome() {
     }
   }, [toast]);
 
-  // Check subscription status
   const { data: subscriptionData, isLoading: loadingSubscription } = useQuery<{
     subscription: any;
     allFeesWaived: boolean;
@@ -150,7 +147,6 @@ export default function TherapistHome() {
     refetchOnMount: "always",
   });
 
-  // Subscription checkout mutation
   const subscriptionMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest(
@@ -174,7 +170,6 @@ export default function TherapistHome() {
     },
   });
 
-  // Cancel subscription mutation
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest(
@@ -216,7 +211,7 @@ export default function TherapistHome() {
     clients: ClientWithProgress[];
   }>({
     queryKey: ["/api/therapist/clients"],
-    enabled: hasActiveSubscription, // Only fetch clients if subscribed or fees waived
+    enabled: hasActiveSubscription,
   });
 
   const { data: unreviewedAutopsiesData } = useQuery<{
@@ -253,7 +248,6 @@ export default function TherapistHome() {
 
   const allClients = clientsData?.clients || [];
 
-  // Filter clients based on search query
   const clients = searchQuery.trim()
     ? allClients.filter(
         (c) =>
@@ -276,17 +270,16 @@ export default function TherapistHome() {
     return "Active";
   };
 
-  const getStatusBadgeStyle = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "Needs Attention":
-        return "border-amber-300 text-amber-700 bg-amber-50 dark:border-amber-600 dark:text-amber-400 dark:bg-amber-950";
+        return <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />;
       case "On Track":
+        return <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />;
       case "Active":
-        return "border-green-300 text-green-700 bg-green-50 dark:border-green-600 dark:text-green-400 dark:bg-green-950";
-      case "Pending":
-        return "border-muted text-muted-foreground bg-muted/40";
+        return <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />;
       default:
-        return "";
+        return null;
     }
   };
 
@@ -309,10 +302,9 @@ export default function TherapistHome() {
     setLocation("/login");
   };
 
-  // Show loading while checking subscription
   if (loadingSubscription) {
     return (
-      <div className="min-h-screen bg-background px-6 py-8">
+      <div className="min-h-screen bg-background px-4 sm:px-6 py-8">
         <div className="mx-auto max-w-5xl flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -320,14 +312,13 @@ export default function TherapistHome() {
     );
   }
 
-  // Show subscription wall if no active subscription
   if (!hasActiveSubscription) {
     return (
-      <div className="min-h-screen bg-background px-6 py-8">
+      <div className="min-h-screen bg-background px-4 sm:px-6 py-8">
         <div className="mx-auto max-w-2xl">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold">
-              Mentor Dashboard -- Build Test
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
+            <h1 className="text-2xl font-bold" data-testid="text-therapist-title">
+              Mentor Dashboard
             </h1>
             <Button
               variant="outline"
@@ -341,21 +332,20 @@ export default function TherapistHome() {
 
           <Card data-testid="card-subscription-required">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <CreditCard className="h-8 w-8 text-primary" />
+              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                <CreditCard className="h-7 w-7 text-muted-foreground" />
               </div>
               <h3 className="mb-2 text-xl font-semibold">
                 Subscription Required
               </h3>
-              <div className="mb-4 rounded-lg border-2 border-green-600/30 dark:border-green-500/30 bg-green-600/10 dark:bg-green-500/10 px-4 py-2">
-                <Badge
-                  className="bg-green-600 dark:bg-green-600 text-white"
-                  data-testid="badge-first-month-free"
-                >
-                  First Month FREE
-                </Badge>
-              </div>
-              <p className="max-w-md text-muted-foreground mb-6">
+              <Badge
+                variant="secondary"
+                data-testid="badge-first-month-free"
+                className="mb-4"
+              >
+                First Month FREE
+              </Badge>
+              <p className="max-w-md text-muted-foreground mb-8">
                 Start with a{" "}
                 <span className="font-semibold text-foreground">
                   30-day free trial
@@ -365,44 +355,43 @@ export default function TherapistHome() {
                 to access the mentor dashboard, manage your clients, and monitor
                 their progress through the 16-week program.
               </p>
-              <div className="space-y-4">
-                <ul className="text-left text-sm text-muted-foreground space-y-2 mb-6">
-                  <li className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    Unlimited client management
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    Real-time progress monitoring
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    Client check-in data access
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    Cancel anytime
-                  </li>
-                </ul>
-                <Button
-                  size="lg"
-                  onClick={() => subscriptionMutation.mutate()}
-                  disabled={subscriptionMutation.isPending}
-                  data-testid="button-subscribe"
-                >
-                  {subscriptionMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Start Free Trial
-                    </>
-                  )}
-                </Button>
-              </div>
+              <ul className="text-left text-sm text-muted-foreground space-y-3 mb-8 w-full max-w-xs">
+                <li className="flex items-center gap-3">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                  Unlimited client management
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                  Real-time progress monitoring
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                  Client check-in data access
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                  Cancel anytime
+                </li>
+              </ul>
+              <Button
+                size="lg"
+                className="w-full sm:w-auto"
+                onClick={() => subscriptionMutation.mutate()}
+                disabled={subscriptionMutation.isPending}
+                data-testid="button-subscribe"
+              >
+                {subscriptionMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Start Free Trial
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -411,35 +400,36 @@ export default function TherapistHome() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-6 py-8">
+    <div className="min-h-screen bg-background px-4 sm:px-6 py-6 sm:py-8">
       <div className="mx-auto max-w-5xl space-y-6">
-        {/* Cancellation pending banner */}
         {subscriptionCancelledButActive && subscriptionData?.periodEnd && (
-          <div
-            className="p-4 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg"
+          <Card
+            className="border-amber-200 dark:border-amber-800"
             data-testid="banner-subscription-ending"
           >
-            <p className="font-medium text-yellow-800 dark:text-yellow-200">
-              Subscription Cancelled
-            </p>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              Your subscription will end on{" "}
-              {new Date(subscriptionData.periodEnd).toLocaleDateString()}. You
-              will retain full access until then. No refunds will be issued.
-            </p>
-          </div>
+            <CardContent className="py-4">
+              <p className="font-medium text-sm">
+                Subscription Ending
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your subscription will end on{" "}
+                {new Date(subscriptionData.periodEnd).toLocaleDateString()}. You
+                will retain full access until then.
+              </p>
+            </CardContent>
+          </Card>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1
-              className="text-2xl font-bold"
+              className="text-xl sm:text-2xl font-bold"
               data-testid="text-therapist-title"
             >
               Welcome back, {(user as any)?.name || 'Mentor'}
             </h1>
-            <p className="text-muted-foreground">
-              Manage your assigned clients and monitor their progress
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage your clients and monitor their progress
             </p>
           </div>
           <DropdownMenu>
@@ -504,22 +494,24 @@ export default function TherapistHome() {
                 <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
                   <p>Are you sure you want to cancel your subscription?</p>
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                      Important:
-                    </p>
-                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
-                      <li>
-                        Your subscription will remain active until the end of
-                        your billing period
-                      </li>
-                      <li>No refunds will be issued for any unused time</li>
-                      <li>
-                        You will lose access to the dashboard after your billing
-                        period ends
-                      </li>
-                    </ul>
-                  </div>
+                  <Card className="mt-4 border-amber-200 dark:border-amber-800">
+                    <CardContent className="py-3">
+                      <p className="font-medium text-sm">
+                        Important:
+                      </p>
+                      <ul className="text-sm text-muted-foreground mt-1 list-disc list-inside space-y-1">
+                        <li>
+                          Your subscription will remain active until the end of
+                          your billing period
+                        </li>
+                        <li>No refunds will be issued for any unused time</li>
+                        <li>
+                          You will lose access to the dashboard after your billing
+                          period ends
+                        </li>
+                      </ul>
+                    </CardContent>
+                  </Card>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -528,7 +520,7 @@ export default function TherapistHome() {
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => cancelSubscriptionMutation.mutate()}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  className="bg-destructive text-destructive-foreground"
                   disabled={cancelSubscriptionMutation.isPending}
                   data-testid="button-confirm-cancel"
                 >
@@ -547,15 +539,14 @@ export default function TherapistHome() {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Your Assigned Clients
+              <CardTitle className="text-lg">
+                Your Clients
                 {allClients.length > 0 && (
-                  <Badge variant="secondary" className="ml-2">
-                    {allClients.length}
-                  </Badge>
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    ({allClients.length})
+                  </span>
                 )}
               </CardTitle>
               {allClients.length > 0 && (
@@ -576,96 +567,151 @@ export default function TherapistHome() {
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
+                  <Skeleton key={i} className="h-16 w-full" />
                 ))}
               </div>
             ) : clients.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                <Users className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                <p>No clients assigned to you yet.</p>
-                <p className="text-sm">
+              <div className="py-12 text-center text-muted-foreground">
+                <Users className="mx-auto mb-3 h-8 w-8 opacity-40" />
+                <p className="font-medium">No clients assigned yet</p>
+                <p className="text-sm mt-1">
                   Contact your administrator to get clients assigned.
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-3">Client Name</th>
-                      <th className="text-left p-3">Email</th>
-                      <th className="text-left p-3">Progress</th>
-                      <th className="text-left p-3">Status</th>
-                      <th className="text-left p-3">Start Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedClients.map((client) => {
-                      const status = getClientStatus(client);
-                      return (
-                        <tr
-                          key={client.id}
-                          className="border-b hover-elevate cursor-pointer"
-                          onClick={() =>
-                            setLocation(`/therapist/clients/${client.id}`)
-                          }
-                          data-testid={`row-client-${client.id}`}
-                        >
-                          <td className="p-3 font-medium">
-                            <span className="flex items-center gap-2 flex-wrap">
-                              {client.name}
-                              {combinedReviewCounts[String(client.id)] > 0 && (
-                                <span
-                                  className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300"
-                                  data-testid={`badge-unreviewed-items-${client.id}`}
-                                >
-                                  {combinedReviewCounts[String(client.id)]} to review
-                                </span>
-                              )}
-                              {unreviewedCounts[String(client.id)] > 0 && (
-                                <span
-                                  className="inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-950 px-2 py-0.5 text-xs font-bold text-red-700 dark:text-red-300"
-                                  data-testid={`badge-autopsy-alert-${client.id}`}
-                                >
-                                  <AlertTriangle className="h-3 w-3" />
-                                  {unreviewedCounts[String(client.id)]} autopsy
-                                </span>
-                              )}
-                            </span>
-                          </td>
-                          <td className="p-3 text-muted-foreground">
-                            {client.email}
-                          </td>
-                          <td className="p-3">
-                            Week {client.currentWeek} / 16
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              ({client.completedWeeks.length} completed)
-                            </span>
-                          </td>
-                          <td className="p-3">
+              <>
+                {/* Desktop table view */}
+                <div className="hidden md:block">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-muted-foreground">
+                        <th className="text-left py-3 px-3 font-medium">Client</th>
+                        <th className="text-left py-3 px-3 font-medium">Email</th>
+                        <th className="text-left py-3 px-3 font-medium">Progress</th>
+                        <th className="text-left py-3 px-3 font-medium">Status</th>
+                        <th className="text-left py-3 px-3 font-medium">Start Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedClients.map((client) => {
+                        const status = getClientStatus(client);
+                        return (
+                          <tr
+                            key={client.id}
+                            className="border-b last:border-b-0 hover-elevate cursor-pointer"
+                            onClick={() =>
+                              setLocation(`/therapist/clients/${client.id}`)
+                            }
+                            data-testid={`row-client-${client.id}`}
+                          >
+                            <td className="py-3 px-3 font-medium">
+                              <span className="flex items-center gap-2 flex-wrap">
+                                {client.name}
+                                {combinedReviewCounts[String(client.id)] > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px]"
+                                    data-testid={`badge-unreviewed-items-${client.id}`}
+                                  >
+                                    {combinedReviewCounts[String(client.id)]} to review
+                                  </Badge>
+                                )}
+                                {unreviewedCounts[String(client.id)] > 0 && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-[10px]"
+                                    data-testid={`badge-autopsy-alert-${client.id}`}
+                                  >
+                                    <AlertTriangle className="h-3 w-3 mr-0.5" />
+                                    {unreviewedCounts[String(client.id)]} autopsy
+                                  </Badge>
+                                )}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-muted-foreground">
+                              {client.email}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className="text-sm">Week {client.currentWeek} / 16</span>
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                ({client.completedWeeks.length} done)
+                              </span>
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className="flex items-center gap-1.5 text-sm">
+                                {getStatusIcon(status)}
+                                {status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-muted-foreground">
+                              {client.startDate
+                                ? new Date(client.startDate).toLocaleDateString()
+                                : "Not set"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile card view */}
+                <div className="md:hidden space-y-3">
+                  {sortedClients.map((client) => {
+                    const status = getClientStatus(client);
+                    return (
+                      <div
+                        key={client.id}
+                        className="rounded-lg border p-4 hover-elevate cursor-pointer"
+                        onClick={() =>
+                          setLocation(`/therapist/clients/${client.id}`)
+                        }
+                        data-testid={`row-client-${client.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{client.name}</p>
+                            <p className="text-sm text-muted-foreground truncate">{client.email}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+                        </div>
+                        <div className="flex items-center gap-3 mt-3 flex-wrap">
+                          <span className="text-sm text-muted-foreground">
+                            Week {client.currentWeek}/16
+                          </span>
+                          <span className="flex items-center gap-1 text-sm">
+                            {getStatusIcon(status)}
+                            <span className="text-muted-foreground">{status}</span>
+                          </span>
+                          {combinedReviewCounts[String(client.id)] > 0 && (
                             <Badge
-                              variant="outline"
-                              className={getStatusBadgeStyle(status)}
+                              variant="secondary"
+                              className="text-[10px]"
+                              data-testid={`badge-unreviewed-items-${client.id}`}
                             >
-                              {status}
+                              {combinedReviewCounts[String(client.id)]} to review
                             </Badge>
-                          </td>
-                          <td className="p-3 text-muted-foreground">
-                            {client.startDate
-                              ? new Date(client.startDate).toLocaleDateString()
-                              : "Not set"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          )}
+                          {unreviewedCounts[String(client.id)] > 0 && (
+                            <Badge
+                              variant="destructive"
+                              className="text-[10px]"
+                              data-testid={`badge-autopsy-alert-${client.id}`}
+                            >
+                              <AlertTriangle className="h-3 w-3 mr-0.5" />
+                              autopsy
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }

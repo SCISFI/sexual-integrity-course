@@ -525,11 +525,11 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid week number" });
       }
       const userId = (req.user as any).id;
-      const { q1, q2, q3, q4 } = req.body;
+      const { q1, q2, q3, q4, q5, q6 } = req.body;
       const reflection = await storage.upsertWeekReflection(
         userId,
         weekNumber,
-        { q1, q2, q3, q4 },
+        { q1, q2, q3, q4, q5, q6 },
       );
       res.json({ reflection });
     } catch (error) {
@@ -1865,6 +1865,10 @@ export async function registerRoutes(
             contextInfo += `- Challenges: "${weekReflection.q3}"\n`;
           if (weekReflection.q4)
             contextInfo += `- Goals for next week: "${weekReflection.q4}"\n`;
+          if (weekReflection.q5)
+            contextInfo += `- Additional insight: "${weekReflection.q5}"\n`;
+          if (weekReflection.q6)
+            contextInfo += `- Future vision: "${weekReflection.q6}"\n`;
         }
 
         const journalEntries = weekCheckins
@@ -2399,6 +2403,10 @@ ${trendStatsBlock}
             contextInfo += `- Challenges faced: "${weekReflection.q3}"\n`;
           if (weekReflection.q4)
             contextInfo += `- Goals for next week: "${weekReflection.q4}"\n`;
+          if (weekReflection.q5)
+            contextInfo += `- Additional insight: "${weekReflection.q5}"\n`;
+          if (weekReflection.q6)
+            contextInfo += `- Future vision: "${weekReflection.q6}"\n`;
         }
 
         if (journalEntries.length > 0) {

@@ -68,18 +68,17 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Left side - Hero Image (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 relative">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20" />
         </div>
         <div className="relative z-10 flex flex-col justify-between p-12 text-white">
           <Link href="/">
             <div className="flex cursor-pointer items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-md bg-white/15 backdrop-blur-sm">
                 <Mountain className="h-6 w-6 text-white" />
               </div>
               <span className="text-2xl font-bold tracking-tight">
@@ -87,32 +86,31 @@ export default function Login() {
               </span>
             </div>
           </Link>
-          <div className="space-y-4">
+          <div className="space-y-5">
             <h2 className="text-4xl font-bold leading-tight">
               Your journey to
               <br />
-              <span className="text-accent">freedom begins here</span>
+              freedom begins here
             </h2>
-            <p className="text-lg text-white/80 max-w-md">
+            <p className="text-base text-white/70 max-w-md leading-relaxed">
               A proven 16-week program combining CBT and ACT approaches for lasting change and recovery.
             </p>
           </div>
-          <div className="flex items-center gap-4 text-sm text-white/60">
+          <div className="flex items-center gap-4 flex-wrap text-sm text-white/50">
             <span>Evidence-based</span>
-            <span className="w-1 h-1 rounded-full bg-white/40" />
+            <span className="w-1 h-1 rounded-full bg-white/30" />
             <span>Professional support</span>
-            <span className="w-1 h-1 rounded-full bg-white/40" />
+            <span className="w-1 h-1 rounded-full bg-white/30" />
             <span>Confidential</span>
           </div>
         </div>
       </div>
 
-      {/* Right side - Login Form */}
       <div className="flex flex-1 flex-col lg:w-1/2">
-        <header className="flex items-center justify-between gap-2 flex-wrap p-4 lg:justify-end">
+        <header className="flex items-center justify-between gap-2 flex-wrap px-5 py-4 lg:justify-end">
           <Link href="/" className="lg:hidden">
             <div className="flex cursor-pointer items-center gap-2 flex-wrap">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary">
                 <Shield className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-semibold tracking-tight" data-testid="text-logo">
@@ -123,22 +121,22 @@ export default function Login() {
           <ThemeToggle />
         </header>
 
-        <main className="flex flex-1 items-center justify-center px-4 py-12">
+        <main className="flex flex-1 items-center justify-center px-5 py-8 sm:px-8">
           <Card className="w-full max-w-md border-0 shadow-none lg:shadow-sm lg:border">
-            <CardHeader className="space-y-1 text-center">
-              <CardTitle className="text-2xl font-bold" data-testid="text-login-title">
+            <CardHeader className="space-y-2 text-center pb-2 px-6 pt-8 sm:px-8">
+              <CardTitle className="text-2xl font-bold tracking-tight" data-testid="text-login-title">
                 Welcome back
               </CardTitle>
-              <CardDescription data-testid="text-login-description">
-                Enter your email and password to sign in
+              <CardDescription className="text-sm" data-testid="text-login-description">
+                Sign in to continue your program
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-6 pt-4 pb-2 sm:px-8">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                   {error && (
-                    <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive" data-testid="text-login-error">
-                      <AlertCircle className="h-4 w-4 shrink-0" />
+                    <div className="flex items-start gap-3 rounded-md bg-destructive/10 p-4 text-sm text-destructive" data-testid="text-login-error">
+                      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                       <span>{error}</span>
                     </div>
                   )}
@@ -147,12 +145,13 @@ export default function Login() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel className="text-sm font-medium">Email</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
                             placeholder="you@example.com"
                             autoComplete="email"
+                            className="h-11"
                             data-testid="input-email"
                             {...field}
                           />
@@ -167,19 +166,20 @@ export default function Login() {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <FormLabel>Password</FormLabel>
-                          <Link 
-                            href="/forgot-password" 
-                            className="text-sm text-primary hover:underline"
+                          <FormLabel className="text-sm font-medium">Password</FormLabel>
+                          <Link
+                            href="/forgot-password"
+                            className="text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
                             data-testid="link-forgot-password"
                           >
-                            Forgot Password?
+                            Forgot password?
                           </Link>
                         </div>
                         <FormControl>
                           <PasswordInput
                             placeholder="Enter your password"
                             autoComplete="current-password"
+                            className="h-11"
                             data-testid="input-password"
                             {...field}
                           />
@@ -188,32 +188,34 @@ export default function Login() {
                       </FormItem>
                     )}
                   />
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading}
-                    data-testid="button-sign-in"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
-                  </Button>
+                  <div className="pt-1">
+                    <Button
+                      type="submit"
+                      className="w-full h-11"
+                      disabled={isLoading}
+                      data-testid="button-sign-in"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Signing in...
+                        </>
+                      ) : (
+                        "Sign In"
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-              <div className="text-center text-sm text-muted-foreground" data-testid="text-signup-link">
+            <CardFooter className="flex flex-col gap-5 px-6 pt-4 pb-8 sm:px-8">
+              <div className="text-center text-sm text-muted-foreground py-1" data-testid="text-signup-link">
                 Don't have an account?{" "}
                 <Link href="/register" className="font-medium text-primary underline underline-offset-4">
                   Sign up
                 </Link>
               </div>
-              <p className="text-xs text-muted-foreground text-center" data-testid="text-disclaimer">
+              <p className="text-xs text-muted-foreground/70 text-center leading-relaxed" data-testid="text-disclaimer">
                 This program is an educational and personal growth resource. It is not therapy, counseling, or a substitute for professional mental health treatment.
               </p>
             </CardFooter>

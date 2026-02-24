@@ -45,56 +45,62 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
         id: "what-is-csbd",
         title: "What Is Compulsive Sexual Behavior Disorder?",
         content: [
-          "Compulsive Sexual Behavior Disorder (CSBD) is recognized in the ICD-11 (the World Health Organization's International Classification of Diseases) as an impulse control disorder.",
+          "Compulsive Sexual Behavior Disorder (CSBD) is recognized in the ICD-11 (the World Health Organization's International Classification of Diseases) as an impulse control disorder. If you're reading this, you've already taken the most courageous step: acknowledging something needs to change.",
           "The official definition: \"A persistent pattern of failure to control intense, repetitive sexual impulses or urges, resulting in repetitive sexual behavior that causes marked distress or impairment in personal, family, social, educational, occupational, or other important areas of functioning.\"",
           "Key features include: (1) Repetitive sexual activities become a central focus of your life, (2) Numerous unsuccessful efforts to reduce or control the behavior, (3) Continued behavior despite harmful consequences, (4) Distress or impairment in important areas of functioning.",
-          "Research indicates that approximately 3-6% of the general population meets criteria for CSBD. That means millions of people struggle with this. You are not alone. You are not uniquely broken.",
-          "Important: CSBD is a clinical condition, not a moral failure or a character flaw. It's a recognized impulse control disorder that responds to treatment."
+          "Research indicates that approximately 3-6% of the general population meets criteria for CSBD. That means tens of millions of people worldwide struggle with this same pattern. You are not alone. You are not uniquely broken. And millions have found lasting freedom through structured programs like this one.",
+          "Important: CSBD is a clinical condition, not a moral failure or a character flaw. It's a recognized impulse control disorder that responds well to treatment. The fact that you're here means your capacity for honesty and courage is already working in your favor.",
+          "This program is not about perfection. It's about progress. Every person who has walked this path started exactly where you are right now — uncertain, maybe skeptical, but willing to try."
         ]
       },
       {
         id: "addiction-cycle",
         title: "The Addiction Cycle",
         content: [
-          "CSBD follows a predictable, repeating cycle. Understanding this cycle is the first critical step toward interrupting it.",
-          "STAGE 1 - PREOCCUPATION: Your mind becomes increasingly focused on sexual thoughts, fantasies, or planning. This includes obsessive thoughts, mental planning, feeling \"zoned out\" or in a trance-like state, difficulty concentrating on other tasks, and increasing anxiety or restlessness.",
-          "STAGE 2 - RITUALIZATION: This is the bridge between thinking and doing. These are preparatory steps that lead directly to acting out: opening browsers in private mode, checking for privacy, arranging schedules to create opportunity, \"just checking\" certain websites. For most men, once ritualization begins, the behavior becomes extremely difficult to stop.",
-          "STAGE 3 - ACTING OUT: The sexual behavior itself. What it feels like in the moment: temporary relief from anxiety, brief pleasure, numbness or escape from difficult emotions, tunnel vision where consequences disappear, time distortion (hours feel like minutes).",
+          "CSBD follows a predictable, repeating cycle. Understanding this cycle is the first critical step toward interrupting it. Here's the key insight: seeing the cycle IS the first intervention. The moment you can name what's happening, you've already created space between the urge and the action.",
+          "STAGE 1 - PREOCCUPATION: Your mind becomes increasingly focused on sexual thoughts, fantasies, or planning. This includes obsessive thoughts, mental planning, feeling \"zoned out\" or in a trance-like state, difficulty concentrating on other tasks, and increasing anxiety or restlessness. You may not even realize you've entered this stage — it often begins subtly, like background noise that gradually gets louder.",
+          "STAGE 2 - RITUALIZATION: This is the bridge between thinking and doing. These are preparatory steps that lead directly to acting out: opening browsers in private mode, checking for privacy, arranging schedules to create opportunity, \"just checking\" certain websites. For most men, once ritualization begins, the behavior becomes extremely difficult to stop. Ritualization creates its own dopamine rush — the anticipation becomes part of the high.",
+          "STAGE 3 - ACTING OUT: The sexual behavior itself. What it feels like in the moment: temporary relief from anxiety, brief pleasure, numbness or escape from difficult emotions, tunnel vision where consequences disappear, time distortion (hours feel like minutes). Notably, the relief is almost never as satisfying as the anticipation promised.",
           "STAGE 4 - DESPAIR: After acting out, reality crashes back in. Intense shame, guilt about broken promises, fear of being discovered, promises to \"never do it again,\" feeling hopeless about change, isolation and hiding.",
-          "The cruel trap: Despair creates the exact emotions (shame, anxiety, hopelessness) that trigger the next cycle. You feel terrible, so you need escape, so you return to the very behavior that made you feel terrible."
+          "The cruel trap: Despair creates the exact emotions (shame, anxiety, hopelessness) that trigger the next cycle. You feel terrible, so you need escape, so you return to the very behavior that made you feel terrible. This is why willpower alone fails — the cycle is self-reinforcing. But once you can see it, you can begin to interrupt it."
         ]
       },
       {
         id: "what-this-is-not",
         title: "Understanding What This Is NOT",
         content: [
+          "Before going further, let's be clear about something: this program is pro-freedom, not anti-sex. The goal is not to eliminate your sexuality. The goal is to free you from compulsive patterns so you can experience sexuality that is genuinely chosen, genuinely connecting, and genuinely satisfying.",
           "CSBD is NOT simply having a high sex drive. Having frequent sexual desire is normal. CSBD is about loss of control and negative consequences, not frequency alone.",
           "CSBD is NOT enjoying sex or masturbation. Healthy sexuality includes pleasure. The issue is compulsion, not enjoyment.",
           "CSBD is NOT having sexual thoughts or fantasies. Sexual thoughts are normal and healthy. CSBD involves obsessive, intrusive thoughts that interfere with functioning.",
           "CSBD is NOT being interested in pornography. Many people view pornography without problems. CSBD involves compulsive use despite harm.",
-          "CSBD IS: Loss of control over sexual behavior despite repeated attempts to stop. Continued behavior despite significant negative consequences. Using sex as the primary coping mechanism for uncomfortable emotions. Significant distress or life impairment."
+          "CSBD IS: Loss of control over sexual behavior despite repeated attempts to stop. Continued behavior despite significant negative consequences. Using sex as the primary coping mechanism for uncomfortable emotions. Significant distress or life impairment.",
+          "The distinction matters because recovery isn't about becoming someone who doesn't have sexual desires. It's about becoming someone whose sexual choices align with their values and enhance their life."
         ]
       },
       {
         id: "healthy-vs-csbd",
         title: "How CSBD Differs from Healthy Sexuality",
         content: [
-          "Healthy Sexuality: Enhances life and relationships | CSBD: Damages life and relationships",
-          "Healthy Sexuality: Rooted in choice and mutual consent | CSBD: Rooted in compulsion and urge",
-          "Healthy Sexuality: Connected to personal values | CSBD: Conflicts with personal values",
-          "Healthy Sexuality: Enhances intimacy and connection | CSBD: Substitutes for or avoids intimacy",
-          "Healthy Sexuality: Integrated with other areas of life | CSBD: Separate, hidden, or compartmentalized",
-          "Healthy Sexuality: Brings genuine satisfaction | CSBD: Brings temporary relief followed by shame"
+          "Healthy Sexuality: Enhances life and relationships | CSBD: Damages life and relationships. Example: Healthy sexuality deepens trust with a partner; CSBD creates secrets that erode trust.",
+          "Healthy Sexuality: Rooted in choice and mutual consent | CSBD: Rooted in compulsion and urge. Example: You choose to be intimate because you want connection; with CSBD, you feel driven by a force you can't control.",
+          "Healthy Sexuality: Connected to personal values | CSBD: Conflicts with personal values. Example: Your sexual life reflects who you want to be; with CSBD, it contradicts everything you believe in.",
+          "Healthy Sexuality: Enhances intimacy and connection | CSBD: Substitutes for or avoids intimacy. Example: Sex brings you closer to your partner; with CSBD, it becomes a substitute for real emotional closeness.",
+          "Healthy Sexuality: Integrated with other areas of life | CSBD: Separate, hidden, or compartmentalized. Example: You can talk openly about your sexual values; with CSBD, there's a hidden world you can never mention.",
+          "Healthy Sexuality: Brings genuine satisfaction | CSBD: Brings temporary relief followed by shame. Example: After healthy intimacy, you feel fulfilled; after compulsive behavior, you feel empty and regretful.",
+          "Understanding these differences isn't about judgment — it's about having a clear picture of where you are and where you want to be."
         ]
       },
       {
         id: "brain-science",
         title: "The Brain Science: Why This Happens",
         content: [
-          "You're not weak-willed. You're not morally deficient. Your brain has formed powerful neural pathways that make this behavior feel automatic and nearly impossible to resist.",
-          "PREFRONTAL CORTEX (The Brake): Handles executive function, impulse control, and consequence evaluation. In CSBD, it has weakened ability to override urges and gets bypassed when you're triggered.",
+          "You're not weak-willed. You're not morally deficient. Your brain has formed powerful neural pathways that make this behavior feel automatic and nearly impossible to resist. Understanding why gives you power over it.",
+          "THE DOPAMINE SYSTEM: Dopamine is the brain's \"wanting\" chemical. It doesn't just create pleasure — it creates anticipation and craving. In CSBD, the dopamine system has been trained to release massive amounts in response to sexual cues. Over time, the brain needs more stimulation to achieve the same dopamine response, driving escalation in behavior.",
+          "PREFRONTAL CORTEX (The Brake): Handles executive function, impulse control, and consequence evaluation. In CSBD, it has weakened ability to override urges and gets bypassed when you're triggered. Research shows that chronic compulsive behavior actually reduces prefrontal cortex activity — literally weakening your brake pedal.",
           "LIMBIC SYSTEM (The Gas Pedal): Handles reward, motivation, and emotional responses. In CSBD, it becomes hypersensitive to sexual cues, floods the system with \"GO\" signals, and creates powerful urges that feel life-or-death urgent.",
-          "THE RESULT: When triggered, your gas pedal is flooring it while your brake is weak. This is why willpower alone doesn't work. You need strategies that work WITH your brain, not against it."
+          "THE RESULT: When triggered, your gas pedal is flooring it while your brake is weak. This is why willpower alone doesn't work. You need strategies that work WITH your brain, not against it.",
+          "THE HOPE — NEUROPLASTICITY: Here's the good news. The same brain plasticity that created these pathways can rewire them. Every time you choose a different response to a trigger, you strengthen new neural pathways and weaken the old ones. Research consistently shows that with sustained practice, the brain physically changes. The urges become less intense. The brake gets stronger. Recovery is not just a metaphor — it's a measurable, biological reality."
         ]
       },
       {
@@ -103,7 +109,9 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
         content: [
           "GUILT says: \"I did something bad.\" It focuses on behavior. It motivates repair and change. It can be resolved through making amends and changing behavior.",
           "SHAME says: \"I am bad.\" It focuses on identity. It paralyzes and perpetuates cycles. It leads to hiding and isolation.",
+          "Here are some concrete examples of the difference. Shame statement: \"I'm a disgusting person.\" Guilt/accountability reframe: \"I engaged in behavior that doesn't reflect my values, and I'm taking steps to change.\" Shame statement: \"No one could love me if they knew.\" Guilt reframe: \"I've been hiding parts of my life, and I'm choosing to be more honest.\" Shame statement: \"I'll never change — this is just who I am.\" Guilt reframe: \"Change is hard and I've struggled, but my past doesn't determine my future.\"",
           "Shame doesn't motivate change — it fuels the cycle. When you feel fundamentally broken, you hide. When you hide, you disconnect. When you disconnect, you need escape. When you need escape, you act out. When you act out, you feel more shame.",
+          "Learning to reframe shame into accountability is a practical skill, not just a mindset shift. Throughout this program, you'll practice catching shame statements and translating them into guilt-based, action-oriented responses. This single skill can break the cycle's fuel supply.",
           "This program will help you move from shame to accountability — taking responsibility for behavior without attacking your worth as a person."
         ]
       }
@@ -115,41 +123,173 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "q2",
-        question: "What has my behavior cost me (emotionally, relationally, spiritually, professionally)?"
+        question: "Which stage of the addiction cycle do you most identify with right now? Describe your personal version of each stage."
       },
       {
         id: "q3",
-        question: "What fears or doubts do I have about changing? What am I afraid of losing?"
+        question: "What has my behavior cost me — emotionally, relationally, spiritually, professionally? What would I gain back?"
       },
       {
         id: "q4",
-        question: "If nothing changes, what will my life look like in 5 years? What will staying the same cost me?"
+        question: "What fears or doubts do I have about changing? What am I afraid of losing? What might I gain?"
+      },
+      {
+        id: "q5",
+        question: "How does understanding the brain science change how you see yourself and your struggle?"
+      },
+      {
+        id: "q6",
+        question: "If nothing changes, what will your life look like in 5 years? If everything changes, what could it become?"
       }
     ],
     exercises: [
       {
         id: "my-story",
         title: "My Story in Brief",
-        instructions: "Write a brief summary of your story. When did problematic sexual behavior begin? What patterns have you noticed? What have you tried before? Be honest — this is for you.",
+        instructions: "Write a brief but honest summary of your story. This is for you — no one else needs to see it unless you choose to share. The act of writing it down is itself a step out of hiding and into honesty.",
         fields: [
           {
-            id: "story",
-            label: "My Story",
+            id: "when-it-began",
+            label: "When did problematic sexual behavior begin? What was happening in your life at that time?",
             type: "textarea",
-            placeholder: "Write your story here..."
+            placeholder: "Describe when and how it started..."
+          },
+          {
+            id: "patterns-noticed",
+            label: "What patterns have you noticed over time? How has the behavior changed or escalated?",
+            type: "textarea",
+            placeholder: "Describe the patterns you've observed..."
+          },
+          {
+            id: "what-tried",
+            label: "What have you tried before to change? What worked, even temporarily? What didn't?",
+            type: "textarea",
+            placeholder: "Describe previous attempts at change..."
+          }
+        ]
+      },
+      {
+        id: "map-your-cycle",
+        title: "Map Your Cycle",
+        instructions: "Using the 4-stage addiction cycle you just learned about, describe your personal version of each stage. Be as specific as possible — the more detail you include, the earlier you'll be able to recognize the cycle when it starts.",
+        fields: [
+          {
+            id: "preoccupation",
+            label: "Your Preoccupation Stage: What does it look like when your mind starts fixating? What thoughts or feelings signal this stage?",
+            type: "textarea",
+            placeholder: "Describe your personal preoccupation patterns..."
+          },
+          {
+            id: "ritualization",
+            label: "Your Ritualization Stage: What preparatory steps do you take? What are the behaviors that bridge thinking and acting out?",
+            type: "textarea",
+            placeholder: "Describe your ritualization behaviors..."
+          },
+          {
+            id: "acting-out",
+            label: "Your Acting Out Stage: What specific behaviors constitute acting out for you?",
+            type: "textarea",
+            placeholder: "Describe your acting out behaviors..."
+          },
+          {
+            id: "despair",
+            label: "Your Despair Stage: What do you feel and think afterward? How does this set up the next cycle?",
+            type: "textarea",
+            placeholder: "Describe your despair response..."
+          }
+        ]
+      },
+      {
+        id: "cost-and-vision",
+        title: "The Cost and the Vision",
+        instructions: "This exercise helps you see both the damage of staying the same and the possibility of change. Be honest about the costs, and be bold about the vision.",
+        fields: [
+          {
+            id: "costs",
+            label: "What has CSBD cost you? Consider relationships, career, self-respect, time, money, health, and spiritual life.",
+            type: "textarea",
+            placeholder: "List everything this behavior has cost you..."
+          },
+          {
+            id: "vision",
+            label: "What does your life look like with sexual integrity? Describe the relationships, confidence, freedom, and peace you'd experience.",
+            type: "textarea",
+            placeholder: "Describe the life you want to build..."
           }
         ]
       },
       {
         id: "sexual-integrity-definition",
         title: "What Does Sexual Integrity Mean to Me?",
-        instructions: "Before we define sexual integrity for you, we want to know what it means to YOU. Don't worry about getting it \"right\" — this is your starting point.",
+        instructions: "Before we define sexual integrity for you, we want to know what it means to YOU. Don't worry about getting it \"right\" — this is your starting point. Your definition will likely grow and deepen as you move through the program.",
         fields: [
           {
             id: "definition",
             label: "To me, sexual integrity means...",
             type: "textarea",
-            placeholder: "Write your definition..."
+            placeholder: "Write your personal definition..."
+          }
+        ]
+      },
+      {
+        id: "triggers-inventory",
+        title: "My Triggers Inventory",
+        instructions: "Begin identifying the internal and external triggers that start your cycle. You'll continue building this inventory throughout the program, but starting now gives you early awareness.",
+        fields: [
+          {
+            id: "internal-triggers",
+            label: "Internal Triggers: What emotions, thoughts, or mental states make you vulnerable? (e.g., loneliness, boredom, stress, anger, feeling unappreciated, anxiety)",
+            type: "textarea",
+            placeholder: "List your internal triggers..."
+          },
+          {
+            id: "external-triggers",
+            label: "External Triggers: What situations, places, times of day, or circumstances increase your risk? (e.g., being home alone, late night, business travel, certain apps)",
+            type: "textarea",
+            placeholder: "List your external triggers..."
+          }
+        ]
+      },
+      {
+        id: "shame-to-accountability",
+        title: "Shame to Accountability Reframe",
+        instructions: "Write down 3 shame statements you commonly tell yourself about your struggle. Then rewrite each one as a guilt/accountability statement that acknowledges the behavior without attacking your identity.",
+        fields: [
+          {
+            id: "shame-1",
+            label: "Shame statement #1:",
+            type: "textarea",
+            placeholder: "e.g., \"I'm a disgusting person who can't control himself.\""
+          },
+          {
+            id: "reframe-1",
+            label: "Accountability reframe #1:",
+            type: "textarea",
+            placeholder: "e.g., \"I've engaged in behavior that doesn't align with my values, and I'm actively working to change.\""
+          },
+          {
+            id: "shame-2",
+            label: "Shame statement #2:",
+            type: "textarea",
+            placeholder: "Write another shame statement you tell yourself..."
+          },
+          {
+            id: "reframe-2",
+            label: "Accountability reframe #2:",
+            type: "textarea",
+            placeholder: "Rewrite it as an accountability statement..."
+          },
+          {
+            id: "shame-3",
+            label: "Shame statement #3:",
+            type: "textarea",
+            placeholder: "Write a third shame statement..."
+          },
+          {
+            id: "reframe-3",
+            label: "Accountability reframe #3:",
+            type: "textarea",
+            placeholder: "Rewrite it as an accountability statement..."
           }
         ]
       }
@@ -157,8 +297,12 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     homeworkChecklist: [
       "Read all Week 1 material",
       "Complete \"My Story in Brief\" exercise",
-      "Complete all 4 reflection questions",
+      "Complete \"Map Your Cycle\" exercise",
+      "Complete \"The Cost and the Vision\" exercise",
+      "Complete all 6 reflection questions",
       "Define what sexual integrity means to you",
+      "Complete \"My Triggers Inventory\" exercise",
+      "Complete \"Shame to Accountability Reframe\" exercise",
       "Begin daily self-monitoring (use Daily Check-In)",
       "Identify one person you could potentially talk to about your struggle"
     ]

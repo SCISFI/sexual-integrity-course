@@ -112,7 +112,6 @@ export default function AdminPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientSearchQuery, setClientSearchQuery] = useState("");
 
-  // Form states
   const [newTherapist, setNewTherapist] = useState({ name: "", email: "", password: "" });
   const [newClient, setNewClient] = useState({ name: "", email: "", password: "", therapistId: "" });
   const [editForm, setEditForm] = useState({ startDate: "", allFeesWaived: false, therapistId: "" });
@@ -122,31 +121,21 @@ export default function AdminPage() {
   const [deletingTherapist, setDeletingTherapist] = useState<{ id: string; name: string | null; email: string; clientCount: number } | null>(null);
   const [reassignToTherapistId, setReassignToTherapistId] = useState("");
 
-  // Check if user is admin
-  if (user && (user as any).role !== "admin") {
-    setLocation("/dashboard");
-    return null;
-  }
-
-  // Fetch therapists
   const { data: therapistsData, isLoading: loadingTherapists } = useQuery({
     queryKey: ["/api/admin/therapists"],
     enabled: !!(user && (user as any).role === "admin"),
   });
 
-  // Fetch clients
   const { data: clientsData, isLoading: loadingClients } = useQuery({
     queryKey: ["/api/admin/clients"],
     enabled: !!(user && (user as any).role === "admin"),
   });
 
-  // Fetch revenue data
   const { data: revenueData, isLoading: loadingRevenue } = useQuery<{ revenue: { therapistId: string; therapistName: string | null; therapistEmail: string; totalAmount: number; paymentCount: number }[] }>({
     queryKey: ["/api/admin/revenue"],
     enabled: !!(user && (user as any).role === "admin"),
   });
 
-  // Fetch overdue reviews
   const { data: overdueReviewsData, isLoading: loadingOverdueReviews } = useQuery<{ overdueReviews: OverdueReview[] }>({
     queryKey: ["/api/admin/overdue-reviews"],
     enabled: !!(user && (user as any).role === "admin"),
@@ -154,7 +143,6 @@ export default function AdminPage() {
 
   const overdueReviews = overdueReviewsData?.overdueReviews || [];
 
-  // Create therapist mutation
   const createTherapistMutation = useMutation({
     mutationFn: async (data: { name: string; email: string; password: string }) => {
       const res = await apiRequest("POST", "/api/admin/therapists", data);
@@ -175,7 +163,6 @@ export default function AdminPage() {
     },
   });
 
-  // Create client mutation
   const createClientMutation = useMutation({
     mutationFn: async (data: { name: string; email: string; password: string; therapistId?: string }) => {
       const res = await apiRequest("POST", "/api/admin/clients", data);
@@ -196,7 +183,6 @@ export default function AdminPage() {
     },
   });
 
-  // Update client mutation
   const updateClientMutation = useMutation({
     mutationFn: async ({ clientId, data }: { clientId: string; data: any }) => {
       const res = await apiRequest("PATCH", `/api/admin/clients/${clientId}`, data);
@@ -216,7 +202,6 @@ export default function AdminPage() {
     },
   });
 
-  // Assign therapist mutation
   const assignTherapistMutation = useMutation({
     mutationFn: async ({ therapistId, clientId }: { therapistId: string; clientId: string }) => {
       const res = await apiRequest("POST", "/api/admin/assignments", { therapistId, clientId });
@@ -235,7 +220,6 @@ export default function AdminPage() {
     },
   });
 
-  // Reset password mutation
   const resetPasswordMutation = useMutation({
     mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
       const res = await apiRequest("POST", `/api/admin/reset-password/${userId}`, { newPassword });
@@ -255,7 +239,6 @@ export default function AdminPage() {
     },
   });
 
-  // Delete client mutation
   const deleteClientMutation = useMutation({
     mutationFn: async (clientId: string) => {
       const res = await apiRequest("DELETE", `/api/admin/clients/${clientId}`);
@@ -275,7 +258,6 @@ export default function AdminPage() {
     },
   });
 
-  // Update therapist fee waiver mutation
   const updateTherapistMutation = useMutation({
     mutationFn: async ({ therapistId, allFeesWaived }: { therapistId: string; allFeesWaived: boolean }) => {
       const res = await apiRequest("PATCH", `/api/admin/therapists/${therapistId}`, { allFeesWaived });
@@ -294,7 +276,6 @@ export default function AdminPage() {
     },
   });
 
-  // Delete therapist mutation
   const deleteTherapistMutation = useMutation({
     mutationFn: async ({ therapistId, reassignToTherapistId }: { therapistId: string; reassignToTherapistId?: string }) => {
       const res = await apiRequest("DELETE", `/api/admin/therapists/${therapistId}`, { reassignToTherapistId });
@@ -329,7 +310,6 @@ export default function AdminPage() {
   const therapists: Therapist[] = (therapistsData as any)?.therapists || [];
   const allClients: Client[] = (clientsData as any)?.clients || [];
   
-  // Filter clients based on search query
   const clients = clientSearchQuery.trim()
     ? allClients.filter(c => 
         (c.name?.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
@@ -337,15 +317,20 @@ export default function AdminPage() {
       )
     : allClients;
 
+  if (user && (user as any).role !== "admin") {
+    setLocation("/dashboard");
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex items-center justify-between p-4">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex items-center justify-between gap-2 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
               <Shield className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-semibold">Admin Panel</span>
+            <span className="text-lg font-semibold">Admin Panel</span>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -380,39 +365,40 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="container mx-auto p-4">
-        <Tabs defaultValue="clients" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="clients" data-testid="tab-clients">
-              <Users className="mr-2 h-4 w-4" />
-              Clients
-            </TabsTrigger>
-            <TabsTrigger value="therapists" data-testid="tab-therapists">
-              <Stethoscope className="mr-2 h-4 w-4" />
-              Mentors
-            </TabsTrigger>
-            <TabsTrigger value="revenue" data-testid="tab-revenue">
-              <DollarSign className="mr-2 h-4 w-4" />
-              Revenue
-            </TabsTrigger>
-            <TabsTrigger value="overdue-reviews" data-testid="tab-overdue-reviews" className="relative">
-              <AlertTriangle className="mr-2 h-4 w-4" />
-              Overdue Reviews
-              {overdueReviews.length > 0 && (
-                <Badge variant="destructive" className="ml-2" data-testid="badge-overdue-reviews-count">
-                  {overdueReviews.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <Tabs defaultValue="clients" className="space-y-6">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0">
+              <TabsTrigger value="clients" data-testid="tab-clients">
+                <Users className="mr-1.5 h-4 w-4" />
+                <span>Clients</span>
+              </TabsTrigger>
+              <TabsTrigger value="therapists" data-testid="tab-therapists">
+                <Stethoscope className="mr-1.5 h-4 w-4" />
+                <span>Mentors</span>
+              </TabsTrigger>
+              <TabsTrigger value="revenue" data-testid="tab-revenue">
+                <DollarSign className="mr-1.5 h-4 w-4" />
+                <span>Revenue</span>
+              </TabsTrigger>
+              <TabsTrigger value="overdue-reviews" data-testid="tab-overdue-reviews" className="relative">
+                <AlertTriangle className="mr-1.5 h-4 w-4" />
+                <span>Overdue</span>
+                {overdueReviews.length > 0 && (
+                  <Badge variant="destructive" className="ml-1.5 text-[10px] px-1.5" data-testid="badge-overdue-reviews-count">
+                    {overdueReviews.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="clients" className="space-y-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Clients</h2>
-                <Dialog open={showCreateClient} onOpenChange={setShowCreateClient}>
+          <TabsContent value="clients" className="space-y-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-xl font-semibold" data-testid="text-clients-heading">Clients</h2>
+              <Dialog open={showCreateClient} onOpenChange={setShowCreateClient}>
                 <DialogTrigger asChild>
-                  <Button data-testid="button-create-client">
+                  <Button className="w-full sm:w-auto" data-testid="button-create-client">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Client
                   </Button>
@@ -476,6 +462,7 @@ export default function AdminPage() {
                     <Button
                       onClick={() => createClientMutation.mutate(newClient)}
                       disabled={createClientMutation.isPending}
+                      className="w-full sm:w-auto"
                       data-testid="button-submit-client"
                     >
                       {createClientMutation.isPending ? (
@@ -486,126 +473,205 @@ export default function AdminPage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <Input
-                  placeholder="Search clients by name or email..."
-                  value={clientSearchQuery}
-                  onChange={(e) => setClientSearchQuery(e.target.value)}
-                  className="max-w-xs"
-                  data-testid="input-client-search"
-                />
-                {allClients.filter(c => c.therapists.length === 0).length > 0 && (
-                  <Badge variant="destructive" data-testid="badge-unassigned-count">
-                    {allClients.filter(c => c.therapists.length === 0).length} unassigned
-                  </Badge>
-                )}
-              </div>
+            </div>
+            
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <Input
+                placeholder="Search clients by name or email..."
+                value={clientSearchQuery}
+                onChange={(e) => setClientSearchQuery(e.target.value)}
+                className="sm:max-w-xs"
+                data-testid="input-client-search"
+              />
+              {allClients.filter(c => c.therapists.length === 0).length > 0 && (
+                <Badge variant="destructive" data-testid="badge-unassigned-count">
+                  {allClients.filter(c => c.therapists.length === 0).length} unassigned
+                </Badge>
+              )}
             </div>
 
-            <Card>
-              <CardContent className="p-0">
-                {loadingClients ? (
-                  <div className="flex items-center justify-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-                ) : clients.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
-                    No clients yet. Create your first client above.
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Start Date</TableHead>
-                        <TableHead>Mentor(s)</TableHead>
-                        <TableHead>Fees Waived</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {clients.map((client) => (
-                        <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
-                          <TableCell className="font-medium">{client.name || "—"}</TableCell>
-                          <TableCell>{client.email}</TableCell>
-                          <TableCell>{client.startDate || "Not set"}</TableCell>
-                          <TableCell>
-                            {client.therapists.length > 0
-                              ? client.therapists.map((t) => t.name || t.email).join(", ")
-                              : "None"}
-                          </TableCell>
-                          <TableCell>
-                            {client.allFeesWaived ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <X className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Link href={`/admin/clients/${client.id}`}>
+            {loadingClients ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : clients.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  No clients yet. Create your first client above.
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="hidden md:block">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Start Date</TableHead>
+                          <TableHead>Mentor(s)</TableHead>
+                          <TableHead>Fees Waived</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clients.map((client) => (
+                          <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
+                            <TableCell className="font-medium">{client.name || "—"}</TableCell>
+                            <TableCell className="text-muted-foreground">{client.email}</TableCell>
+                            <TableCell>{client.startDate || "Not set"}</TableCell>
+                            <TableCell>
+                              {client.therapists.length > 0
+                                ? client.therapists.map((t) => t.name || t.email).join(", ")
+                                : <span className="text-muted-foreground">None</span>}
+                            </TableCell>
+                            <TableCell>
+                              {client.allFeesWaived ? (
+                                <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              ) : (
+                                <X className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Link href={`/admin/clients/${client.id}`}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    data-testid={`button-view-client-${client.id}`}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </Link>
                                 <Button
                                   variant="ghost"
-                                  size="sm"
-                                  data-testid={`button-view-client-${client.id}`}
+                                  size="icon"
+                                  onClick={() => {
+                                    setEditingClient(client);
+                                    setEditForm({
+                                      startDate: client.startDate || "",
+                                      allFeesWaived: client.allFeesWaived || false,
+                                      therapistId: client.therapists.length > 0 ? client.therapists[0].id : "",
+                                    });
+                                  }}
+                                  data-testid={`button-edit-client-${client.id}`}
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Edit className="h-4 w-4" />
                                 </Button>
-                              </Link>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingClient(client);
-                                  setEditForm({
-                                    startDate: client.startDate || "",
-                                    allFeesWaived: client.allFeesWaived || false,
-                                    therapistId: client.therapists.length > 0 ? client.therapists[0].id : "",
-                                  });
-                                }}
-                                data-testid={`button-edit-client-${client.id}`}
-                              >
-                                <Edit className="h-4 w-4" />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setResetPasswordUser({ id: client.id, name: client.name, email: client.email })}
+                                  data-testid={`button-reset-password-client-${client.id}`}
+                                  title="Reset Password"
+                                >
+                                  <Key className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeletingClient({ id: client.id, name: client.name, email: client.email })}
+                                  data-testid={`button-delete-client-${client.id}`}
+                                  title="Delete Client"
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-3 md:hidden">
+                  {clients.map((client) => (
+                    <Card key={client.id} data-testid={`card-client-${client.id}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium truncate">{client.name || "—"}</p>
+                            <p className="text-sm text-muted-foreground truncate">{client.email}</p>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Link href={`/admin/clients/${client.id}`}>
+                              <Button variant="ghost" size="icon" data-testid={`button-view-client-mobile-${client.id}`}>
+                                <Eye className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setResetPasswordUser({ id: client.id, name: client.name, email: client.email })}
-                                data-testid={`button-reset-password-client-${client.id}`}
-                                title="Reset Password"
-                              >
-                                <Key className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setDeletingClient({ id: client.id, name: client.name, email: client.email })}
-                                data-testid={`button-delete-client-${client.id}`}
-                                title="Delete Client"
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setEditingClient(client);
+                                setEditForm({
+                                  startDate: client.startDate || "",
+                                  allFeesWaived: client.allFeesWaived || false,
+                                  therapistId: client.therapists.length > 0 ? client.therapists[0].id : "",
+                                });
+                              }}
+                              data-testid={`button-edit-client-mobile-${client.id}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                          {client.startDate && (
+                            <span className="text-muted-foreground">
+                              <Calendar className="inline h-3 w-3 mr-1" />
+                              {client.startDate}
+                            </span>
+                          )}
+                          {client.therapists.length > 0 ? (
+                            <Badge variant="outline" className="text-xs">
+                              {client.therapists.map((t) => t.name || t.email).join(", ")}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs">No mentor</Badge>
+                          )}
+                          {client.allFeesWaived && (
+                            <Badge variant="secondary" className="text-xs">Fees waived</Badge>
+                          )}
+                        </div>
+                        <div className="mt-3 flex gap-2 border-t pt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setResetPasswordUser({ id: client.id, name: client.name, email: client.email })}
+                            data-testid={`button-reset-password-client-mobile-${client.id}`}
+                          >
+                            <Key className="h-3.5 w-3.5 mr-1.5" />
+                            Reset Password
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeletingClient({ id: client.id, name: client.name, email: client.email })}
+                            className="text-destructive ml-auto"
+                            data-testid={`button-delete-client-mobile-${client.id}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            Delete
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
           </TabsContent>
 
-          <TabsContent value="therapists" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Mentors</h2>
+          <TabsContent value="therapists" className="space-y-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-xl font-semibold" data-testid="text-mentors-heading">Mentors</h2>
               <Dialog open={showCreateTherapist} onOpenChange={setShowCreateTherapist}>
                 <DialogTrigger asChild>
-                  <Button data-testid="button-create-therapist">
+                  <Button className="w-full sm:w-auto" data-testid="button-create-therapist">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Mentor
                   </Button>
@@ -652,6 +718,7 @@ export default function AdminPage() {
                     <Button
                       onClick={() => createTherapistMutation.mutate(newTherapist)}
                       disabled={createTherapistMutation.isPending}
+                      className="w-full sm:w-auto"
                       data-testid="button-submit-therapist"
                     >
                       {createTherapistMutation.isPending ? (
@@ -664,36 +731,109 @@ export default function AdminPage() {
               </Dialog>
             </div>
 
-            <Card>
-              <CardContent className="p-0">
-                {loadingTherapists ? (
-                  <div className="flex items-center justify-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-                ) : therapists.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
-                    No mentors yet. Create your first mentor above.
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Subscription Waived</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {therapists.map((therapist) => (
-                        <TableRow key={therapist.id} data-testid={`row-therapist-${therapist.id}`}>
-                          <TableCell className="font-medium">{therapist.name || "—"}</TableCell>
-                          <TableCell>{therapist.email}</TableCell>
-                          <TableCell>{therapist.subscriptionStatus || "active"}</TableCell>
-                          <TableCell>
+            {loadingTherapists ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : therapists.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  No mentors yet. Create your first mentor above.
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="hidden md:block">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Subscription Waived</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {therapists.map((therapist) => (
+                          <TableRow key={therapist.id} data-testid={`row-therapist-${therapist.id}`}>
+                            <TableCell className="font-medium">{therapist.name || "—"}</TableCell>
+                            <TableCell className="text-muted-foreground">{therapist.email}</TableCell>
+                            <TableCell>{therapist.subscriptionStatus || "active"}</TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={therapist.allFeesWaived || false}
+                                onCheckedChange={(checked) => {
+                                  updateTherapistMutation.mutate({
+                                    therapistId: therapist.id,
+                                    allFeesWaived: checked,
+                                  });
+                                }}
+                                disabled={updateTherapistMutation.isPending}
+                                data-testid={`switch-therapist-waiver-${therapist.id}`}
+                              />
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{new Date(therapist.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setResetPasswordUser({ id: therapist.id, name: therapist.name, email: therapist.email })}
+                                  data-testid={`button-reset-password-therapist-${therapist.id}`}
+                                  title="Reset Password"
+                                >
+                                  <Key className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => {
+                                    const clientCount = allClients.filter(c => 
+                                      c.therapists?.some(t => t.id === therapist.id)
+                                    ).length;
+                                    setDeletingTherapist({ 
+                                      id: therapist.id, 
+                                      name: therapist.name, 
+                                      email: therapist.email,
+                                      clientCount
+                                    });
+                                  }}
+                                  data-testid={`button-delete-therapist-${therapist.id}`}
+                                  title="Delete Mentor"
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-3 md:hidden">
+                  {therapists.map((therapist) => (
+                    <Card key={therapist.id} data-testid={`card-therapist-${therapist.id}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium truncate">{therapist.name || "—"}</p>
+                            <p className="text-sm text-muted-foreground truncate">{therapist.email}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            {therapist.subscriptionStatus || "active"}
+                          </Badge>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`mobile-waiver-${therapist.id}`} className="text-sm text-muted-foreground">Fees waived</Label>
                             <Switch
+                              id={`mobile-waiver-${therapist.id}`}
                               checked={therapist.allFeesWaived || false}
                               onCheckedChange={(checked) => {
                                 updateTherapistMutation.mutate({
@@ -702,176 +842,231 @@ export default function AdminPage() {
                                 });
                               }}
                               disabled={updateTherapistMutation.isPending}
-                              data-testid={`switch-therapist-waiver-${therapist.id}`}
+                              data-testid={`switch-therapist-waiver-mobile-${therapist.id}`}
                             />
-                          </TableCell>
-                          <TableCell>{new Date(therapist.createdAt).toLocaleDateString()}</TableCell>
-                          <TableCell className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setResetPasswordUser({ id: therapist.id, name: therapist.name, email: therapist.email })}
-                              data-testid={`button-reset-password-therapist-${therapist.id}`}
-                              title="Reset Password"
-                            >
-                              <Key className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                const clientCount = allClients.filter(c => 
-                                  c.therapists?.some(t => t.id === therapist.id)
-                                ).length;
-                                setDeletingTherapist({ 
-                                  id: therapist.id, 
-                                  name: therapist.name, 
-                                  email: therapist.email,
-                                  clientCount
-                                });
-                              }}
-                              data-testid={`button-delete-therapist-${therapist.id}`}
-                              title="Delete Mentor"
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(therapist.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex gap-2 border-t pt-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setResetPasswordUser({ id: therapist.id, name: therapist.name, email: therapist.email })}
+                            data-testid={`button-reset-password-therapist-mobile-${therapist.id}`}
+                          >
+                            <Key className="h-3.5 w-3.5 mr-1.5" />
+                            Reset Password
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const clientCount = allClients.filter(c => 
+                                c.therapists?.some(t => t.id === therapist.id)
+                              ).length;
+                              setDeletingTherapist({ 
+                                id: therapist.id, 
+                                name: therapist.name, 
+                                email: therapist.email,
+                                clientCount
+                              });
+                            }}
+                            className="text-destructive ml-auto"
+                            data-testid={`button-delete-therapist-mobile-${therapist.id}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            Delete
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
           </TabsContent>
 
-          <TabsContent value="revenue" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Revenue by Mentor</h2>
-            </div>
+          <TabsContent value="revenue" className="space-y-5">
+            <h2 className="text-xl font-semibold" data-testid="text-revenue-heading">Revenue by Mentor</h2>
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Mentor Revenue Share (50%)
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Mentor Revenue Share (50%)</CardTitle>
                 <CardDescription>
                   Track revenue generated by each mentor — mentors earn 50% of client payments
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 {loadingRevenue ? (
-                  <div className="flex items-center justify-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : !revenueData?.revenue || revenueData.revenue.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
+                  <div className="px-6 pb-6 text-center text-muted-foreground">
                     No revenue data yet. Revenue will appear here once clients make payments.
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Mentor</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead className="text-right">Payments</TableHead>
-                        <TableHead className="text-right">Total Revenue</TableHead>
-                        <TableHead className="text-right">Mentor Share (50%)</TableHead>
-                        <TableHead className="text-right">Your Share (50%)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <>
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Mentor</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead className="text-right">Payments</TableHead>
+                            <TableHead className="text-right">Total Revenue</TableHead>
+                            <TableHead className="text-right">Mentor Share (50%)</TableHead>
+                            <TableHead className="text-right">Your Share (50%)</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {revenueData.revenue.map((row) => (
+                            <TableRow key={row.therapistId} data-testid={`row-revenue-${row.therapistId}`}>
+                              <TableCell className="font-medium">{row.therapistName || "—"}</TableCell>
+                              <TableCell className="text-muted-foreground">{row.therapistEmail}</TableCell>
+                              <TableCell className="text-right">{row.paymentCount}</TableCell>
+                              <TableCell className="text-right">
+                                ${(row.totalAmount / 100).toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-green-600 dark:text-green-400">
+                                ${(row.totalAmount / 100 * 0.5).toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                ${(row.totalAmount / 100 * 0.5).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="bg-muted/30 font-semibold">
+                            <TableCell colSpan={2}>Total</TableCell>
+                            <TableCell className="text-right">
+                              {revenueData.revenue.reduce((sum, r) => sum + r.paymentCount, 0)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-right text-green-600 dark:text-green-400">
+                              ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100 * 0.5).toFixed(2)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100 * 0.5).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="space-y-3 p-4 md:hidden">
                       {revenueData.revenue.map((row) => (
-                        <TableRow key={row.therapistId} data-testid={`row-revenue-${row.therapistId}`}>
-                          <TableCell className="font-medium">{row.therapistName || "—"}</TableCell>
-                          <TableCell>{row.therapistEmail}</TableCell>
-                          <TableCell className="text-right">{row.paymentCount}</TableCell>
-                          <TableCell className="text-right">
-                            ${(row.totalAmount / 100).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold text-green-600 dark:text-green-500">
-                            ${(row.totalAmount / 100 * 0.5).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            ${(row.totalAmount / 100 * 0.5).toFixed(2)}
-                          </TableCell>
-                        </TableRow>
+                        <div key={row.therapistId} className="rounded-lg border p-4" data-testid={`card-revenue-${row.therapistId}`}>
+                          <p className="font-medium">{row.therapistName || "—"}</p>
+                          <p className="text-sm text-muted-foreground">{row.therapistEmail}</p>
+                          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Payments</p>
+                              <p className="font-medium">{row.paymentCount}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Total</p>
+                              <p className="font-medium">${(row.totalAmount / 100).toFixed(2)}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Mentor Share</p>
+                              <p className="font-medium text-green-600 dark:text-green-400">${(row.totalAmount / 100 * 0.5).toFixed(2)}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Your Share</p>
+                              <p className="font-medium">${(row.totalAmount / 100 * 0.5).toFixed(2)}</p>
+                            </div>
+                          </div>
+                        </div>
                       ))}
-                      <TableRow className="bg-muted/50 font-bold">
-                        <TableCell colSpan={2}>Total</TableCell>
-                        <TableCell className="text-right">
-                          {revenueData.revenue.reduce((sum, r) => sum + r.paymentCount, 0)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right text-green-600 dark:text-green-500">
-                          ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100 * 0.5).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          ${(revenueData.revenue.reduce((sum, r) => sum + r.totalAmount, 0) / 100 * 0.5).toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="overdue-reviews" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Overdue Reviews</h2>
-            </div>
+          <TabsContent value="overdue-reviews" className="space-y-5">
+            <h2 className="text-xl font-semibold" data-testid="text-overdue-heading">Overdue Reviews</h2>
 
-            <Card>
-              <CardContent className="p-0">
-                {loadingOverdueReviews ? (
-                  <div className="flex items-center justify-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-                ) : overdueReviews.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground" data-testid="text-no-overdue-reviews">
-                    <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                    <p>No overdue reviews</p>
-                    <p className="text-sm">All mentors are up to date with their client reviews.</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Mentor</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Week #</TableHead>
-                        <TableHead>Completed Date</TableHead>
-                        <TableHead>Hours Pending</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {overdueReviews.map((review) => (
-                        <TableRow key={`${review.clientId}-${review.weekNumber}`} data-testid={`row-overdue-${review.clientId}-${review.weekNumber}`}>
-                          <TableCell className="font-medium">{review.therapistName || "—"}</TableCell>
-                          <TableCell>{review.clientName || "—"}</TableCell>
-                          <TableCell>Week {review.weekNumber}</TableCell>
-                          <TableCell>{new Date(review.completedAt).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <span className={review.hoursPending > 72 ? "font-semibold text-red-600 dark:text-red-500" : ""}>
-                              {Math.round(review.hoursPending)} hours
-                            </span>
-                          </TableCell>
+            {loadingOverdueReviews ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : overdueReviews.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground" data-testid="text-no-overdue-reviews">
+                  <AlertTriangle className="mx-auto mb-3 h-8 w-8 opacity-40" />
+                  <p className="font-medium">No overdue reviews</p>
+                  <p className="text-sm mt-1">All mentors are up to date with their client reviews.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card className="hidden md:block">
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Mentor</TableHead>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Week #</TableHead>
+                          <TableHead>Completed Date</TableHead>
+                          <TableHead>Hours Pending</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {overdueReviews.map((review) => (
+                          <TableRow key={`${review.clientId}-${review.weekNumber}`} data-testid={`row-overdue-${review.clientId}-${review.weekNumber}`}>
+                            <TableCell className="font-medium">{review.therapistName || "—"}</TableCell>
+                            <TableCell>{review.clientName || "—"}</TableCell>
+                            <TableCell>Week {review.weekNumber}</TableCell>
+                            <TableCell className="text-muted-foreground">{new Date(review.completedAt).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <span className={review.hoursPending > 72 ? "font-medium text-destructive" : ""}>
+                                {Math.round(review.hoursPending)} hours
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-3 md:hidden">
+                  {overdueReviews.map((review) => (
+                    <Card key={`${review.clientId}-${review.weekNumber}`} data-testid={`card-overdue-${review.clientId}-${review.weekNumber}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-medium">{review.therapistName || "—"}</p>
+                            <p className="text-sm text-muted-foreground">{review.clientName || "—"}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            Week {review.weekNumber}
+                          </Badge>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {new Date(review.completedAt).toLocaleDateString()}
+                          </span>
+                          <span className={review.hoursPending > 72 ? "font-medium text-destructive" : "text-muted-foreground"}>
+                            {Math.round(review.hoursPending)} hours pending
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
           </TabsContent>
         </Tabs>
 
-        {/* Edit Client Dialog */}
         <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
           <DialogContent>
             <DialogHeader>
@@ -919,8 +1114,8 @@ export default function AdminPage() {
                 )}
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingClient(null)}>
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => setEditingClient(null)} className="w-full sm:w-auto">
                 Cancel
               </Button>
               <Button
@@ -933,6 +1128,7 @@ export default function AdminPage() {
                   }
                 }}
                 disabled={updateClientMutation.isPending}
+                className="w-full sm:w-auto"
                 data-testid="button-save-client"
               >
                 {updateClientMutation.isPending ? (
@@ -944,7 +1140,6 @@ export default function AdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Reset Password Dialog */}
         <Dialog open={!!resetPasswordUser} onOpenChange={(open) => { if (!open) { setResetPasswordUser(null); setNewPassword(""); } }}>
           <DialogContent>
             <DialogHeader>
@@ -968,8 +1163,8 @@ export default function AdminPage() {
                 The user will receive an email notification that their password has been changed.
               </p>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => { setResetPasswordUser(null); setNewPassword(""); }}>
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => { setResetPasswordUser(null); setNewPassword(""); }} className="w-full sm:w-auto">
                 Cancel
               </Button>
               <Button
@@ -982,6 +1177,7 @@ export default function AdminPage() {
                   }
                 }}
                 disabled={resetPasswordMutation.isPending || newPassword.length < 6}
+                className="w-full sm:w-auto"
                 data-testid="button-confirm-reset-password"
               >
                 {resetPasswordMutation.isPending ? (
@@ -993,7 +1189,6 @@ export default function AdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Client Confirmation Dialog */}
         <AlertDialog open={!!deletingClient} onOpenChange={(open) => { if (!open) setDeletingClient(null); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -1018,7 +1213,7 @@ export default function AdminPage() {
                     deleteClientMutation.mutate(deletingClient.id);
                   }
                 }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive text-destructive-foreground"
                 data-testid="button-confirm-delete-client"
               >
                 {deleteClientMutation.isPending ? (
@@ -1030,7 +1225,6 @@ export default function AdminPage() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Delete Therapist Confirmation Dialog */}
         <AlertDialog open={!!deletingTherapist} onOpenChange={(open) => { if (!open) { setDeletingTherapist(null); setReassignToTherapistId(""); } }}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -1040,11 +1234,11 @@ export default function AdminPage() {
                   Are you sure you want to delete the account for <strong>{deletingTherapist?.name || deletingTherapist?.email}</strong>?
                   
                   {deletingTherapist && deletingTherapist.clientCount > 0 && (
-                    <div className="mt-4 p-3 border rounded-lg bg-yellow-50 dark:bg-yellow-950/30">
-                      <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                    <div className="mt-4 p-3 border rounded-md">
+                      <p className="font-medium">
                         This mentor has {deletingTherapist.clientCount} assigned client(s).
                       </p>
-                      <p className="text-sm mt-2 text-yellow-700 dark:text-yellow-300">
+                      <p className="text-sm mt-2 text-muted-foreground">
                         Select a mentor to reassign these clients to:
                       </p>
                       <Select

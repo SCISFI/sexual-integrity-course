@@ -57,6 +57,8 @@ type ClientProgress = {
     q2: string | null;
     q3: string | null;
     q4: string | null;
+    q5: string | null;
+    q6: string | null;
   }>;
   homeworkCompletions: Array<{
     weekNumber: number;
@@ -154,7 +156,7 @@ export default function AdminClientPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background px-6 py-8">
+      <div className="min-h-screen bg-background px-4 py-6 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-4xl space-y-6">
           <Skeleton className="h-10 w-40" />
           <Skeleton className="h-40 w-full" />
@@ -166,14 +168,14 @@ export default function AdminClientPage() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-background px-6 py-8">
+      <div className="min-h-screen bg-background px-4 py-6 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-4xl">
           <Button variant="ghost" onClick={() => setLocation("/admin")} data-testid="button-back">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Admin
           </Button>
           <Card className="mt-6">
-            <CardContent className="py-8 text-center text-muted-foreground">
+            <CardContent className="py-12 text-center text-muted-foreground">
               Client not found or error loading data.
             </CardContent>
           </Card>
@@ -185,7 +187,7 @@ export default function AdminClientPage() {
   const { client, completedWeeks, checkins, reflections, homeworkCompletions, feedback, therapists } = data;
 
   return (
-    <div className="min-h-screen bg-background px-6 py-8">
+    <div className="min-h-screen bg-background px-4 py-6 sm:px-6 sm:py-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <Button variant="ghost" onClick={() => setLocation("/admin")} data-testid="button-back">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -193,77 +195,77 @@ export default function AdminClientPage() {
         </Button>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <User className="h-5 w-5 text-muted-foreground" />
               {client.name || "Unnamed Client"}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-3">
               <div>
                 <p className="text-sm text-muted-foreground">Email</p>
-                <p className="font-medium">{client.email}</p>
+                <p className="font-medium text-sm break-all">{client.email}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Start Date</p>
-                <p className="font-medium">{client.startDate || "Not set"}</p>
+                <p className="font-medium text-sm">{client.startDate || "Not set"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Mentor(s)</p>
-                <p className="font-medium">
+                <p className="font-medium text-sm">
                   {therapists.length > 0 
                     ? therapists.map(t => t.name || t.email).join(", ") 
                     : "None assigned"}
                 </p>
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               {client.allFeesWaived && (
                 <Badge variant="secondary">All Fees Waived</Badge>
               )}
-              <Badge variant="outline">{completedWeeks.length} / 16 Weeks Completed</Badge>
+              <Badge variant="outline">{completedWeeks.length} / 16 Weeks</Badge>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setLocation(`/analytics/${clientId}`)}
+                className="ml-auto"
                 data-testid="button-view-analytics"
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
-                View Analytics
+                Analytics
               </Button>
             </div>
           </CardContent>
         </Card>
 
         <Tabs defaultValue="progress" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="progress">Progress</TabsTrigger>
-            <TabsTrigger value="checkins">Check-ins</TabsTrigger>
-            <TabsTrigger value="reflections">Reflections</TabsTrigger>
-            <TabsTrigger value="homework">Homework</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex w-auto min-w-full sm:min-w-0">
+              <TabsTrigger value="progress">Progress</TabsTrigger>
+              <TabsTrigger value="checkins">Check-ins</TabsTrigger>
+              <TabsTrigger value="reflections">Reflections</TabsTrigger>
+              <TabsTrigger value="homework">Homework</TabsTrigger>
+              <TabsTrigger value="feedback">Feedback</TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="progress" className="space-y-4">
+          <TabsContent value="progress" className="mt-4 space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Week Completion Status
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Week Completion Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-4 gap-3 sm:grid-cols-8">
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-8 sm:gap-3">
                   {Array.from({ length: 16 }, (_, i) => i + 1).map((week) => {
                     const isCompleted = completedWeeks.includes(week);
                     return (
                       <div
                         key={week}
-                        className={`relative flex h-12 w-12 items-center justify-center rounded-lg border-2 text-sm font-medium ${
+                        className={`relative flex h-11 w-full items-center justify-center rounded-md border text-sm font-medium ${
                           isCompleted
-                            ? "border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
-                            : "border-muted bg-muted/20 text-muted-foreground"
+                            ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300"
+                            : "border-border bg-muted/20 text-muted-foreground"
                         }`}
                         data-testid={`week-status-${week}`}
                       >
@@ -276,61 +278,60 @@ export default function AdminClientPage() {
                               e.stopPropagation();
                               setResetWeekNumber(week);
                             }}
-                            className="absolute -top-2 -right-2"
+                            className="absolute -top-2 -right-2 h-5 w-5"
                             title={`Reset Week ${week}`}
                             data-testid={`button-reset-week-${week}`}
                           >
-                            <RotateCcw className="h-3 w-3" />
+                            <RotateCcw className="h-2.5 w-2.5" />
                           </Button>
                         )}
                       </div>
                     );
                   })}
                 </div>
-                <p className="mt-4 text-sm text-muted-foreground">
-                  Click the reset button on a completed week to allow the client to redo it.
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Tap the reset button on a completed week to allow the client to redo it.
                 </p>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="checkins" className="space-y-4">
+          <TabsContent value="checkins" className="mt-4 space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">
                   Daily Check-ins ({checkins.length} total)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {checkins.length === 0 ? (
-                  <p className="text-muted-foreground">No check-ins recorded yet.</p>
+                  <p className="text-muted-foreground text-sm">No check-ins recorded yet.</p>
                 ) : (
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
                     {checkins.slice(0, 30).map((checkin) => (
                       <div
                         key={checkin.id}
-                        className="rounded-lg border p-4"
+                        className="rounded-md border p-4"
                         data-testid={`checkin-${checkin.dateKey}`}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium">{checkin.dateKey}</span>
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                          <span className="font-medium text-sm">{checkin.dateKey}</span>
                           <div className="flex gap-2">
                             {checkin.moodLevel !== null && (
-                              <Badge variant="outline">Mood: {checkin.moodLevel}/10</Badge>
+                              <Badge variant="outline" className="text-xs">Mood: {checkin.moodLevel}/10</Badge>
                             )}
                             {checkin.urgeLevel !== null && (
-                              <Badge variant="outline">Urge: {checkin.urgeLevel}/10</Badge>
+                              <Badge variant="outline" className="text-xs">Urge: {checkin.urgeLevel}/10</Badge>
                             )}
                           </div>
                         </div>
                         {checkin.eveningChecks && (
                           <div className="mt-2">
-                            <p className="text-xs text-muted-foreground mb-1">Daily Items</p>
+                            <p className="text-xs text-muted-foreground mb-1.5">Daily Items</p>
                             <div className="space-y-1">
                               {formatEveningChecks(checkin.eveningChecks).map((id) => (
-                                <div key={id} className="flex items-center gap-2 text-sm" data-testid={`checkin-item-${id}`}>
-                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                <div key={id} className="flex items-start gap-2 text-sm" data-testid={`checkin-item-${id}`}>
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                                   <span>{DAILY_CHECK_LABELS[id] || id}</span>
                                 </div>
                               ))}
@@ -338,7 +339,7 @@ export default function AdminClientPage() {
                           </div>
                         )}
                         {checkin.journalEntry && (
-                          <div className="mt-2">
+                          <div className="mt-3 pt-3 border-t">
                             <p className="text-xs text-muted-foreground">
                               Journal Prompt: <em>{getPromptForDate(checkin.dateKey)}</em>
                             </p>
@@ -353,38 +354,35 @@ export default function AdminClientPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="reflections" className="space-y-4">
+          <TabsContent value="reflections" className="mt-4 space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Week Reflections
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Week Reflections</CardTitle>
               </CardHeader>
               <CardContent>
                 {reflections.length === 0 ? (
-                  <p className="text-muted-foreground">No reflections recorded yet.</p>
+                  <p className="text-muted-foreground text-sm">No reflections recorded yet.</p>
                 ) : (
                   <div className="space-y-4">
                     {reflections.map((reflection) => (
                       <div
                         key={reflection.weekNumber}
-                        className="rounded-lg border p-4"
+                        className="rounded-md border p-4"
                         data-testid={`reflection-week-${reflection.weekNumber}`}
                       >
-                        <h4 className="font-medium mb-3">Week {reflection.weekNumber}</h4>
+                        <h4 className="font-medium text-sm mb-3">Week {reflection.weekNumber}</h4>
                         <div className="space-y-3">
                           {(() => {
                             const weekData = WEEK_CONTENT[reflection.weekNumber];
                             const rqs = weekData?.reflectionQuestions || [];
-                            const defaultLabels = ["Key insight", "What went well", "Challenges faced", "Goals for next week"];
-                            return [reflection.q1, reflection.q2, reflection.q3, reflection.q4].map((answer, idx) => {
+                            const defaultLabels = ["Key insight", "What went well", "Challenges faced", "Goals for next week", "Reflection 5", "Reflection 6"];
+                            return [reflection.q1, reflection.q2, reflection.q3, reflection.q4, reflection.q5, reflection.q6].map((answer, idx) => {
                               if (!answer) return null;
                               const label = rqs[idx]?.question || defaultLabels[idx];
                               return (
                                 <div key={idx}>
                                   <p className="text-xs text-muted-foreground">{label}</p>
-                                  <p className="text-sm">{answer}</p>
+                                  <p className="text-sm mt-0.5">{answer}</p>
                                 </div>
                               );
                             });
@@ -398,29 +396,26 @@ export default function AdminClientPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="homework" className="space-y-4">
+          <TabsContent value="homework" className="mt-4 space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ListChecks className="h-5 w-5" />
-                  Homework Completions
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Homework Completions</CardTitle>
               </CardHeader>
               <CardContent>
                 {homeworkCompletions?.length === 0 ? (
-                  <p className="text-muted-foreground">No homework completions recorded yet.</p>
+                  <p className="text-muted-foreground text-sm">No homework completions recorded yet.</p>
                 ) : (
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
                     {homeworkCompletions?.map((hw) => (
                       <div
                         key={hw.weekNumber}
-                        className="rounded-lg border p-4"
+                        className="rounded-md border p-4"
                         data-testid={`homework-week-${hw.weekNumber}`}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">Week {hw.weekNumber}</h4>
-                          <Badge variant="outline">
-                            {hw.completedItems.length} items completed
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <h4 className="font-medium text-sm">Week {hw.weekNumber}</h4>
+                          <Badge variant="outline" className="text-xs">
+                            {hw.completedItems.length} items
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">
@@ -434,13 +429,10 @@ export default function AdminClientPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="feedback" className="space-y-4">
+          <TabsContent value="feedback" className="mt-4 space-y-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Add Feedback
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Add Feedback</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -456,12 +448,13 @@ export default function AdminClientPage() {
                     placeholder="Write your feedback, encouragement, or technique reminders here..."
                     value={newFeedback}
                     onChange={(e) => setNewFeedback(e.target.value)}
-                    className="min-h-24"
+                    className="min-h-[100px]"
                     data-testid="input-feedback"
                   />
                   <Button 
                     onClick={handleSubmitFeedback}
                     disabled={!newFeedback.trim() || feedbackMutation.isPending}
+                    className="w-full sm:w-auto"
                     data-testid="button-submit-feedback"
                   >
                     <Send className="mr-2 h-4 w-4" />
@@ -472,27 +465,27 @@ export default function AdminClientPage() {
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Previous Feedback</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Previous Feedback</CardTitle>
               </CardHeader>
               <CardContent>
                 {feedback?.length === 0 ? (
-                  <p className="text-muted-foreground">No feedback given yet.</p>
+                  <p className="text-muted-foreground text-sm">No feedback given yet.</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {feedback?.map((fb) => (
                       <div
                         key={fb.id}
-                        className="rounded-lg border p-4"
+                        className="rounded-md border p-4"
                         data-testid={`feedback-${fb.id}`}
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            {fb.weekNumber && <Badge variant="outline">Week {fb.weekNumber}</Badge>}
-                            <Badge variant="secondary">{fb.feedbackType}</Badge>
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {fb.weekNumber && <Badge variant="outline" className="text-xs">Week {fb.weekNumber}</Badge>}
+                            <Badge variant="secondary" className="text-xs">{fb.feedbackType}</Badge>
                             {fb.editedAt && (
                               <span className="text-[10px] text-muted-foreground italic" data-testid={`edited-indicator-${fb.id}`}>
-                                Edited by Admin &middot; {new Date(fb.editedAt).toLocaleDateString()}
+                                Edited &middot; {new Date(fb.editedAt).toLocaleDateString()}
                               </span>
                             )}
                           </div>
@@ -513,14 +506,14 @@ export default function AdminClientPage() {
                           </div>
                         </div>
                         {editingFeedbackId === fb.id ? (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <Textarea
                               value={editingContent}
                               onChange={(e) => setEditingContent(e.target.value)}
                               rows={4}
                               data-testid={`textarea-edit-feedback-${fb.id}`}
                             />
-                            <div className="flex gap-2 justify-end">
+                            <div className="flex flex-wrap gap-2 justify-end">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -552,7 +545,6 @@ export default function AdminClientPage() {
         </Tabs>
       </div>
 
-      {/* Reset Week Confirmation Dialog */}
       <Dialog open={resetWeekNumber !== null} onOpenChange={(open) => !open && setResetWeekNumber(null)}>
         <DialogContent>
           <DialogHeader>
@@ -562,14 +554,15 @@ export default function AdminClientPage() {
               Their previous responses (reflections, homework) will be preserved but the week will no longer show as completed.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResetWeekNumber(null)} data-testid="button-cancel-reset-week">
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => setResetWeekNumber(null)} className="w-full sm:w-auto" data-testid="button-cancel-reset-week">
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={() => resetWeekNumber && resetWeekMutation.mutate(resetWeekNumber)}
               disabled={resetWeekMutation.isPending}
+              className="w-full sm:w-auto"
               data-testid="button-confirm-reset-week"
             >
               {resetWeekMutation.isPending ? "Resetting..." : "Reset Week"}

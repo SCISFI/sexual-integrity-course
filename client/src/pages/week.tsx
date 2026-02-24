@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -26,8 +25,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, BookOpen, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Lightbulb, Trophy, Sparkles, Target } from "lucide-react";
-import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
+import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine } from "lucide-react";
+import { WEEK_CONTENT, WEEK_TITLES } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
 import { CrisisResources } from "@/components/CrisisResources";
@@ -180,7 +179,6 @@ export default function WeekPage() {
   const weekContent = WEEK_CONTENT[weekNumber];
   const title = WEEK_TITLES[weekNumber] ?? "Week";
   const phase = weekNumber <= 8 ? 1 : 2;
-  const phaseInfo = PHASE_INFO[phase];
 
   const { toast } = useToast();
   const [isWeekCompleted, setIsWeekCompleted] = useState(false);
@@ -320,6 +318,8 @@ export default function WeekPage() {
         q2: r.q2 || "",
         q3: r.q3 || "",
         q4: r.q4 || "",
+        q5: r.q5 || "",
+        q6: r.q6 || "",
       };
       setReflectionAnswers(loaded);
       reflectionAnswersRef.current = loaded;
@@ -340,7 +340,7 @@ export default function WeekPage() {
 
   // Mutation to save reflections
   const saveReflectionMutation = useMutation({
-    mutationFn: async (data: { q1?: string; q2?: string; q3?: string; q4?: string }) => {
+    mutationFn: async (data: { q1?: string; q2?: string; q3?: string; q4?: string; q5?: string; q6?: string }) => {
       const res = await apiRequest("PUT", `/api/progress/reflection/${weekNumber}`, data);
       return res.json();
     },
@@ -437,6 +437,8 @@ export default function WeekPage() {
         q2: answers.q2 ?? "",
         q3: answers.q3 ?? "",
         q4: answers.q4 ?? "",
+        q5: answers.q5 ?? "",
+        q6: answers.q6 ?? "",
       });
     }, 1000); // Save after 1 second of inactivity
   }, [weekNumber, weekIsLocked, loadingReflections]);
@@ -483,6 +485,8 @@ export default function WeekPage() {
             q2: answers.q2 ?? "",
             q3: answers.q3 ?? "",
             q4: answers.q4 ?? "",
+            q5: answers.q5 ?? "",
+            q6: answers.q6 ?? "",
           }),
           keepalive: true,
         }).catch(() => {});
@@ -596,55 +600,48 @@ export default function WeekPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 py-6 space-y-6">
+      <main className="mx-auto max-w-3xl px-4 py-6 md:py-8 space-y-6 md:space-y-8">
         {/* Hero Section */}
-        <div className={`relative overflow-hidden rounded-xl ${phase === 1 ? 'bg-gradient-to-br from-primary/90 via-primary to-primary/80' : 'bg-gradient-to-br from-accent/90 via-accent to-accent/80'} p-6 md:p-8 text-white`}>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30 hover:bg-white/30">
+        <Card className="overflow-hidden" data-testid="section-hero">
+          <CardContent className="p-6 md:p-8 space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge variant="secondary">
                 Phase {phase}: {phase === 1 ? 'CBT' : 'ACT'}
               </Badge>
               {weekIsLocked && (
-                <Badge variant="secondary" className="bg-green-500/30 text-white border-green-300/30">
+                <Badge variant="secondary" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Completed
                 </Badge>
               )}
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2" data-testid="text-week-title">
-              Week {weekNumber}: {title}
-            </h1>
-            <p className="text-white/90 text-sm md:text-base max-w-2xl" data-testid="text-week-overview">
-              {weekContent?.overview ?? "Content coming soon."}
-            </p>
-            
-            {/* Progress Indicator */}
-            <div className="mt-6 flex items-center gap-3">
-              <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-white rounded-full transition-all duration-500"
-                  style={{ width: `${(weekNumber / 16) * 100}%` }}
-                />
-              </div>
-              <span className="text-sm text-white/80 font-medium">{Math.round((weekNumber / 16) * 100)}%</span>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2" data-testid="text-week-title">
+                Week {weekNumber}: {title}
+              </h1>
+              <p className="text-muted-foreground text-sm md:text-base max-w-2xl leading-relaxed" data-testid="text-week-overview">
+                {weekContent?.overview ?? "Content coming soon."}
+              </p>
             </div>
-          </div>
-        </div>
+
+            {/* Progress Indicator */}
+            <div className="flex items-center gap-3 pt-2">
+              <Progress value={(weekNumber / 16) * 100} className="h-1.5 flex-1" />
+              <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">Week {weekNumber} of 16</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Review Mode Banner - show for completed weeks */}
         {weekIsLocked && (
-          <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30" data-testid="banner-review-mode">
+          <Card data-testid="banner-review-mode">
             <CardContent className="flex items-center gap-3 py-4">
-              <div className="flex-shrink-0 p-2 rounded-full bg-blue-100 dark:bg-blue-900/50">
-                <Eye className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="flex-shrink-0">
+                <Eye className="h-4 w-4 text-muted-foreground" />
               </div>
-              <div>
-                <h3 className="font-medium text-blue-800 dark:text-blue-200">Review Mode</h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  You completed this week. You can review your answers below, but cannot make changes.
-                </p>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                You completed this week. You can review your answers below, but cannot make changes.
+              </p>
             </CardContent>
           </Card>
         )}
@@ -727,25 +724,15 @@ export default function WeekPage() {
               <>
                 {/* Progress Tracker */}
                 {totalProgressItems > 0 && (
-                  <Card data-testid="section-progress-tracker">
-                    <CardContent className="py-4">
-                      <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-                        <div className="flex items-center gap-2">
-                          <Target className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-medium">Section Progress</span>
-                        </div>
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {completedReflections + completedExercises}/{totalProgressItems} completed
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Progress value={sectionProgress} className="h-2 flex-1" />
-                        <span className="text-xs font-medium text-muted-foreground w-10">
-                          {sectionProgress}%
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="flex items-center gap-3" data-testid="section-progress-tracker">
+                    <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                      {completedReflections + completedExercises}/{totalProgressItems}
+                    </span>
+                    <Progress value={sectionProgress} className="h-1.5 flex-1" />
+                    <span className="text-xs text-muted-foreground font-medium w-8 text-right">
+                      {sectionProgress}%
+                    </span>
+                  </div>
                 )}
 
                 {/* Auto-save indicators */}
@@ -782,192 +769,180 @@ export default function WeekPage() {
 
                 {/* Teaching Sections with embedded Reflections and Exercises */}
                 {weekContent.teaching && weekContent.teaching.length > 0 && (
-                  <Card data-testid="section-teaching">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                          <BookOpen className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <h2 className="text-xl font-semibold">Teaching</h2>
-                          <p className="text-sm text-muted-foreground">
-                            {weekContent.teaching.length} topic{weekContent.teaching.length !== 1 ? 's' : ''} to explore
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-3 pl-[52px]">
-                        Each topic below must be opened and reviewed. Complete the reflection and exercise within each section to progress.
-                      </p>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <Accordion type="multiple" className="w-full">
-                        {weekContent.teaching.map((section, idx) => {
-                          const sectionReflection = weekContent.reflectionQuestions?.[idx];
-                          const sectionExercise = weekContent.exercises?.[idx];
-                          const hasReflectionAnswer = sectionReflection && (reflectionAnswers[sectionReflection.id] || "").trim().length > 0;
-                          const hasExerciseAnswer = sectionExercise && sectionExercise.fields.every(
-                            (field) => (exerciseAnswers[`${sectionExercise.id}-${field.id}`] || "").trim().length > 0
-                          );
-                          const sectionItemCount = (sectionReflection ? 1 : 0) + (sectionExercise ? 1 : 0);
-                          const sectionCompletedCount = (hasReflectionAnswer ? 1 : 0) + (hasExerciseAnswer ? 1 : 0);
-                          const sectionDone = sectionItemCount > 0 && sectionCompletedCount === sectionItemCount;
+                  <div className="space-y-3" data-testid="section-teaching">
+                    <div className="flex items-center justify-between gap-2 flex-wrap px-1">
+                      <h2 className="text-lg font-semibold">Lessons</h2>
+                      <span className="text-xs text-muted-foreground">
+                        {weekContent.teaching.length} topic{weekContent.teaching.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
 
-                          return (
-                            <AccordionItem key={section.id} value={section.id} className="border-b last:border-b-0">
-                              <AccordionTrigger 
-                                className="text-left py-4 hover:no-underline group"
-                                data-testid={`accordion-teaching-${idx}`}
-                              >
-                                <div className="flex items-center gap-3 flex-1">
-                                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
-                                    sectionDone 
-                                      ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' 
-                                      : 'bg-primary/10 text-primary group-hover:bg-primary/20'
-                                  }`}>
-                                    {sectionDone ? (
-                                      <CheckCircle2 className="h-4 w-4" />
-                                    ) : (
-                                      idx + 1
-                                    )}
-                                  </span>
-                                  <span className="font-medium">{section.title}</span>
-                                </div>
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="pl-10 space-y-6">
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <TextToSpeech 
-                                      text={section.content.join('. ')} 
-                                      label={`Listen to "${section.title}"`} 
-                                    />
-                                    <span>Listen to this section</span>
-                                  </div>
-                                  <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
-                                    {section.content.map((paragraph, pIdx) => (
-                                      <p key={pIdx}>{paragraph}</p>
-                                    ))}
-                                  </div>
+                    <div className="space-y-3">
+                      {weekContent.teaching.map((section, idx) => {
+                        const sectionReflection = weekContent.reflectionQuestions?.[idx];
+                        const sectionExercise = weekContent.exercises?.[idx];
+                        const hasReflectionAnswer = sectionReflection && (reflectionAnswers[sectionReflection.id] || "").trim().length > 0;
+                        const hasExerciseAnswer = sectionExercise && sectionExercise.fields.every(
+                          (field) => (exerciseAnswers[`${sectionExercise.id}-${field.id}`] || "").trim().length > 0
+                        );
+                        const sectionItemCount = (sectionReflection ? 1 : 0) + (sectionExercise ? 1 : 0);
+                        const sectionCompletedCount = (hasReflectionAnswer ? 1 : 0) + (hasExerciseAnswer ? 1 : 0);
+                        const sectionDone = sectionItemCount > 0 && sectionCompletedCount === sectionItemCount;
 
-                                  {/* Embedded Reflection for this section */}
-                                  {sectionReflection && (
-                                    <div className="rounded-lg border border-amber-200/50 dark:border-amber-800/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 p-4 space-y-3">
-                                      <div className="flex items-start gap-3">
-                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-200/70 dark:bg-amber-800/50 flex-shrink-0 mt-0.5">
-                                          <PenLine className="h-3 w-3 text-amber-800 dark:text-amber-200" />
-                                        </div>
-                                        <div className="flex-1 space-y-1">
-                                          <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Reflection</span>
-                                          <Label 
-                                            htmlFor={`reflection-${sectionReflection.id}`}
-                                            className="text-sm font-medium leading-relaxed block"
-                                            data-testid={`label-reflection-${idx}`}
-                                          >
-                                            {sectionReflection.question}
-                                          </Label>
-                                        </div>
-                                      </div>
-                                      <Textarea
-                                        id={`reflection-${sectionReflection.id}`}
-                                        placeholder={weekIsLocked ? "This week has been completed. Your answers are saved." : "Write your reflection here..."}
-                                        className={`min-h-[100px] bg-white dark:bg-background/80 border-amber-200/50 dark:border-amber-800/30 resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
-                                        value={reflectionAnswers[sectionReflection.id] || ""}
-                                        onChange={(e) => handleReflectionChange(sectionReflection.id, e.target.value)}
-                                        disabled={weekIsLocked}
-                                        data-testid={`input-reflection-${idx}`}
+                        return (
+                          <Card key={section.id} className="overflow-visible">
+                            <Accordion type="multiple" className="w-full">
+                              <AccordionItem value={section.id} className="border-0">
+                                <AccordionTrigger 
+                                  className="text-left px-4 py-4 md:px-6 md:py-5 hover:no-underline group min-h-[52px]"
+                                  data-testid={`accordion-teaching-${idx}`}
+                                >
+                                  <div className="flex items-center gap-3 flex-1">
+                                    <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold flex-shrink-0 transition-colors ${
+                                      sectionDone 
+                                        ? 'bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400' 
+                                        : 'bg-muted text-muted-foreground'
+                                    }`}>
+                                      {sectionDone ? (
+                                        <CheckCircle2 className="h-4 w-4" />
+                                      ) : (
+                                        idx + 1
+                                      )}
+                                    </span>
+                                    <span className="font-medium text-sm md:text-base">{section.title}</span>
+                                  </div>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                  <div className="px-4 pb-5 md:px-6 md:pb-6 space-y-6">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground pl-10">
+                                      <TextToSpeech 
+                                        text={section.content.join('. ')} 
+                                        label={`Listen to "${section.title}"`} 
                                       />
+                                      <span>Listen to this section</span>
                                     </div>
-                                  )}
+                                    <div className="space-y-4 text-sm text-muted-foreground leading-relaxed pl-10">
+                                      {section.content.map((paragraph, pIdx) => (
+                                        <p key={pIdx}>{paragraph}</p>
+                                      ))}
+                                    </div>
 
-                                  {/* Embedded Exercise for this section */}
-                                  {sectionExercise && (
-                                    <div className="rounded-lg border bg-muted/30 overflow-visible">
-                                      <div className="flex items-center gap-3 p-4 border-b bg-muted/50">
-                                        <Badge variant="outline" className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800">
-                                          Exercise
-                                        </Badge>
-                                        <span className="font-medium">{sectionExercise.title}</span>
+                                    {/* Embedded Reflection for this section */}
+                                    {sectionReflection && (
+                                      <div className="rounded-md border bg-muted/30 dark:bg-muted/10 p-4 md:p-5 space-y-3 ml-10">
+                                        <div className="flex items-start gap-2">
+                                          <PenLine className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                          <div className="flex-1 space-y-1">
+                                            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Reflection</span>
+                                            <Label 
+                                              htmlFor={`reflection-${sectionReflection.id}`}
+                                              className="text-sm font-medium leading-relaxed block"
+                                              data-testid={`label-reflection-${idx}`}
+                                            >
+                                              {sectionReflection.question}
+                                            </Label>
+                                          </div>
+                                        </div>
+                                        <Textarea
+                                          id={`reflection-${sectionReflection.id}`}
+                                          placeholder={weekIsLocked ? "This week has been completed. Your answers are saved." : "Write your reflection here..."}
+                                          className={`min-h-[120px] resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                          value={reflectionAnswers[sectionReflection.id] || ""}
+                                          onChange={(e) => handleReflectionChange(sectionReflection.id, e.target.value)}
+                                          disabled={weekIsLocked}
+                                          data-testid={`input-reflection-${idx}`}
+                                        />
                                       </div>
-                                      <div className="p-4 space-y-4">
-                                        <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/30">
-                                          <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                                          <p className="text-sm text-blue-800 dark:text-blue-200">
+                                    )}
+
+                                    {/* Embedded Exercise for this section */}
+                                    {sectionExercise && (
+                                      <div className="rounded-md border overflow-visible ml-10">
+                                        <div className="flex items-center gap-3 px-4 py-3 md:px-5 border-b bg-muted/20">
+                                          <ClipboardList className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Exercise</span>
+                                          <span className="text-sm font-medium">{sectionExercise.title}</span>
+                                        </div>
+                                        <div className="p-4 md:p-5 space-y-4">
+                                          <p className="text-sm text-muted-foreground leading-relaxed">
                                             {sectionExercise.instructions}
                                           </p>
-                                        </div>
-                                        <div className="space-y-4">
-                                          {sectionExercise.fields.map((field, fIdx) => (
-                                            <div key={field.id} className="space-y-2">
-                                              <Label 
-                                                htmlFor={`${sectionExercise.id}-${field.id}`}
-                                                className="text-sm font-medium"
-                                              >
-                                                {field.label}
-                                              </Label>
-                                              {field.type === "textarea" ? (
-                                                <Textarea
-                                                  id={`${sectionExercise.id}-${field.id}`}
-                                                  placeholder={weekIsLocked ? "This week has been completed." : field.placeholder}
-                                                  className={`min-h-[120px] resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
-                                                  value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
-                                                  onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
-                                                  disabled={weekIsLocked}
-                                                  data-testid={`input-exercise-${idx}-${fIdx}`}
-                                                />
-                                              ) : field.type === "number" ? (
-                                                <Input
-                                                  id={`${sectionExercise.id}-${field.id}`}
-                                                  type="number"
-                                                  placeholder={weekIsLocked ? "" : field.placeholder}
-                                                  className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
-                                                  value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
-                                                  onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
-                                                  disabled={weekIsLocked}
-                                                  data-testid={`input-exercise-${idx}-${fIdx}`}
-                                                />
-                                              ) : (
-                                                <Input
-                                                  id={`${sectionExercise.id}-${field.id}`}
-                                                  type="text"
-                                                  placeholder={weekIsLocked ? "" : field.placeholder}
-                                                  className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
-                                                  value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
-                                                  onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
-                                                  disabled={weekIsLocked}
-                                                  data-testid={`input-exercise-${idx}-${fIdx}`}
-                                                />
-                                              )}
-                                            </div>
-                                          ))}
+                                          <div className="space-y-4">
+                                            {sectionExercise.fields.map((field, fIdx) => (
+                                              <div key={field.id} className="space-y-2">
+                                                <Label 
+                                                  htmlFor={`${sectionExercise.id}-${field.id}`}
+                                                  className="text-sm font-medium"
+                                                >
+                                                  {field.label}
+                                                </Label>
+                                                {field.type === "textarea" ? (
+                                                  <Textarea
+                                                    id={`${sectionExercise.id}-${field.id}`}
+                                                    placeholder={weekIsLocked ? "This week has been completed." : field.placeholder}
+                                                    className={`min-h-[120px] resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                                    value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
+                                                    onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
+                                                    disabled={weekIsLocked}
+                                                    data-testid={`input-exercise-${idx}-${fIdx}`}
+                                                  />
+                                                ) : field.type === "number" ? (
+                                                  <Input
+                                                    id={`${sectionExercise.id}-${field.id}`}
+                                                    type="number"
+                                                    placeholder={weekIsLocked ? "" : field.placeholder}
+                                                    className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
+                                                    value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
+                                                    onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
+                                                    disabled={weekIsLocked}
+                                                    data-testid={`input-exercise-${idx}-${fIdx}`}
+                                                  />
+                                                ) : (
+                                                  <Input
+                                                    id={`${sectionExercise.id}-${field.id}`}
+                                                    type="text"
+                                                    placeholder={weekIsLocked ? "" : field.placeholder}
+                                                    className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
+                                                    value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
+                                                    onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
+                                                    disabled={weekIsLocked}
+                                                    data-testid={`input-exercise-${idx}-${fIdx}`}
+                                                  />
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          );
-                        })}
-                      </Accordion>
-                    </CardContent>
-                  </Card>
+                                    )}
+                                  </div>
+                                </AccordionContent>
+                              </AccordionItem>
+                            </Accordion>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
                 {/* Week Completion */}
                 {weekIsLocked ? (
-                  <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-emerald-50/30 dark:from-green-950/20 dark:to-emerald-950/10">
-                    <CardContent className="flex items-center gap-4 py-6">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
-                        <Trophy className="h-6 w-6 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-green-800 dark:text-green-200">Week {weekNumber} Completed</h3>
-                        <p className="text-sm text-green-700 dark:text-green-300">
-                          Your reflection and exercise answers are saved and viewable above.
-                        </p>
+                  <Card data-testid="section-week-completed">
+                    <CardContent className="flex flex-col gap-4 py-6 sm:flex-row sm:items-center">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <h3 className="font-semibold">Week {weekNumber} Completed</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Your answers are saved and viewable above.
+                          </p>
+                        </div>
                       </div>
                       {weekNumber < 16 && (
                         <Button
                           onClick={() => setLocation(`/week/${weekNumber + 1}`)}
+                          className="w-full sm:w-auto"
                           data-testid="button-next-week-locked"
                         >
                           Week {weekNumber + 1}
@@ -977,36 +952,26 @@ export default function WeekPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-                    <CardContent className="py-6 space-y-4">
-                      <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-muted">
+                  <Card>
+                    <CardContent className="py-6 space-y-5">
+                      <div className="flex items-start gap-3">
                         <input
                           type="checkbox"
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          className="mt-1 h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary flex-shrink-0"
                           checked={affirmComplete}
                           onChange={(e) => setAffirmComplete(e.target.checked)}
                           data-testid="checkbox-affirm-complete"
                         />
-                        <span className="text-sm leading-relaxed">
-                          By marking this week complete, I affirm that I have completed all required readings, reflections, and exercises <strong>honestly and in full</strong>. I understand that partial completion or skipping undermines the purpose of this program.
+                        <span className="text-sm leading-relaxed text-muted-foreground">
+                          I affirm that I have completed all readings, reflections, and exercises <strong className="text-foreground">honestly and in full</strong>.
                         </span>
                       </div>
 
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="text-sm text-muted-foreground">
-                          {isWeekCompleted
-                            ? weekNumber === 16 
-                              ? "Congratulations! You have completed the program!"
-                              : `Week ${weekNumber} completed! Week ${weekNumber + 1} is now unlocked.`
-                            : weekNumber === 16
-                              ? "Complete all exercises to finish the program."
-                              : `Complete all exercises to unlock Week ${weekNumber + 1}.`}
-                        </p>
-
+                      <div className="flex flex-col gap-3">
                         <Button
                           onClick={markWeekComplete}
                           disabled={isWeekCompleted || !affirmComplete || markCompleteMutation.isPending}
-                          className="gap-2"
+                          className="w-full gap-2"
                           data-testid="button-mark-complete"
                         >
                           {markCompleteMutation.isPending ? (
@@ -1026,6 +991,15 @@ export default function WeekPage() {
                             </>
                           )}
                         </Button>
+                        <p className="text-xs text-muted-foreground text-center">
+                          {isWeekCompleted
+                            ? weekNumber === 16 
+                              ? "Congratulations! You have completed the program!"
+                              : `Week ${weekNumber} completed! Week ${weekNumber + 1} is now unlocked.`
+                            : weekNumber === 16
+                              ? "Complete all exercises to finish the program."
+                              : `Complete all exercises to unlock Week ${weekNumber + 1}.`}
+                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -1061,22 +1035,17 @@ export default function WeekPage() {
 
           <div className="space-y-6 py-4">
             {/* Congratulations Message */}
-            <div className="rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 p-4 border border-primary/20">
-              <p className="text-sm leading-relaxed">
-                {weekSummary.congrats}
-              </p>
-            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {weekSummary.congrats}
+            </p>
 
             {/* What You Learned */}
             <div className="space-y-3">
-              <h3 className="font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                What You Learned This Week
-              </h3>
+              <h3 className="text-sm font-semibold">What You Learned</h3>
               <ul className="space-y-2">
                 {weekSummary.learnings.map((learning, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-600 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                     <span>{learning}</span>
                   </li>
                 ))}
@@ -1086,15 +1055,15 @@ export default function WeekPage() {
             {/* Personal Insights from Reflections */}
             {hasReflectionAnswers && (
               <div className="space-y-3">
-                <h3 className="font-semibold">Your Personal Insights</h3>
-                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <h3 className="text-sm font-semibold">Your Insights</h3>
+                <div className="rounded-md border p-4 space-y-3">
                   {weekContent?.reflectionQuestions?.map((q) => {
                     const answer = reflectionAnswers[q.id];
                     if (!answer?.trim()) return null;
                     return (
                       <div key={q.id} className="space-y-1">
                         <p className="text-xs font-medium text-muted-foreground">{q.question}</p>
-                        <p className="text-sm italic">"{answer.substring(0, 150)}{answer.length > 150 ? '...' : ''}"</p>
+                        <p className="text-sm italic text-muted-foreground">"{answer.substring(0, 150)}{answer.length > 150 ? '...' : ''}"</p>
                       </div>
                     );
                   })}
@@ -1104,17 +1073,17 @@ export default function WeekPage() {
 
             {/* Daily Check-in Reminder */}
             {weekNumber < 16 && (
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-4">
-                <h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-1">Don't forget: Daily Check-ins</h3>
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  Complete your daily check-in every day to track your progress and stay accountable. This is a key part of the program.
+              <div className="rounded-md border p-4">
+                <h3 className="text-sm font-semibold mb-1">Daily Check-ins</h3>
+                <p className="text-sm text-muted-foreground">
+                  Complete your daily check-in every day to track your progress and stay accountable.
                 </p>
               </div>
             )}
 
             {/* Next Steps */}
             <div className="space-y-3">
-              <h3 className="font-semibold">
+              <h3 className="text-sm font-semibold">
                 {weekNumber === 16 ? "Your Continuing Journey" : "Next Steps"}
               </h3>
               <p className="text-sm text-muted-foreground">

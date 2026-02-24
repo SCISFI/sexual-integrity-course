@@ -15,12 +15,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Loader2, Activity, Lightbulb, BarChart3, HelpCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Loader2, Activity, Lightbulb, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { getTodaysPrompt } from "@/data/journal-prompts";
-import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
 
 interface DailyCheckItem {
   id: string;
@@ -29,7 +28,6 @@ interface DailyCheckItem {
   description?: string;
 }
 
-// Unified daily check-in items - complete once per day
 const DAILY_ITEMS: DailyCheckItem[] = [
   { id: "no-acting-out", category: "Recovery", label: "Did not engage in compulsive sexual behavior today", description: "This tracks your core recovery goal. Even partial days of sobriety matter and build momentum." },
   { id: "no-rituals", category: "Recovery", label: "Did not engage in ritualistic behaviors leading to acting out", description: "Rituals are the habitual steps that precede acting out (e.g., browsing patterns, isolation). Catching them early breaks the cycle." },
@@ -63,7 +61,7 @@ export default function DailyCheckinPage() {
   const [dataLoaded, setDataLoaded] = useState(false);
 
   const todayDate = new Date();
-  const dateKey = todayDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+  const dateKey = todayDate.toISOString().split('T')[0];
   
   const today = todayDate.toLocaleDateString('en-US', { 
     weekday: 'long', 
@@ -72,18 +70,15 @@ export default function DailyCheckinPage() {
     day: 'numeric' 
   });
 
-  // Fetch existing check-in data for today
   const { data: checkinData, isLoading } = useQuery<{ checkin: any }>({
     queryKey: ['/api/progress/checkin', dateKey],
   });
 
-  // Load existing data when fetched
   useEffect(() => {
     if (checkinData?.checkin && !dataLoaded) {
       const c = checkinData.checkin;
       try {
         const halt = c.haltChecks ? JSON.parse(c.haltChecks) : [];
-        // Daily checks are stored in eveningChecks column for compatibility
         const daily = c.eveningChecks ? JSON.parse(c.eveningChecks) : [];
         
         setHaltChecks(halt.reduce((acc: Record<string, boolean>, id: string) => ({ ...acc, [id]: true }), {}));
@@ -98,7 +93,6 @@ export default function DailyCheckinPage() {
     }
   }, [checkinData, dataLoaded]);
 
-  // Mutation to save check-in data
   const saveCheckinMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await apiRequest("PUT", `/api/progress/checkin/${dateKey}`, data);
@@ -124,11 +118,11 @@ export default function DailyCheckinPage() {
     
     try {
       await saveCheckinMutation.mutateAsync({
-        morningChecks: [], // No longer used
+        morningChecks: [],
         haltChecks: haltCheckIds,
         urgeLevel: urgeLevel[0],
         moodLevel: moodLevel[0],
-        eveningChecks: dailyCheckIds, // Store unified daily checks here
+        eveningChecks: dailyCheckIds,
         journalEntry,
       });
       setSubmitted(true);
@@ -175,42 +169,34 @@ export default function DailyCheckinPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between gap-3 border-b px-4 py-3 sticky top-0 bg-background z-50">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            className="gap-2"
-            onClick={() => setLocation("/dashboard")}
-            data-testid="button-back-dashboard"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Dashboard
-          </Button>
-          <div>
-            {user?.name && (
-              <div className="text-sm text-muted-foreground" data-testid="text-welcome-greeting">
-                Welcome, {user.name}
-              </div>
-            )}
-            <div className="font-semibold">Daily Check-in</div>
-            <div className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {today}
-            </div>
-          </div>
+      <header className="flex items-center gap-3 border-b px-4 py-3 sticky top-0 bg-background z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setLocation("/dashboard")}
+          data-testid="button-back-dashboard"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0">
+          <h1 className="text-lg font-semibold leading-tight" data-testid="text-page-title">Daily Check-in</h1>
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <Calendar className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{today}</span>
+          </p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+      <main className="mx-auto max-w-2xl px-4 py-6 space-y-8">
         {submitted ? (
           <Card>
             <CardContent className="py-12 text-center space-y-4">
-              <CheckCircle2 className="h-16 w-16 mx-auto text-green-600" />
-              <h2 className="text-2xl font-bold">Check-in Complete!</h2>
-              <p className="text-muted-foreground max-w-md mx-auto">
+              <CheckCircle2 className="h-16 w-16 mx-auto text-primary" />
+              <h2 className="text-2xl font-bold" data-testid="text-checkin-complete">Check-in Complete!</h2>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
                 Great job taking time to reflect on your day. Self-awareness is a powerful tool in your recovery journey.
               </p>
-              <div className="flex flex-col gap-2 pt-4 max-w-xs mx-auto">
+              <div className="flex flex-col gap-3 pt-4 max-w-xs mx-auto">
                 <Button onClick={() => setLocation("/dashboard")} data-testid="button-go-dashboard">
                   Return to Dashboard
                 </Button>
@@ -228,131 +214,122 @@ export default function DailyCheckinPage() {
           </Card>
         ) : (
           <>
-            {/* Instructions */}
-            <Card className="bg-primary/5 border-primary/20">
-              <CardContent className="py-4">
-                <p className="text-sm text-muted-foreground">
-                  Complete this check-in <strong>toward the end of your day</strong> for the most accurate reflection. 
-                  Reviewing your whole day helps you see patterns and build honest self-awareness.
-                </p>
-              </CardContent>
-            </Card>
+            <p className="text-sm text-muted-foreground">
+              Complete this check-in <strong>toward the end of your day</strong> for the most accurate reflection. 
+              Reviewing your whole day helps you see patterns and build honest self-awareness.
+            </p>
 
-            {/* Daily Recovery & Wellness Items */}
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-primary" />
-                      Today's Check-in
-                    </CardTitle>
-                    <CardDescription>
-                      Check all that apply to your day
-                    </CardDescription>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{checkedCount}/{DAILY_ITEMS.length}</div>
-                    <div className="text-xs text-muted-foreground">{progressPercent}% complete</div>
-                  </div>
+              <CardHeader className="flex flex-row items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <CardTitle className="flex items-center gap-2 flex-wrap">
+                    <Activity className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    Today's Check-in
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Check all that apply to your day
+                  </CardDescription>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <div className="text-2xl font-bold" data-testid="text-progress-count">{checkedCount}/{DAILY_ITEMS.length}</div>
+                  <div className="text-xs text-muted-foreground">{progressPercent}%</div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {DAILY_ITEMS.map((item) => (
-                  <div 
-                    key={item.id} 
-                    className="flex items-start gap-3 p-3 rounded-lg hover-elevate cursor-pointer border"
-                    onClick={() => toggleDailyCheck(item.id)}
-                    data-testid={`daily-item-${item.id}`}
-                  >
-                    <Checkbox
-                      id={`daily-${item.id}`}
-                      checked={dailyChecks[item.id] || false}
-                      onCheckedChange={() => toggleDailyCheck(item.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      data-testid={`checkbox-daily-${item.id}`}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <label
-                          htmlFor={`daily-${item.id}`}
-                          className={`text-sm font-medium cursor-pointer ${dailyChecks[item.id] ? 'line-through text-muted-foreground' : ''}`}
-                        >
-                          {item.label}
-                        </label>
-                        {item.description && (
-                          <Tooltip>
-                            <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 flex-shrink-0 cursor-help" data-testid={`tooltip-trigger-${item.id}`} />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-xs text-xs" data-testid={`tooltip-content-${item.id}`}>
-                              <p>{item.description}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
+              <CardContent>
+                <div className="divide-y">
+                  {DAILY_ITEMS.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="flex items-start gap-3 py-3.5 cursor-pointer"
+                      onClick={() => toggleDailyCheck(item.id)}
+                      data-testid={`daily-item-${item.id}`}
+                    >
+                      <Checkbox
+                        id={`daily-${item.id}`}
+                        checked={dailyChecks[item.id] || false}
+                        onCheckedChange={() => toggleDailyCheck(item.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-0.5"
+                        data-testid={`checkbox-daily-${item.id}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start gap-1.5">
+                          <label
+                            htmlFor={`daily-${item.id}`}
+                            className={`text-sm leading-snug cursor-pointer select-none ${dailyChecks[item.id] ? 'line-through text-muted-foreground' : ''}`}
+                          >
+                            {item.label}
+                          </label>
+                          {item.description && (
+                            <Tooltip>
+                              <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/50 flex-shrink-0 mt-0.5 cursor-help" data-testid={`tooltip-trigger-${item.id}`} />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs text-xs" data-testid={`tooltip-content-${item.id}`}>
+                                <p>{item.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
-            {/* HALT-BS Check */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-red-500" />
+                  <Shield className="h-5 w-5 text-muted-foreground" />
                   HALT-BS Check
                 </CardTitle>
                 <CardDescription>
-                  Are you experiencing any of these vulnerability states? Check any that apply.
+                  Are you experiencing any of these vulnerability states?
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {HALTBS_ITEMS.map((item) => (
                     <div 
                       key={item.id} 
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                      className={`flex items-start gap-2.5 p-3 rounded-md border cursor-pointer transition-colors min-h-[56px] ${
                         haltChecks[item.id] 
-                          ? 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-800' 
+                          ? 'border-foreground/20 bg-muted/50' 
                           : 'hover-elevate'
                       }`}
                       onClick={() => toggleHaltCheck(item.id)}
                       data-testid={`halt-item-${item.id}`}
                     >
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id={`halt-${item.id}`}
-                          checked={haltChecks[item.id] || false}
-                          onCheckedChange={() => toggleHaltCheck(item.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          data-testid={`checkbox-halt-${item.id}`}
-                        />
-                        <div>
-                          <span className="font-bold text-lg">{item.letter}</span>
-                          <span className="text-sm ml-1">- {item.label}</span>
+                      <Checkbox
+                        id={`halt-${item.id}`}
+                        checked={haltChecks[item.id] || false}
+                        onCheckedChange={() => toggleHaltCheck(item.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-0.5"
+                        data-testid={`checkbox-halt-${item.id}`}
+                      />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium leading-tight">
+                          <span className="font-semibold">{item.letter}</span> — {item.label}
                         </div>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{item.description}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 ml-6">{item.description}</p>
                     </div>
                   ))}
                 </div>
                 {anyHaltChecked && (
-                  <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3">
-                    <p className="text-sm text-amber-800 dark:text-amber-200">
-                      You've identified some vulnerability states. Take extra care today and use your coping strategies.
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground" data-testid="text-halt-warning">
+                    You've identified some vulnerability states. Take extra care today and use your coping strategies.
+                  </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Urge & Mood Levels */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-purple-500" />
+                  <Brain className="h-5 w-5 text-muted-foreground" />
                   Current State
                 </CardTitle>
                 <CardDescription>
@@ -360,80 +337,71 @@ export default function DailyCheckinPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label>Urge Level</Label>
-                      <span className="text-sm font-medium px-2 py-1 rounded bg-muted">
-                        {urgeLevel[0]}/10 - {getUrgeLabel(urgeLevel[0])}
-                      </span>
-                    </div>
-                    <Slider
-                      value={urgeLevel}
-                      onValueChange={setUrgeLevel}
-                      max={10}
-                      min={0}
-                      step={1}
-                      className="py-2"
-                      data-testid="slider-urge"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>No urges</span>
-                      <span>Overwhelming</span>
-                    </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm">Urge Level</Label>
+                    <span className="text-sm text-muted-foreground" data-testid="text-urge-value">
+                      {urgeLevel[0]}/10 — {getUrgeLabel(urgeLevel[0])}
+                    </span>
                   </div>
+                  <Slider
+                    value={urgeLevel}
+                    onValueChange={setUrgeLevel}
+                    max={10}
+                    min={0}
+                    step={1}
+                    className="py-3"
+                    data-testid="slider-urge"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>No urges</span>
+                    <span>Overwhelming</span>
+                  </div>
+                </div>
 
-                  <Separator />
+                <Separator />
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label>Mood Level</Label>
-                      <span className="text-sm font-medium px-2 py-1 rounded bg-muted">
-                        {moodLevel[0]}/10 - {getMoodLabel(moodLevel[0])}
-                      </span>
-                    </div>
-                    <Slider
-                      value={moodLevel}
-                      onValueChange={setMoodLevel}
-                      max={10}
-                      min={0}
-                      step={1}
-                      className="py-2"
-                      data-testid="slider-mood"
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Very low</span>
-                      <span>Excellent</span>
-                    </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm">Mood Level</Label>
+                    <span className="text-sm text-muted-foreground" data-testid="text-mood-value">
+                      {moodLevel[0]}/10 — {getMoodLabel(moodLevel[0])}
+                    </span>
+                  </div>
+                  <Slider
+                    value={moodLevel}
+                    onValueChange={setMoodLevel}
+                    max={10}
+                    min={0}
+                    step={1}
+                    className="py-3"
+                    data-testid="slider-mood"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>Very low</span>
+                    <span>Excellent</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Journal */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-pink-500" />
+                  <Heart className="h-5 w-5 text-muted-foreground" />
                   Daily Journal
                 </CardTitle>
                 <CardDescription>
-                  Writing about your day builds self-awareness and strengthens recovery. Even a few sentences make a difference.
+                  Writing about your day builds self-awareness and strengthens recovery.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-3">
-                  <div className="flex items-start gap-2">
-                    <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Today's Prompt</p>
-                      <p className="text-sm text-amber-700 dark:text-amber-300">{getTodaysPrompt()}</p>
-                    </div>
-                  </div>
+                <div className="text-sm text-muted-foreground" data-testid="text-journal-prompt">
+                  <span className="font-medium">Today's prompt:</span> {getTodaysPrompt()}
                 </div>
                 <Textarea
                   placeholder="What's on your mind today? Any wins to celebrate? Challenges you faced? Insights you gained?"
-                  className="min-h-[120px]"
+                  className="min-h-[140px] text-base"
                   value={journalEntry}
                   onChange={(e) => setJournalEntry(e.target.value)}
                   data-testid="input-journal"
@@ -441,25 +409,22 @@ export default function DailyCheckinPage() {
               </CardContent>
             </Card>
 
-            {/* Submit */}
-            <Card>
-              <CardContent className="py-6">
-                <Button 
-                  className="w-full" 
-                  size="lg" 
-                  onClick={handleSubmit}
-                  disabled={saveCheckinMutation.isPending}
-                  data-testid="button-submit-checkin"
-                >
-                  {saveCheckinMutation.isPending ? (
-                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-5 w-5 mr-2" />
-                  )}
-                  {saveCheckinMutation.isPending ? "Saving..." : "Complete Today's Check-in"}
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="pb-6">
+              <Button 
+                className="w-full" 
+                size="lg" 
+                onClick={handleSubmit}
+                disabled={saveCheckinMutation.isPending}
+                data-testid="button-submit-checkin"
+              >
+                {saveCheckinMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-5 w-5 mr-2" />
+                )}
+                {saveCheckinMutation.isPending ? "Saving..." : "Complete Today's Check-in"}
+              </Button>
+            </div>
           </>
         )}
       </main>

@@ -17,10 +17,8 @@ import {
   Mail,
   Calendar,
   Clock,
-  AlertTriangle,
   BookOpen,
   Key,
-  XCircle,
   Loader2,
   LogOut,
 } from "lucide-react";
@@ -100,24 +98,21 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b sticky top-0 bg-background z-50">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              className="gap-2"
-              onClick={() => setLocation("/dashboard")}
-              data-testid="button-back-dashboard"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Dashboard
-            </Button>
-            <div className="font-semibold">Profile & Settings</div>
-          </div>
+        <div className="mx-auto max-w-2xl px-4 py-3 flex items-center justify-between gap-3">
+          <Button
+            variant="ghost"
+            className="gap-2"
+            onClick={() => setLocation("/dashboard")}
+            data-testid="button-back-dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Dashboard
+          </Button>
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 py-6 space-y-6">
+      <main className="mx-auto max-w-2xl px-4 py-8 space-y-8">
         <div data-testid="text-profile-heading">
           <h1 className="text-2xl font-bold">Profile & Settings</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -132,40 +127,41 @@ export default function ProfilePage() {
               Profile info for this member account.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-3 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Name:</span>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3 text-sm py-1">
+              <User className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-muted-foreground min-w-[3.5rem]">Name:</span>
               <span className="font-medium" data-testid="text-account-name">
                 {(user as any)?.name ?? "Not set"}
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Email:</span>
+            <div className="flex items-center gap-3 text-sm py-1">
+              <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-muted-foreground min-w-[3.5rem]">Email:</span>
               <span className="font-medium" data-testid="text-account-email">
                 {(user as any)?.email ?? "Not set"}
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Joined:</span>
+            <div className="flex items-center gap-3 text-sm py-1">
+              <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-muted-foreground min-w-[3.5rem]">Joined:</span>
               <span className="font-medium" data-testid="text-account-joined">
                 {memberSince}
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-3 border-t">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 pt-4 border-t">
               <Link href="/change-password">
-                <Button variant="outline" data-testid="button-change-password">
+                <Button variant="outline" className="w-full sm:w-auto" data-testid="button-change-password">
                   <Key className="h-4 w-4 mr-2" />
                   Change Password
                 </Button>
               </Link>
               <Button
                 variant="outline"
+                className="w-full sm:w-auto"
                 onClick={handleLogout}
                 data-testid="button-logout"
               >
@@ -176,51 +172,43 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-primary/30 bg-primary/5 dark:bg-primary/10" data-testid="card-mentor-support">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <User className="h-5 w-5" />
-              Your Mentor Support
-            </CardTitle>
+        <Card data-testid="card-mentor-support">
+          <CardHeader>
+            <CardTitle>Mentor Support</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
               You have a dedicated mentor monitoring your progress throughout
               this program. They review your check-ins, reflections, and
-              homework—and will provide personalized feedback to support your
+              homework — and will provide personalized feedback to support your
               recovery.
             </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-              <Clock className="h-4 w-4" />
-              <span>Typical response time: Within 1-2 business days</span>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md p-3">
+              <Clock className="h-4 w-4 shrink-0" />
+              <span>Typical response time: Within 1–2 business days</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20" data-testid="card-support-resources">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-              <AlertTriangle className="h-5 w-5" />
-              Support Resources
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-amber-700 dark:text-amber-300/80 mb-4">
+        <Card data-testid="card-support-resources">
+          <CardHeader>
+            <CardTitle>Support Resources</CardTitle>
+            <CardDescription>
               A setback does NOT remove you from the program. Use these tools to
               process and move forward.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/user-manual">
-                <Button
-                  variant="outline"
-                  className="border-amber-300 dark:border-amber-700"
-                  data-testid="button-user-manual"
-                >
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  User Manual
-                </Button>
-              </Link>
-            </div>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/user-manual">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                data-testid="button-user-manual"
+              >
+                <BookOpen className="mr-2 h-4 w-4" />
+                User Manual
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
@@ -228,8 +216,7 @@ export default function ProfilePage() {
 
         <Card data-testid="card-cancel-account">
           <CardHeader>
-            <CardTitle className="text-destructive flex items-center gap-2">
-              <XCircle className="h-5 w-5" />
+            <CardTitle className="text-muted-foreground">
               Cancel Account
             </CardTitle>
             <CardDescription>
@@ -242,11 +229,10 @@ export default function ProfilePage() {
             </p>
             <Button
               variant="outline"
-              className="text-destructive border-destructive/50"
+              className="w-full sm:w-auto text-destructive border-destructive/30"
               onClick={() => setShowCancelDialog(true)}
               data-testid="button-cancel-account"
             >
-              <XCircle className="h-4 w-4 mr-2" />
               Cancel Account
             </Button>
           </CardContent>
@@ -260,25 +246,27 @@ export default function ProfilePage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Your Account?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>Are you sure you want to cancel your account?</p>
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
-                <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                  Important:
-                </p>
-                <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
-                  <li>
-                    You will retain access to any weeks you have already
-                    paid for
-                  </li>
-                  <li>
-                    No refunds will be issued for previously purchased weeks
-                  </li>
-                  <li>
-                    You will not be able to purchase new weeks after
-                    cancellation
-                  </li>
-                </ul>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Are you sure you want to cancel your account?</p>
+                <div className="p-3 bg-muted rounded-md mt-3">
+                  <p className="font-medium text-foreground text-sm">
+                    Important:
+                  </p>
+                  <ul className="text-sm text-muted-foreground mt-1.5 list-disc list-inside space-y-1">
+                    <li>
+                      You will retain access to any weeks you have already
+                      paid for
+                    </li>
+                    <li>
+                      No refunds will be issued for previously purchased weeks
+                    </li>
+                    <li>
+                      You will not be able to purchase new weeks after
+                      cancellation
+                    </li>
+                  </ul>
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -288,7 +276,7 @@ export default function ProfilePage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => cancelAccountMutation.mutate()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground"
               disabled={cancelAccountMutation.isPending}
               data-testid="button-confirm-cancel-account"
             >

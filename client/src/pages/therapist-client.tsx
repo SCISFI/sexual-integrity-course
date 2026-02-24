@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, ListChecks, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { getPromptForDate } from "@/data/journal-prompts";
@@ -402,8 +402,29 @@ export default function TherapistClient() {
     setActiveFeedbackTarget({ type: 'insight', key: insightType });
   };
 
+  const renderInlineFeedback = (targetType: string, targetKey: string, dateKeyForAI?: string) => {
+    if (activeFeedbackTarget?.type !== targetType || activeFeedbackTarget.key !== targetKey) return null;
+    return (
+      <div className="mt-4 p-4 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-${targetType}-${targetKey}`}>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback</p>
+          <Button variant="ghost" size="sm" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft(dateKeyForAI)} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
+            {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
+          </Button>
+        </div>
+        <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-[120px]" data-testid="input-feedback" />
+        <Button className="w-full sm:w-auto" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
+          <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
+        </Button>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-background px-6 py-8">
+    <div className="min-h-screen bg-background px-4 sm:px-6 py-6 sm:py-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <Button
           variant="ghost"
@@ -416,95 +437,93 @@ export default function TherapistClient() {
 
         {!client ? (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
+            <CardContent className="py-12 text-center text-muted-foreground">
               Client not found or you don't have access to view this client.
             </CardContent>
           </Card>
         ) : (
           <>
             {unreviewedAutopsies.length > 0 && (
-              <div className="p-4 rounded-lg border-2 border-red-400 bg-red-50 dark:bg-red-950/50 dark:border-red-700 flex items-start gap-3" data-testid="banner-unreviewed-autopsies">
-                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-bold text-red-800 dark:text-red-200">
-                    Immediate Attention Required
-                  </p>
-                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                    {client.name} has {unreviewedAutopsies.length} unreviewed relapse {unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} that need your review.
-                    Timely response is critical for recovery.
-                  </p>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => setActiveTab("autopsies")}
-                    data-testid="button-go-to-autopsies"
-                  >
-                    <ShieldAlert className="mr-2 h-4 w-4" />
-                    Review Now
-                  </Button>
-                </div>
-              </div>
+              <Card className="border-destructive/50" data-testid="banner-unreviewed-autopsies">
+                <CardContent className="py-4 flex flex-col sm:flex-row items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">
+                      Attention Required
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {client.name} has {unreviewedAutopsies.length} unreviewed relapse {unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} that need your review.
+                    </p>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="mt-3 w-full sm:w-auto"
+                      onClick={() => setActiveTab("autopsies")}
+                      data-testid="button-go-to-autopsies"
+                    >
+                      <ShieldAlert className="mr-2 h-4 w-4" />
+                      Review Now
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  {client.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium">{client.email}</p>
+              <CardContent className="py-5">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <User className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Start Date</p>
-                    <p className="font-medium">
-                      {client.startDate ? new Date(client.startDate).toLocaleDateString() : "Not set"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Progress</p>
-                    <p className="font-medium">{completedWeeks.length} / 16 Weeks</p>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg font-semibold truncate">{client.name}</h2>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1 text-sm text-muted-foreground">
+                      <span className="truncate">{client.email}</span>
+                      <span className="hidden sm:inline">|</span>
+                      <span>
+                        {client.startDate ? `Started ${new Date(client.startDate).toLocaleDateString()}` : "Not started"}
+                      </span>
+                      <span className="hidden sm:inline">|</span>
+                      <span>{completedWeeks.length} / 16 weeks</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="flex w-full overflow-x-auto flex-nowrap">
-                <TabsTrigger value="analytics" data-testid="tab-analytics" className="flex-1">Analytics</TabsTrigger>
-                <TabsTrigger value="progress" data-testid="tab-progress" className="relative flex-1">
-                  Progress
-                  {(pendingWeekReviewCount + getUnreviewedReflectionCount()) > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-pending-week-reviews">
-                      {pendingWeekReviewCount + getUnreviewedReflectionCount()}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="checkins" data-testid="tab-checkins" className="relative flex-1">
-                  Check-ins
-                  {getUnreviewedCheckinCount() > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-unreviewed-checkins">
-                      {getUnreviewedCheckinCount()}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="autopsies" data-testid="tab-autopsies" className="relative flex-1">
-                  Autopsies
-                  {unreviewedAutopsies.length > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white animate-pulse" data-testid="badge-unreviewed-autopsies">
-                      {unreviewedAutopsies.length}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="reports" data-testid="tab-reports" className="flex-1">Reports</TabsTrigger>
-              </TabsList>
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <TabsList className="inline-flex w-auto min-w-full sm:w-full">
+                  <TabsTrigger value="analytics" data-testid="tab-analytics" className="flex-1 min-w-[80px]">Analytics</TabsTrigger>
+                  <TabsTrigger value="progress" data-testid="tab-progress" className="relative flex-1 min-w-[80px]">
+                    Progress
+                    {(pendingWeekReviewCount + getUnreviewedReflectionCount()) > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white" data-testid="badge-pending-week-reviews">
+                        {pendingWeekReviewCount + getUnreviewedReflectionCount()}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="checkins" data-testid="tab-checkins" className="relative flex-1 min-w-[80px]">
+                    Check-ins
+                    {getUnreviewedCheckinCount() > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white" data-testid="badge-unreviewed-checkins">
+                        {getUnreviewedCheckinCount()}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="autopsies" data-testid="tab-autopsies" className="relative flex-1 min-w-[80px]">
+                    Autopsies
+                    {unreviewedAutopsies.length > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white" data-testid="badge-unreviewed-autopsies">
+                        {unreviewedAutopsies.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="reports" data-testid="tab-reports" className="flex-1 min-w-[80px]">Reports</TabsTrigger>
+                </TabsList>
+              </div>
 
-              <TabsContent value="analytics" className="space-y-4">
+              <TabsContent value="analytics" className="space-y-6 mt-6">
                 {(() => {
                   const sortedByDateAsc = [...checkins].sort((a, b) => a.dateKey.localeCompare(b.dateKey));
                   const sortedCheckins = [...checkins].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
@@ -557,68 +576,50 @@ export default function TherapistClient() {
                   }
                   const urgeTrend = computeTrendLocal(urgeValues);
 
-                  const insightItems: Array<{type: string; color: string; icon: any; text: string; show: boolean}> = [
-                    { type: 'unreviewed-autopsies', color: 'red', icon: AlertTriangle, text: `${unreviewedAutopsies.length} unreviewed relapse ${unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} — immediate review recommended.`, show: unreviewedAutopsies.length > 0 },
-                    { type: 'strong-streak', color: 'green', icon: Flame, text: `Strong engagement with ${currentStreak}-day streak. Client is staying consistent with daily practice.`, show: currentStreak >= 7 },
-                    { type: 'low-streak', color: 'amber', icon: Clock, text: `Check-in consistency has dropped. Consider reaching out to encourage re-engagement.`, show: currentStreak < 3 && totalCheckins > 0 },
-                    { type: 'urge-improving', color: 'green', icon: TrendingDown, text: `Urge levels are meaningfully decreasing. The tools and techniques appear to be helping.`, show: urgeTrend === 'decreasing' },
-                    { type: 'urge-increasing', color: 'red', icon: TrendingUp, text: `Urge levels are meaningfully increasing. Client may benefit from additional support or crisis resources.`, show: urgeTrend === 'increasing' },
-                    { type: 'no-checkins', color: 'muted', icon: Clock, text: `No check-in data yet. Client hasn't started tracking their daily progress.`, show: totalCheckins === 0 },
+                  const insightItems: Array<{type: string; severity: 'high' | 'positive' | 'warning' | 'neutral'; icon: any; text: string; show: boolean}> = [
+                    { type: 'unreviewed-autopsies', severity: 'high', icon: AlertTriangle, text: `${unreviewedAutopsies.length} unreviewed relapse ${unreviewedAutopsies.length === 1 ? 'autopsy' : 'autopsies'} — immediate review recommended.`, show: unreviewedAutopsies.length > 0 },
+                    { type: 'strong-streak', severity: 'positive', icon: Flame, text: `Strong engagement with ${currentStreak}-day streak. Client is staying consistent with daily practice.`, show: currentStreak >= 7 },
+                    { type: 'low-streak', severity: 'warning', icon: Clock, text: `Check-in consistency has dropped. Consider reaching out to encourage re-engagement.`, show: currentStreak < 3 && totalCheckins > 0 },
+                    { type: 'urge-improving', severity: 'positive', icon: TrendingDown, text: `Urge levels are meaningfully decreasing. The tools and techniques appear to be helping.`, show: urgeTrend === 'decreasing' },
+                    { type: 'urge-increasing', severity: 'high', icon: TrendingUp, text: `Urge levels are meaningfully increasing. Client may benefit from additional support or crisis resources.`, show: urgeTrend === 'increasing' },
+                    { type: 'no-checkins', severity: 'neutral', icon: Clock, text: `No check-in data yet. Client hasn't started tracking their daily progress.`, show: totalCheckins === 0 },
                   ];
                   const activeInsights = insightItems.filter(i => i.show);
 
                   return (
                     <>
-                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
                         <Card>
-                          <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm text-muted-foreground">Current Streak</p>
-                                <p className="text-2xl font-bold">{currentStreak} days</p>
-                              </div>
-                              <Flame className={`h-8 w-8 ${currentStreak >= 7 ? 'text-orange-500' : 'text-muted-foreground'}`} />
-                            </div>
+                          <CardContent className="pt-5 pb-4">
+                            <p className="text-xs text-muted-foreground">Current Streak</p>
+                            <p className="text-2xl font-bold mt-1">{currentStreak} <span className="text-sm font-normal text-muted-foreground">days</span></p>
                           </CardContent>
                         </Card>
 
                         <Card>
-                          <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm text-muted-foreground">{windowSize}-Day Completion</p>
-                                <p className="text-2xl font-bold">{completionRate}%</p>
-                              </div>
-                              <Target className={`h-8 w-8 ${completionRate >= 70 ? 'text-green-500' : completionRate >= 40 ? 'text-amber-500' : 'text-muted-foreground'}`} />
-                            </div>
+                          <CardContent className="pt-5 pb-4">
+                            <p className="text-xs text-muted-foreground">{windowSize}-Day Completion</p>
+                            <p className="text-2xl font-bold mt-1">{completionRate}<span className="text-sm font-normal text-muted-foreground">%</span></p>
                           </CardContent>
                         </Card>
 
                         <Card>
-                          <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm text-muted-foreground">Avg Mood ({Math.min(totalCheckins, 14)}d)</p>
-                                <p className="text-2xl font-bold">{avgMood}/10</p>
-                              </div>
-                              <TrendingUp className="h-8 w-8 text-primary" />
-                            </div>
+                          <CardContent className="pt-5 pb-4">
+                            <p className="text-xs text-muted-foreground">Avg Mood</p>
+                            <p className="text-2xl font-bold mt-1">{avgMood}<span className="text-sm font-normal text-muted-foreground">/10</span></p>
                           </CardContent>
                         </Card>
 
                         <Card>
-                          <CardContent className="pt-6">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm text-muted-foreground">Avg Urge Level</p>
-                                <p className="text-2xl font-bold">{avgUrge}/10</p>
-                              </div>
-                              {urgeTrend === 'decreasing' ? (
-                                <TrendingDown className="h-8 w-8 text-green-500" />
-                              ) : urgeTrend === 'increasing' ? (
-                                <TrendingUp className="h-8 w-8 text-red-500" />
-                              ) : (
-                                <BarChart3 className="h-8 w-8 text-muted-foreground" />
+                          <CardContent className="pt-5 pb-4">
+                            <p className="text-xs text-muted-foreground">Avg Urge Level</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-2xl font-bold">{avgUrge}<span className="text-sm font-normal text-muted-foreground">/10</span></p>
+                              {urgeTrend === 'decreasing' && (
+                                <TrendingDown className="h-4 w-4 text-green-600 dark:text-green-400" />
+                              )}
+                              {urgeTrend === 'increasing' && (
+                                <TrendingUp className="h-4 w-4 text-destructive" />
                               )}
                             </div>
                           </CardContent>
@@ -626,83 +627,63 @@ export default function TherapistClient() {
                       </div>
 
                       <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <BarChart3 className="h-5 w-5" />
-                            Client Insights
-                          </CardTitle>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Client Insights</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           {activeInsights.map((insight) => {
                             const IconComp = insight.icon;
                             const insightFeedback = feedback.filter(f => f.feedbackType === 'general' && f.checkinDateKey === `insight-${insight.type}`);
-                            const colorMap: Record<string, string> = {
-                              red: 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300',
-                              green: 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300',
-                              amber: 'bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
-                              muted: 'bg-muted border text-muted-foreground',
-                            };
-                            const iconColorMap: Record<string, string> = {
-                              red: 'text-red-600', green: 'text-green-600', amber: 'text-amber-600', muted: 'text-muted-foreground',
-                            };
                             return (
-                              <div key={insight.type} className={`p-3 rounded-lg border ${colorMap[insight.color]}`}>
+                              <div key={insight.type} className={`p-3 rounded-lg border ${
+                                insight.severity === 'high' ? 'border-destructive/30' :
+                                insight.severity === 'warning' ? 'border-amber-200 dark:border-amber-800' :
+                                ''
+                              }`}>
                                 <div className="flex items-start justify-between gap-2">
-                                  <div className="flex items-start gap-2">
-                                    <IconComp className={`h-4 w-4 mt-0.5 ${iconColorMap[insight.color]}`} />
-                                    <p className="text-sm font-medium">{insight.text}</p>
+                                  <div className="flex items-start gap-2.5">
+                                    <IconComp className={`h-4 w-4 mt-0.5 shrink-0 ${
+                                      insight.severity === 'high' ? 'text-destructive' :
+                                      insight.severity === 'positive' ? 'text-green-600 dark:text-green-400' :
+                                      insight.severity === 'warning' ? 'text-amber-600 dark:text-amber-400' :
+                                      'text-muted-foreground'
+                                    }`} />
+                                    <p className="text-sm">{insight.text}</p>
                                   </div>
                                   {activeInsights.length > 1 && (
                                     <div className="flex items-center gap-1 shrink-0">
                                       {insightFeedback.length > 0 && (
-                                        <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700">
-                                          <CheckCircle2 className="h-3 w-3 mr-0.5" /> Feedback
+                                        <Badge variant="outline" className="text-[10px]">
+                                          <CheckCircle2 className="h-3 w-3 mr-0.5" /> Sent
                                         </Badge>
                                       )}
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="h-7 px-2 text-xs"
                                         onClick={() => handleAddFeedbackForInsight(insight.type)}
                                         data-testid={`button-feedback-insight-${insight.type}`}
                                       >
-                                        <MessageSquare className="h-3 w-3 mr-1" /> Respond
+                                        <MessageSquare className="h-3.5 w-3.5 mr-1" /> Respond
                                       </Button>
                                     </div>
                                   )}
                                 </div>
                                 {insightFeedback.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t border-dashed">
+                                  <div className="mt-3 pt-2 border-t">
                                     {insightFeedback.map(f => (
-                                      <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
+                                      <div key={f.id} className="text-sm bg-muted/50 p-2.5 rounded-md mb-1.5">
                                         <p>{f.content}</p>
                                         <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
                                       </div>
                                     ))}
                                   </div>
                                 )}
-                                {activeFeedbackTarget?.type === 'insight' && activeFeedbackTarget.key === insight.type && (
-                                  <div className="mt-3 p-3 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-insight-${insight.type}`}>
-                                    <div className="flex items-center justify-between">
-                                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback</p>
-                                      <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft()} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
-                                        {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
-                                      </Button>
-                                    </div>
-                                    <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-24" data-testid="input-feedback" />
-                                    <Button size="sm" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
-                                      <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
-                                    </Button>
-                                  </div>
-                                )}
+                                {renderInlineFeedback('insight', insight.type)}
                               </div>
                             );
                           })}
-                          <div className="pt-2 text-sm text-muted-foreground">
-                            <p>Program Progress: {completedWeeks.length}/16 weeks completed ({Math.round((completedWeeks.length / 16) * 100)}%)</p>
+                          <div className="pt-3 text-sm text-muted-foreground space-y-1">
+                            <p>Program Progress: {completedWeeks.length}/16 weeks ({Math.round((completedWeeks.length / 16) * 100)}%)</p>
                             <p>Total Check-ins: {totalCheckins}</p>
                             {relapseAutopsies.filter(a => a.status === "completed").length > 0 && (
                               <p>Relapse/Lapse Reports: {relapseAutopsies.filter(a => a.status === "completed").length}</p>
@@ -716,7 +697,7 @@ export default function TherapistClient() {
                               data-testid="button-view-full-analytics"
                             >
                               <BarChart3 className="mr-2 h-4 w-4" />
-                              View Full Analytics Page
+                              View Full Analytics
                             </Button>
                           </div>
                         </CardContent>
@@ -726,19 +707,16 @@ export default function TherapistClient() {
                 })()}
               </TabsContent>
 
-              <TabsContent value="progress" className="space-y-4">
+              <TabsContent value="progress" className="space-y-6 mt-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5" />
-                      Weekly Progress
-                    </CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Weekly Progress</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {loadingProgress ? (
                       <Skeleton className="h-32 w-full" />
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
                           {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
                             const status = getWeekStatus(weekNum);
@@ -750,29 +728,29 @@ export default function TherapistClient() {
                             return (
                               <div
                                 key={weekNum}
-                                className={`flex flex-col items-center justify-center rounded-lg border p-3 ${
+                                className={`flex flex-col items-center justify-center rounded-md border p-2.5 ${
                                   needsReview
-                                    ? "border-amber-400 border-2 bg-amber-50 dark:border-amber-500 dark:bg-amber-950 ring-1 ring-amber-300 dark:ring-amber-600"
+                                    ? "border-amber-300 dark:border-amber-700"
                                     : status === "completed"
-                                      ? "border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-950"
+                                      ? "border-green-200 dark:border-green-800"
                                       : status === "available"
-                                        ? "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950"
-                                        : "border-muted bg-muted/30"
+                                        ? "border-amber-200 dark:border-amber-800"
+                                        : "border-muted"
                                 }`}
                                 data-testid={`week-status-${weekNum}`}
                               >
-                                <span className="text-xs text-muted-foreground">Week</span>
-                                <span className="font-bold">{weekNum}</span>
+                                <span className="text-[10px] text-muted-foreground">Wk</span>
+                                <span className="font-bold text-sm">{weekNum}</span>
                                 {needsReview ? (
-                                  <Eye className="mt-1 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                  <Eye className="mt-0.5 h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                                 ) : status === "completed" ? (
-                                  <CheckCircle2 className="mt-1 h-4 w-4 text-green-600 dark:text-green-400" />
+                                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                                 ) : status === "available" ? (
-                                  <Clock className="mt-1 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                  <Clock className="mt-0.5 h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                                 ) : null}
                                 {totalItems > 0 && (status === "completed" || status === "available") && (
-                                  <span className={`text-[10px] mt-1 ${completedItems === totalItems ? 'text-green-600 dark:text-green-400 font-bold' : 'text-muted-foreground'}`}>
-                                    HW: {completedItems}/{totalItems}
+                                  <span className={`text-[9px] mt-0.5 ${completedItems === totalItems ? 'text-green-600 dark:text-green-400 font-bold' : 'text-muted-foreground'}`}>
+                                    {completedItems}/{totalItems}
                                   </span>
                                 )}
                               </div>
@@ -781,10 +759,10 @@ export default function TherapistClient() {
                         </div>
 
                         {pendingWeekReviewCount > 0 && (
-                          <Card className="border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-950/30">
+                          <Card className="border-amber-200 dark:border-amber-800">
                             <CardHeader className="pb-2">
-                              <CardTitle className="text-base flex items-center gap-2">
-                                <Eye className="h-4 w-4 text-amber-600" />
+                              <CardTitle className="text-sm flex items-center gap-2">
+                                <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                 Weeks Needing Review ({pendingWeekReviewCount})
                               </CardTitle>
                             </CardHeader>
@@ -795,14 +773,12 @@ export default function TherapistClient() {
                                   const hasReflection = reflections.some(r => r.weekNumber === weekNum);
                                   const hasExercise = exerciseAnswers.some(e => e.weekNumber === weekNum);
                                   return (
-                                    <div key={weekNum} className="flex items-center justify-between rounded-lg border bg-card p-3" data-testid={`pending-review-week-${weekNum}`}>
-                                      <div className="flex items-center gap-3">
-                                        <span className="font-bold text-sm">Week {weekNum}</span>
+                                    <div key={weekNum} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-md border p-3" data-testid={`pending-review-week-${weekNum}`}>
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-medium text-sm">Week {weekNum}</span>
                                         <span className="text-xs text-muted-foreground">{weekContent?.title || ""}</span>
-                                        <div className="flex gap-1">
-                                          {hasReflection && <Badge variant="outline" className="text-[10px] h-5">Reflection</Badge>}
-                                          {hasExercise && <Badge variant="outline" className="text-[10px] h-5">Exercise</Badge>}
-                                        </div>
+                                        {hasReflection && <Badge variant="outline" className="text-[10px]">Reflection</Badge>}
+                                        {hasExercise && <Badge variant="outline" className="text-[10px]">Exercise</Badge>}
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <Button
@@ -814,7 +790,7 @@ export default function TherapistClient() {
                                           }}
                                           data-testid={`button-view-week-${weekNum}`}
                                         >
-                                          <FileText className="mr-1 h-3.5 w-3.5" /> View Work
+                                          <FileText className="mr-1 h-3.5 w-3.5" /> View
                                         </Button>
                                         <Button
                                           size="sm"
@@ -822,7 +798,7 @@ export default function TherapistClient() {
                                           disabled={submitWeekReviewMutation.isPending}
                                           data-testid={`button-review-week-${weekNum}`}
                                         >
-                                          <CheckSquare className="mr-1 h-3.5 w-3.5" /> Mark Reviewed
+                                          <CheckSquare className="mr-1 h-3.5 w-3.5" /> Reviewed
                                         </Button>
                                       </div>
                                     </div>
@@ -838,15 +814,12 @@ export default function TherapistClient() {
                 </Card>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Week Reflections & Exercises
-                    </CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Reflections & Exercises</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {reflections.length === 0 && exerciseAnswers.length === 0 ? (
-                      <p className="text-muted-foreground">No reflections or exercises recorded yet.</p>
+                      <p className="text-sm text-muted-foreground py-4">No reflections or exercises recorded yet.</p>
                     ) : (
                       <div className="space-y-4">
                         {[...reflections].sort((a, b) => b.weekNumber - a.weekNumber).map((reflection) => {
@@ -862,24 +835,24 @@ export default function TherapistClient() {
                             <div
                               key={reflection.weekNumber}
                               id={`reflection-week-${reflection.weekNumber}`}
-                              className={`rounded-lg border p-4 ${!reviewed ? 'border-l-4 border-l-amber-400' : ''}`}
+                              className="rounded-lg border p-4"
                               data-testid={`reflection-week-${reflection.weekNumber}`}
                             >
-                              <div className="flex items-center justify-between mb-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <h4 className="font-medium">Week {reflection.weekNumber}</h4>
                                   {reviewed ? (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                    <Badge variant="outline" className="text-[10px]">
                                       <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
                                     </Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-amber-400 text-amber-600">
+                                    <Badge variant="secondary" className="text-[10px]">
                                       Needs Review
                                     </Badge>
                                   )}
                                   {weekFeedback.length > 0 && (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
-                                      <MessageSquare className="h-3 w-3 mr-0.5" /> Feedback ({weekFeedback.length})
+                                    <Badge variant="outline" className="text-[10px]">
+                                      <MessageSquare className="h-3 w-3 mr-0.5" /> {weekFeedback.length}
                                     </Badge>
                                   )}
                                 </div>
@@ -901,7 +874,7 @@ export default function TherapistClient() {
                                     onClick={() => handleAddFeedbackForWeek(reflection.weekNumber)}
                                     data-testid={`button-add-feedback-week-${reflection.weekNumber}`}
                                   >
-                                    <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Add Feedback
+                                    <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
                                   </Button>
                                 </div>
                               </div>
@@ -915,8 +888,8 @@ export default function TherapistClient() {
                                     const label = rqs[idx]?.question || defaultLabels[idx];
                                     return (
                                       <div key={idx}>
-                                        <p className="text-xs text-muted-foreground">{label}</p>
-                                        <p className="text-sm bg-muted/50 p-2 rounded">{answer}</p>
+                                        <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                                        <p className="text-sm bg-muted/40 p-2.5 rounded-md">{answer}</p>
                                       </div>
                                     );
                                   });
@@ -924,28 +897,26 @@ export default function TherapistClient() {
                               </div>
 
                               {answerEntries.length > 0 && (
-                                <div className="mt-4 pt-3 border-t">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Exercise Answers</p>
-                                    {!exerciseReviewed && (
+                                <div className="mt-4 pt-4 border-t">
+                                  <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Exercise Answers</p>
+                                    {!exerciseReviewed ? (
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-6 text-xs"
                                         onClick={() => markItemReviewedMutation.mutate({ itemType: 'exercise', itemKey: String(reflection.weekNumber) })}
                                         disabled={markItemReviewedMutation.isPending}
                                         data-testid={`button-review-exercise-${reflection.weekNumber}`}
                                       >
                                         <CheckSquare className="mr-1 h-3 w-3" /> Mark Exercises Reviewed
                                       </Button>
-                                    )}
-                                    {exerciseReviewed && (
-                                      <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
-                                        <CheckCircle2 className="h-3 w-3 mr-0.5" /> Exercises Reviewed
+                                    ) : (
+                                      <Badge variant="outline" className="text-[10px]">
+                                        <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
                                       </Badge>
                                     )}
                                   </div>
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
                                     {answerEntries.map(([key, value]) => {
                                       const weekData = WEEK_CONTENT[reflection.weekNumber];
                                       let fieldLabel = key.replace(/-/g, ' ');
@@ -961,8 +932,8 @@ export default function TherapistClient() {
                                       }
                                       return (
                                         <div key={key}>
-                                          <p className="text-xs text-muted-foreground">{fieldLabel}</p>
-                                          <p className="text-sm bg-muted/50 p-2 rounded">{value}</p>
+                                          <p className="text-xs text-muted-foreground mb-1">{fieldLabel}</p>
+                                          <p className="text-sm bg-muted/40 p-2.5 rounded-md">{value}</p>
                                         </div>
                                       );
                                     })}
@@ -971,35 +942,19 @@ export default function TherapistClient() {
                               )}
 
                               {weekFeedback.length > 0 && (
-                                <div className="mt-4 pt-3 border-t border-dashed">
-                                  <p className="text-xs font-bold text-primary mb-2 flex items-center">
-                                    <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response:
+                                <div className="mt-4 pt-4 border-t">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
+                                    <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response
                                   </p>
                                   {weekFeedback.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(f => (
-                                    <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
+                                    <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
                                       <p>{f.content}</p>
                                       <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
                                     </div>
                                   ))}
                                 </div>
                               )}
-                              {activeFeedbackTarget?.type === 'week' && activeFeedbackTarget.key === String(reflection.weekNumber) && (
-                                <div className="mt-4 p-3 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-week-${reflection.weekNumber}`}>
-                                  <div className="flex items-center justify-between">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback for Week {reflection.weekNumber}</p>
-                                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft()} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
-                                      {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
-                                    </Button>
-                                  </div>
-                                  <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-24" data-testid="input-feedback" />
-                                  <Button size="sm" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
-                                    <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
-                                  </Button>
-                                </div>
-                              )}
+                              {renderInlineFeedback('week', String(reflection.weekNumber))}
                             </div>
                           );
                         })}
@@ -1009,96 +964,91 @@ export default function TherapistClient() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="checkins" className="space-y-4">
+              <TabsContent value="checkins" className="space-y-6 mt-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Daily Check-ins ({checkins.length} total)</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Daily Check-ins <span className="text-sm font-normal text-muted-foreground">({checkins.length} total)</span></CardTitle>
                   </CardHeader>
                   <CardContent>
                     {checkins.length === 0 ? (
-                      <p className="text-muted-foreground">No check-ins recorded yet.</p>
+                      <p className="text-sm text-muted-foreground py-4">No check-ins recorded yet.</p>
                     ) : (
-                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
                         {[...checkins].sort((a, b) => b.dateKey.localeCompare(a.dateKey)).slice(0, 30).map((checkin) => {
                           const existingFeedback = feedback.filter(f => f.checkinDateKey === checkin.dateKey);
                           const reviewed = isItemReviewed('checkin', checkin.dateKey);
                           return (
                             <div
                               key={checkin.id}
-                              className={`rounded-lg border p-4 bg-card ${!reviewed ? 'border-l-4 border-l-amber-400' : ''}`}
+                              className="rounded-lg border p-4"
                               data-testid={`checkin-${checkin.dateKey}`}
                             >
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-bold text-lg">{checkin.dateKey}</span>
-                                  {existingFeedback.length > 0 && (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
-                                      <MessageSquare className="h-3 w-3 mr-0.5" /> Feedback ({existingFeedback.length})
-                                    </Badge>
-                                  )}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium">{checkin.dateKey}</span>
                                   {reviewed ? (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                    <Badge variant="outline" className="text-[10px]">
                                       <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
                                     </Badge>
                                   ) : (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-amber-400 text-amber-600">
+                                    <Badge variant="secondary" className="text-[10px]">
                                       Needs Review
                                     </Badge>
                                   )}
+                                  {existingFeedback.length > 0 && (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      <MessageSquare className="h-3 w-3 mr-0.5" /> {existingFeedback.length}
+                                    </Badge>
+                                  )}
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap">
                                   {!reviewed && (
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="h-8"
                                       onClick={() => markItemReviewedMutation.mutate({ itemType: 'checkin', itemKey: checkin.dateKey })}
                                       disabled={markItemReviewedMutation.isPending}
                                       data-testid={`button-review-checkin-${checkin.dateKey}`}
                                     >
-                                      <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Mark Reviewed
+                                      <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Reviewed
                                     </Button>
                                   )}
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-8"
                                     onClick={() => handleAddFeedbackForDate(checkin.dateKey)}
                                     data-testid={`button-feedback-checkin-${checkin.dateKey}`}
                                   >
-                                    <MessageSquare className="mr-2 h-3.5 w-3.5" /> Feedback
+                                    <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
                                   </Button>
                                   <Button
-                                    variant="secondary"
+                                    variant="outline"
                                     size="sm"
-                                    className="h-8"
                                     onClick={() => handleGenerateAIDraft(checkin.dateKey)}
                                     disabled={isGeneratingDraft}
                                     data-testid={`button-ai-checkin-${checkin.dateKey}`}
                                   >
                                     {isGeneratingDraft ? (
-                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                                     ) : (
-                                      <Sparkles className="mr-2 h-3.5 w-3.5" />
+                                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                                     )}
                                     AI Insight
                                   </Button>
                                 </div>
                               </div>
-                              <div className="flex gap-4 mb-3">
+                              <div className="flex gap-3 mb-3 flex-wrap">
                                 {checkin.moodLevel !== null && (
-                                  <Badge variant="outline" className="px-3 py-1">Mood: {checkin.moodLevel}/10</Badge>
+                                  <span className="text-sm text-muted-foreground">Mood: <span className="font-medium text-foreground">{checkin.moodLevel}/10</span></span>
                                 )}
                                 {checkin.urgeLevel !== null && (
-                                  <Badge variant={Number(checkin.urgeLevel) > 6 ? "destructive" : "outline"} className="px-3 py-1">
-                                    Urge: {checkin.urgeLevel}/10
-                                  </Badge>
+                                  <span className="text-sm text-muted-foreground">Urge: <span className={`font-medium ${Number(checkin.urgeLevel) > 6 ? 'text-destructive' : 'text-foreground'}`}>{checkin.urgeLevel}/10</span></span>
                                 )}
                               </div>
                               {checkin.eveningChecks && (
                                 <div className="mt-2">
-                                  <p className="text-xs text-muted-foreground mb-1">Daily Items</p>
-                                  <div className="space-y-1">
+                                  <p className="text-xs text-muted-foreground mb-1.5">Daily Items</p>
+                                  <div className="space-y-1.5">
                                     {formatEveningChecks(checkin.eveningChecks).map((id) => (
                                       <div key={id} className="flex items-center gap-2 text-sm" data-testid={`checkin-item-${id}`}>
                                         <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
@@ -1109,43 +1059,27 @@ export default function TherapistClient() {
                                 </div>
                               )}
                               {checkin.journalEntry && (
-                                <div className="mt-3 p-3 bg-muted/30 rounded-md border-l-4 border-primary/20">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                                    Journal Prompt: <em className="normal-case">{getPromptForDate(checkin.dateKey)}</em>
+                                <div className="mt-3 p-3 bg-muted/30 rounded-md">
+                                  <p className="text-xs text-muted-foreground mb-1">
+                                    Journal: <em>{getPromptForDate(checkin.dateKey)}</em>
                                   </p>
                                   <p className="text-sm italic">"{checkin.journalEntry}"</p>
                                 </div>
                               )}
                               {existingFeedback.length > 0 && (
-                                <div className="mt-4 pt-3 border-t border-dashed">
-                                  <p className="text-xs font-bold text-primary mb-2 flex items-center">
-                                    <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response:
+                                <div className="mt-4 pt-3 border-t">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
+                                    <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response
                                   </p>
                                   {existingFeedback.map(f => (
-                                    <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
+                                    <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
                                       <p>{f.content}</p>
                                       <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
                                     </div>
                                   ))}
                                 </div>
                               )}
-                              {activeFeedbackTarget?.type === 'checkin' && activeFeedbackTarget.key === checkin.dateKey && (
-                                <div className="mt-4 p-3 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-checkin-${checkin.dateKey}`}>
-                                  <div className="flex items-center justify-between">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback for {checkin.dateKey}</p>
-                                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft(checkin.dateKey)} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
-                                      {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
-                                    </Button>
-                                  </div>
-                                  <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-24" data-testid="input-feedback" />
-                                  <Button size="sm" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
-                                    <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
-                                  </Button>
-                                </div>
-                              )}
+                              {renderInlineFeedback('checkin', checkin.dateKey, checkin.dateKey)}
                             </div>
                           );
                         })}
@@ -1155,27 +1089,28 @@ export default function TherapistClient() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="autopsies" className="space-y-4">
+              <TabsContent value="autopsies" className="space-y-6 mt-6">
                 {unreviewedAutopsies.length > 0 && (
-                  <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-700 flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
-                    <p className="text-sm font-medium text-red-700 dark:text-red-300">
-                      {unreviewedAutopsies.length} unreviewed — these require immediate attention.
-                    </p>
-                  </div>
+                  <Card className="border-destructive/30">
+                    <CardContent className="py-3 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                      <p className="text-sm">
+                        {unreviewedAutopsies.length} unreviewed — these require immediate attention.
+                      </p>
+                    </CardContent>
+                  </Card>
                 )}
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ShieldAlert className="h-5 w-5" />
-                      Relapse Autopsies ({relapseAutopsies.filter(a => a.status === "completed").length} submitted)
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">
+                      Relapse Autopsies <span className="text-sm font-normal text-muted-foreground">({relapseAutopsies.filter(a => a.status === "completed").length} submitted)</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {relapseAutopsies.filter(a => a.status === "completed").length === 0 ? (
-                      <p className="text-muted-foreground">No relapse autopsies submitted.</p>
+                      <p className="text-sm text-muted-foreground py-4">No relapse autopsies submitted.</p>
                     ) : (
-                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
                         {relapseAutopsies
                           .filter(a => a.status === "completed")
                           .sort((a, b) => b.date.localeCompare(a.date))
@@ -1186,36 +1121,33 @@ export default function TherapistClient() {
                             return (
                               <div
                                 key={autopsy.id}
-                                className={`rounded-lg border-2 p-4 ${
-                                  isUnreviewed
-                                    ? "border-red-400 bg-red-50/50 dark:bg-red-950/30 dark:border-red-700"
-                                    : "border-green-300 bg-card dark:border-green-700"
+                                className={`rounded-lg border p-4 ${
+                                  isUnreviewed ? "border-destructive/30" : ""
                                 }`}
                                 data-testid={`autopsy-${autopsy.id}`}
                               >
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center gap-3">
-                                    <span className="font-bold text-lg">{autopsy.date}</span>
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium">{autopsy.date}</span>
                                     <Badge variant={autopsy.lapseOrRelapse === "relapse" ? "destructive" : "secondary"}>
                                       {autopsy.lapseOrRelapse === "relapse" ? "Relapse" : "Lapse"}
                                     </Badge>
                                     {isUnreviewed ? (
-                                      <Badge variant="destructive" className="animate-pulse">Needs Review</Badge>
+                                      <Badge variant="secondary">Needs Review</Badge>
                                     ) : (
-                                      <Badge variant="outline" className="border-green-300 text-green-700 dark:text-green-400">
+                                      <Badge variant="outline">
                                         <CheckCircle2 className="mr-1 h-3 w-3" /> Reviewed
                                       </Badge>
                                     )}
                                     {autopsyFeedback.length > 0 && (
-                                      <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
-                                        <MessageSquare className="h-3 w-3 mr-0.5" /> Feedback ({autopsyFeedback.length})
+                                      <Badge variant="outline" className="text-[10px]">
+                                        <MessageSquare className="h-3 w-3 mr-0.5" /> {autopsyFeedback.length}
                                       </Badge>
                                     )}
                                   </div>
-                                  <div className="flex gap-2">
+                                  <div className="flex gap-2 flex-wrap">
                                     {isUnreviewed && (
                                       <Button
-                                        variant="default"
                                         size="sm"
                                         onClick={() => markReviewedMutation.mutate(autopsy.id)}
                                         disabled={markReviewedMutation.isPending}
@@ -1228,7 +1160,6 @@ export default function TherapistClient() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      className="h-8"
                                       onClick={() => handleAddFeedbackForAutopsy(autopsy.id)}
                                       data-testid={`button-feedback-autopsy-${autopsy.id}`}
                                     >
@@ -1238,7 +1169,7 @@ export default function TherapistClient() {
                                 </div>
 
                                 {autopsy.summary && (
-                                  <p className="text-sm mb-3">{autopsy.summary}</p>
+                                  <p className="text-sm mb-3 text-muted-foreground">{autopsy.summary}</p>
                                 )}
 
                                 <Button
@@ -1284,35 +1215,19 @@ export default function TherapistClient() {
                                 )}
 
                                 {autopsyFeedback.length > 0 && (
-                                  <div className="mt-4 pt-3 border-t border-dashed">
-                                    <p className="text-xs font-bold text-primary mb-2 flex items-center">
-                                      <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response:
+                                  <div className="mt-4 pt-3 border-t">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
+                                      <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response
                                     </p>
                                     {autopsyFeedback.map(f => (
-                                      <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
+                                      <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
                                         <p>{f.content}</p>
                                         <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
                                       </div>
                                     ))}
                                   </div>
                                 )}
-                                {activeFeedbackTarget?.type === 'autopsy' && activeFeedbackTarget.key === autopsy.id && (
-                                  <div className="mt-4 p-3 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-autopsy-${autopsy.id}`}>
-                                    <div className="flex items-center justify-between">
-                                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback for Autopsy</p>
-                                      <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft()} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
-                                        {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
-                                      </Button>
-                                    </div>
-                                    <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-24" data-testid="input-feedback" />
-                                    <Button size="sm" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
-                                      <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
-                                    </Button>
-                                  </div>
-                                )}
+                                {renderInlineFeedback('autopsy', autopsy.id)}
                               </div>
                             );
                           })}
@@ -1322,17 +1237,14 @@ export default function TherapistClient() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="reports" className="space-y-4">
+              <TabsContent value="reports" className="space-y-6 mt-6">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileBarChart className="h-5 w-5" />
-                      Weekly Summary Reports
-                    </CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Weekly Summary Reports</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Generate AI-powered weekly summary reports with progress data, mood/urge trends, and personalized observations. Download as PDF.
+                      Generate AI-powered weekly summary reports with progress data, mood/urge trends, and personalized observations.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
@@ -1344,16 +1256,16 @@ export default function TherapistClient() {
                         return (
                           <div
                             key={weekNum}
-                            className={`rounded-lg border p-4 ${isCompleted ? 'bg-card' : 'bg-muted/30 opacity-60'}`}
+                            className={`rounded-lg border p-4 ${!isCompleted ? 'opacity-50' : ''}`}
                             data-testid={`report-week-${weekNum}`}
                           >
-                            <div className="flex items-center justify-between mb-2">
-                              <div>
-                                <span className="font-semibold text-sm">Week {weekNum}</span>
-                                <p className="text-xs text-muted-foreground truncate max-w-[180px]">{weekTitle}</p>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="min-w-0">
+                                <span className="font-medium text-sm">Week {weekNum}</span>
+                                <p className="text-xs text-muted-foreground truncate">{weekTitle}</p>
                               </div>
                               {existingSummary && (
-                                <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                <Badge variant="outline" className="text-[10px] shrink-0">
                                   <CheckCircle2 className="h-3 w-3 mr-0.5" /> Ready
                                 </Badge>
                               )}

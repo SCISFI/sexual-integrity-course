@@ -24,6 +24,7 @@ import {
   BookOpen,
   MessageSquare,
   ChevronDown,
+  ChevronRight,
   UserCircle,
   UserCog,
 } from "lucide-react";
@@ -55,9 +56,6 @@ const WEEKS: WeekItem[] = Array.from({ length: 16 }, (_, i) => ({
 export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
   const [, setLocation] = useLocation();
-  // -----------------------------------------------------
-  // Staff-only Draft Assistant UI state (v2 Hybrid)
-  // -----------------------------------------------------
   const isStaff = user?.role === "admin" || user?.role === "therapist";
 
   const [draftClientId, setDraftClientId] = useState("");
@@ -70,14 +68,13 @@ export default function Dashboard() {
   );
   const [draftText, setDraftText] = useState("");
   const [draftLoading, setDraftLoading] = useState(false);
-  // Fetch completed weeks from the API
+
   const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
     queryKey: ["/api/progress/completions"],
     staleTime: 0,
     refetchOnMount: "always",
   });
 
-  // Fetch unlocked weeks based on start date
   const { data: unlockedWeeksData } = useQuery<{ unlockedWeeks: number[] }>({
     queryKey: ["/api/progress/unlocked-weeks"],
     staleTime: 0,
@@ -102,7 +99,6 @@ export default function Dashboard() {
   const completedWeeks = completionsData?.completedWeeks || [];
   const unlockedWeeks = unlockedWeeksData?.unlockedWeeks || [];
 
-  // Check if user has completed onboarding (only for clients)
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -134,14 +130,12 @@ export default function Dashboard() {
     setLocation("/");
   };
 
-  // Find the next available week to continue (first unlocked but not completed)
   const nextAvailableWeek = useMemo(() => {
     for (let i = 1; i <= 16; i++) {
       if (unlockedWeeks.includes(i) && !completedWeeks.includes(i)) {
         return i;
       }
     }
-    // If all unlocked weeks are completed, return the last completed week for review
     return completedWeeks.length > 0 ? Math.max(...completedWeeks) : 1;
   }, [unlockedWeeks, completedWeeks]);
 
@@ -182,17 +176,19 @@ export default function Dashboard() {
 
   if (!user) return null;
 
+  const completionCount = completedWeeks.length;
+  const progressPercent = Math.round((completionCount / 16) * 100);
+
   return (
     <div className="min-h-screen bg-background">
       {isStaff && (
-        <Card className="mb-6">
-          <CardHeader>
+        <Card className="mb-8">
+          <CardHeader className="gap-1">
             <CardTitle>Mentor Draft Assistant (Private)</CardTitle>
             <CardDescription>
               Staff-only drafts. Not client-visible. Review and edit before use.
             </CardDescription>
           </CardHeader>
-
           <CardContent className="space-y-3">
             <div className="space-y-1">
               <div className="text-sm font-medium">Client ID</div>
@@ -203,7 +199,6 @@ export default function Dashboard() {
                 placeholder="Paste the client ID here"
               />
             </div>
-
             <div className="space-y-1">
               <div className="text-sm font-medium">Focus</div>
               <input
@@ -213,7 +208,6 @@ export default function Dashboard() {
                 placeholder="Session opener, accountability questions, follow-up email..."
               />
             </div>
-
             <div className="space-y-1">
               <div className="text-sm font-medium">Tone</div>
               <select
@@ -226,7 +220,6 @@ export default function Dashboard() {
                 <option value="warm">Warm</option>
               </select>
             </div>
-
             <div className="space-y-1">
               <div className="text-sm font-medium">Constraints</div>
               <input
@@ -235,11 +228,9 @@ export default function Dashboard() {
                 onChange={(e) => setDraftConstraints(e.target.value)}
               />
             </div>
-
             <Button onClick={generateStaffDraft} disabled={draftLoading}>
               {draftLoading ? "Generating..." : "Generate Draft"}
             </Button>
-
             {draftText && (
               <textarea
                 className="w-full min-h-[200px] rounded-md border px-3 py-2 text-sm"
@@ -250,39 +241,38 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
-      {/* Onboarding Modal for first-time users */}
+
       <OnboardingModal
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
       />
 
-      {/* Header */}
-      <header className="border-b">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between gap-3">
+      <header className="border-b bg-card">
+        <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between gap-3">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-sm font-bold text-primary">SI</span>
+              <div className="h-9 w-9 rounded-md bg-primary flex items-center justify-center">
+                <span className="text-sm font-bold text-primary-foreground">SI</span>
               </div>
-              <div>
-                <div className="font-semibold leading-tight">
+              <div className="hidden sm:block">
+                <div className="font-semibold leading-tight text-sm">
                   The Integrity Protocol
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Private member dashboard
+                  Member Dashboard
                 </div>
               </div>
             </div>
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2">
             <ThemeToggle />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" data-testid="button-profile-menu">
-                  <UserCircle className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">
+                  <UserCircle className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline text-sm">
                     {(user as any)?.name || "Account"}
                   </span>
                   <ChevronDown className="h-3 w-3 ml-1" />
@@ -339,24 +329,22 @@ export default function Dashboard() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
         </div>
       </header>
 
-      {/* Main */}
-      <main className="mx-auto max-w-4xl px-4 py-6 space-y-6">
-        {/* Welcome greeting */}
-        <div className="flex items-start justify-between gap-3 flex-wrap" data-testid="text-welcome-greeting">
+      <main className="mx-auto max-w-4xl px-4 py-8 space-y-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" data-testid="text-welcome-greeting">
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
               Welcome back, {(user as any)?.name || 'there'}
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Here's your program progress and daily tools.
+            <p className="text-muted-foreground mt-1">
+              Your program progress and daily tools.
             </p>
           </div>
           <Button
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={() => setLocation("/analytics")}
             data-testid="button-analytics-top"
           >
@@ -365,41 +353,50 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* My Program */}
         <Card>
-          <CardHeader className="gap-3">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <CardHeader className="gap-1">
+            <div className="flex flex-col gap-4">
               <div>
-                <CardTitle>My Program</CardTitle>
-                <CardDescription>
-                  Your weekly modules, daily practices, and progress live here.
+                <CardTitle className="text-lg">My Program</CardTitle>
+                <CardDescription className="mt-1">
+                  {completionCount} of 16 weeks completed
+                  {completionCount > 0 && ` \u00b7 ${progressPercent}%`}
                 </CardDescription>
+                {completionCount > 0 && (
+                  <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                )}
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                {/* I'm Struggling button */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <UrgeSurfingTool />
-                {/* Relapse Autopsy */}
-                <Link href="/relapse-autopsy">
+                <Link href="/relapse-autopsy" className="w-full sm:w-auto">
                   <Button
                     variant="outline"
-                    className="border-amber-300 dark:border-amber-700"
+                    className="w-full sm:w-auto"
                     data-testid="button-relapse-autopsy"
                   >
                     <AlertTriangle className="h-4 w-4 mr-2" />
                     Relapse Autopsy
                   </Button>
                 </Link>
-                {/* Daily Check-in button */}
-                <Link href="/daily-checkin">
-                  <Button variant="outline" data-testid="button-daily-checkin">
+                <Link href="/daily-checkin" className="w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    data-testid="button-daily-checkin"
+                  >
                     <ClipboardCheck className="h-4 w-4 mr-2" />
                     Daily Check-in
                   </Button>
                 </Link>
-                {/* Resume button */}
                 <Button
                   onClick={resumeCurrentWeek}
+                  className="w-full sm:w-auto"
                   data-testid="button-resume-week"
                 >
                   {completedWeeks.includes(nextAvailableWeek)
@@ -410,17 +407,8 @@ export default function Dashboard() {
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-6">
-            {/* 16-week overview */}
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold">Your 16-Week Program</h2>
-              <p className="text-sm text-muted-foreground">
-                Weeks unlock weekly. Right now Week 1 is available. As you
-                progress, new weeks will unlock automatically.
-              </p>
-            </div>
-
-            <div className="grid gap-3">
+          <CardContent>
+            <div className="divide-y">
               {WEEKS.map((w) => {
                 const isCompleted = completedWeeks.includes(w.week);
                 const isUnlocked = unlockedWeeks.includes(w.week);
@@ -429,59 +417,56 @@ export default function Dashboard() {
                 return (
                   <div
                     key={w.week}
-                    className={`rounded-lg border p-4 flex items-center justify-between ${
-                      isCompleted
-                        ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
-                        : ""
-                    }`}
+                    className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
                     data-testid={`week-row-${w.week}`}
                   >
-                    <div>
-                      <div className="font-medium flex items-center gap-2">
-                        Week {w.week}: {w.title}
-                        {isCompleted && (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        )}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {isCompleted
-                          ? "Completed"
-                          : isUnlocked
-                            ? "Available"
-                            : "Locked"}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {isCompleted ? (
+                        <CheckCircle className="h-4 w-4 text-accent flex-shrink-0" />
+                      ) : isAvailable ? (
+                        <div className="h-4 w-4 rounded-full border-2 border-accent flex-shrink-0" />
+                      ) : (
+                        <Lock className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          Week {w.week}: {w.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {isCompleted
+                            ? "Completed"
+                            : isUnlocked
+                              ? "Available"
+                              : "Locked"}
+                        </div>
                       </div>
                     </div>
 
                     {isCompleted ? (
                       <Link href={`/week/${w.week}`}>
                         <Button
-                          variant="outline"
-                          className="gap-2"
+                          variant="ghost"
+                          size="sm"
                           data-testid={`button-review-week-${w.week}`}
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 mr-1" />
                           Review
                         </Button>
                       </Link>
                     ) : isAvailable ? (
                       <Link href={`/week/${w.week}`}>
                         <Button
-                          variant="default"
+                          size="sm"
                           data-testid={`button-continue-week-${w.week}`}
                         >
                           Continue
+                          <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       </Link>
                     ) : (
-                      <Button
-                        variant="outline"
-                        disabled
-                        className="gap-2"
-                        data-testid={`button-locked-week-${w.week}`}
-                      >
-                        <Lock className="h-4 w-4" />
+                      <span className="text-xs text-muted-foreground/50 pr-2">
                         Locked
-                      </Button>
+                      </span>
                     )}
                   </div>
                 );
@@ -490,14 +475,12 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Check-in Progress Dashboard */}
         <CheckinProgressDashboard />
 
-        {/* Mentor Feedback */}
         <Card>
-          <CardHeader className="gap-3">
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
+          <CardHeader className="gap-1">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-muted-foreground" />
               Mentor Feedback
             </CardTitle>
             <CardDescription>
@@ -507,7 +490,7 @@ export default function Dashboard() {
           <CardContent>
             {!feedbackData?.feedback || feedbackData.feedback.length === 0 ? (
               <p
-                className="text-sm text-muted-foreground"
+                className="text-sm text-muted-foreground py-4"
                 data-testid="text-no-feedback"
               >
                 No feedback from your mentor yet. They'll provide personalized
@@ -515,7 +498,7 @@ export default function Dashboard() {
               </p>
             ) : (
               <div
-                className="space-y-4 max-h-96 overflow-y-auto"
+                className="space-y-3 max-h-96 overflow-y-auto"
                 data-testid="section-mentor-feedback"
               >
                 {[...feedbackData.feedback]
@@ -527,7 +510,7 @@ export default function Dashboard() {
                   .map((fb) => (
                     <div
                       key={fb.id}
-                      className="rounded-lg border p-4"
+                      className="rounded-md border p-4"
                       data-testid={`feedback-item-${fb.id}`}
                     >
                       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
@@ -540,23 +523,25 @@ export default function Dashboard() {
                                 ? "Check-in"
                                 : "General"}
                         </Badge>
-                        {fb.editedAt && (
-                          <span className="text-[10px] text-muted-foreground italic">
-                            Edited by Admin &middot; {new Date(fb.editedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
-                          </span>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(fb.createdAt).toLocaleDateString(
-                            undefined,
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            },
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {fb.editedAt && (
+                            <span className="text-[10px] text-muted-foreground italic">
+                              Edited &middot; {new Date(fb.editedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                            </span>
                           )}
-                        </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(fb.createdAt).toLocaleDateString(
+                              undefined,
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap">
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
                         {fb.content}
                       </p>
                     </div>
@@ -571,6 +556,7 @@ export default function Dashboard() {
     </div>
   );
 }
+
 export function IntegrityCoach() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -602,98 +588,54 @@ export function IntegrityCoach() {
   };
 
   return (
-    <div
-      style={{ position: "fixed", bottom: "20px", right: "20px", zIndex: 1000 }}
-    >
-      <button
+    <div className="fixed bottom-5 right-5 z-50">
+      <Button
+        size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          padding: "15px",
-          borderRadius: "50%",
-          background: "#007bff",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-        }}
+        className="h-12 w-12 rounded-full shadow-lg"
+        data-testid="button-coach-toggle"
       >
-        💬 Coach
-      </button>
+        <MessageSquare className="h-5 w-5" />
+      </Button>
 
       {isOpen && (
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #ccc",
-            width: "300px",
-            height: "400px",
-            position: "absolute",
-            bottom: "70px",
-            right: "0",
-            display: "flex",
-            flexDirection: "column",
-            padding: "10px",
-            borderRadius: "10px",
-            boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-          }}
-        >
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              marginBottom: "10px",
-              fontSize: "14px",
-            }}
-          >
+        <Card className="absolute bottom-16 right-0 w-[320px] sm:w-[360px] flex flex-col overflow-hidden" style={{ height: "420px" }}>
+          <CardHeader className="gap-1 py-3 border-b">
+            <CardTitle className="text-sm">Integrity Coach</CardTitle>
+          </CardHeader>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {chat.map((msg, i) => (
               <div
                 key={i}
-                style={{
-                  marginBottom: "8px",
-                  textAlign: msg.role === "bot" ? "left" : "right",
-                }}
+                className={`text-sm rounded-md px-3 py-2 max-w-[85%] ${
+                  msg.role === "user"
+                    ? "ml-auto bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }`}
+                data-testid={`chat-message-${i}`}
               >
-                <span
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: "10px",
-                    background: msg.role === "bot" ? "#f0f0f0" : "#007bff",
-                    color: msg.role === "bot" ? "black" : "white",
-                    display: "inline-block",
-                  }}
-                >
-                  {msg.content}
-                </span>
+                {msg.content}
               </div>
             ))}
           </div>
-          <div style={{ display: "flex", gap: "5px" }}>
+          <div className="border-t p-3 flex gap-2">
             <input
-              style={{
-                flex: 1,
-                padding: "8px",
-                border: "1px solid #ddd",
-                borderRadius: "5px",
-              }}
+              className="flex-1 rounded-md border px-3 py-2 text-sm bg-background"
+              placeholder="Type a message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Ask a question..."
+              data-testid="input-coach-message"
             />
-            <button
+            <Button
+              size="sm"
               onClick={sendMessage}
-              style={{
-                background: "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "5px",
-                padding: "0 10px",
-              }}
+              data-testid="button-coach-send"
             >
               Send
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );
