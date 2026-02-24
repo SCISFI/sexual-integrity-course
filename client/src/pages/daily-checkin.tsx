@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, CheckCircle2, Calendar, Heart, Brain, Shield, Loader2, Activity, Lightbulb, BarChart3, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 import { getTodaysPrompt } from "@/data/journal-prompts";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
 
@@ -52,6 +53,7 @@ const HALTBS_ITEMS = [
 export default function DailyCheckinPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [dailyChecks, setDailyChecks] = useState<Record<string, boolean>>({});
   const [haltChecks, setHaltChecks] = useState<Record<string, boolean>>({});
   const [urgeLevel, setUrgeLevel] = useState([0]);
@@ -185,6 +187,11 @@ export default function DailyCheckinPage() {
             Dashboard
           </Button>
           <div>
+            {user?.name && (
+              <div className="text-sm text-muted-foreground" data-testid="text-welcome-greeting">
+                Welcome, {user.name}
+              </div>
+            )}
             <div className="font-semibold">Daily Check-in</div>
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3 w-3" />

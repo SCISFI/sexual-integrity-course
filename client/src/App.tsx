@@ -26,6 +26,7 @@ import ResetPassword from "@/pages/reset-password";
 import ChangePassword from "@/pages/change-password";
 import AnalyticsPage from "@/pages/analytics";
 import UserManualPage from "@/pages/user-manual";
+import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/protected" component={Protected} />
       <Route path="/relapse-autopsy" component={RelapseAutopsyPage} />
       <Route path="/pricing" component={PricingPage} />
+      <Route path="/profile" component={ProfilePage} />
       <Route component={NotFound} />
     </Switch>
   );

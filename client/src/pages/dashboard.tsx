@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,25 +12,20 @@ import {
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
-  Calendar,
   Lock,
   LogOut,
-  Mail,
-  User,
   ClipboardCheck,
   Key,
   CheckCircle,
   Eye,
   AlertTriangle,
   BarChart3,
-  Clock,
-  XCircle,
   Loader2,
   BookOpen,
   MessageSquare,
   ChevronDown,
-  Settings,
   UserCircle,
+  UserCog,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -43,22 +38,9 @@ import {
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { Badge } from "@/components/ui/badge";
 import { OnboardingModal } from "@/components/OnboardingModal";
-import { NotificationSettings } from "@/components/NotificationSettings";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
 import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 type WeekItem = {
   week: number;
@@ -73,7 +55,6 @@ const WEEKS: WeekItem[] = Array.from({ length: 16 }, (_, i) => ({
 export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   // -----------------------------------------------------
   // Staff-only Draft Assistant UI state (v2 Hybrid)
   // -----------------------------------------------------
@@ -123,7 +104,6 @@ export default function Dashboard() {
 
   // Check if user has completed onboarding (only for clients)
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   useEffect(() => {
     if (user && (user as any).role === "client") {
@@ -149,40 +129,10 @@ export default function Dashboard() {
     }
   }, [user, isLoading, isAuthenticating, setLocation]);
 
-  const memberSince = useMemo(() => {
-    if (!user) return "";
-    const createdAt = (user as any)?.createdAt;
-    const dt = createdAt ? new Date(createdAt) : new Date();
-    return dt.toLocaleDateString();
-  }, [user]);
-
   const handleLogout = async () => {
     await logout();
     setLocation("/");
   };
-
-  // Cancel account mutation
-  const cancelAccountMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/account/cancel", {});
-      return res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Account Cancelled",
-        description:
-          "Your account has been cancelled. You will retain access to any previously paid weeks. No refunds will be issued.",
-      });
-      setLocation("/login");
-    },
-    onError: () => {
-      toast({
-        title: "Cancellation Failed",
-        description: "Failed to cancel account. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
 
   // Find the next available week to continue (first unlocked but not completed)
   const nextAvailableWeek = useMemo(() => {
@@ -371,14 +321,12 @@ export default function Dashboard() {
                   <BookOpen className="h-4 w-4 mr-2" />
                   User Manual
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => setShowCancelDialog(true)}
-                  className="text-destructive focus:text-destructive"
-                  data-testid="menu-cancel-account"
+                  onClick={() => setLocation("/profile")}
+                  data-testid="menu-profile"
                 >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Cancel Account
+                  <UserCog className="h-4 w-4 mr-2" />
+                  Profile & Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -392,70 +340,29 @@ export default function Dashboard() {
             </DropdownMenu>
           </div>
 
-          <AlertDialog
-            open={showCancelDialog}
-            onOpenChange={setShowCancelDialog}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancel Your Account?</AlertDialogTitle>
-                <AlertDialogDescription className="space-y-2">
-                  <p>Are you sure you want to cancel your account?</p>
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg mt-4">
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                      Important:
-                    </p>
-                    <ul className="text-sm text-yellow-700 dark:text-yellow-300 mt-1 list-disc list-inside">
-                      <li>
-                        You will retain access to any weeks you have already
-                        paid for
-                      </li>
-                      <li>
-                        No refunds will be issued for previously purchased weeks
-                      </li>
-                      <li>
-                        You will not be able to purchase new weeks after
-                        cancellation
-                      </li>
-                    </ul>
-                  </div>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel data-testid="button-keep-account">
-                  Keep Account
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => cancelAccountMutation.mutate()}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  disabled={cancelAccountMutation.isPending}
-                  data-testid="button-confirm-cancel-account"
-                >
-                  {cancelAccountMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Cancelling...
-                    </>
-                  ) : (
-                    "Cancel Account"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       </header>
 
       {/* Main */}
       <main className="mx-auto max-w-4xl px-4 py-6 space-y-6">
         {/* Welcome greeting */}
-        <div data-testid="text-welcome-greeting">
-          <h1 className="text-2xl font-bold">
-            Welcome back, {(user as any)?.name || 'there'}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Here's your program progress and daily tools.
-          </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap" data-testid="text-welcome-greeting">
+          <div>
+            <h1 className="text-2xl font-bold">
+              Welcome back, {(user as any)?.name || 'there'}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Here's your program progress and daily tools.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setLocation("/analytics")}
+            data-testid="button-analytics-top"
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            My Analytics
+          </Button>
         </div>
 
         {/* My Program */}
@@ -659,91 +566,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Mentor Support */}
-        <Card className="border-primary/30 bg-primary/5 dark:bg-primary/10">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <User className="h-5 w-5" />
-              Your Mentor Support
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">
-              You have a dedicated mentor monitoring your progress throughout
-              this program. They review your check-ins, reflections, and
-              homework—and will provide personalized feedback to support your
-              recovery.
-            </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-              <Clock className="h-4 w-4" />
-              <span>Typical response time: Within 1-2 business days</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Support Resources */}
-        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-              <AlertTriangle className="h-5 w-5" />
-              Support Resources
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-amber-700 dark:text-amber-300/80 mb-4">
-              A setback does NOT remove you from the program. Use these tools to
-              process and move forward.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/user-manual">
-                <Button
-                  variant="outline"
-                  className="border-amber-300 dark:border-amber-700"
-                  data-testid="button-user-manual"
-                >
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  User Manual
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notification Settings */}
-        <NotificationSettings />
-
-        {/* Your Account */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Account</CardTitle>
-            <CardDescription>
-              Profile info for this member account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-3 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Name:</span>
-              <span className="font-medium">
-                {(user as any)?.name ?? "Not set"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Email:</span>
-              <span className="font-medium">
-                {(user as any)?.email ?? "Not set"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Joined:</span>
-              <span className="font-medium">{memberSince}</span>
-            </div>
-          </CardContent>
-        </Card>
         <IntegrityCoach />
       </main>
     </div>

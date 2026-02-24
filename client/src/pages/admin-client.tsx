@@ -14,6 +14,25 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+const DAILY_CHECK_LABELS: Record<string, string> = {
+  "no-acting-out": "Did not engage in compulsive sexual behavior today",
+  "no-rituals": "Did not engage in ritualistic behaviors leading to acting out",
+  "triggers-managed": "Successfully managed triggers when they occurred",
+  "sleep": "Got adequate sleep (7-8 hours)",
+  "exercise": "Got physical exercise or movement",
+  "connection": "Had meaningful connection with others",
+  "values-aligned": "Took at least one values-aligned action",
+  "honest": "Was honest in my interactions today",
+};
+
+function formatEveningChecks(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {}
+  return [];
+}
+
 type ClientProgress = {
   client: {
     id: string;
@@ -307,8 +326,15 @@ export default function AdminClientPage() {
                         </div>
                         {checkin.eveningChecks && (
                           <div className="mt-2">
-                            <p className="text-xs text-muted-foreground">Daily Items</p>
-                            <p className="text-sm">{checkin.eveningChecks}</p>
+                            <p className="text-xs text-muted-foreground mb-1">Daily Items</p>
+                            <div className="space-y-1">
+                              {formatEveningChecks(checkin.eveningChecks).map((id) => (
+                                <div key={id} className="flex items-center gap-2 text-sm" data-testid={`checkin-item-${id}`}>
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                  <span>{DAILY_CHECK_LABELS[id] || id}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                         {checkin.journalEntry && (

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { useLocation, useRoute, Link } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -7,14 +7,10 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardDescription,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -30,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, BookOpen, HelpCircle, ClipboardList, ListChecks, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Lightbulb, Trophy, Sparkles, Target } from "lucide-react";
+import { ArrowLeft, CheckCircle2, BookOpen, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Lightbulb, Trophy, Sparkles, Target } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
 import { AIEncouragement } from "@/components/AIEncouragement";
@@ -189,12 +185,10 @@ export default function WeekPage() {
   const { toast } = useToast();
   const [isWeekCompleted, setIsWeekCompleted] = useState(false);
   const [affirmComplete, setAffirmComplete] = useState(false);
-  const [homeworkCompleted, setHomeworkCompleted] = useState<Record<number, boolean>>({});
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [showMilestoneDialog, setShowMilestoneDialog] = useState(false);
   const [reflectionAnswers, setReflectionAnswers] = useState<Record<string, string>>({});
   const [reflectionsLoaded, setReflectionsLoaded] = useState(false);
-  const [homeworkLoaded, setHomeworkLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({});
   const [exercisesLoaded, setExercisesLoaded] = useState(false);
@@ -202,14 +196,11 @@ export default function WeekPage() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reflectionAnswersRef = useRef<Record<string, string>>({});
-  const homeworkCompletedRef = useRef<Record<number, boolean>>({});
   const exerciseAnswersRef = useRef<Record<string, string>>({});
   const exercisesDirtyRef = useRef(false);
   const exerciseSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const weekIsLockedRef = useRef(false);
   const reflectionsDirtyRef = useRef(false);
-  const homeworkDirtyRef = useRef(false);
-  const homeworkSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const paymentConfirmedRef = useRef(false);
 
   // Handle payment success confirmation
@@ -259,11 +250,6 @@ export default function WeekPage() {
   // Fetch saved reflections for this week
   const { data: reflectionData, isLoading: loadingReflections } = useQuery<{ reflection: any }>({
     queryKey: ['/api/progress/reflection', weekNumber],
-  });
-
-  // Fetch homework completions for this week
-  const { data: homeworkData } = useQuery<{ completedItems: number[] }>({
-    queryKey: ['/api/progress/homework', weekNumber],
   });
 
   // Fetch exercise answers for this week
@@ -342,20 +328,6 @@ export default function WeekPage() {
     }
   }, [reflectionData, reflectionsLoaded]);
 
-  // Load homework completions when data arrives
-  useEffect(() => {
-    if (homeworkData?.completedItems && !homeworkLoaded) {
-      const completed: Record<number, boolean> = {};
-      homeworkData.completedItems.forEach((idx: number) => {
-        completed[idx] = true;
-      });
-      setHomeworkCompleted(completed);
-      homeworkCompletedRef.current = completed;
-      homeworkDirtyRef.current = false;
-      setHomeworkLoaded(true);
-    }
-  }, [homeworkData, homeworkLoaded]);
-
   // Load exercise answers when data arrives
   useEffect(() => {
     if (exerciseData?.answers && !exercisesLoaded) {
@@ -420,25 +392,6 @@ export default function WeekPage() {
     },
   });
 
-  // Mutation to save homework completions
-  const saveHomeworkMutation = useMutation({
-    mutationFn: async (completedItems: number[]) => {
-      const res = await apiRequest("PUT", `/api/progress/homework/${weekNumber}`, { completedItems });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/progress/homework', weekNumber] });
-      homeworkDirtyRef.current = false;
-    },
-    onError: () => {
-      toast({
-        title: "Auto-save failed",
-        description: "Your homework progress couldn't be saved.",
-        variant: "destructive",
-      });
-    },
-  });
-
   // Mutation to save exercise answers
   const saveExerciseMutation = useMutation({
     mutationFn: async (data: Record<string, string>) => {
@@ -459,19 +412,15 @@ export default function WeekPage() {
 
   useEffect(() => {
     setAffirmComplete(false);
-    setHomeworkCompleted({});
     setReflectionAnswers({});
     setReflectionsLoaded(false);
-    setHomeworkLoaded(false);
     setExerciseAnswers({});
     setExercisesLoaded(false);
     setIsWeekCompleted(false);
     setShowCompletionDialog(false);
     reflectionAnswersRef.current = {};
-    homeworkCompletedRef.current = {};
     exerciseAnswersRef.current = {};
     reflectionsDirtyRef.current = false;
-    homeworkDirtyRef.current = false;
     exercisesDirtyRef.current = false;
   }, [weekNumber]);
 
@@ -491,21 +440,6 @@ export default function WeekPage() {
       });
     }, 1000); // Save after 1 second of inactivity
   }, [weekNumber, weekIsLocked, loadingReflections]);
-
-  // Debounced save for homework
-  const debouncedSaveHomework = useCallback((completed: Record<number, boolean>) => {
-    if (weekIsLocked) return;
-
-    if (homeworkSaveTimeoutRef.current) {
-      clearTimeout(homeworkSaveTimeoutRef.current);
-    }
-    homeworkSaveTimeoutRef.current = setTimeout(() => {
-      const completedItems = Object.entries(completed)
-        .filter(([, isCompleted]) => isCompleted)
-        .map(([idx]) => parseInt(idx, 10));
-      saveHomeworkMutation.mutate(completedItems);
-    }, 500);
-  }, [weekNumber, weekIsLocked]);
 
   // Debounced save for exercises
   const debouncedSaveExercises = useCallback((answers: Record<string, string>) => {
@@ -531,9 +465,6 @@ export default function WeekPage() {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
-      if (homeworkSaveTimeoutRef.current) {
-        clearTimeout(homeworkSaveTimeoutRef.current);
-      }
       if (saveStatusTimeoutRef.current) {
         clearTimeout(saveStatusTimeoutRef.current);
       }
@@ -553,20 +484,6 @@ export default function WeekPage() {
             q3: answers.q3 ?? "",
             q4: answers.q4 ?? "",
           }),
-          keepalive: true,
-        }).catch(() => {});
-      }
-
-      if (!weekIsLockedRef.current && homeworkDirtyRef.current) {
-        const completed = homeworkCompletedRef.current;
-        const completedItems = Object.entries(completed)
-          .filter(([, isCompleted]) => isCompleted)
-          .map(([idx]) => parseInt(idx, 10));
-        fetch(`/api/progress/homework/${weekNumber}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ completedItems }),
           keepalive: true,
         }).catch(() => {});
       }
@@ -604,16 +521,6 @@ export default function WeekPage() {
     }
   };
 
-  const toggleHomework = (index: number) => {
-    setHomeworkCompleted(prev => {
-      const updated = { ...prev, [index]: !prev[index] };
-      homeworkCompletedRef.current = updated;
-      homeworkDirtyRef.current = true;
-      debouncedSaveHomework(updated);
-      return updated;
-    });
-  };
-
   const handleReflectionChange = (questionId: string, value: string) => {
     if (weekIsLocked) return;
 
@@ -634,10 +541,25 @@ export default function WeekPage() {
 
   const hasReflectionAnswers = Object.values(reflectionAnswers).some(answer => answer.trim().length > 0);
 
-  // Calculate homework progress
-  const homeworkTotal = weekContent?.homeworkChecklist?.length || 0;
-  const homeworkDone = Object.values(homeworkCompleted).filter(Boolean).length;
-  const homeworkProgress = homeworkTotal > 0 ? Math.round((homeworkDone / homeworkTotal) * 100) : 0;
+  // Calculate progress based on completed reflections and exercises per teaching section
+  const totalTeachingSections = weekContent?.teaching?.length || 0;
+  const totalReflections = weekContent?.reflectionQuestions?.length || 0;
+  const totalExercises = weekContent?.exercises?.length || 0;
+  const totalProgressItems = totalReflections + totalExercises;
+  
+  const completedReflections = weekContent?.reflectionQuestions?.filter(
+    (q) => (reflectionAnswers[q.id] || "").trim().length > 0
+  ).length || 0;
+  
+  const completedExercises = weekContent?.exercises?.filter((exercise) =>
+    exercise.fields.every((field) => 
+      (exerciseAnswers[`${exercise.id}-${field.id}`] || "").trim().length > 0
+    )
+  ).length || 0;
+  
+  const sectionProgress = totalProgressItems > 0
+    ? Math.round(((completedReflections + completedExercises) / totalProgressItems) * 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -800,52 +722,119 @@ export default function WeekPage() {
         )}
 
         {!isTimeLocked && !needsPayment && (
-          <Tabs defaultValue="read" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="read" data-testid="tab-read">
-                <BookOpen className="h-4 w-4 mr-2" />
-                Read
-              </TabsTrigger>
-              <TabsTrigger value="listen" data-testid="tab-listen">Listen</TabsTrigger>
-              <TabsTrigger value="video" data-testid="tab-video">Video</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="read" className="space-y-6">
-              {weekContent ? (
-                <>
-                  {/* Teaching Sections */}
-                  {weekContent.teaching && weekContent.teaching.length > 0 && (
-                    <Card data-testid="section-teaching">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                            <BookOpen className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <h2 className="text-xl font-semibold">Teaching</h2>
-                            <p className="text-sm text-muted-foreground">
-                              {weekContent.teaching.length} topic{weekContent.teaching.length !== 1 ? 's' : ''} to explore
-                            </p>
-                          </div>
+          <div className="space-y-6">
+            {weekContent ? (
+              <>
+                {/* Progress Tracker */}
+                {totalProgressItems > 0 && (
+                  <Card data-testid="section-progress-tracker">
+                    <CardContent className="py-4">
+                      <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Section Progress</span>
                         </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <Accordion type="multiple" className="w-full">
-                          {weekContent.teaching.map((section, idx) => (
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {completedReflections + completedExercises}/{totalProgressItems} completed
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Progress value={sectionProgress} className="h-2 flex-1" />
+                        <span className="text-xs font-medium text-muted-foreground w-10">
+                          {sectionProgress}%
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Auto-save indicators */}
+                {!weekIsLocked && (
+                  <div className="flex items-center justify-end gap-4">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground" data-testid="save-indicator">
+                      {(saveStatus === "saving" || exerciseSaveStatus === "saving") && (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      )}
+                      {saveStatus === "saved" && exerciseSaveStatus !== "saving" && (
+                        <>
+                          <Cloud className="h-3 w-3 text-green-600" />
+                          <span className="text-green-600">Saved</span>
+                        </>
+                      )}
+                      {exerciseSaveStatus === "saved" && saveStatus !== "saving" && saveStatus !== "saved" && (
+                        <>
+                          <Cloud className="h-3 w-3 text-green-600" />
+                          <span className="text-green-600">Saved</span>
+                        </>
+                      )}
+                      {saveStatus === "idle" && exerciseSaveStatus === "idle" && (reflectionsLoaded || exercisesLoaded) && (
+                        <>
+                          <Cloud className="h-3 w-3" />
+                          <span>Auto-save on</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Teaching Sections with embedded Reflections and Exercises */}
+                {weekContent.teaching && weekContent.teaching.length > 0 && (
+                  <Card data-testid="section-teaching">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <BookOpen className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-semibold">Teaching</h2>
+                          <p className="text-sm text-muted-foreground">
+                            {weekContent.teaching.length} topic{weekContent.teaching.length !== 1 ? 's' : ''} to explore
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-3 pl-[52px]">
+                        Each topic below must be opened and reviewed. Complete the reflection and exercise within each section to progress.
+                      </p>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <Accordion type="multiple" className="w-full">
+                        {weekContent.teaching.map((section, idx) => {
+                          const sectionReflection = weekContent.reflectionQuestions?.[idx];
+                          const sectionExercise = weekContent.exercises?.[idx];
+                          const hasReflectionAnswer = sectionReflection && (reflectionAnswers[sectionReflection.id] || "").trim().length > 0;
+                          const hasExerciseAnswer = sectionExercise && sectionExercise.fields.every(
+                            (field) => (exerciseAnswers[`${sectionExercise.id}-${field.id}`] || "").trim().length > 0
+                          );
+                          const sectionItemCount = (sectionReflection ? 1 : 0) + (sectionExercise ? 1 : 0);
+                          const sectionCompletedCount = (hasReflectionAnswer ? 1 : 0) + (hasExerciseAnswer ? 1 : 0);
+                          const sectionDone = sectionItemCount > 0 && sectionCompletedCount === sectionItemCount;
+
+                          return (
                             <AccordionItem key={section.id} value={section.id} className="border-b last:border-b-0">
                               <AccordionTrigger 
                                 className="text-left py-4 hover:no-underline group"
                                 data-testid={`accordion-teaching-${idx}`}
                               >
-                                <div className="flex items-center gap-3">
-                                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary group-hover:bg-primary/20 transition-colors">
-                                    {idx + 1}
+                                <div className="flex items-center gap-3 flex-1">
+                                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
+                                    sectionDone 
+                                      ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' 
+                                      : 'bg-primary/10 text-primary group-hover:bg-primary/20'
+                                  }`}>
+                                    {sectionDone ? (
+                                      <CheckCircle2 className="h-4 w-4" />
+                                    ) : (
+                                      idx + 1
+                                    )}
                                   </span>
                                   <span className="font-medium">{section.title}</span>
                                 </div>
                               </AccordionTrigger>
                               <AccordionContent>
-                                <div className="pl-10 space-y-4">
+                                <div className="pl-10 space-y-6">
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <TextToSpeech 
                                       text={section.content.join('. ')} 
@@ -858,374 +847,200 @@ export default function WeekPage() {
                                       <p key={pIdx}>{paragraph}</p>
                                     ))}
                                   </div>
+
+                                  {/* Embedded Reflection for this section */}
+                                  {sectionReflection && (
+                                    <div className="rounded-lg border border-amber-200/50 dark:border-amber-800/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 p-4 space-y-3">
+                                      <div className="flex items-start gap-3">
+                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-200/70 dark:bg-amber-800/50 flex-shrink-0 mt-0.5">
+                                          <PenLine className="h-3 w-3 text-amber-800 dark:text-amber-200" />
+                                        </div>
+                                        <div className="flex-1 space-y-1">
+                                          <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Reflection</span>
+                                          <Label 
+                                            htmlFor={`reflection-${sectionReflection.id}`}
+                                            className="text-sm font-medium leading-relaxed block"
+                                            data-testid={`label-reflection-${idx}`}
+                                          >
+                                            {sectionReflection.question}
+                                          </Label>
+                                        </div>
+                                      </div>
+                                      <Textarea
+                                        id={`reflection-${sectionReflection.id}`}
+                                        placeholder={weekIsLocked ? "This week has been completed. Your answers are saved." : "Write your reflection here..."}
+                                        className={`min-h-[100px] bg-white dark:bg-background/80 border-amber-200/50 dark:border-amber-800/30 resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                        value={reflectionAnswers[sectionReflection.id] || ""}
+                                        onChange={(e) => handleReflectionChange(sectionReflection.id, e.target.value)}
+                                        disabled={weekIsLocked}
+                                        data-testid={`input-reflection-${idx}`}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Embedded Exercise for this section */}
+                                  {sectionExercise && (
+                                    <div className="rounded-lg border bg-muted/30 overflow-visible">
+                                      <div className="flex items-center gap-3 p-4 border-b bg-muted/50">
+                                        <Badge variant="outline" className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800">
+                                          Exercise
+                                        </Badge>
+                                        <span className="font-medium">{sectionExercise.title}</span>
+                                      </div>
+                                      <div className="p-4 space-y-4">
+                                        <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/30">
+                                          <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                                          <p className="text-sm text-blue-800 dark:text-blue-200">
+                                            {sectionExercise.instructions}
+                                          </p>
+                                        </div>
+                                        <div className="space-y-4">
+                                          {sectionExercise.fields.map((field, fIdx) => (
+                                            <div key={field.id} className="space-y-2">
+                                              <Label 
+                                                htmlFor={`${sectionExercise.id}-${field.id}`}
+                                                className="text-sm font-medium"
+                                              >
+                                                {field.label}
+                                              </Label>
+                                              {field.type === "textarea" ? (
+                                                <Textarea
+                                                  id={`${sectionExercise.id}-${field.id}`}
+                                                  placeholder={weekIsLocked ? "This week has been completed." : field.placeholder}
+                                                  className={`min-h-[120px] resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                                  value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
+                                                  onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
+                                                  disabled={weekIsLocked}
+                                                  data-testid={`input-exercise-${idx}-${fIdx}`}
+                                                />
+                                              ) : field.type === "number" ? (
+                                                <Input
+                                                  id={`${sectionExercise.id}-${field.id}`}
+                                                  type="number"
+                                                  placeholder={weekIsLocked ? "" : field.placeholder}
+                                                  className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
+                                                  value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
+                                                  onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
+                                                  disabled={weekIsLocked}
+                                                  data-testid={`input-exercise-${idx}-${fIdx}`}
+                                                />
+                                              ) : (
+                                                <Input
+                                                  id={`${sectionExercise.id}-${field.id}`}
+                                                  type="text"
+                                                  placeholder={weekIsLocked ? "" : field.placeholder}
+                                                  className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
+                                                  value={exerciseAnswers[`${sectionExercise.id}-${field.id}`] || ""}
+                                                  onChange={(e) => handleExerciseChange(`${sectionExercise.id}-${field.id}`, e.target.value)}
+                                                  disabled={weekIsLocked}
+                                                  data-testid={`input-exercise-${idx}-${fIdx}`}
+                                                />
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </AccordionContent>
                             </AccordionItem>
-                          ))}
-                        </Accordion>
-                      </CardContent>
-                    </Card>
-                  )}
+                          );
+                        })}
+                      </Accordion>
+                    </CardContent>
+                  </Card>
+                )}
 
-                  {/* Reflection Questions */}
-                  {weekContent.reflectionQuestions && weekContent.reflectionQuestions.length > 0 && (
-                    <Card className="border-amber-200/50 dark:border-amber-800/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10" data-testid="section-reflection">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50">
-                              <PenLine className="h-5 w-5 text-amber-700 dark:text-amber-400" />
-                            </div>
-                            <div>
-                              <h2 className="text-xl font-semibold">Reflection Journal</h2>
-                              <p className="text-sm text-muted-foreground">
-                                Take time to reflect on your journey
-                              </p>
-                            </div>
-                          </div>
-                          {!weekIsLocked && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground" data-testid="save-indicator">
-                              {saveStatus === "saving" && (
-                                <>
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  <span>Saving...</span>
-                                </>
-                              )}
-                              {saveStatus === "saved" && (
-                                <>
-                                  <Cloud className="h-3 w-3 text-green-600" />
-                                  <span className="text-green-600">Saved</span>
-                                </>
-                              )}
-                              {saveStatus === "idle" && reflectionsLoaded && (
-                                <>
-                                  <Cloud className="h-3 w-3" />
-                                  <span>Auto-save on</span>
-                                </>
-                              )}
-                            </div>
+                {/* Week Completion */}
+                {weekIsLocked ? (
+                  <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-emerald-50/30 dark:from-green-950/20 dark:to-emerald-950/10">
+                    <CardContent className="flex items-center gap-4 py-6">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
+                        <Trophy className="h-6 w-6 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-green-800 dark:text-green-200">Week {weekNumber} Completed</h3>
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          Your reflection and exercise answers are saved and viewable above.
+                        </p>
+                      </div>
+                      {weekNumber < 16 && (
+                        <Button
+                          onClick={() => setLocation(`/week/${weekNumber + 1}`)}
+                          data-testid="button-next-week-locked"
+                        >
+                          Week {weekNumber + 1}
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+                    <CardContent className="py-6 space-y-4">
+                      <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-muted">
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          checked={affirmComplete}
+                          onChange={(e) => setAffirmComplete(e.target.checked)}
+                          data-testid="checkbox-affirm-complete"
+                        />
+                        <span className="text-sm leading-relaxed">
+                          By marking this week complete, I affirm that I have completed all required readings, reflections, and exercises <strong>honestly and in full</strong>. I understand that partial completion or skipping undermines the purpose of this program.
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          {isWeekCompleted
+                            ? weekNumber === 16 
+                              ? "Congratulations! You have completed the program!"
+                              : `Week ${weekNumber} completed! Week ${weekNumber + 1} is now unlocked.`
+                            : weekNumber === 16
+                              ? "Complete all exercises to finish the program."
+                              : `Complete all exercises to unlock Week ${weekNumber + 1}.`}
+                        </p>
+
+                        <Button
+                          onClick={markWeekComplete}
+                          disabled={isWeekCompleted || !affirmComplete || markCompleteMutation.isPending}
+                          className="gap-2"
+                          data-testid="button-mark-complete"
+                        >
+                          {markCompleteMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Saving...
+                            </>
+                          ) : isWeekCompleted ? (
+                            <>
+                              <CheckCircle2 className="h-4 w-4" />
+                              Week {weekNumber} Completed
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-4 w-4" />
+                              Mark Week {weekNumber} Complete
+                            </>
                           )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        {weekContent.reflectionQuestions.map((q, idx) => (
-                          <div 
-                            key={q.id} 
-                            className="rounded-lg border border-amber-200/50 dark:border-amber-800/30 bg-white/70 dark:bg-background/50 p-4 space-y-3"
-                          >
-                            <div className="flex items-start gap-3">
-                              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-200/70 dark:bg-amber-800/50 text-xs font-semibold text-amber-800 dark:text-amber-200 flex-shrink-0 mt-0.5">
-                                {idx + 1}
-                              </span>
-                              <Label 
-                                htmlFor={`reflection-${q.id}`}
-                                className="text-sm font-medium leading-relaxed"
-                                data-testid={`label-reflection-${idx}`}
-                              >
-                                {q.question}
-                              </Label>
-                            </div>
-                            <Textarea
-                              id={`reflection-${q.id}`}
-                              placeholder={weekIsLocked ? "This week has been completed. Your answers are saved." : "Write your reflection here..."}
-                              className={`min-h-[100px] bg-white dark:bg-background/80 border-amber-200/50 dark:border-amber-800/30 resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
-                              value={reflectionAnswers[q.id] || ""}
-                              onChange={(e) => handleReflectionChange(q.id, e.target.value)}
-                              disabled={weekIsLocked}
-                              data-testid={`input-reflection-${idx}`}
-                            />
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Exercises */}
-                  {weekContent.exercises && weekContent.exercises.length > 0 && (
-                    <Card data-testid="section-exercises">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50">
-                              <Target className="h-5 w-5 text-green-700 dark:text-green-400" />
-                            </div>
-                            <div>
-                              <h2 className="text-xl font-semibold">Exercises</h2>
-                              <p className="text-sm text-muted-foreground">
-                                {weekContent.exercises.length} practical exercise{weekContent.exercises.length !== 1 ? 's' : ''}
-                              </p>
-                            </div>
-                          </div>
-                          {!weekIsLocked && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground" data-testid="exercise-save-indicator">
-                              {exerciseSaveStatus === "saving" && (
-                                <>
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                  <span>Saving...</span>
-                                </>
-                              )}
-                              {exerciseSaveStatus === "saved" && (
-                                <>
-                                  <Cloud className="h-3 w-3 text-green-600" />
-                                  <span className="text-green-600">Saved</span>
-                                </>
-                              )}
-                              {exerciseSaveStatus === "idle" && exercisesLoaded && (
-                                <>
-                                  <Cloud className="h-3 w-3" />
-                                  <span>Auto-save on</span>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0 space-y-4">
-                        {weekContent.exercises.map((exercise, idx) => (
-                          <div 
-                            key={exercise.id}
-                            className="rounded-lg border bg-muted/30 overflow-hidden"
-                          >
-                            <div className="flex items-center gap-3 p-4 border-b bg-muted/50">
-                              <Badge variant="outline" className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800">
-                                Exercise {idx + 1}
-                              </Badge>
-                              <span className="font-medium">{exercise.title}</span>
-                            </div>
-                            <div className="p-4 space-y-4">
-                              <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-800/30">
-                                <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                                <p className="text-sm text-blue-800 dark:text-blue-200">
-                                  {exercise.instructions}
-                                </p>
-                              </div>
-                              <div className="space-y-4">
-                                {exercise.fields.map((field, fIdx) => (
-                                  <div key={field.id} className="space-y-2">
-                                    <Label 
-                                      htmlFor={`${exercise.id}-${field.id}`}
-                                      className="text-sm font-medium"
-                                    >
-                                      {field.label}
-                                    </Label>
-                                    {field.type === "textarea" ? (
-                                      <Textarea
-                                        id={`${exercise.id}-${field.id}`}
-                                        placeholder={weekIsLocked ? "This week has been completed." : field.placeholder}
-                                        className={`min-h-[120px] resize-none ${weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
-                                        value={exerciseAnswers[`${exercise.id}-${field.id}`] || ""}
-                                        onChange={(e) => handleExerciseChange(`${exercise.id}-${field.id}`, e.target.value)}
-                                        disabled={weekIsLocked}
-                                        data-testid={`input-exercise-${idx}-${fIdx}`}
-                                      />
-                                    ) : field.type === "number" ? (
-                                      <Input
-                                        id={`${exercise.id}-${field.id}`}
-                                        type="number"
-                                        placeholder={weekIsLocked ? "" : field.placeholder}
-                                        className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
-                                        value={exerciseAnswers[`${exercise.id}-${field.id}`] || ""}
-                                        onChange={(e) => handleExerciseChange(`${exercise.id}-${field.id}`, e.target.value)}
-                                        disabled={weekIsLocked}
-                                        data-testid={`input-exercise-${idx}-${fIdx}`}
-                                      />
-                                    ) : (
-                                      <Input
-                                        id={`${exercise.id}-${field.id}`}
-                                        type="text"
-                                        placeholder={weekIsLocked ? "" : field.placeholder}
-                                        className={weekIsLocked ? 'opacity-70 cursor-not-allowed' : ''}
-                                        value={exerciseAnswers[`${exercise.id}-${field.id}`] || ""}
-                                        onChange={(e) => handleExerciseChange(`${exercise.id}-${field.id}`, e.target.value)}
-                                        disabled={weekIsLocked}
-                                        data-testid={`input-exercise-${idx}-${fIdx}`}
-                                      />
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Homework Checklist */}
-                  {weekContent.homeworkChecklist && weekContent.homeworkChecklist.length > 0 && (
-                    <Card data-testid="section-homework">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/50">
-                            <ListChecks className="h-5 w-5 text-purple-700 dark:text-purple-400" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <h2 className="text-xl font-semibold">Weekly Homework</h2>
-                              <span className="text-sm font-medium text-muted-foreground">
-                                {homeworkDone}/{homeworkTotal} completed
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 mt-2">
-                              <Progress value={homeworkProgress} className="h-2 flex-1" />
-                              <span className="text-xs font-medium text-muted-foreground w-10">
-                                {homeworkProgress}%
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-2">
-                          {weekContent.homeworkChecklist.map((item, idx) => (
-                            <div 
-                              key={idx} 
-                              className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                                homeworkCompleted[idx] 
-                                  ? 'bg-green-50/50 dark:bg-green-950/20 border-green-200/50 dark:border-green-800/30' 
-                                  : 'bg-muted/30 border-transparent'
-                              }`}
-                              data-testid={`homework-item-${idx}`}
-                            >
-                              <Checkbox
-                                id={`homework-${idx}`}
-                                checked={homeworkCompleted[idx] || false}
-                                onCheckedChange={() => toggleHomework(idx)}
-                                disabled={weekIsLocked}
-                                className="mt-0.5"
-                                data-testid={`checkbox-homework-${idx}`}
-                              />
-                              <label
-                                htmlFor={`homework-${idx}`}
-                                className={`text-sm flex-1 ${weekIsLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} ${
-                                  homeworkCompleted[idx] ? 'line-through text-muted-foreground' : ''
-                                }`}
-                              >
-                                {item}
-                              </label>
-                              {homeworkCompleted[idx] && (
-                                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        
-                        {homeworkProgress === 100 && (
-                          <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-green-100/80 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200">
-                            <Sparkles className="h-4 w-4" />
-                            <span className="text-sm font-medium">Amazing! You've completed all homework for this week!</span>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Week Completion */}
-                  {weekIsLocked ? (
-                    <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-emerald-50/30 dark:from-green-950/20 dark:to-emerald-950/10">
-                      <CardContent className="flex items-center gap-4 py-6">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/50">
-                          <Trophy className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-green-800 dark:text-green-200">Week {weekNumber} Completed</h3>
-                          <p className="text-sm text-green-700 dark:text-green-300">
-                            Your reflection answers are saved and viewable above.
-                          </p>
-                        </div>
-                        {weekNumber < 16 && (
-                          <Button
-                            onClick={() => setLocation(`/week/${weekNumber + 1}`)}
-                            data-testid="button-next-week-locked"
-                          >
-                            Week {weekNumber + 1}
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-                      <CardContent className="py-6 space-y-4">
-                        <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-muted">
-                          <input
-                            type="checkbox"
-                            className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                            checked={affirmComplete}
-                            onChange={(e) => setAffirmComplete(e.target.checked)}
-                            data-testid="checkbox-affirm-complete"
-                          />
-                          <span className="text-sm leading-relaxed">
-                            By marking this week complete, I affirm that I have completed all required readings, reflections, and exercises <strong>honestly and in full</strong>. I understand that partial completion or skipping undermines the purpose of this program.
-                          </span>
-                        </div>
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <p className="text-sm text-muted-foreground">
-                            {isWeekCompleted
-                              ? weekNumber === 16 
-                                ? "Congratulations! You have completed the program!"
-                                : `Week ${weekNumber} completed! Week ${weekNumber + 1} is now unlocked.`
-                              : weekNumber === 16
-                                ? "Complete all exercises to finish the program."
-                                : `Complete all exercises to unlock Week ${weekNumber + 1}.`}
-                          </p>
-
-                          <Button
-                            onClick={markWeekComplete}
-                            disabled={isWeekCompleted || !affirmComplete || markCompleteMutation.isPending}
-                            className="gap-2"
-                            data-testid="button-mark-complete"
-                          >
-                            {markCompleteMutation.isPending ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Saving...
-                              </>
-                            ) : isWeekCompleted ? (
-                              <>
-                                <CheckCircle2 className="h-4 w-4" />
-                                Week {weekNumber} Completed
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 className="h-4 w-4" />
-                                Mark Week {weekNumber} Complete
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </>
-              ) : (
-                <Card className="border-dashed">
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">
-                      Content for Week {weekNumber} is coming soon.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="listen">
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
               <Card className="border-dashed">
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  Audio narration coming soon.
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground">
+                    Content for Week {weekNumber} is coming soon.
+                  </p>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="video">
-              <Card className="border-dashed">
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  Video content coming soon.
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         )}
       </main>
 

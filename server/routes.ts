@@ -849,6 +849,7 @@ export async function registerRoutes(
 
     const windowStart = new Date();
     windowStart.setDate(windowStart.getDate() - windowSize + 1);
+    windowStart.setUTCHours(0, 0, 0, 0);
     const recentDates = new Set(checkins.filter((c) => new Date(c.dateKey) >= windowStart).map((c) => c.dateKey));
     const dailyCompletionRate = Math.round((recentDates.size / windowSize) * 100);
 
@@ -2418,7 +2419,9 @@ ${trendStatsBlock}
           });
         }
 
-        const prompt = `You are a supportive mentor providing feedback to a client in The Integrity Protocol recovery program. Based on the following client information, write a personalized, encouraging feedback message.
+        const prompt = `You are a supportive mentor providing feedback to a client in The Integrity Protocol recovery program. You are writing feedback for Week ${weekNumber}. Always reference this as Week ${weekNumber}.
+
+Based on the following client information, write a personalized, encouraging feedback message.
 
 ${contextInfo}
 

@@ -13,6 +13,25 @@ import { useToast } from "@/hooks/use-toast";
 import { getPromptForDate } from "@/data/journal-prompts";
 import { WEEK_CONTENT } from "@/data/curriculum";
 
+const DAILY_CHECK_LABELS: Record<string, string> = {
+  "no-acting-out": "Did not engage in compulsive sexual behavior today",
+  "no-rituals": "Did not engage in ritualistic behaviors leading to acting out",
+  "triggers-managed": "Successfully managed triggers when they occurred",
+  "sleep": "Got adequate sleep (7-8 hours)",
+  "exercise": "Got physical exercise or movement",
+  "connection": "Had meaningful connection with others",
+  "values-aligned": "Took at least one values-aligned action",
+  "honest": "Was honest in my interactions today",
+};
+
+function formatEveningChecks(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch {}
+  return [];
+}
+
 type RelapseAutopsyData = {
   id: string;
   userId: string;
@@ -113,6 +132,7 @@ export default function TherapistClient() {
   const [activeTab, setActiveTab] = useState("progress");
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [expandedAutopsy, setExpandedAutopsy] = useState<string | null>(null);
+  const [activeFeedbackTarget, setActiveFeedbackTarget] = useState<{ type: string; key: string } | null>(null);
 
   const { data: clientsData } = useQuery<{ clients: ClientInfo[] }>({
     queryKey: ['/api/therapist/clients'],
@@ -138,6 +158,7 @@ export default function TherapistClient() {
       setFeedbackDateKey(null);
       setFeedbackAutopsyId(null);
       setFeedbackInsightType(null);
+      setActiveFeedbackTarget(null);
       toast({ title: "Feedback added successfully" });
     },
     onError: () => {
@@ -265,8 +286,9 @@ export default function TherapistClient() {
 
   const getUnreviewedReflectionCount = () => {
     let count = 0;
-    reflections.forEach(r => { if (!isItemReviewed('reflection', String(r.weekNumber))) count++; });
-    exerciseAnswers.forEach(e => { if (!isItemReviewed('exercise', String(e.weekNumber))) count++; });
+    const completedSet = new Set(completedWeeks);
+    reflections.forEach(r => { if (completedSet.has(r.weekNumber) && !isItemReviewed('reflection', String(r.weekNumber))) count++; });
+    exerciseAnswers.forEach(e => { if (completedSet.has(e.weekNumber) && !isItemReviewed('exercise', String(e.weekNumber))) count++; });
     return count;
   };
 
@@ -332,7 +354,7 @@ export default function TherapistClient() {
         setFeedbackDateKey(dateKey);
         setFeedbackWeek(null);
         setFeedbackAutopsyId(null);
-        setActiveTab("feedback");
+        setActiveFeedbackTarget({ type: 'checkin', key: dateKey });
       }
 
       setNewFeedback(data.draft);
@@ -349,7 +371,8 @@ export default function TherapistClient() {
     setFeedbackDateKey(null);
     setFeedbackAutopsyId(null);
     setFeedbackInsightType(null);
-    setActiveTab("feedback");
+    setNewFeedback("");
+    setActiveFeedbackTarget({ type: 'week', key: String(weekNumber) });
   };
 
   const handleAddFeedbackForDate = (dateKey: string) => {
@@ -357,7 +380,8 @@ export default function TherapistClient() {
     setFeedbackWeek(null);
     setFeedbackAutopsyId(null);
     setFeedbackInsightType(null);
-    setActiveTab("feedback");
+    setNewFeedback("");
+    setActiveFeedbackTarget({ type: 'checkin', key: dateKey });
   };
 
   const handleAddFeedbackForAutopsy = (autopsyId: string) => {
@@ -365,7 +389,8 @@ export default function TherapistClient() {
     setFeedbackWeek(null);
     setFeedbackDateKey(null);
     setFeedbackInsightType(null);
-    setActiveTab("feedback");
+    setNewFeedback("");
+    setActiveFeedbackTarget({ type: 'autopsy', key: autopsyId });
   };
 
   const handleAddFeedbackForInsight = (insightType: string) => {
@@ -374,10 +399,8 @@ export default function TherapistClient() {
     setFeedbackDateKey(null);
     setFeedbackAutopsyId(null);
     setNewFeedback("");
-    setActiveTab("feedback");
+    setActiveFeedbackTarget({ type: 'insight', key: insightType });
   };
-
-  const sortedFeedback = [...feedback].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <div className="min-h-screen bg-background px-6 py-8">
@@ -456,9 +479,9 @@ export default function TherapistClient() {
                 <TabsTrigger value="analytics" data-testid="tab-analytics" className="flex-1">Analytics</TabsTrigger>
                 <TabsTrigger value="progress" data-testid="tab-progress" className="relative flex-1">
                   Progress
-                  {pendingWeekReviewCount > 0 && (
+                  {(pendingWeekReviewCount + getUnreviewedReflectionCount()) > 0 && (
                     <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-pending-week-reviews">
-                      {pendingWeekReviewCount}
+                      {pendingWeekReviewCount + getUnreviewedReflectionCount()}
                     </span>
                   )}
                 </TabsTrigger>
@@ -478,15 +501,6 @@ export default function TherapistClient() {
                     </span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="reflections" data-testid="tab-reflections" className="relative flex-1">
-                  Reflections
-                  {getUnreviewedReflectionCount() > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white" data-testid="badge-unreviewed-reflections">
-                      {getUnreviewedReflectionCount()}
-                    </span>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="feedback" data-testid="tab-feedback" className="flex-1">Feedback</TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports" className="flex-1">Reports</TabsTrigger>
               </TabsList>
 
@@ -504,6 +518,7 @@ export default function TherapistClient() {
                   const windowSize = Math.min(14, daysSinceFirst);
                   const windowStart = new Date();
                   windowStart.setDate(windowStart.getDate() - windowSize + 1);
+                  windowStart.setUTCHours(0, 0, 0, 0);
                   const recentDates = new Set(checkins.filter(c => new Date(c.dateKey) >= windowStart).map(c => c.dateKey));
                   const completionRate = Math.round((recentDates.size / windowSize) * 100);
 
@@ -648,14 +663,7 @@ export default function TherapistClient() {
                                         variant="ghost"
                                         size="sm"
                                         className="h-7 px-2 text-xs"
-                                        onClick={() => {
-                                          setFeedbackInsightType(insight.type);
-                                          setFeedbackWeek(null);
-                                          setFeedbackDateKey(null);
-                                          setFeedbackAutopsyId(null);
-                                          setNewFeedback("");
-                                          setActiveTab("feedback");
-                                        }}
+                                        onClick={() => handleAddFeedbackForInsight(insight.type)}
                                         data-testid={`button-feedback-insight-${insight.type}`}
                                       >
                                         <MessageSquare className="h-3 w-3 mr-1" /> Respond
@@ -671,6 +679,23 @@ export default function TherapistClient() {
                                         <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
                                       </div>
                                     ))}
+                                  </div>
+                                )}
+                                {activeFeedbackTarget?.type === 'insight' && activeFeedbackTarget.key === insight.type && (
+                                  <div className="mt-3 p-3 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-insight-${insight.type}`}>
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback</p>
+                                      <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft()} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
+                                        {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
+                                      </Button>
+                                    </div>
+                                    <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-24" data-testid="input-feedback" />
+                                    <Button size="sm" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
+                                      <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
+                                    </Button>
                                   </div>
                                 )}
                               </div>
@@ -783,7 +808,10 @@ export default function TherapistClient() {
                                         <Button
                                           variant="outline"
                                           size="sm"
-                                          onClick={() => setActiveTab("reflections")}
+                                          onClick={() => {
+                                            const el = document.getElementById(`reflection-week-${weekNum}`);
+                                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                          }}
                                           data-testid={`button-view-week-${weekNum}`}
                                         >
                                           <FileText className="mr-1 h-3.5 w-3.5" /> View Work
@@ -804,6 +832,177 @@ export default function TherapistClient() {
                             </CardContent>
                           </Card>
                         )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Week Reflections & Exercises
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {reflections.length === 0 && exerciseAnswers.length === 0 ? (
+                      <p className="text-muted-foreground">No reflections or exercises recorded yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {[...reflections].sort((a, b) => b.weekNumber - a.weekNumber).map((reflection) => {
+                          const weekFeedback = feedback.filter(f => f.feedbackType === 'week' && f.weekNumber === reflection.weekNumber);
+                          const reviewed = isItemReviewed('reflection', String(reflection.weekNumber));
+                          const weekExercise = exerciseAnswers.find(e => e.weekNumber === reflection.weekNumber);
+                          const exerciseReviewed = isItemReviewed('exercise', String(reflection.weekNumber));
+                          let parsedAnswers: Record<string, string> = {};
+                          try { parsedAnswers = weekExercise ? JSON.parse(weekExercise.answers) : {}; } catch {}
+                          const answerEntries = Object.entries(parsedAnswers).filter(([, v]) => v && String(v).trim());
+
+                          return (
+                            <div
+                              key={reflection.weekNumber}
+                              id={`reflection-week-${reflection.weekNumber}`}
+                              className={`rounded-lg border p-4 ${!reviewed ? 'border-l-4 border-l-amber-400' : ''}`}
+                              data-testid={`reflection-week-${reflection.weekNumber}`}
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-medium">Week {reflection.weekNumber}</h4>
+                                  {reviewed ? (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                      <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-amber-400 text-amber-600">
+                                      Needs Review
+                                    </Badge>
+                                  )}
+                                  {weekFeedback.length > 0 && (
+                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                      <MessageSquare className="h-3 w-3 mr-0.5" /> Feedback ({weekFeedback.length})
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex gap-2 flex-wrap">
+                                  {!reviewed && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => markItemReviewedMutation.mutate({ itemType: 'reflection', itemKey: String(reflection.weekNumber) })}
+                                      disabled={markItemReviewedMutation.isPending}
+                                      data-testid={`button-review-reflection-${reflection.weekNumber}`}
+                                    >
+                                      <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Mark Reviewed
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleAddFeedbackForWeek(reflection.weekNumber)}
+                                    data-testid={`button-add-feedback-week-${reflection.weekNumber}`}
+                                  >
+                                    <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Add Feedback
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="space-y-3">
+                                {(() => {
+                                  const weekData = WEEK_CONTENT[reflection.weekNumber];
+                                  const rqs = weekData?.reflectionQuestions || [];
+                                  const defaultLabels = ["Key insight from this week", "What went well", "Challenges faced", "Goals for next week"];
+                                  return [reflection.q1, reflection.q2, reflection.q3, reflection.q4].map((answer, idx) => {
+                                    if (!answer) return null;
+                                    const label = rqs[idx]?.question || defaultLabels[idx];
+                                    return (
+                                      <div key={idx}>
+                                        <p className="text-xs text-muted-foreground">{label}</p>
+                                        <p className="text-sm bg-muted/50 p-2 rounded">{answer}</p>
+                                      </div>
+                                    );
+                                  });
+                                })()}
+                              </div>
+
+                              {answerEntries.length > 0 && (
+                                <div className="mt-4 pt-3 border-t">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Exercise Answers</p>
+                                    {!exerciseReviewed && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 text-xs"
+                                        onClick={() => markItemReviewedMutation.mutate({ itemType: 'exercise', itemKey: String(reflection.weekNumber) })}
+                                        disabled={markItemReviewedMutation.isPending}
+                                        data-testid={`button-review-exercise-${reflection.weekNumber}`}
+                                      >
+                                        <CheckSquare className="mr-1 h-3 w-3" /> Mark Exercises Reviewed
+                                      </Button>
+                                    )}
+                                    {exerciseReviewed && (
+                                      <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
+                                        <CheckCircle2 className="h-3 w-3 mr-0.5" /> Exercises Reviewed
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="space-y-2">
+                                    {answerEntries.map(([key, value]) => {
+                                      const weekData = WEEK_CONTENT[reflection.weekNumber];
+                                      let fieldLabel = key.replace(/-/g, ' ');
+                                      if (weekData?.exercises) {
+                                        for (const ex of weekData.exercises) {
+                                          for (const f of ex.fields) {
+                                            if (`${ex.id}-${f.id}` === key) {
+                                              fieldLabel = f.label;
+                                              break;
+                                            }
+                                          }
+                                        }
+                                      }
+                                      return (
+                                        <div key={key}>
+                                          <p className="text-xs text-muted-foreground">{fieldLabel}</p>
+                                          <p className="text-sm bg-muted/50 p-2 rounded">{value}</p>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {weekFeedback.length > 0 && (
+                                <div className="mt-4 pt-3 border-t border-dashed">
+                                  <p className="text-xs font-bold text-primary mb-2 flex items-center">
+                                    <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response:
+                                  </p>
+                                  {weekFeedback.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(f => (
+                                    <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
+                                      <p>{f.content}</p>
+                                      <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {activeFeedbackTarget?.type === 'week' && activeFeedbackTarget.key === String(reflection.weekNumber) && (
+                                <div className="mt-4 p-3 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-week-${reflection.weekNumber}`}>
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback for Week {reflection.weekNumber}</p>
+                                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft()} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
+                                      {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
+                                    </Button>
+                                  </div>
+                                  <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-24" data-testid="input-feedback" />
+                                  <Button size="sm" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
+                                    <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>
@@ -898,8 +1097,15 @@ export default function TherapistClient() {
                               </div>
                               {checkin.eveningChecks && (
                                 <div className="mt-2">
-                                  <p className="text-xs text-muted-foreground">Daily Items</p>
-                                  <p className="text-sm">{checkin.eveningChecks}</p>
+                                  <p className="text-xs text-muted-foreground mb-1">Daily Items</p>
+                                  <div className="space-y-1">
+                                    {formatEveningChecks(checkin.eveningChecks).map((id) => (
+                                      <div key={id} className="flex items-center gap-2 text-sm" data-testid={`checkin-item-${id}`}>
+                                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                        <span>{DAILY_CHECK_LABELS[id] || id}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               )}
                               {checkin.journalEntry && (
@@ -921,6 +1127,23 @@ export default function TherapistClient() {
                                       <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
                                     </div>
                                   ))}
+                                </div>
+                              )}
+                              {activeFeedbackTarget?.type === 'checkin' && activeFeedbackTarget.key === checkin.dateKey && (
+                                <div className="mt-4 p-3 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-checkin-${checkin.dateKey}`}>
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback for {checkin.dateKey}</p>
+                                    <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft(checkin.dateKey)} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
+                                      {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
+                                    </Button>
+                                  </div>
+                                  <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-24" data-testid="input-feedback" />
+                                  <Button size="sm" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
+                                    <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
+                                  </Button>
                                 </div>
                               )}
                             </div>
@@ -1073,264 +1296,26 @@ export default function TherapistClient() {
                                     ))}
                                   </div>
                                 )}
+                                {activeFeedbackTarget?.type === 'autopsy' && activeFeedbackTarget.key === autopsy.id && (
+                                  <div className="mt-4 p-3 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-autopsy-${autopsy.id}`}>
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Feedback for Autopsy</p>
+                                      <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => { setActiveFeedbackTarget(null); setNewFeedback(""); }} data-testid="button-cancel-inline-feedback">Cancel</Button>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button variant="outline" size="sm" onClick={() => handleGenerateAIDraft()} disabled={isGeneratingDraft} data-testid="button-generate-ai-draft">
+                                        {isGeneratingDraft ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Generating...</> : <><Sparkles className="mr-1.5 h-3.5 w-3.5" />AI Draft</>}
+                                      </Button>
+                                    </div>
+                                    <Textarea placeholder="Write your feedback..." value={newFeedback} onChange={(e) => setNewFeedback(e.target.value)} className="min-h-24" data-testid="input-feedback" />
+                                    <Button size="sm" onClick={handleSubmitFeedback} disabled={!newFeedback.trim() || feedbackMutation.isPending} data-testid="button-submit-feedback">
+                                      <Send className="mr-1.5 h-3.5 w-3.5" />{feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
+                                    </Button>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="reflections" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Week Reflections & Exercises
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {reflections.length === 0 && exerciseAnswers.length === 0 ? (
-                      <p className="text-muted-foreground">No reflections or exercises recorded yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {[...reflections].sort((a, b) => b.weekNumber - a.weekNumber).map((reflection) => {
-                          const weekFeedback = feedback.filter(f => f.feedbackType === 'week' && f.weekNumber === reflection.weekNumber);
-                          const reviewed = isItemReviewed('reflection', String(reflection.weekNumber));
-                          const weekExercise = exerciseAnswers.find(e => e.weekNumber === reflection.weekNumber);
-                          const exerciseReviewed = isItemReviewed('exercise', String(reflection.weekNumber));
-                          let parsedAnswers: Record<string, string> = {};
-                          try { parsedAnswers = weekExercise ? JSON.parse(weekExercise.answers) : {}; } catch {}
-                          const answerEntries = Object.entries(parsedAnswers).filter(([, v]) => v && String(v).trim());
-
-                          return (
-                            <div
-                              key={reflection.weekNumber}
-                              className={`rounded-lg border p-4 ${!reviewed ? 'border-l-4 border-l-amber-400' : ''}`}
-                              data-testid={`reflection-week-${reflection.weekNumber}`}
-                            >
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-medium">Week {reflection.weekNumber}</h4>
-                                  {reviewed ? (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
-                                      <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-amber-400 text-amber-600">
-                                      Needs Review
-                                    </Badge>
-                                  )}
-                                  {weekFeedback.length > 0 && (
-                                    <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
-                                      <MessageSquare className="h-3 w-3 mr-0.5" /> Feedback ({weekFeedback.length})
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex gap-2">
-                                  {!reviewed && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => markItemReviewedMutation.mutate({ itemType: 'reflection', itemKey: String(reflection.weekNumber) })}
-                                      disabled={markItemReviewedMutation.isPending}
-                                      data-testid={`button-review-reflection-${reflection.weekNumber}`}
-                                    >
-                                      <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Mark Reviewed
-                                    </Button>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleAddFeedbackForWeek(reflection.weekNumber)}
-                                    data-testid={`button-add-feedback-week-${reflection.weekNumber}`}
-                                  >
-                                    <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Add Feedback
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="space-y-3">
-                                {(() => {
-                                  const weekData = WEEK_CONTENT[reflection.weekNumber];
-                                  const rqs = weekData?.reflectionQuestions || [];
-                                  const defaultLabels = ["Key insight from this week", "What went well", "Challenges faced", "Goals for next week"];
-                                  return [reflection.q1, reflection.q2, reflection.q3, reflection.q4].map((answer, idx) => {
-                                    if (!answer) return null;
-                                    const label = rqs[idx]?.question || defaultLabels[idx];
-                                    return (
-                                      <div key={idx}>
-                                        <p className="text-xs text-muted-foreground">{label}</p>
-                                        <p className="text-sm bg-muted/50 p-2 rounded">{answer}</p>
-                                      </div>
-                                    );
-                                  });
-                                })()}
-                              </div>
-
-                              {answerEntries.length > 0 && (
-                                <div className="mt-4 pt-3 border-t">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Exercise Answers</p>
-                                    {!exerciseReviewed && (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-6 text-xs"
-                                        onClick={() => markItemReviewedMutation.mutate({ itemType: 'exercise', itemKey: String(reflection.weekNumber) })}
-                                        disabled={markItemReviewedMutation.isPending}
-                                        data-testid={`button-review-exercise-${reflection.weekNumber}`}
-                                      >
-                                        <CheckSquare className="mr-1 h-3 w-3" /> Mark Exercises Reviewed
-                                      </Button>
-                                    )}
-                                    {exerciseReviewed && (
-                                      <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:text-green-400">
-                                        <CheckCircle2 className="h-3 w-3 mr-0.5" /> Exercises Reviewed
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="space-y-2">
-                                    {answerEntries.map(([key, value]) => {
-                                      const weekData = WEEK_CONTENT[reflection.weekNumber];
-                                      let fieldLabel = key.replace(/-/g, ' ');
-                                      if (weekData?.exercises) {
-                                        for (const ex of weekData.exercises) {
-                                          for (const f of ex.fields) {
-                                            if (`${ex.id}-${f.id}` === key) {
-                                              fieldLabel = f.label;
-                                              break;
-                                            }
-                                          }
-                                        }
-                                      }
-                                      return (
-                                        <div key={key}>
-                                          <p className="text-xs text-muted-foreground">{fieldLabel}</p>
-                                          <p className="text-sm bg-muted/50 p-2 rounded">{value}</p>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-
-                              {weekFeedback.length > 0 && (
-                                <div className="mt-4 pt-3 border-t border-dashed">
-                                  <p className="text-xs font-bold text-primary mb-2 flex items-center">
-                                    <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response:
-                                  </p>
-                                  {weekFeedback.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(f => (
-                                    <div key={f.id} className="text-sm bg-primary/5 p-2 rounded mb-1">
-                                      <p>{f.content}</p>
-                                      <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="feedback" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5" />
-                      Add Feedback
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {(feedbackWeek || feedbackDateKey || feedbackAutopsyId || feedbackInsightType) && (
-                        <div className="flex items-center gap-2 p-2 bg-secondary/20 rounded-md">
-                          <Badge variant="secondary">
-                            Target: {feedbackAutopsyId ? `Relapse Autopsy` : feedbackInsightType ? `Insight: ${feedbackInsightType.replace(/-/g, ' ')}` : feedbackDateKey ? `Check-in ${feedbackDateKey}` : `Week ${feedbackWeek}`}
-                          </Badge>
-                          <Button variant="ghost" size="sm" className="h-6" onClick={() => { setFeedbackWeek(null); setFeedbackDateKey(null); setFeedbackAutopsyId(null); setFeedbackInsightType(null); }}>
-                            Clear
-                          </Button>
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => handleGenerateAIDraft()}
-                          disabled={isGeneratingDraft}
-                          data-testid="button-generate-ai-draft"
-                        >
-                          {isGeneratingDraft ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="mr-2 h-4 w-4" />
-                              Generate AI Draft
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      <Textarea
-                        placeholder="Write your feedback, encouragement, or technique reminders here... or click 'Generate AI Draft' for a personalized starting point."
-                        value={newFeedback}
-                        onChange={(e) => setNewFeedback(e.target.value)}
-                        className="min-h-32"
-                        data-testid="input-feedback"
-                      />
-                      <Button
-                        onClick={handleSubmitFeedback}
-                        disabled={!newFeedback.trim() || feedbackMutation.isPending}
-                        className="w-full"
-                        data-testid="button-submit-feedback"
-                      >
-                        <Send className="mr-2 h-4 w-4" />
-                        {feedbackMutation.isPending ? "Sending..." : "Send Feedback"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Previous Feedback</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {feedback.length === 0 ? (
-                      <p className="text-muted-foreground">No feedback given yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {sortedFeedback.map((fb) => (
-                          <div
-                            key={fb.id}
-                            className="rounded-lg border p-4"
-                            data-testid={`feedback-${fb.id}`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                {fb.weekNumber && <Badge variant="outline">Week {fb.weekNumber}</Badge>}
-                                {fb.checkinDateKey && !fb.checkinDateKey.startsWith('insight-') && <Badge variant="outline">Check-in {fb.checkinDateKey}</Badge>}
-                                {fb.checkinDateKey?.startsWith('insight-') && <Badge variant="outline">Insight</Badge>}
-                                <Badge variant="secondary">{fb.feedbackType}</Badge>
-                                {fb.editedAt && (
-                                  <span className="text-[10px] text-muted-foreground italic">
-                                    Edited by Admin &middot; {new Date(fb.editedAt).toLocaleDateString()}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(fb.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <p className="text-sm">{fb.content}</p>
-                          </div>
-                        ))}
                       </div>
                     )}
                   </CardContent>
