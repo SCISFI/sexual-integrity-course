@@ -843,10 +843,8 @@ export async function registerRoutes(
     const averageUrge = urgeValues.length > 0 ? Math.round((urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length) * 10) / 10 : 0;
 
     const nowDate = new Date();
-    const startDate = programStartDate ? new Date(programStartDate) : null;
     const oldestCheckinDate = checkins[0]?.dateKey ? new Date(checkins[0].dateKey) : nowDate;
-    const effectiveStart = startDate && startDate < oldestCheckinDate ? startDate : oldestCheckinDate;
-    const daysSinceStart = Math.max(1, Math.ceil((nowDate.getTime() - effectiveStart.getTime()) / 86400000) + 1);
+    const daysSinceStart = Math.max(1, Math.ceil((nowDate.getTime() - oldestCheckinDate.getTime()) / 86400000) + 1);
     const windowSize = Math.min(14, daysSinceStart);
 
     const windowStart = new Date();
