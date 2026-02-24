@@ -3324,7 +3324,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
 };
 
 export const WEEK_TITLES: Record<number, string> = {
-  1: "Welcome & Understanding CSBD",
+  1: "The Moment You Stop Pretending",
   2: "Understanding Your Cycle & Triggers",
   3: "Cognitive Restructuring",
   4: "Self-Regulation & Impulse Management",

@@ -41,7 +41,11 @@ export function TextToSpeech({ text, label = "Listen to this section" }: TextToS
     utterance.pitch = 1;
 
     const voices = window.speechSynthesis.getVoices();
-    const englishVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) 
+    const maleIndicators = ['Male', 'David', 'James', 'Daniel', 'Mark', 'Guy', 'Aaron'];
+    const isMale = (v: SpeechSynthesisVoice) => maleIndicators.some(m => v.name.includes(m));
+    const englishVoice = voices.find(v => v.lang.startsWith('en') && isMale(v) && v.name.includes('Google'))
+      || voices.find(v => v.lang.startsWith('en') && isMale(v))
+      || voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'))
       || voices.find(v => v.lang.startsWith('en'))
       || voices[0];
     if (englishVoice) {
