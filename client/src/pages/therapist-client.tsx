@@ -457,7 +457,9 @@ export default function TherapistClient() {
                   const MCID = 2.0;
 
                   const oldestCheckinDate = sortedByDateAsc[0]?.dateKey ? new Date(sortedByDateAsc[0].dateKey) : new Date();
-                  const daysSinceFirst = Math.max(1, Math.ceil((Date.now() - oldestCheckinDate.getTime()) / 86400000) + 1);
+                  const programStart = client?.startDate ? new Date(client.startDate) : null;
+                  const effectiveStart = programStart && programStart < oldestCheckinDate ? programStart : oldestCheckinDate;
+                  const daysSinceFirst = Math.max(1, Math.ceil((Date.now() - effectiveStart.getTime()) / 86400000) + 1);
                   const windowSize = Math.min(14, daysSinceFirst);
                   const windowStart = new Date();
                   windowStart.setDate(windowStart.getDate() - windowSize + 1);

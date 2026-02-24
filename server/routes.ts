@@ -799,7 +799,7 @@ export async function registerRoutes(
   });
 
   // Get check-in statistics for progress dashboard
-  function computeCheckinStats(checkins: Array<{ dateKey: string; moodLevel: number | null; urgeLevel: number | null }>) {
+  function computeCheckinStats(checkins: Array<{ dateKey: string; moodLevel: number | null; urgeLevel: number | null }>, programStartDate?: Date | string | null) {
     if (checkins.length === 0) {
       return {
         totalCheckins: 0,
@@ -843,8 +843,10 @@ export async function registerRoutes(
     const averageUrge = urgeValues.length > 0 ? Math.round((urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length) * 10) / 10 : 0;
 
     const nowDate = new Date();
+    const startDate = programStartDate ? new Date(programStartDate) : null;
     const oldestCheckinDate = checkins[0]?.dateKey ? new Date(checkins[0].dateKey) : nowDate;
-    const daysSinceStart = Math.max(1, Math.ceil((nowDate.getTime() - oldestCheckinDate.getTime()) / 86400000) + 1);
+    const effectiveStart = startDate && startDate < oldestCheckinDate ? startDate : oldestCheckinDate;
+    const daysSinceStart = Math.max(1, Math.ceil((nowDate.getTime() - effectiveStart.getTime()) / 86400000) + 1);
     const windowSize = Math.min(14, daysSinceStart);
 
     const windowStart = new Date();
@@ -854,14 +856,15 @@ export async function registerRoutes(
 
     const recentCheckins = checkins.slice(-14).map((c) => ({ date: c.dateKey, mood: c.moodLevel, urge: c.urgeLevel }));
 
-    return { totalCheckins: checkins.length, currentStreak, longestStreak, averageMood, averageUrge, dailyCompletionRate, recentCheckins };
+    return { totalCheckins: checkins.length, currentStreak, longestStreak, averageMood, averageUrge, dailyCompletionRate, recentCheckins, windowSize };
   }
 
   app.get("/api/progress/checkin-stats", requireAuth, async (req, res) => {
     try {
       const userId = (req.user as any).id;
+      const user = await storage.getUser(userId);
       const checkins = await storage.getUserCheckinHistory(userId, 365);
-      res.json(computeCheckinStats(checkins));
+      res.json(computeCheckinStats(checkins, user?.startDate || user?.createdAt));
     } catch (error) {
       console.error("Get checkin stats error:", error);
       res.status(500).json({ message: "Failed to get checkin statistics" });
@@ -876,8 +879,9 @@ export async function registerRoutes(
       if (!clients.some((c) => c.id === clientId)) {
         return res.status(403).json({ message: "Not authorized" });
       }
+      const client = await storage.getUser(clientId);
       const checkins = await storage.getUserCheckinHistory(clientId, 365);
-      res.json(computeCheckinStats(checkins));
+      res.json(computeCheckinStats(checkins, client?.startDate || client?.createdAt));
     } catch (error) {
       console.error("Get client checkin stats error:", error);
       res.status(500).json({ message: "Failed to get checkin statistics" });
@@ -903,8 +907,9 @@ export async function registerRoutes(
   app.get("/api/admin/clients/:clientId/checkin-stats", requireRole("admin"), async (req, res) => {
     try {
       const { clientId } = req.params;
+      const client = await storage.getUser(clientId);
       const checkins = await storage.getUserCheckinHistory(clientId, 365);
-      res.json(computeCheckinStats(checkins));
+      res.json(computeCheckinStats(checkins, client?.startDate || client?.createdAt));
     } catch (error) {
       console.error("Get admin client checkin stats error:", error);
       res.status(500).json({ message: "Failed to get checkin statistics" });

@@ -29,6 +29,7 @@ type CheckinStats = {
   averageMood: number;
   averageUrge: number;
   dailyCompletionRate: number;
+  windowSize?: number;
   recentCheckins: Array<{
     date: string;
     mood: number | null;
@@ -446,7 +447,7 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                 Daily Check-in Rate
               </CardTitle>
               <CardDescription>
-                Percentage of days with completed check-ins (last 14 days)
+                Percentage of days with completed check-ins (last {stats?.windowSize || 14} days)
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center py-6">
