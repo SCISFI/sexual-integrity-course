@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, X, PenSquare } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -146,6 +147,18 @@ export default function TherapistClient() {
   const [composeFailed, setComposeFailed] = useState(false);
   const [sentSuggestionIds, setSentSuggestionIds] = useState<Set<string>>(new Set());
   const [draftedSuggestionIds, setDraftedSuggestionIds] = useState<Set<string>>(new Set());
+
+  // Sheet compose panel state (for week/autopsy/general messages)
+  type SheetCtx = { kind: 'week'; weekNumber: number } | { kind: 'autopsy'; autopsyId: string } | { kind: 'general' } | null;
+  const [sheetCtx, setSheetCtx] = useState<SheetCtx>(null);
+  const [sheetSubject, setSheetSubject] = useState("");
+  const [sheetMessage, setSheetMessage] = useState("");
+  const [sheetLoading, setSheetLoading] = useState(false);
+  const [sheetSending, setSheetSending] = useState(false);
+  const [sheetSaving, setSheetSaving] = useState(false);
+  const [sheetFailed, setSheetFailed] = useState(false);
+  const [messagedWeekNums, setMessagedWeekNums] = useState<Set<number>>(new Set());
+  const [messagedAutopsyIds, setMessagedAutopsyIds] = useState<Set<string>>(new Set());
 
   const { data: clientsData } = useQuery<{ clients: ClientInfo[] }>({
     queryKey: ['/api/therapist/clients'],
@@ -370,6 +383,141 @@ export default function TherapistClient() {
       toast({ title: "Failed to send message", variant: "destructive" });
     } finally {
       setComposeSending(false);
+    }
+  };
+
+  // ── Sheet compose handlers (week / autopsy / general) ──────────────────
+  const closeSheet = () => {
+    setSheetCtx(null);
+    setSheetSubject("");
+    setSheetMessage("");
+    setSheetFailed(false);
+  };
+
+  const openWeekSheet = async (weekNumber: number) => {
+    setSheetCtx({ kind: 'week', weekNumber });
+    setSheetSubject(`Week ${weekNumber} — A Personal Note`);
+    setSheetMessage("");
+    setSheetFailed(false);
+    setSheetLoading(true);
+    try {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-feedback`, { weekNumber });
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setSheetMessage(data.draft || "");
+    } catch {
+      setSheetFailed(true);
+    } finally {
+      setSheetLoading(false);
+    }
+  };
+
+  const openAutopsySheet = async (autopsyId: string) => {
+    setSheetCtx({ kind: 'autopsy', autopsyId });
+    setSheetSubject("Your Relapse Report — A Personal Note");
+    setSheetMessage("");
+    setSheetFailed(false);
+    setSheetLoading(true);
+    try {
+      const res = await apiRequest("POST", `/api/therapist/generate-autopsy-feedback`, { clientId, autopsyId });
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setSheetMessage(data.draft || "");
+    } catch {
+      setSheetFailed(true);
+    } finally {
+      setSheetLoading(false);
+    }
+  };
+
+  const openGeneralSheet = () => {
+    setSheetCtx({ kind: 'general' });
+    setSheetSubject("");
+    setSheetMessage("");
+    setSheetFailed(false);
+    setSheetLoading(false);
+  };
+
+  const handleSheetSend = async () => {
+    if (!sheetMessage.trim() || !sheetCtx) return;
+    setSheetSending(true);
+    try {
+      let feedbackType = 'general';
+      let weekNumber: number | undefined;
+      let checkinDateKey: string | undefined;
+      if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
+      else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; checkinDateKey = sheetCtx.autopsyId; }
+
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
+        feedbackType, content: sheetMessage, subject: sheetSubject, status: 'sent',
+        weekNumber, checkinDateKey,
+      });
+      if (!res.ok) throw new Error("Failed to send");
+
+      if (sheetCtx.kind === 'week') {
+        await apiRequest("POST", `/api/therapist/clients/${clientId}/review/${sheetCtx.weekNumber}`, { reviewNotes: "" });
+        setMessagedWeekNums(prev => new Set([...prev, (sheetCtx as { kind: 'week'; weekNumber: number }).weekNumber]));
+      } else if (sheetCtx.kind === 'autopsy') {
+        await apiRequest("POST", `/api/therapist/clients/${clientId}/autopsies/${sheetCtx.autopsyId}/review`, {});
+        setMessagedAutopsyIds(prev => new Set([...prev, (sheetCtx as { kind: 'autopsy'; autopsyId: string }).autopsyId]));
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/pending-reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-autopsies'] });
+
+      toast({ title: `Message sent to ${client?.name || "client"}` });
+      closeSheet();
+    } catch {
+      toast({ title: "Failed to send message", variant: "destructive" });
+    } finally {
+      setSheetSending(false);
+    }
+  };
+
+  const handleSheetSaveDraft = async () => {
+    if (!sheetMessage.trim() || !sheetCtx) return;
+    setSheetSaving(true);
+    try {
+      let feedbackType = 'general';
+      let weekNumber: number | undefined;
+      if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
+      else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; }
+
+      await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
+        feedbackType, content: sheetMessage, subject: sheetSubject, status: 'draft', weekNumber,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'messages', 'drafts'] });
+      toast({ title: "Draft saved — find it at the top of the Guidance tab" });
+      closeSheet();
+    } catch {
+      toast({ title: "Failed to save draft", variant: "destructive" });
+    } finally {
+      setSheetSaving(false);
+    }
+  };
+
+  const handleSheetRegenerateDraft = async () => {
+    if (!sheetCtx) return;
+    setSheetLoading(true);
+    setSheetFailed(false);
+    try {
+      if (sheetCtx.kind === 'week') {
+        const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-feedback`, { weekNumber: sheetCtx.weekNumber });
+        if (!res.ok) throw new Error("Generation failed");
+        const data = await res.json();
+        setSheetMessage(data.draft || "");
+      } else if (sheetCtx.kind === 'autopsy') {
+        const res = await apiRequest("POST", `/api/therapist/generate-autopsy-feedback`, { clientId, autopsyId: sheetCtx.autopsyId });
+        if (!res.ok) throw new Error("Generation failed");
+        const data = await res.json();
+        setSheetMessage(data.draft || "");
+      }
+    } catch {
+      setSheetFailed(true);
+    } finally {
+      setSheetLoading(false);
     }
   };
 
@@ -642,6 +790,10 @@ export default function TherapistClient() {
                       <span>{completedWeeks.length} / 16 weeks</span>
                     </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={openGeneralSheet} data-testid="button-new-message">
+                    <PenSquare className="h-3.5 w-3.5 mr-1.5" />
+                    New Message
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -955,14 +1107,19 @@ export default function TherapistClient() {
                                         >
                                           <FileText className="mr-1 h-3.5 w-3.5" /> View
                                         </Button>
-                                        <Button
-                                          size="sm"
-                                          onClick={() => submitWeekReviewMutation.mutate(weekNum)}
-                                          disabled={submitWeekReviewMutation.isPending}
-                                          data-testid={`button-review-week-${weekNum}`}
-                                        >
-                                          <CheckSquare className="mr-1 h-3.5 w-3.5" /> Reviewed
-                                        </Button>
+                                        {messagedWeekNums.has(weekNum) ? (
+                                          <Badge variant="outline" className="text-green-600 border-green-300 text-xs">
+                                            <CheckCircle2 className="h-3 w-3 mr-1" /> Messaged
+                                          </Badge>
+                                        ) : (
+                                          <Button
+                                            size="sm"
+                                            onClick={() => openWeekSheet(weekNum)}
+                                            data-testid={`button-message-week-${weekNum}`}
+                                          >
+                                            <Mail className="mr-1 h-3.5 w-3.5" /> Send Message
+                                          </Button>
+                                        )}
                                       </div>
                                     </div>
                                   );
@@ -1309,25 +1466,28 @@ export default function TherapistClient() {
                                     )}
                                   </div>
                                   <div className="flex gap-2 flex-wrap">
-                                    {isUnreviewed && (
+                                    {isUnreviewed && !messagedAutopsyIds.has(autopsy.id) ? (
                                       <Button
                                         size="sm"
-                                        onClick={() => markReviewedMutation.mutate(autopsy.id)}
-                                        disabled={markReviewedMutation.isPending}
-                                        data-testid={`button-mark-reviewed-${autopsy.id}`}
+                                        onClick={() => openAutopsySheet(autopsy.id)}
+                                        data-testid={`button-message-autopsy-${autopsy.id}`}
                                       >
-                                        <Eye className="mr-1.5 h-3.5 w-3.5" />
-                                        {markReviewedMutation.isPending ? "..." : "Mark Reviewed"}
+                                        <Mail className="mr-1.5 h-3.5 w-3.5" /> Send Required Message
+                                      </Button>
+                                    ) : messagedAutopsyIds.has(autopsy.id) ? (
+                                      <Badge variant="outline" className="text-green-600 border-green-300 text-xs">
+                                        <CheckCircle2 className="h-3 w-3 mr-1" /> Messaged
+                                      </Badge>
+                                    ) : (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openAutopsySheet(autopsy.id)}
+                                        data-testid={`button-message-autopsy-again-${autopsy.id}`}
+                                      >
+                                        <Mail className="mr-1.5 h-3.5 w-3.5" /> Send Message
                                       </Button>
                                     )}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleAddFeedbackForAutopsy(autopsy.id)}
-                                      data-testid={`button-feedback-autopsy-${autopsy.id}`}
-                                    >
-                                      <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
-                                    </Button>
                                   </div>
                                 </div>
 
@@ -1744,6 +1904,97 @@ export default function TherapistClient() {
           </>
         )}
       </div>
+
+      {/* ── Compose Sheet (week / autopsy / general) ── */}
+      <Sheet open={!!sheetCtx} onOpenChange={(open) => { if (!open) closeSheet(); }}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+            <SheetTitle className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              {sheetCtx?.kind === 'week' && `Message for Week ${sheetCtx.weekNumber}`}
+              {sheetCtx?.kind === 'autopsy' && "Autopsy Response Message"}
+              {sheetCtx?.kind === 'general' && "New Message"}
+            </SheetTitle>
+            <SheetDescription>
+              {sheetCtx?.kind === 'week' && "Required — sending this message will also mark the week as reviewed."}
+              {sheetCtx?.kind === 'autopsy' && "Required — sending this message will also mark the autopsy as reviewed."}
+              {sheetCtx?.kind === 'general' && `Send an unsolicited message to ${client?.name || "this client"}.`}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            {sheetCtx?.kind !== 'general' && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>AI-generated draft — review before sending</span>
+                </div>
+                {!sheetLoading && (
+                  <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={handleSheetRegenerateDraft} disabled={sheetLoading} data-testid="button-sheet-regenerate">
+                    <RefreshCw className="h-3 w-3 mr-1" /> Regenerate
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {sheetLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-48 w-full" />
+              </div>
+            ) : (
+              <>
+                {sheetFailed && (
+                  <p className="text-xs text-destructive bg-destructive/10 rounded-md px-3 py-2">
+                    Draft generation failed — write your message below.
+                  </p>
+                )}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Subject</label>
+                  <Input
+                    value={sheetSubject}
+                    onChange={e => setSheetSubject(e.target.value)}
+                    placeholder="Subject line…"
+                    data-testid="input-sheet-subject"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Message</label>
+                  <Textarea
+                    value={sheetMessage}
+                    onChange={e => setSheetMessage(e.target.value)}
+                    placeholder="Write your message…"
+                    className="min-h-[200px] resize-none"
+                    data-testid="input-sheet-message"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="px-6 py-4 border-t shrink-0 flex flex-col sm:flex-row justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSheetSaveDraft}
+              disabled={sheetSaving || sheetSending || sheetLoading || !sheetMessage.trim()}
+              data-testid="button-sheet-save-draft"
+            >
+              {sheetSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+              Save Draft
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSheetSend}
+              disabled={sheetSending || sheetSaving || sheetLoading || !sheetMessage.trim()}
+              data-testid="button-sheet-send"
+            >
+              {sheetSending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Mail className="h-3.5 w-3.5 mr-1.5" />}
+              Send to {client?.name || "Client"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
