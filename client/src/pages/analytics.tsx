@@ -12,7 +12,6 @@ import {
   Flame,
   TrendingUp,
   TrendingDown,
-  Target,
   Heart,
   Zap,
   Award,
@@ -20,6 +19,8 @@ import {
   BarChart3,
   Sparkles,
 } from "lucide-react";
+
+type CheckinEntry = { date: string; mood: number | null; urge: number | null };
 
 type CheckinStats = {
   totalCheckins: number;
@@ -29,54 +30,58 @@ type CheckinStats = {
   averageUrge: number;
   dailyCompletionRate: number;
   windowSize?: number;
-  recentCheckins: Array<{
-    date: string;
-    mood: number | null;
-    urge: number | null;
-  }>;
+  recentCheckins: CheckinEntry[];
 };
+
+/**
+ * Builds a proper 14-slot daily grid aligned to calendar days.
+ * Each slot corresponds to exactly one calendar day (today, yesterday, ..., 13 days ago).
+ * Days with no check-in produce null. This makes bar chart x-axis labels accurate.
+ */
+function buildDailyGrid(checkins: CheckinEntry[], days = 14): CheckinEntry[] {
+  const grid: CheckinEntry[] = [];
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split("T")[0];
+    const match = checkins.find(c => c.date === key);
+    grid.push(match ?? { date: key, mood: null, urge: null });
+  }
+  return grid;
+}
+
+/** Round to 1 decimal place, matching backend precision. */
+function avg(values: (number | null)[]): number {
+  const nums = values.filter((v): v is number => v !== null);
+  if (nums.length === 0) return 0;
+  return Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10;
+}
 
 function ProgressRing({ percentage, color, size = 120 }: { percentage: number; color: string; size?: number }) {
   const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (percentage / 100) * circumference;
+  const offset = circumference - (Math.min(percentage, 100) / 100) * circumference;
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="currentColor"
-          strokeWidth={strokeWidth}
-          fill="transparent"
-          className="text-muted/30"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="transparent"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          className="transition-all duration-700 ease-out"
-        />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke="currentColor" strokeWidth={strokeWidth} fill="transparent" className="text-muted/30" />
+        <circle cx={size / 2} cy={size / 2} r={radius} stroke={color} strokeWidth={strokeWidth} fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-700 ease-out" />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-bold">{percentage}%</span>
+        <span className="text-2xl font-bold">{Math.min(percentage, 100)}%</span>
       </div>
     </div>
   );
 }
 
-function TrendChart({ data, color, label, height = 140 }: { data: (number | null)[]; color: string; label: string; height?: number }) {
-  const validData = data.filter(d => d !== null) as number[];
-  if (validData.length === 0) {
+function TrendChart({ grid, color, label, height = 140 }: { grid: CheckinEntry[]; color: string; label: "mood" | "urge"; height?: number }) {
+  const values = grid.map(g => g[label]);
+  const validValues = values.filter((v): v is number => v !== null);
+
+  if (validValues.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
         <BarChart3 className="h-8 w-8 mb-2 opacity-30" />
@@ -85,35 +90,36 @@ function TrendChart({ data, color, label, height = 140 }: { data: (number | null
     );
   }
 
-  const max = Math.max(...validData, 10);
-  const min = Math.min(...validData, 0);
-  const range = max - min || 1;
-  const latest = validData[validData.length - 1];
+  const latest = validValues[validValues.length - 1];
+  // Always use 0–10 scale so bars are proportional to the actual scale, not just relative to each other.
+  const max = 10;
+  const min = 0;
+  const range = max - min;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-muted-foreground">{label}</span>
-        <span className="text-lg font-bold" style={{ color }}>
-          {latest}/10
-        </span>
+        <span className="text-sm font-medium text-muted-foreground">Most recent</span>
+        <span className="text-lg font-bold" style={{ color }}>{latest}/10</span>
       </div>
       <div className="flex items-end gap-1" style={{ height }}>
-        {data.map((value, i) => {
+        {values.map((value, i) => {
           const barHeight = value !== null ? ((value - min) / range) * 100 : 0;
+          const entry = grid[i];
           return (
             <div
               key={i}
               className="flex-1 rounded-t transition-all duration-300 relative group"
               style={{
-                height: `${Math.max(barHeight, 5)}%`,
+                height: `${value !== null ? Math.max(barHeight, 2) : 0}%`,
                 backgroundColor: value !== null ? color : 'transparent',
-                opacity: value !== null ? 0.5 + (i / data.length) * 0.5 : 0.08,
+                opacity: value !== null ? 0.45 + (i / values.length) * 0.55 : 0,
               }}
             >
               {value !== null && (
-                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-popover border rounded px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-                  {value}/10
+                <div className="absolute -top-9 left-1/2 transform -translate-x-1/2 bg-popover border rounded px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  <div className="font-semibold">{value}/10</div>
+                  <div className="text-muted-foreground">{entry.date}</div>
                 </div>
               )}
             </div>
@@ -121,7 +127,7 @@ function TrendChart({ data, color, label, height = 140 }: { data: (number | null
         })}
       </div>
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>14 days ago</span>
+        <span>13 days ago</span>
         <span>Today</span>
       </div>
     </div>
@@ -191,44 +197,50 @@ function computeTrend(values: (number | null)[]): TrendDirection {
   return diff > 0 ? "increasing" : "decreasing";
 }
 
-function getInsight(stats: CheckinStats, moodTrend: TrendDirection, urgeTrend: TrendDirection, isViewingOther: boolean): string {
-  const insights: string[] = [];
+/** Returns up to 3 relevant insights in priority order. */
+function getInsights(stats: CheckinStats, moodTrend: TrendDirection, urgeTrend: TrendDirection, isViewingOther: boolean): string[] {
   const you = isViewingOther ? "Client's" : "Your";
   const your = isViewingOther ? "Their" : "Your";
 
-  if (moodTrend === "insufficient_data" || urgeTrend === "insufficient_data") {
-    return `${isViewingOther ? "More check-ins are needed" : "Keep checking in daily"} to build enough data for meaningful trend analysis (at least ${MIN_ENTRIES_FOR_TREND} entries).`;
+  if (moodTrend === "insufficient_data" && urgeTrend === "insufficient_data") {
+    return [`${isViewingOther ? "More check-ins are needed" : "Keep checking in daily"} to build enough data for trend analysis — at least ${MIN_ENTRIES_FOR_TREND} entries are needed.`];
   }
 
+  const insights: string[] = [];
+
   if (stats.currentStreak >= 14) {
-    insights.push(`${isViewingOther ? "A" : "You've maintained a"} two-week streak. This level of consistency is building lasting neural pathways.`);
+    insights.push(`${isViewingOther ? "A" : "You've maintained a"} two-week check-in streak. That level of consistency is where real patterns become visible.`);
   } else if (stats.currentStreak >= 7) {
     insights.push(`A week-long streak shows real commitment. ${your} brain is adapting to this new routine.`);
   } else if (stats.currentStreak >= 3) {
-    insights.push("Three days of consistency is when habits start forming. Keep going.");
+    insights.push("Three days of consistent check-ins is where habits start forming.");
   }
 
   if (moodTrend === "increasing") {
-    insights.push(`${you} mood has been meaningfully improving — a positive sign of progress.`);
+    insights.push(`${you} mood has been meaningfully improving over the past two weeks — a positive sign of progress.`);
   } else if (moodTrend === "decreasing") {
-    insights.push(`${you} mood has dipped recently. Awareness is the first step to turning it around.`);
+    insights.push(`${you} mood has dipped meaningfully in the past two weeks. Awareness of the pattern is the first step.`);
   }
 
   if (urgeTrend === "decreasing") {
-    insights.push(`${you} urge levels are meaningfully decreasing — the coping strategies are working.`);
+    insights.push(`${you} urge intensity has meaningfully decreased over the past two weeks — the coping strategies are working.`);
   } else if (urgeTrend === "increasing") {
-    insights.push(`Urge levels have increased. ${isViewingOther ? "Consider discussing" : "Consider reviewing"} coping tools or ${isViewingOther ? "additional support" : "reaching out"}.`);
+    insights.push(`Urge levels have increased recently. ${isViewingOther ? "Consider discussing" : "Review"} coping tools and ${isViewingOther ? "offering additional support" : "reach out if needed"}.`);
   } else if ((urgeTrend === "stable" || urgeTrend === "consistently_same") && stats.averageUrge < 4) {
     insights.push(`${you} urge levels are consistently low — a sign of growing control.`);
   }
 
   if (stats.dailyCompletionRate >= 80) {
-    insights.push(`Excellent consistency — ${isViewingOther ? "checking" : "you're checking"} in most days.`);
+    insights.push(`Strong consistency: ${isViewingOther ? "checking" : "you're checking"} in on ${stats.dailyCompletionRate}% of days in the current window.`);
   } else if (stats.dailyCompletionRate < 50 && stats.totalCheckins > 5) {
-    insights.push("More frequent check-ins help track patterns. Try to check in daily.");
+    insights.push(`Check-in rate is ${stats.dailyCompletionRate}% this window. Daily check-ins are where patterns become trackable.`);
   }
 
-  return insights.length > 0 ? insights[0] : `${you} data is stable. ${isViewingOther ? "Encourage daily check-ins" : "Keep checking in daily"} to track the journey.`;
+  if (insights.length === 0) {
+    insights.push(`${you} data is stable. ${isViewingOther ? "Encourage daily check-ins" : "Keep checking in daily"} to keep the picture current.`);
+  }
+
+  return insights.slice(0, 3);
 }
 
 export default function AnalyticsPage({ params }: { params?: { clientId?: string } }) {
@@ -277,9 +289,7 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
   const viewedClientName = isMentor ? clientData?.name : adminClientData?.name;
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      setLocation("/login");
-    }
+    if (!authLoading && !user) setLocation("/login");
   }, [user, authLoading, setLocation]);
 
   if (authLoading || isLoading) {
@@ -309,12 +319,21 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
   if (!user) return null;
 
   const completedWeeks = completionsData?.completedWeeks || [];
-  const moodData = stats?.recentCheckins.map(c => c.mood) || [];
-  const urgeData = stats?.recentCheckins.map(c => c.urge) || [];
 
-  const moodTrend = computeTrend(moodData);
-  const urgeTrend = computeTrend(urgeData);
+  // Build a proper 14-day calendar-aligned grid from the raw check-in data.
+  // Each slot is exactly one calendar day; days with no check-in are null.
+  // This ensures chart bars and "X days ago → Today" labels are accurate.
+  const dailyGrid = buildDailyGrid(stats?.recentCheckins || []);
+
+  const moodTrend = computeTrend(dailyGrid.map(g => g.mood));
+  const urgeTrend = computeTrend(dailyGrid.map(g => g.urge));
   const hasData = (stats?.totalCheckins ?? 0) > 0;
+
+  // Compute 14-day averages from the daily grid — consistent with what the charts show.
+  const mood14dayAvg = avg(dailyGrid.map(g => g.mood));
+  const urge14dayAvg = avg(dailyGrid.map(g => g.urge));
+
+  const insights = stats ? getInsights(stats, moodTrend, urgeTrend, isViewingOtherClient) : [];
 
   const displayName = isViewingOtherClient
     ? (viewedClientName || "Client")
@@ -351,21 +370,21 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
             </h1>
             <p className="mt-2 text-white/60 text-sm max-w-md">
               {hasData
-                ? "Data from your check-ins, tracked over time. What the numbers show is what's actually happening."
-                : "No check-in data yet. Complete your first check-in to start seeing your trends here."}
+                ? "Check-in data tracked over time. What the numbers show is what's actually happening."
+                : "No check-in data yet. Complete your first check-in to start seeing trends here."}
             </p>
           </div>
           {hasData && (
-            <div className="flex items-center gap-4 sm:text-right">
+            <div className="flex items-center gap-4">
               <div className="flex flex-col items-center bg-white/10 rounded-xl px-5 py-3 ring-1 ring-white/20">
                 <Flame className="h-5 w-5 text-orange-400 mb-1" />
                 <span className="text-3xl font-bold text-white">{stats?.currentStreak ?? 0}</span>
                 <span className="text-xs text-white/50 mt-0.5">day streak</span>
               </div>
               <div className="flex flex-col items-center bg-white/10 rounded-xl px-5 py-3 ring-1 ring-white/20">
-                <Target className="h-5 w-5 text-cyan-400 mb-1" />
+                <ClipboardCheck className="h-5 w-5 text-cyan-400 mb-1" />
                 <span className="text-3xl font-bold text-white">{stats?.totalCheckins ?? 0}</span>
-                <span className="text-xs text-white/50 mt-0.5">check-ins</span>
+                <span className="text-xs text-white/50 mt-0.5">total check-ins</span>
               </div>
             </div>
           )}
@@ -374,19 +393,19 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
 
       <main className="mx-auto max-w-5xl px-4 py-8 space-y-6">
 
-        {/* Insight Banner */}
-        {hasData && (
+        {/* Insights */}
+        {hasData && insights.length > 0 && (
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="py-4">
               <div className="flex items-start gap-3">
                 <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-foreground mb-0.5">
-                    {isViewingOtherClient ? "Progress insight" : "Your progress insight"}
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-foreground">
+                    {isViewingOtherClient ? "Progress insights" : "Your progress insights"}
                   </p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {getInsight(stats!, moodTrend, urgeTrend, isViewingOtherClient)}
-                  </p>
+                  {insights.map((insight, i) => (
+                    <p key={i} className="text-sm text-muted-foreground leading-relaxed">{insight}</p>
+                  ))}
                 </div>
               </div>
             </CardContent>
@@ -403,9 +422,7 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                   <p className="text-4xl font-bold text-orange-700 dark:text-orange-300">
                     {stats?.currentStreak || 0}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Best: {stats?.longestStreak || 0} days
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Best: {stats?.longestStreak || 0} days</p>
                 </div>
                 <div className="h-16 w-16 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
                   <Flame className="h-8 w-8 text-orange-500" />
@@ -422,9 +439,7 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                   <p className="text-4xl font-bold text-cyan-700 dark:text-cyan-300">
                     {stats?.dailyCompletionRate || 0}%
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {stats?.totalCheckins || 0} total check-ins
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Last {stats?.windowSize || 14} days</p>
                 </div>
                 <div className="h-16 w-16 rounded-full bg-cyan-100 dark:bg-cyan-900/50 flex items-center justify-center">
                   <ClipboardCheck className="h-8 w-8 text-cyan-500" />
@@ -451,9 +466,9 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                     )}
                   </div>
                   <p className="text-4xl font-bold text-emerald-700 dark:text-emerald-300">
-                    {stats?.averageMood || 0}<span className="text-xl">/10</span>
+                    {mood14dayAvg}<span className="text-xl">/10</span>
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Higher is better</p>
+                  <p className="text-xs text-muted-foreground mt-1">14-day avg · higher is better</p>
                 </div>
                 <div className="h-16 w-16 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
                   <Heart className="h-8 w-8 text-emerald-500" />
@@ -480,9 +495,9 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                     )}
                   </div>
                   <p className="text-4xl font-bold text-purple-700 dark:text-purple-300">
-                    {stats?.averageUrge || 0}<span className="text-xl">/10</span>
+                    {urge14dayAvg}<span className="text-xl">/10</span>
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Lower is better</p>
+                  <p className="text-xs text-muted-foreground mt-1">14-day avg · lower is better</p>
                 </div>
                 <div className="h-16 w-16 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
                   <Zap className="h-8 w-8 text-purple-500" />
@@ -500,10 +515,10 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                 <Heart className="h-4 w-4 text-emerald-500" />
                 Mood — Last 14 Days
               </CardTitle>
-              <CardDescription>Higher is better</CardDescription>
+              <CardDescription>One bar per calendar day · hover for date and value · higher is better</CardDescription>
             </CardHeader>
             <CardContent>
-              <TrendChart data={moodData} color="#10b981" label="Mood level" height={140} />
+              <TrendChart grid={dailyGrid} color="#10b981" label="mood" height={140} />
             </CardContent>
           </Card>
 
@@ -513,10 +528,10 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                 <Zap className="h-4 w-4 text-purple-500" />
                 Urge Intensity — Last 14 Days
               </CardTitle>
-              <CardDescription>Lower is better</CardDescription>
+              <CardDescription>One bar per calendar day · hover for date and value · lower is better</CardDescription>
             </CardHeader>
             <CardContent>
-              <TrendChart data={urgeData} color="#8b5cf6" label="Urge level" height={140} />
+              <TrendChart grid={dailyGrid} color="#8b5cf6" label="urge" height={140} />
             </CardContent>
           </Card>
         </div>
@@ -529,9 +544,7 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
                 <Award className="h-4 w-4 text-amber-500" />
                 Program Progress
               </CardTitle>
-              <CardDescription>
-                16-week journey — each bubble is one week
-              </CardDescription>
+              <CardDescription>16-week journey — each bubble is one week</CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
               <WeekGrid completedWeeks={completedWeeks} />
@@ -552,7 +565,7 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
               <ProgressRing percentage={stats?.dailyCompletionRate || 0} color="#0891b2" size={140} />
               <p className="text-sm text-center text-muted-foreground max-w-xs">
                 {(stats?.dailyCompletionRate ?? 0) >= 80
-                  ? "Strong consistency. This level of check-in frequency is where patterns become visible."
+                  ? "Strong consistency. This frequency is where patterns become visible and change becomes trackable."
                   : (stats?.dailyCompletionRate ?? 0) >= 50
                   ? "Solid effort. Daily check-ins — even brief ones — compound over time."
                   : "Aim to check in daily. The data only works if it's there."}
