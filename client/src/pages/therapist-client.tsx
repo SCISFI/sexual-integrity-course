@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { getPromptForDate } from "@/data/journal-prompts";
@@ -141,6 +141,13 @@ export default function TherapistClient() {
   const { data: progressData, isLoading: loadingProgress } = useQuery<ClientProgress>({
     queryKey: ['/api/therapist/clients', clientId, 'progress'],
     enabled: !!clientId,
+  });
+
+  type MentorSuggestion = { id: string; priority: "urgent" | "followup" | "curriculum" | "recognition"; title: string; detail: string; action: string };
+  const { data: suggestionsData, isLoading: loadingSuggestions } = useQuery<{ suggestions: MentorSuggestion[] }>({
+    queryKey: ['/api/therapist/clients', clientId, 'suggestions'],
+    enabled: !!clientId,
+    staleTime: 60000,
   });
 
   const feedbackMutation = useMutation({
@@ -516,6 +523,14 @@ export default function TherapistClient() {
                     {unreviewedAutopsies.length > 0 && (
                       <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white" data-testid="badge-unreviewed-autopsies">
                         {unreviewedAutopsies.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="guidance" data-testid="tab-guidance" className="relative flex-1 min-w-[80px]">
+                    Guidance
+                    {(suggestionsData?.suggestions.filter(s => s.priority === "urgent").length ?? 0) > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                        {suggestionsData!.suggestions.filter(s => s.priority === "urgent").length}
                       </span>
                     )}
                   </TabsTrigger>
@@ -1310,6 +1325,74 @@ export default function TherapistClient() {
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="guidance" className="space-y-4 mt-6">
+                {loadingSuggestions ? (
+                  <div className="space-y-3">
+                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
+                  </div>
+                ) : !suggestionsData?.suggestions.length ? (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                      <Lightbulb className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                      <p className="font-semibold">No guidance suggestions yet</p>
+                      <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                        More client data is needed to generate meaningful guidance. Encourage daily check-ins.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    <div className="rounded-lg border bg-muted/40 px-4 py-3 flex items-start gap-3">
+                      <Lightbulb className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        These suggestions are generated from this client's check-in data, curriculum pace, and relapse history.
+                        They are starting points for your clinical judgment — not directives.
+                      </p>
+                    </div>
+
+                    {(["urgent", "followup", "curriculum", "recognition"] as const).map((priority) => {
+                      const items = suggestionsData.suggestions.filter(s => s.priority === priority);
+                      if (items.length === 0) return null;
+
+                      const config = {
+                        urgent: { label: "Needs Attention", color: "border-red-400 dark:border-red-700", badge: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400", dot: "bg-red-500" },
+                        followup: { label: "Follow Up", color: "border-amber-400 dark:border-amber-700", badge: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400", dot: "bg-amber-500" },
+                        curriculum: { label: "This Week's Lesson", color: "border-blue-400 dark:border-blue-700", badge: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400", dot: "bg-blue-500" },
+                        recognition: { label: "Positive Signal", color: "border-green-400 dark:border-green-700", badge: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400", dot: "bg-green-500" },
+                      }[priority];
+
+                      return (
+                        <div key={priority} className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`h-2 w-2 rounded-full ${config.dot}`} />
+                            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{config.label}</p>
+                          </div>
+                          {items.map((suggestion) => (
+                            <Card key={suggestion.id} className={`border-l-4 ${config.color}`} data-testid={`card-suggestion-${suggestion.id}`}>
+                              <CardHeader className="pb-2 pt-4">
+                                <div className="flex items-start justify-between gap-2">
+                                  <CardTitle className="text-sm font-semibold leading-snug">{suggestion.title}</CardTitle>
+                                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${config.badge}`}>
+                                    {config.label}
+                                  </span>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="pb-4 space-y-3">
+                                <p className="text-sm text-muted-foreground leading-relaxed">{suggestion.detail}</p>
+                                <div className="rounded-md bg-muted/60 px-3 py-2.5 flex items-start gap-2">
+                                  <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
+                                  <p className="text-xs font-medium leading-relaxed">{suggestion.action}</p>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </TabsContent>
             </Tabs>
           </>

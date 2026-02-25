@@ -903,6 +903,193 @@ export async function registerRoutes(
     }
   });
 
+  const MENTOR_WEEK_GUIDANCE: Record<number, { weekTitle: string; detail: string; action: string }> = {
+    1: { weekTitle: "The Moment You Stop Pretending", detail: "Week 1 sets the tone for everything that follows. Watch for intellectualizing — clients who discuss the concepts without connecting them to their own specific behavior. Vague reflection answers here predict surface-level engagement throughout the program.", action: "In your first feedback, ask for one concrete example from their own life. Push past abstractions. 'Can you give me a specific moment when this was true for you?' is always the right question." },
+    2: { weekTitle: "Nothing About This Is Random", detail: "Pattern recognition requires specificity. Clients who describe their triggers in vague terms ('stress,' 'loneliness') haven't done the mapping work yet. The goal is the exact sequence — what happened, then what, then what.", action: "Ask them to walk through the sequence of their most recent urge from the beginning. If they can't, they're still in the general. Get them specific." },
+    3: { weekTitle: "Your Mind Is Not Telling You the Truth", detail: "The most common deflection in Week 3: 'I already knew about cognitive distortions.' Knowing the concept is not the same as catching it in the moment. The work is self-recognition, not comprehension.", action: "Ask them to name the distortion they use most often. Then ask for a recent example. Textbook answers mean they haven't applied it to themselves yet." },
+    4: { weekTitle: "When the Urge Hits", detail: "This is where CBT theory is supposed to meet real-time practice. The question isn't whether they read about urge management — it's whether they tried the tools when an urge actually appeared.", action: "Ask: 'What did you do the last time an urge hit?' If the answer is 'I didn't have any urges,' push harder. If the answer is 'I just waited,' that's important information." },
+    5: { weekTitle: "Shame Is Not Your Conscience", detail: "High-resistance week. Shame activates avoidance, and the clients who need this material most are often the ones who go quiet during Week 5. A sudden increase in missed check-ins or shorter reflection answers during this week is a clinical signal.", action: "If you see avoidance behavior this week, name it directly. 'I notice you've been quieter since starting Week 5' is a clinical observation, not an accusation. Name what you see." },
+    6: { weekTitle: "The People You've Been Living Around", detail: "Relationship patterns surface codependency, enabling relationships, and isolation. The common deflection is externalization — making the week entirely about what others need to change. Watch for it.", action: "Focus your feedback on what they can control. 'What would it look like for you to change your role in that dynamic?' Not what others need to do differently." },
+    7: { weekTitle: "What Needs to Be Said", detail: "Emotionally demanding week. Some clients underestimate it; some perform. Both are forms of avoidance. The emotional difficulty of this week is the point — disclosure and honesty have real emotional weight.", action: "Validate the difficulty without minimizing it. 'This is hard for a reason' is more useful than praise. The quality of effort here matters more than polish." },
+    8: { weekTitle: "The Architecture of Not Going Back", detail: "The quality of their CBT relapse prevention plan directly predicts their vulnerability. Vague plans ('I'll call someone') are not plans. They're intentions without structure. Plans have specifics: who, when, what exactly.", action: "Look for specificity. Do they have actual rules with actual consequences? Real names and numbers, not general intentions? Challenge every vague element directly." },
+    9: { weekTitle: "What Fighting Has Cost You", detail: "Week 9 is the pivot point from CBT to ACT. The framework shifts from fighting behaviors to examining what the behavior has cost them. Clients often feel disoriented here — the model they've been using for 8 weeks has changed.", action: "Normalize the disorientation in your feedback. 'This week asks you to look at it differently than you have been — that's uncomfortable on purpose.' Don't let them mistake the shift for regression." },
+    10: { weekTitle: "Your Thoughts Don't Have Permission", detail: "Cognitive defusion exercises feel strange at first. Clients often dismiss them as silly or ineffective before they've genuinely tried them. The goal is changing the relationship to thoughts, not eliminating them.", action: "Ask specifically: did they try the exercises or just read about them? Engagement with the experiential work is what matters here. 'Reading about swimming isn't swimming.'" },
+    11: { weekTitle: "The Part of You That Doesn't Change", detail: "The emotional core of the ACT phase. Watch for aspirational values — they describe who clients want to be rather than what they actually care about. Genuine values show up in behavior. Aspirational values don't.", action: "Ask: 'How did this value show up in something you actually did this week?' Ground values in behavior, not aspiration. If they can't answer, the value may not be theirs yet." },
+    12: { weekTitle: "What You're Actually Living For", detail: "Week 12 makes the gap between stated values and actual behavior visible. That gap is where the work lives. Clients who can articulate it clearly are ready to close it. Clients who avoid the question aren't.", action: "Ask them to identify one specific place where their behavior didn't align with a stated value this week. The honesty of that answer is more important than the answer itself." },
+    13: { weekTitle: "Stop Running", detail: "Avoidance is the engine of the addiction cycle. Week 13 targets it directly. Clients who've spent years fighting their internal experience often resist the acceptance framework — it feels like giving up. It isn't.", action: "Ask what they're still avoiding — not thoughts, but actions, feelings, conversations. Avoidance shows up in behavior, not just mental experience." },
+    14: { weekTitle: "From Knowing to Doing", detail: "Insight without behavior change is just self-awareness. Week 14 is about what they've actually done differently — not what they've learned to say about themselves, but how their behavior has changed.", action: "Ask for one specific behavioral change they made this week. Not a plan to change — something they actually did differently. 'I decided to' doesn't count. 'I did' counts." },
+    15: { weekTitle: "Protect What You've Built", detail: "With one week remaining, some clients coast. The maintenance plan for life after the program is as important as anything in the curriculum. This is where the program's gains are preserved or lost.", action: "Push for specificity: what triggers will still be present after the program ends? What support structures will remain? What's the plan when the accountability structure of this program is gone?" },
+    16: { weekTitle: "Who You've Become", detail: "This is closure, not completion in the sense of 'finished.' The goal is helping the client articulate who they are now — not just what they learned, but what has actually changed about how they see themselves.", action: "Ask: 'What's the most important thing that changed about how you see yourself?' The depth of that answer is the measure of the work they've done." },
+  };
+
+  type MentorSuggestion = {
+    id: string;
+    priority: "urgent" | "followup" | "curriculum" | "recognition";
+    title: string;
+    detail: string;
+    action: string;
+  };
+
+  app.get("/api/therapist/clients/:clientId/suggestions", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const { clientId } = req.params;
+
+      const clients = await storage.getClientsForTherapist(therapistId);
+      if (!clients.some((c) => c.id === clientId)) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      const client = await storage.getUser(clientId);
+      const checkins = await storage.getUserCheckinHistory(clientId, 30);
+      const completedWeeks = await storage.getCompletedWeeks(clientId);
+      const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
+
+      const { analyzeTrends } = await import("./trendAnalysis");
+      const trends = analyzeTrends(checkins);
+      const suggestions: MentorSuggestion[] = [];
+
+      const unreviewedAutopsies = relapseAutopsies.filter(
+        (a) => a.status === "completed" && !a.reviewedByTherapist,
+      );
+      if (unreviewedAutopsies.length > 0) {
+        suggestions.push({
+          id: "unreviewed-autopsy",
+          priority: "urgent",
+          title: `${unreviewedAutopsies.length} Relapse Autopsy Submission${unreviewedAutopsies.length > 1 ? "s" : ""} Needs Review`,
+          detail: `Your client submitted a relapse autopsy on ${unreviewedAutopsies[0].date}${unreviewedAutopsies.length > 1 ? ` and ${unreviewedAutopsies.length - 1} more` : ""}. They took the right step. Now it's your turn.`,
+          action: "Go to the Autopsies tab. Read it carefully, then respond. Your response is what keeps them engaged in the program after a setback.",
+        });
+      }
+
+      if (checkins.length > 0) {
+        const lastCheckin = checkins[checkins.length - 1];
+        const daysSince = Math.floor(
+          (Date.now() - new Date(lastCheckin.dateKey).getTime()) / 86400000,
+        );
+        if (daysSince >= 3) {
+          suggestions.push({
+            id: "checkin-gap",
+            priority: "urgent",
+            title: `No Check-in for ${daysSince} Days`,
+            detail: `Absence from check-ins is one of the earliest behavioral warning signs before a relapse. The longer the gap, the harder the re-entry. Last check-in: ${lastCheckin.dateKey}.`,
+            action: "Reach out directly with a specific question — not 'how are you doing?' but 'what happened to your check-in this week?' Specificity signals that you noticed.",
+          });
+        }
+      } else {
+        suggestions.push({
+          id: "no-checkins",
+          priority: "urgent",
+          title: "No Check-ins Recorded Yet",
+          detail: "Client has not completed any daily check-ins. Without check-in data, you have no view into what's happening day to day.",
+          action: "Make daily check-ins a clear expectation in your first feedback message. Frame it as non-negotiable, not optional.",
+        });
+      }
+
+      if (
+        trends.urge.trend === "increasing" &&
+        trends.urge.difference >= 2
+      ) {
+        suggestions.push({
+          id: "urge-spike",
+          priority: "urgent",
+          title: "Urge Intensity Is Rising",
+          detail: `Urge levels have increased by ${trends.urge.difference} points on average over the past two weeks (${trends.urge.firstHalfAvg}/10 → ${trends.urge.secondHalfAvg}/10). This is a clinical flag.`,
+          action: "Initiate contact before they do. Ask what's changed recently — routine, relationships, stress. Review their coping plan. Don't wait.",
+        });
+      }
+
+      if (trends.mood.trend === "decreasing") {
+        suggestions.push({
+          id: "mood-decline",
+          priority: "followup",
+          title: "Mood Has Been Declining",
+          detail: `Average mood dropped by ${Math.abs(trends.mood.difference)} points over the past two weeks (${trends.mood.firstHalfAvg}/10 → ${trends.mood.secondHalfAvg}/10). Low mood is a known vulnerability factor for relapse.`,
+          action: "Acknowledge the dip in your next feedback. Ask what's been weighing on them. Don't normalize it — naming it is the first move.",
+        });
+      }
+
+      if (trends.checkinConsistency.rate < 50 && checkins.length >= 5) {
+        suggestions.push({
+          id: "low-consistency",
+          priority: "followup",
+          title: `Check-in Rate Is ${trends.checkinConsistency.rate}%`,
+          detail: `Client checked in on ${trends.checkinConsistency.rate}% of tracked days (${trends.checkinConsistency.totalCheckins} of ${trends.checkinConsistency.daysCovered} days). You can't track patterns you don't have data for.`,
+          action: "Name it directly in your next message. 'Daily check-ins aren't optional' is the message. Ask specifically what's getting in the way.",
+        });
+      }
+
+      if (client?.startDate) {
+        const daysSinceStart = Math.floor(
+          (Date.now() - new Date(client.startDate).getTime()) / 86400000,
+        );
+        const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
+        if (completedWeeks.length < expectedWeek - 1 && completedWeeks.length < 16) {
+          suggestions.push({
+            id: "curriculum-behind",
+            priority: "followup",
+            title: "Behind on Curriculum Pace",
+            detail: `Based on start date, client should be approaching Week ${expectedWeek} but has completed ${completedWeeks.length} week${completedWeeks.length !== 1 ? "s" : ""}. Falling behind is often avoidance, not logistics.`,
+            action: "Ask what's blocking them. Is it time, or is it the content? A curriculum week they're avoiding is usually the one they most need to do.",
+          });
+        }
+      }
+
+      const activeWeek = Math.min(16, completedWeeks.length + 1);
+      const weekGuide = MENTOR_WEEK_GUIDANCE[activeWeek];
+      if (weekGuide) {
+        suggestions.push({
+          id: `curriculum-w${activeWeek}`,
+          priority: "curriculum",
+          title: `Week ${activeWeek}: ${weekGuide.weekTitle}`,
+          detail: weekGuide.detail,
+          action: weekGuide.action,
+        });
+      }
+
+      const positiveSignals: string[] = [];
+      const currentStreakDays = (() => {
+        if (checkins.length === 0) return 0;
+        const sorted = [...checkins].sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+        const today = new Date().toISOString().split("T")[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+        if (sorted[0].dateKey !== today && sorted[0].dateKey !== yesterday) return 0;
+        let streak = 1;
+        for (let i = 1; i < sorted.length; i++) {
+          const prev = new Date(sorted[i - 1].dateKey);
+          const curr = new Date(sorted[i].dateKey);
+          const diff = Math.round((prev.getTime() - curr.getTime()) / 86400000);
+          if (diff === 1) streak++;
+          else break;
+        }
+        return streak;
+      })();
+
+      if (currentStreakDays >= 7) positiveSignals.push(`${currentStreakDays}-day check-in streak`);
+      if (trends.mood.trend === "increasing") positiveSignals.push(`mood improving (+${trends.mood.difference} pts over two weeks)`);
+      if (trends.urge.trend === "decreasing") positiveSignals.push(`urge intensity declining (${Math.abs(trends.urge.difference)} pts)`);
+      if (trends.checkinConsistency.rate >= 80) positiveSignals.push(`${trends.checkinConsistency.rate}% check-in consistency`);
+
+      if (positiveSignals.length >= 2) {
+        suggestions.push({
+          id: "positive-momentum",
+          priority: "recognition",
+          title: "Real Positive Momentum",
+          detail: positiveSignals.join(" · ") + ". These are measurable signals of progress, not just optimism.",
+          action: "Name exactly what you're seeing in your next feedback message. Specific observation beats vague encouragement every time. Tell them what the data shows.",
+        });
+      }
+
+      const priorityOrder: MentorSuggestion["priority"][] = ["urgent", "followup", "curriculum", "recognition"];
+      suggestions.sort((a, b) => priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority));
+
+      res.json({ suggestions });
+    } catch (error) {
+      console.error("Get mentor suggestions error:", error);
+      res.status(500).json({ message: "Failed to generate suggestions" });
+    }
+  });
+
   app.get("/api/admin/clients/:clientId/checkin-stats", requireRole("admin"), async (req, res) => {
     try {
       const { clientId } = req.params;

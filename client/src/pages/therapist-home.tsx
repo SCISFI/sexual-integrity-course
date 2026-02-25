@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
@@ -20,6 +20,9 @@ import {
   ChevronRight,
   CheckCircle2,
   Clock,
+  Bell,
+  BookOpen,
+  Activity,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -61,76 +64,15 @@ export default function TherapistHome() {
   const { toast } = useToast();
   const { user } = useAuth();
   const subscriptionConfirmedRef = useRef(false);
-  const isStaff = user?.role === "admin" || user?.role === "therapist";
-
-  const [draftClientId, setDraftClientId] = useState("");
-  const [draftFocus, setDraftFocus] = useState("");
-  const [draftTone, setDraftTone] = useState<"neutral" | "direct" | "warm">(
-    "neutral",
-  );
-  const [draftConstraints, setDraftConstraints] = useState(
-    "Avoid shame language. No diagnosis. No risk scoring.",
-  );
-  const [draftText, setDraftText] = useState("");
-  const [draftLoading, setDraftLoading] = useState(false);
-
-  async function generateStaffDraft() {
-    if (!draftClientId.trim()) {
-      toast({
-        title: "Client ID required",
-        description: "Enter a client ID to generate a draft.",
-      });
-      return;
-    }
-    if (!draftFocus.trim()) {
-      toast({
-        title: "Focus required",
-        description: "Enter what you want the draft to be about.",
-      });
-      return;
-    }
-
-    setDraftLoading(true);
-    setDraftText("");
-
-    try {
-      const res = await apiRequest(
-        "POST",
-        `/api/staff/clients/${encodeURIComponent(draftClientId.trim())}/ai-draft`,
-        {
-          focus: draftFocus.trim(),
-          tone: draftTone,
-          constraints: draftConstraints.trim(),
-        },
-      );
-
-      const data = await res.json();
-      setDraftText(data?.draftText || "");
-    } catch (err) {
-      console.error(err);
-      toast({
-        title: "Draft failed",
-        description: "Could not generate a draft. Check server logs.",
-      });
-    } finally {
-      setDraftLoading(false);
-    }
-  }
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const paymentStatus = searchParams.get("payment");
-
     if (paymentStatus === "success" && !subscriptionConfirmedRef.current) {
       subscriptionConfirmedRef.current = true;
-      toast({
-        title: "Subscription Activated",
-        description: "Welcome! Your mentor subscription is now active.",
-      });
+      toast({ title: "Subscription Activated", description: "Welcome! Your mentor subscription is now active." });
       window.history.replaceState({}, "", "/therapist-home");
-      queryClient.invalidateQueries({
-        queryKey: ["/api/payments/subscription"],
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/payments/subscription"] });
     } else if (paymentStatus === "cancelled") {
       window.history.replaceState({}, "", "/therapist-home");
     }
@@ -141,62 +83,32 @@ export default function TherapistHome() {
     allFeesWaived: boolean;
     cancelAtPeriodEnd?: boolean;
     periodEnd?: string | null;
-  }>({
-    queryKey: ["/api/payments/subscription"],
-    staleTime: 0,
-    refetchOnMount: "always",
-  });
+  }>({ queryKey: ["/api/payments/subscription"], staleTime: 0, refetchOnMount: "always" });
 
   const subscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest(
-        "POST",
-        "/api/payments/checkout/subscription",
-        {},
-      );
+      const res = await apiRequest("POST", "/api/payments/checkout/subscription", {});
       return res.json();
     },
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    },
-    onError: () => {
-      toast({
-        title: "Checkout Error",
-        description: "Failed to start subscription checkout. Please try again.",
-        variant: "destructive",
-      });
-    },
+    onSuccess: (data) => { if (data.url) window.location.href = data.url; },
+    onError: () => toast({ title: "Checkout Error", description: "Failed to start checkout.", variant: "destructive" }),
   });
 
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest(
-        "POST",
-        "/api/account/cancel-subscription",
-        {},
-      );
+      const res = await apiRequest("POST", "/api/account/cancel-subscription", {});
       return res.json();
     },
     onSuccess: (data) => {
       toast({
         title: "Subscription Cancelled",
         description: data.accessEndsAt
-          ? `Your subscription will remain active until ${new Date(data.accessEndsAt).toLocaleDateString()}. No refunds will be issued.`
-          : "Your subscription has been cancelled. No refunds will be issued.",
+          ? `Active until ${new Date(data.accessEndsAt).toLocaleDateString()}. No refunds.`
+          : "Cancelled. No refunds.",
       });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/payments/subscription"],
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/payments/subscription"] });
     },
-    onError: () => {
-      toast({
-        title: "Cancellation Failed",
-        description: "Failed to cancel subscription. Please try again.",
-        variant: "destructive",
-      });
-    },
+    onError: () => toast({ title: "Cancellation Failed", description: "Please try again.", variant: "destructive" }),
   });
 
   const hasActiveSubscription =
@@ -204,38 +116,30 @@ export default function TherapistHome() {
     subscriptionData?.subscription?.status === "trialing" ||
     subscriptionData?.allFeesWaived === true;
 
-  const subscriptionCancelledButActive =
-    hasActiveSubscription && subscriptionData?.cancelAtPeriodEnd === true;
+  const subscriptionCancelledButActive = hasActiveSubscription && subscriptionData?.cancelAtPeriodEnd === true;
 
-  const { data: clientsData, isLoading } = useQuery<{
-    clients: ClientWithProgress[];
-  }>({
+  const { data: clientsData, isLoading } = useQuery<{ clients: ClientWithProgress[] }>({
     queryKey: ["/api/therapist/clients"],
     enabled: hasActiveSubscription,
   });
 
-  const { data: unreviewedAutopsiesData } = useQuery<{
-    unreviewedCounts: Record<string, number>;
-  }>({
+  const { data: unreviewedAutopsiesData } = useQuery<{ unreviewedCounts: Record<string, number> }>({
     queryKey: ["/api/therapist/unreviewed-autopsies"],
     enabled: hasActiveSubscription,
   });
   const unreviewedCounts = unreviewedAutopsiesData?.unreviewedCounts || {};
 
-  const { data: unreviewedItemsData } = useQuery<{
-    unreviewedItemCounts: Record<string, number>;
-  }>({
+  const { data: unreviewedItemsData } = useQuery<{ unreviewedItemCounts: Record<string, number> }>({
     queryKey: ["/api/therapist/unreviewed-items"],
     enabled: hasActiveSubscription,
   });
   const unreviewedItemCounts = unreviewedItemsData?.unreviewedItemCounts || {};
 
-  const { data: pendingReviewsData } = useQuery<{
-    pendingReviews: Array<{ clientId: string; weekNumber: number }>;
-  }>({
+  const { data: pendingReviewsData } = useQuery<{ pendingReviews: Array<{ clientId: string; weekNumber: number }> }>({
     queryKey: ["/api/therapist/pending-reviews"],
     enabled: hasActiveSubscription,
   });
+
   const pendingReviewCounts: Record<string, number> = {};
   for (const pr of pendingReviewsData?.pendingReviews || []) {
     pendingReviewCounts[pr.clientId] = (pendingReviewCounts[pr.clientId] || 0) + 1;
@@ -248,52 +152,26 @@ export default function TherapistHome() {
 
   const allClients = clientsData?.clients || [];
 
-  const clients = searchQuery.trim()
-    ? allClients.filter(
-        (c) =>
-          c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.email.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
-    : allClients;
-
   const getClientStatus = (client: ClientWithProgress) => {
     if (!client.startDate) return "Pending";
-    const daysSinceStart = Math.floor(
-      (Date.now() - new Date(client.startDate).getTime()) /
-        (1000 * 60 * 60 * 24),
-    );
+    const daysSinceStart = Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24));
     const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
-
     if (client.completedWeeks.length >= expectedWeek) return "On Track";
-    if (client.completedWeeks.length < expectedWeek - 1)
-      return "Needs Attention";
+    if (client.completedWeeks.length < expectedWeek - 1) return "Needs Attention";
     return "Active";
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Needs Attention":
-        return <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />;
-      case "On Track":
-        return <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />;
-      case "Active":
-        return <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground" />;
-      default:
-        return null;
-    }
-  };
+  const clients = searchQuery.trim()
+    ? allClients.filter(c =>
+        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.email.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : allClients;
 
   const sortedClients = [...clients].sort((a, b) => {
     const statusA = getClientStatus(a);
     const statusB = getClientStatus(b);
-    const priority = (status: string) =>
-      status === "Needs Attention"
-        ? 0
-        : status === "Active"
-          ? 1
-          : status === "On Track"
-            ? 2
-            : 3;
+    const priority = (s: string) => s === "Needs Attention" ? 0 : s === "Active" ? 1 : s === "On Track" ? 2 : 3;
     return priority(statusA) - priority(statusB);
   });
 
@@ -302,11 +180,28 @@ export default function TherapistHome() {
     setLocation("/login");
   };
 
+  // Summary stats
+  const totalClients = allClients.length;
+  const totalUnreviewed = Object.values(combinedReviewCounts).reduce((a, b) => a + b, 0) +
+    Object.values(unreviewedCounts).reduce((a, b) => a + b, 0);
+  const needsAttentionCount = allClients.filter(c => getClientStatus(c) === "Needs Attention").length;
+
   if (loadingSubscription) {
     return (
-      <div className="min-h-screen bg-background px-4 sm:px-6 py-8">
-        <div className="mx-auto max-w-5xl flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-background">
+        <div className="bg-gradient-to-br from-slate-900 to-blue-900 py-12 px-4">
+          <div className="mx-auto max-w-5xl">
+            <Skeleton className="h-8 w-48 bg-white/10 mb-3" />
+            <Skeleton className="h-5 w-72 bg-white/10" />
+          </div>
+        </div>
+        <div className="mx-auto max-w-5xl px-4 py-8">
+          <div className="grid gap-4 sm:grid-cols-3 mb-8">
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+          </div>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+          </div>
         </div>
       </div>
     );
@@ -314,83 +209,40 @@ export default function TherapistHome() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="min-h-screen bg-background px-4 sm:px-6 py-8">
-        <div className="mx-auto max-w-2xl">
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-8">
-            <h1 className="text-2xl font-bold" data-testid="text-therapist-title">
-              Mentor Dashboard
-            </h1>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              data-testid="button-logout"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
+      <div className="min-h-screen bg-background">
+        <div className="bg-gradient-to-br from-slate-900 to-blue-900 py-12 px-4">
+          <div className="mx-auto max-w-5xl flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-1">Mentor Portal</p>
+              <h1 className="text-3xl font-bold text-white" data-testid="text-therapist-title">Mentor Dashboard</h1>
+            </div>
+            <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10" onClick={handleLogout} data-testid="button-logout">
+              <LogOut className="h-4 w-4 mr-2" /> Logout
             </Button>
           </div>
-
+        </div>
+        <div className="mx-auto max-w-2xl px-4 py-10">
           <Card data-testid="card-subscription-required">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
                 <CreditCard className="h-7 w-7 text-muted-foreground" />
               </div>
-              <h3 className="mb-2 text-xl font-semibold">
-                Subscription Required
-              </h3>
-              <Badge
-                variant="secondary"
-                data-testid="badge-first-month-free"
-                className="mb-4"
-              >
-                First Month FREE
-              </Badge>
+              <h3 className="mb-2 text-xl font-semibold">Subscription Required</h3>
+              <Badge variant="secondary" data-testid="badge-first-month-free" className="mb-4">First Month FREE</Badge>
               <p className="max-w-md text-muted-foreground mb-8">
-                Start with a{" "}
-                <span className="font-semibold text-foreground">
-                  30-day free trial
-                </span>
-                , then{" "}
-                <span className="font-semibold text-foreground">$49/month</span>{" "}
-                to access the mentor dashboard, manage your clients, and monitor
-                their progress through the 16-week program.
+                Start with a <span className="font-semibold text-foreground">30-day free trial</span>, then{" "}
+                <span className="font-semibold text-foreground">$49/month</span> to access the mentor dashboard,
+                manage your clients, and guide them through the 16-week program.
               </p>
               <ul className="text-left text-sm text-muted-foreground space-y-3 mb-8 w-full max-w-xs">
-                <li className="flex items-center gap-3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  Unlimited client management
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  Real-time progress monitoring
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  Client check-in data access
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  Cancel anytime
-                </li>
+                {["Unlimited client management", "Real-time progress monitoring", "AI-powered guidance suggestions", "Cancel anytime"].map(f => (
+                  <li key={f} className="flex items-center gap-3">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />{f}
+                  </li>
+                ))}
               </ul>
-              <Button
-                size="lg"
-                className="w-full sm:w-auto"
-                onClick={() => subscriptionMutation.mutate()}
-                disabled={subscriptionMutation.isPending}
-                data-testid="button-subscribe"
-              >
-                {subscriptionMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Start Free Trial
-                  </>
-                )}
+              <Button size="lg" className="w-full sm:w-auto" onClick={() => subscriptionMutation.mutate()} disabled={subscriptionMutation.isPending} data-testid="button-subscribe">
+                {subscriptionMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</> : <><CreditCard className="mr-2 h-4 w-4" />Start Free Trial</>}
               </Button>
             </CardContent>
           </Card>
@@ -400,318 +252,255 @@ export default function TherapistHome() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 sm:px-6 py-6 sm:py-8">
-      <div className="mx-auto max-w-5xl space-y-6">
-        {subscriptionCancelledButActive && subscriptionData?.periodEnd && (
-          <Card
-            className="border-amber-200 dark:border-amber-800"
-            data-testid="banner-subscription-ending"
-          >
-            <CardContent className="py-4">
-              <p className="font-medium text-sm">
-                Subscription Ending
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Your subscription will end on{" "}
-                {new Date(subscriptionData.periodEnd).toLocaleDateString()}. You
-                will retain full access until then.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen bg-background">
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-slate-900 to-blue-900 py-10 px-4">
+        <div className="mx-auto max-w-5xl flex items-start justify-between gap-4">
           <div>
-            <h1
-              className="text-xl sm:text-2xl font-bold"
-              data-testid="text-therapist-title"
-            >
-              Welcome back, {(user as any)?.name || 'Mentor'}
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-2 flex items-center gap-1.5">
+              <Users className="h-3 w-3" />
+              Mentor Portal
+            </p>
+            <h1 className="text-3xl font-bold text-white tracking-tight" data-testid="text-therapist-title">
+              {(user as any)?.name || "Mentor"}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage your clients and monitor their progress
+            <p className="mt-1.5 text-white/60 text-sm">
+              {totalClients > 0
+                ? `${totalClients} client${totalClients !== 1 ? "s" : ""} in the program`
+                : "No clients assigned yet"}
             </p>
           </div>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" data-testid="button-profile-menu">
+              <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10" data-testid="button-profile-menu">
                 <UserCircle className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">
-                  {(user as any)?.name || "Account"}
-                </span>
+                <span className="hidden sm:inline">{(user as any)?.name || "Account"}</span>
                 <ChevronDown className="h-3 w-3 ml-1" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">
-                    {(user as any)?.name || "Mentor"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {(user as any)?.email}
-                  </p>
+                  <p className="text-sm font-medium">{(user as any)?.name || "Mentor"}</p>
+                  <p className="text-xs text-muted-foreground">{(user as any)?.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setLocation("/change-password")}
-                data-testid="menu-change-password"
-              >
-                <Key className="h-4 w-4 mr-2" />
-                Change Password
+              <DropdownMenuItem onClick={() => setLocation("/change-password")} data-testid="menu-change-password">
+                <Key className="h-4 w-4 mr-2" /> Change Password
               </DropdownMenuItem>
               {!subscriptionCancelledButActive && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setShowCancelDialog(true)}
-                    className="text-destructive focus:text-destructive"
-                    data-testid="menu-cancel-subscription"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Cancel Subscription
+                  <DropdownMenuItem onClick={() => setShowCancelDialog(true)} className="text-destructive focus:text-destructive" data-testid="menu-cancel-subscription">
+                    <XCircle className="h-4 w-4 mr-2" /> Cancel Subscription
                   </DropdownMenuItem>
                 </>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleLogout}
-                data-testid="menu-logout"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Log Out
+              <DropdownMenuItem onClick={handleLogout} data-testid="menu-logout">
+                <LogOut className="h-4 w-4 mr-2" /> Log Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <AlertDialog
-            open={showCancelDialog}
-            onOpenChange={setShowCancelDialog}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
-                <AlertDialogDescription className="space-y-2">
-                  <p>Are you sure you want to cancel your subscription?</p>
-                  <Card className="mt-4 border-amber-200 dark:border-amber-800">
-                    <CardContent className="py-3">
-                      <p className="font-medium text-sm">
-                        Important:
-                      </p>
-                      <ul className="text-sm text-muted-foreground mt-1 list-disc list-inside space-y-1">
-                        <li>
-                          Your subscription will remain active until the end of
-                          your billing period
-                        </li>
-                        <li>No refunds will be issued for any unused time</li>
-                        <li>
-                          You will lose access to the dashboard after your billing
-                          period ends
-                        </li>
-                      </ul>
-                    </CardContent>
-                  </Card>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel data-testid="button-keep-subscription">
-                  Keep Subscription
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => cancelSubscriptionMutation.mutate()}
-                  className="bg-destructive text-destructive-foreground"
-                  disabled={cancelSubscriptionMutation.isPending}
-                  data-testid="button-confirm-cancel"
-                >
-                  {cancelSubscriptionMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Cancelling...
-                    </>
-                  ) : (
-                    "Cancel Subscription"
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
 
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="text-lg">
-                Your Clients
-                {allClients.length > 0 && (
-                  <span className="ml-2 text-sm font-normal text-muted-foreground">
-                    ({allClients.length})
-                  </span>
-                )}
-              </CardTitle>
-              {allClients.length > 0 && (
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search clients..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 w-full sm:w-64"
-                    data-testid="input-client-search"
-                  />
-                </div>
-              )}
+        {/* Stat strip inside hero */}
+        {totalClients > 0 && (
+          <div className="mx-auto max-w-5xl mt-6 grid grid-cols-3 gap-3">
+            <div className="rounded-xl bg-white/10 ring-1 ring-white/20 px-4 py-3 flex items-center gap-3">
+              <Users className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+              <div>
+                <p className="text-2xl font-bold text-white">{totalClients}</p>
+                <p className="text-xs text-white/50">Clients</p>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
+            <div className="rounded-xl bg-white/10 ring-1 ring-white/20 px-4 py-3 flex items-center gap-3">
+              <Bell className="h-5 w-5 text-amber-400 flex-shrink-0" />
+              <div>
+                <p className="text-2xl font-bold text-white">{totalUnreviewed}</p>
+                <p className="text-xs text-white/50">To Review</p>
               </div>
-            ) : clients.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground">
-                <Users className="mx-auto mb-3 h-8 w-8 opacity-40" />
-                <p className="font-medium">No clients assigned yet</p>
-                <p className="text-sm mt-1">
-                  Contact your administrator to get clients assigned.
-                </p>
+            </div>
+            <div className="rounded-xl bg-white/10 ring-1 ring-white/20 px-4 py-3 flex items-center gap-3">
+              <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${needsAttentionCount > 0 ? "text-red-400" : "text-white/30"}`} />
+              <div>
+                <p className={`text-2xl font-bold ${needsAttentionCount > 0 ? "text-red-300" : "text-white"}`}>{needsAttentionCount}</p>
+                <p className="text-xs text-white/50">Need Attention</p>
               </div>
-            ) : (
-              <>
-                {/* Desktop table view */}
-                <div className="hidden md:block">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-muted-foreground">
-                        <th className="text-left py-3 px-3 font-medium">Client</th>
-                        <th className="text-left py-3 px-3 font-medium">Email</th>
-                        <th className="text-left py-3 px-3 font-medium">Progress</th>
-                        <th className="text-left py-3 px-3 font-medium">Status</th>
-                        <th className="text-left py-3 px-3 font-medium">Start Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedClients.map((client) => {
-                        const status = getClientStatus(client);
-                        return (
-                          <tr
-                            key={client.id}
-                            className="border-b last:border-b-0 hover-elevate cursor-pointer"
-                            onClick={() =>
-                              setLocation(`/therapist/clients/${client.id}`)
-                            }
-                            data-testid={`row-client-${client.id}`}
-                          >
-                            <td className="py-3 px-3 font-medium">
-                              <span className="flex items-center gap-2 flex-wrap">
-                                {client.name}
-                                {combinedReviewCounts[String(client.id)] > 0 && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-[10px]"
-                                    data-testid={`badge-unreviewed-items-${client.id}`}
-                                  >
-                                    {combinedReviewCounts[String(client.id)]} to review
-                                  </Badge>
-                                )}
-                                {unreviewedCounts[String(client.id)] > 0 && (
-                                  <Badge
-                                    variant="destructive"
-                                    className="text-[10px]"
-                                    data-testid={`badge-autopsy-alert-${client.id}`}
-                                  >
-                                    <AlertTriangle className="h-3 w-3 mr-0.5" />
-                                    {unreviewedCounts[String(client.id)]} autopsy
-                                  </Badge>
-                                )}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3 text-muted-foreground">
-                              {client.email}
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className="text-sm">Week {client.currentWeek} / 16</span>
-                              <span className="ml-2 text-xs text-muted-foreground">
-                                ({client.completedWeeks.length} done)
-                              </span>
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className="flex items-center gap-1.5 text-sm">
-                                {getStatusIcon(status)}
-                                {status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3 text-muted-foreground">
-                              {client.startDate
-                                ? new Date(client.startDate).toLocaleDateString()
-                                : "Not set"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-                {/* Mobile card view */}
-                <div className="md:hidden space-y-3">
-                  {sortedClients.map((client) => {
-                    const status = getClientStatus(client);
-                    return (
-                      <div
-                        key={client.id}
-                        className="rounded-lg border p-4 hover-elevate cursor-pointer"
-                        onClick={() =>
-                          setLocation(`/therapist/clients/${client.id}`)
-                        }
-                        data-testid={`row-client-${client.id}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">{client.name}</p>
-                            <p className="text-sm text-muted-foreground truncate">{client.email}</p>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
+      <main className="mx-auto max-w-5xl px-4 py-8 space-y-6">
+        {subscriptionCancelledButActive && subscriptionData?.periodEnd && (
+          <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 text-sm" data-testid="banner-subscription-ending">
+            <span className="font-semibold">Subscription Ending: </span>
+            <span className="text-muted-foreground">Full access until {new Date(subscriptionData.periodEnd).toLocaleDateString()}.</span>
+          </div>
+        )}
+
+        {/* Client list */}
+        <div>
+          <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+            <h2 className="text-lg font-semibold">
+              Your Clients
+              {allClients.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">({allClients.length})</span>
+              )}
+            </h2>
+            {allClients.length > 0 && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search clients..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-full sm:w-64"
+                  data-testid="input-client-search"
+                />
+              </div>
+            )}
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+            </div>
+          ) : sortedClients.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-14 text-center">
+                <Users className="mx-auto mb-3 h-10 w-10 opacity-20" />
+                <p className="font-semibold text-lg">No clients yet</p>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                  {searchQuery ? "No clients match your search." : "Contact your administrator to get clients assigned to you."}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {sortedClients.map((client) => {
+                const status = getClientStatus(client);
+                const clientId = String(client.id);
+                const reviewCount = combinedReviewCounts[clientId] || 0;
+                const autopsyCount = unreviewedCounts[clientId] || 0;
+                const completedCount = client.completedWeeks.length;
+                const progressPct = Math.round((completedCount / 16) * 100);
+                const isNeedsAttention = status === "Needs Attention";
+                const isOnTrack = status === "On Track";
+
+                return (
+                  <div
+                    key={client.id}
+                    className={`rounded-xl border bg-card p-4 cursor-pointer hover-elevate transition-all ${isNeedsAttention ? "border-amber-200 dark:border-amber-800" : ""}`}
+                    onClick={() => setLocation(`/therapist/clients/${client.id}`)}
+                    data-testid={`row-client-${client.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-4 min-w-0 flex-1">
+                        {/* Avatar */}
+                        <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                          isNeedsAttention ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300" :
+                          isOnTrack ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300" :
+                          "bg-muted text-muted-foreground"
+                        }`}>
+                          {(client.name || client.email).charAt(0).toUpperCase()}
                         </div>
-                        <div className="flex items-center gap-3 mt-3 flex-wrap">
-                          <span className="text-sm text-muted-foreground">
-                            Week {client.currentWeek}/16
-                          </span>
-                          <span className="flex items-center gap-1 text-sm">
-                            {getStatusIcon(status)}
-                            <span className="text-muted-foreground">{status}</span>
-                          </span>
-                          {combinedReviewCounts[String(client.id)] > 0 && (
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px]"
-                              data-testid={`badge-unreviewed-items-${client.id}`}
-                            >
-                              {combinedReviewCounts[String(client.id)]} to review
-                            </Badge>
-                          )}
-                          {unreviewedCounts[String(client.id)] > 0 && (
-                            <Badge
-                              variant="destructive"
-                              className="text-[10px]"
-                              data-testid={`badge-autopsy-alert-${client.id}`}
-                            >
-                              <AlertTriangle className="h-3 w-3 mr-0.5" />
-                              autopsy
-                            </Badge>
-                          )}
+
+                        <div className="min-w-0 flex-1">
+                          {/* Name + badges row */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-sm">{client.name || client.email}</p>
+                            {status !== "Pending" && (
+                              <Badge
+                                variant={isNeedsAttention ? "outline" : isOnTrack ? "outline" : "secondary"}
+                                className={`text-[10px] px-1.5 py-0 ${
+                                  isNeedsAttention ? "border-amber-400 text-amber-700 dark:text-amber-400" :
+                                  isOnTrack ? "border-green-400 text-green-700 dark:text-green-400" : ""
+                                }`}
+                              >
+                                {isNeedsAttention && <Clock className="h-2.5 w-2.5 mr-0.5" />}
+                                {isOnTrack && <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />}
+                                {status}
+                              </Badge>
+                            )}
+                            {autopsyCount > 0 && (
+                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0" data-testid={`badge-autopsy-alert-${client.id}`}>
+                                <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                                {autopsyCount} autopsy
+                              </Badge>
+                            )}
+                            {reviewCount > 0 && (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0" data-testid={`badge-unreviewed-items-${client.id}`}>
+                                {reviewCount} to review
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Email + meta row */}
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">{client.email}</p>
+
+                          {/* Progress row */}
+                          <div className="flex items-center gap-3 mt-2.5">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <BookOpen className="h-3 w-3" />
+                              <span>Week {completedCount}/16</span>
+                            </div>
+                            <div className="flex-1 max-w-[120px] h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${isNeedsAttention ? "bg-amber-500" : isOnTrack ? "bg-green-500" : "bg-primary"}`}
+                                style={{ width: `${progressPct}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted-foreground">{progressPct}%</span>
+                            {client.startDate && (
+                              <span className="text-xs text-muted-foreground hidden sm:inline">
+                                <Activity className="h-3 w-3 inline mr-0.5" />
+                                Started {new Date(client.startDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+
+                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </main>
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Are you sure you want to cancel your subscription?</p>
+              <ul className="text-sm text-muted-foreground mt-2 list-disc list-inside space-y-1">
+                <li>Your subscription remains active until the end of your billing period</li>
+                <li>No refunds will be issued for unused time</li>
+                <li>You will lose dashboard access after the billing period ends</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-keep-subscription">Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => cancelSubscriptionMutation.mutate()}
+              className="bg-destructive text-destructive-foreground"
+              disabled={cancelSubscriptionMutation.isPending}
+              data-testid="button-confirm-cancel"
+            >
+              {cancelSubscriptionMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Cancelling...</> : "Cancel Subscription"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

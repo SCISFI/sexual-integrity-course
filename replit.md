@@ -36,7 +36,7 @@ The application uses a React frontend (Vite, Wouter, TanStack React Query, Tailw
 -   **User Roles**: Admin (full access), Mentor (client progress, feedback), Client (curriculum, daily check-ins, homework, payments).
 -   **Daily Check-ins**: Unified system covering recovery, wellness, relationships, values, integrity, HALT-BS, mood/urge levels, and journal entries.
 -   **Homework & Reflections**: Trackable homework checklists, auto-saving reflection forms, and differentiated reflection questions for specific weeks.
--   **Mentor Tools**: View client progress, provide feedback on weeks, check-ins, and autopsies; generate AI draft feedback, track overdue reviews, and manage clients.
+-   **Mentor Tools**: View client progress, provide feedback on weeks, check-ins, and autopsies; generate AI draft feedback, track overdue reviews, manage clients. **Guidance tab** on each client's detail page surfaces rule-based, prioritized action suggestions (urgent / follow-up / curriculum / recognition) driven by check-in trends, curriculum pace, and relapse autopsy data. `/api/therapist/clients/:clientId/suggestions` endpoint.
 -   **Admin Tools**: User management, fee waivers, client deletion, revenue tracking, and editing of any feedback.
 -   **AI-Powered Features**: Personalized encouragement, technique reminders, and draft feedback generation (including relapse autopsy analysis and trend analysis) with anti-hallucination instructions.
 -   **Client Account Management**: Account deactivation, subscription cancellation, crisis resources, and user manual access.
