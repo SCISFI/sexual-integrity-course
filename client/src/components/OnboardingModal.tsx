@@ -2,48 +2,94 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, ClipboardCheck, BookOpen, Calendar, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import {
+  Shield,
+  ClipboardCheck,
+  BookOpen,
+  Search,
+  Users,
+  ArrowRight,
+  Check,
+} from "lucide-react";
 
 interface OnboardingModalProps {
   open: boolean;
   onComplete: () => void;
 }
 
+const steps = [
+  {
+    gradient: "from-slate-900 to-cyan-900",
+    icon: Shield,
+    tagline: "16 weeks. Real work. Lasting change.",
+    title: "Welcome to The Integrity Protocol",
+    bullets: [
+      "A 16-week structured program for building sexual integrity",
+      "An educational and personal growth resource — not therapy or counseling",
+      "Each week builds on the last. Show up consistently and it compounds.",
+      "Your progress is private between you and your mentor. No one else sees it.",
+    ],
+  },
+  {
+    gradient: "from-slate-900 to-blue-900",
+    icon: ClipboardCheck,
+    tagline: "Two minutes. Every day. It adds up.",
+    title: "The Daily Check-in",
+    bullets: [
+      "Complete a check-in each day — mood, urges, key recovery behaviors",
+      "Takes 2–3 minutes. It's how you track patterns and build awareness.",
+      "Your answers are private between you and your mentor",
+      "Find it on your dashboard under \"Daily Check-in\"",
+    ],
+  },
+  {
+    gradient: "from-slate-900 to-indigo-900",
+    icon: BookOpen,
+    tagline: "One week at a time. No skipping ahead.",
+    title: "Weekly Lessons",
+    bullets: [
+      "New lessons unlock every 7 days — you cannot rush the timeline",
+      "Each week includes reading, reflection questions, and homework",
+      "Your answers auto-save as you type. Stop and return anytime.",
+      "Week 1 is already waiting for you",
+    ],
+  },
+  {
+    gradient: "from-slate-900 to-slate-700",
+    icon: Search,
+    tagline: "A setback is data. Use it.",
+    title: "If You Slip: The Relapse Autopsy",
+    bullets: [
+      "When doctors perform a clinical autopsy, the goal isn't blame — it's cause. Exact cause. Documented. Preventable next time.",
+      "If you experience a lapse or relapse, you complete a Relapse Autopsy: a structured investigation into what happened, what you missed, and what changes.",
+      "A relapse does not remove you from the program. Completing the autopsy is what keeps you in it.",
+      "Your mentor reviews every autopsy and responds with feedback.",
+    ],
+  },
+  {
+    gradient: "from-slate-900 to-green-900",
+    icon: Users,
+    tagline: "Honesty matters more than perfection.",
+    title: "You're Not in This Alone",
+    bullets: [
+      "Your mentor can see your progress, check-ins, and reflections",
+      "They'll provide feedback — especially when things get hard",
+      "Crisis resources are available on every lesson page",
+      "The only thing that ends this program is walking away. Keep showing up.",
+    ],
+  },
+];
+
 export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   const [step, setStep] = useState(0);
 
-  const steps = [
-    {
-      title: "Welcome to Your Journey",
-      description: "You're about to begin a 16-week program designed to help you build lasting sexual integrity. Let's quickly walk through how the program works. Please note: this program is an educational and personal growth resource. It is not therapy, counseling, or a substitute for professional mental health treatment.",
-      icon: BookOpen,
-    },
-    {
-      title: "One Daily Check-in",
-      description: "Complete a quick daily check-in whenever works for you. You'll track your mood, urges, and key recovery behaviors. It takes just a few minutes and helps you build awareness of your patterns. Look for 'Daily Check-in' on your dashboard.",
-      icon: ClipboardCheck,
-    },
-    {
-      title: "Weekly Lessons Unlock Over Time",
-      description: "New lessons unlock every 7 days. Each week includes reading material, reflection questions, and homework. Your answers are auto-saved as you type, so you can take breaks and come back anytime.",
-      icon: Calendar,
-    },
-    {
-      title: "You're Not Alone",
-      description: "Your mentor can view your progress and provide feedback. If you're struggling, there are crisis resources available on every lesson page. Remember: relapse doesn't disqualify you — avoidance does. Honesty is more important than perfection.",
-      icon: CheckCircle,
-    },
-  ];
-
-  const currentStep = steps[step];
+  const current = steps[step];
   const isLastStep = step === steps.length - 1;
-  const Icon = currentStep.icon;
+  const Icon = current.icon;
+  const progressValue = ((step + 1) / steps.length) * 100;
 
   const handleNext = () => {
     if (isLastStep) {
@@ -55,55 +101,70 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Icon className="h-5 w-5 text-primary" />
-            </div>
-            <DialogTitle>{currentStep.title}</DialogTitle>
-          </div>
-          <DialogDescription className="text-base leading-relaxed pt-2">
-            {currentStep.description}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex justify-center gap-2 py-4">
-          {steps.map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-2 w-2 rounded-full transition-colors ${
-                idx === step ? "bg-primary" : "bg-muted"
-              }`}
-            />
-          ))}
-        </div>
-
-        <DialogFooter className="flex-row gap-2 sm:justify-between">
-          {step > 0 && (
-            <Button
-              variant="outline"
-              onClick={() => setStep(step - 1)}
-              data-testid="button-onboarding-back"
-            >
-              Back
-            </Button>
-          )}
-          <Button
-            onClick={handleNext}
-            className="flex-1 sm:flex-none"
-            data-testid="button-onboarding-next"
+      <DialogContent
+        className="p-0 gap-0 sm:max-w-xl overflow-hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
+        <div key={step} className="animate-in fade-in duration-200">
+          <div
+            className={`bg-gradient-to-br ${current.gradient} flex flex-col items-center justify-center gap-3 py-10 px-6`}
           >
-            {isLastStep ? (
-              "Get Started"
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
+              <Icon className="h-8 w-8 text-white" />
+            </div>
+            <p className="text-sm font-medium text-white/70 tracking-wide text-center">
+              {current.tagline}
+            </p>
+          </div>
+
+          <div className="px-6 pt-5 pb-2">
+            <h2 className="text-xl font-bold tracking-tight">{current.title}</h2>
+            <ul className="mt-4 space-y-3">
+              {current.bullets.map((bullet, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground leading-relaxed">
+                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <Check className="h-3 w-3 text-primary" />
+                  </span>
+                  {bullet}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="px-6 pb-2 pt-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs text-muted-foreground">Step {step + 1} of {steps.length}</span>
+            </div>
+            <Progress value={progressValue} className="h-1.5" />
+          </div>
+
+          <div className="flex items-center justify-between gap-3 px-6 py-4">
+            {step > 0 ? (
+              <Button
+                variant="outline"
+                onClick={() => setStep(step - 1)}
+                data-testid="button-onboarding-back"
+              >
+                Back
+              </Button>
             ) : (
-              <>
-                Next
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </>
+              <div />
             )}
-          </Button>
-        </DialogFooter>
+            <Button
+              onClick={handleNext}
+              data-testid="button-onboarding-next"
+            >
+              {isLastStep ? (
+                "Get Started"
+              ) : (
+                <>
+                  Next
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

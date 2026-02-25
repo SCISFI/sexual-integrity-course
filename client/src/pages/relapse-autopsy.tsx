@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Save, CheckCircle2, Plus, Clock, Loader2 } from "lucide-react";
+import { Info, Save, CheckCircle2, Plus, Clock, Loader2, Search } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -174,11 +174,11 @@ export default function RelapseAutopsyPage() {
           </div>
         </div>
 
-        <div className="mt-6 rounded-md border border-destructive/40 bg-destructive/5 p-4">
+        <div className="mt-6 rounded-md border border-border bg-muted/50 p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
+            <Info className="mt-0.5 h-5 w-5 text-muted-foreground flex-shrink-0" />
             <div>
-              <div className="font-semibold text-destructive">If a relapse occurs</div>
+              <div className="font-semibold text-foreground">Protocol reminder</div>
               <p className="mt-1 text-sm text-muted-foreground">
                 A relapse does <span className="font-semibold">not</span> remove you from the program.
                 Complete a <span className="font-semibold">Relapse Autopsy</span> and your mentor will review it and provide feedback.
@@ -193,11 +193,33 @@ export default function RelapseAutopsyPage() {
             <Skeleton className="h-20 w-full" />
           </div>
         ) : autopsies.length === 0 ? (
-          <Card className="mt-6">
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No relapse autopsies yet. If you experience a lapse or relapse, use the button above to start one.
-            </CardContent>
-          </Card>
+          <div className="mt-6 space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                    <Search className="h-5 w-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-base">What is a Relapse Autopsy?</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground space-y-3 leading-relaxed">
+                <p>
+                  When a patient dies, doctors perform a clinical autopsy — not to assign blame, but to determine the exact cause of death. Every factor is examined, documented, and analyzed so it can be understood and, where possible, prevented in the future.
+                </p>
+                <p>
+                  This program uses the same method. If you experience a lapse or relapse, you complete a Relapse Autopsy: a structured, factual investigation into exactly what happened and why. What were the triggers? What warning signs were present but ignored? Where were the decision points — the exits you had but didn't take?
+                </p>
+                <p>
+                  The goal is <span className="font-semibold text-foreground">forensic clarity</span>, not self-punishment. A setback analyzed honestly becomes prevention intelligence. That's what this tool is for.
+                </p>
+              </CardContent>
+            </Card>
+
+            <div className="rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-foreground">You haven't needed one yet.</span> That's a good sign. If a lapse or relapse does occur, this tool is here and ready — completing it is the right next step. It keeps you in the program and gives your mentor what they need to help you move forward.
+            </div>
+          </div>
         ) : (
           <div className="mt-6 space-y-3">
             {autopsies.map((a) => (
@@ -254,11 +276,11 @@ export default function RelapseAutopsyPage() {
         </Button>
       </div>
 
-      <div className="mt-6 rounded-md border border-destructive/40 bg-destructive/5 p-4">
+      <div className="mt-6 rounded-md border border-border bg-muted/50 p-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
+          <Info className="mt-0.5 h-5 w-5 text-muted-foreground flex-shrink-0" />
           <div>
-            <div className="font-semibold text-destructive">If a relapse occurs</div>
+            <div className="font-semibold text-foreground">Protocol reminder</div>
             <p className="mt-1 text-sm text-muted-foreground">
               A relapse does <span className="font-semibold">not</span> remove you from the program.
               Continuing requires completing a <span className="font-semibold">Relapse Autopsy</span>.
