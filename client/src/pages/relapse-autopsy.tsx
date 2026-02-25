@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Info, Save, CheckCircle2, Plus, Clock, Loader2, Search } from "lucide-react";
+import {
+  Info, Save, CheckCircle2, Plus, Clock, Loader2, Search,
+  FileText, Brain, AlertOctagon, ShieldCheck, ArrowLeft,
+} from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -57,6 +60,41 @@ const emptyAutopsy: AutopsyData = {
   supportPlan: "",
   next24HoursPlan: "",
 };
+
+function SectionHeader({
+  number,
+  icon: Icon,
+  title,
+  description,
+  accent,
+}: {
+  number: number;
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  accent: string;
+}) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full ${accent}`}>
+        <Icon className="h-4 w-4 text-white" />
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">
+          Section {number}
+        </p>
+        <CardTitle className="text-base leading-tight">{title}</CardTitle>
+        <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Label className="text-sm font-semibold text-foreground">{children}</Label>
+  );
+}
 
 export default function RelapseAutopsyPage() {
   const { toast } = useToast();
@@ -208,7 +246,7 @@ export default function RelapseAutopsyPage() {
                   When a patient dies, doctors perform a clinical autopsy — not to assign blame, but to determine the exact cause of death. Every factor is examined, documented, and analyzed so it can be understood and, where possible, prevented in the future.
                 </p>
                 <p>
-                  This program uses the same method. If you experience a lapse or relapse, you complete a Relapse Autopsy: a structured, factual investigation into exactly what happened and why. What were the triggers? What warning signs were present but ignored? Where were the decision points — the exits you had but didn't take?
+                  This program uses the same method. If you experience a lapse or relapse, you complete a Relapse Autopsy: a structured, factual investigation into exactly what happened and why. What were the triggers? What warning signs were present? Where were the decision points — the exits you had but didn't take?
                 </p>
                 <p>
                   The goal is <span className="font-semibold text-foreground">forensic clarity</span>, not self-punishment. A setback analyzed honestly becomes prevention intelligence. That's what this tool is for.
@@ -263,33 +301,27 @@ export default function RelapseAutopsyPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Relapse Autopsy</h1>
-          <p className="mt-2 text-muted-foreground">
-            No shame. No stories. Just facts, patterns, and corrective action.
-          </p>
+    <div className="mx-auto max-w-3xl px-4 pb-16">
+      <div className="relative flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 py-10 px-6 -mx-4 mb-8">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 mb-4">
+          <Search className="h-7 w-7 text-white" />
         </div>
-        <Button variant="outline" onClick={() => { setShowForm(false); setEditingId(null); setData(emptyAutopsy); }}>
-          Back to list
+        <h1 className="text-2xl font-bold text-white tracking-tight text-center">Relapse Autopsy</h1>
+        <p className="mt-2 text-sm text-white/60 text-center max-w-sm">
+          No shame. No stories. Just facts, patterns, and corrective action.
+        </p>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 left-4 text-white/60 hover:text-white hover:bg-white/10"
+          onClick={() => { setShowForm(false); setEditingId(null); setData(emptyAutopsy); }}
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
         </Button>
       </div>
 
-      <div className="mt-6 rounded-md border border-border bg-muted/50 p-4">
-        <div className="flex items-start gap-3">
-          <Info className="mt-0.5 h-5 w-5 text-muted-foreground flex-shrink-0" />
-          <div>
-            <div className="font-semibold text-foreground">Protocol reminder</div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              A relapse does <span className="font-semibold">not</span> remove you from the program.
-              Continuing requires completing a <span className="font-semibold">Relapse Autopsy</span>.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row mb-8">
         <Button onClick={handleSave} disabled={isSaving} className="sm:w-auto" data-testid="button-save-draft">
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save draft
@@ -300,126 +332,230 @@ export default function RelapseAutopsyPage() {
         </Button>
       </div>
 
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-base">1) Incident summary</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label>Date</Label>
-            <Input value={data.date} onChange={(e) => update("date", e.target.value)} type="date" data-testid="input-autopsy-date" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Lapse or relapse?</Label>
-            <div className="flex gap-3 text-sm">
-              <label className="flex items-center gap-2">
-                <input type="radio" checked={data.lapseOrRelapse === "lapse"} onChange={() => update("lapseOrRelapse", "lapse")} data-testid="radio-lapse" />
-                Lapse (brief slip)
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="radio" checked={data.lapseOrRelapse === "relapse"} onChange={() => update("lapseOrRelapse", "relapse")} data-testid="radio-relapse" />
-                Relapse (returned to old pattern)
-              </label>
+      <div className="space-y-5">
+        <Card className="border-l-4 border-l-cyan-600">
+          <CardHeader className="pb-4">
+            <SectionHeader
+              number={1}
+              icon={FileText}
+              title="What happened"
+              description="Factual summary only. No self-attacks, no justification, no minimizing."
+              accent="bg-cyan-600"
+            />
+          </CardHeader>
+          <CardContent className="grid gap-5">
+            <div className="grid gap-2">
+              <FieldLabel>Date</FieldLabel>
+              <Input value={data.date} onChange={(e) => update("date", e.target.value)} type="date" data-testid="input-autopsy-date" />
             </div>
-          </div>
-          <div className="grid gap-2">
-            <Label>What happened? (facts only)</Label>
-            <Textarea value={data.summary} onChange={(e) => update("summary", e.target.value)} placeholder="Write a short, factual summary. No self-attacks. No justification." className="min-h-[110px]" data-testid="textarea-summary" />
-          </div>
-        </CardContent>
-      </Card>
+            <div className="grid gap-2">
+              <FieldLabel>Lapse or relapse?</FieldLabel>
+              <p className="text-xs text-muted-foreground -mt-1">A lapse is a brief slip. A relapse is a return to the full pattern.</p>
+              <div className="flex gap-4 text-sm mt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" checked={data.lapseOrRelapse === "lapse"} onChange={() => update("lapseOrRelapse", "lapse")} data-testid="radio-lapse" />
+                  <span>Lapse — brief slip</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" checked={data.lapseOrRelapse === "relapse"} onChange={() => update("lapseOrRelapse", "relapse")} data-testid="radio-relapse" />
+                  <span>Relapse — returned to old pattern</span>
+                </label>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>What happened? Write it as a factual account.</FieldLabel>
+              <Textarea
+                value={data.summary}
+                onChange={(e) => update("summary", e.target.value)}
+                placeholder="State the facts plainly. What did you do, in what order? Leave out the self-attack and the justification — just the sequence of events."
+                className="min-h-[120px]"
+                data-testid="textarea-summary"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-base">2) Timeline</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label>When did it start?</Label>
-            <Input value={data.whenStarted} onChange={(e) => update("whenStarted", e.target.value)} placeholder="e.g., 10:30pm" />
-          </div>
-          <div className="grid gap-2">
-            <Label>How long did it last?</Label>
-            <Input value={data.duration} onChange={(e) => update("duration", e.target.value)} placeholder="e.g., 25 minutes" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Where were you / what was happening?</Label>
-            <Textarea value={data.context} onChange={(e) => update("context", e.target.value)} placeholder="Environment + situation. Example: alone, laptop in bed, late night, tired." className="min-h-[90px]" />
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="border-l-4 border-l-blue-600">
+          <CardHeader className="pb-4">
+            <SectionHeader
+              number={2}
+              icon={Clock}
+              title="When and where"
+              description="Context and situation. The environment shapes behavior — document it precisely."
+              accent="bg-blue-600"
+            />
+          </CardHeader>
+          <CardContent className="grid gap-5">
+            <div className="grid gap-2">
+              <FieldLabel>When did it start?</FieldLabel>
+              <Input value={data.whenStarted} onChange={(e) => update("whenStarted", e.target.value)} placeholder="e.g., 10:30pm on a Tuesday after getting home from work" />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>How long before you stopped?</FieldLabel>
+              <Input value={data.duration} onChange={(e) => update("duration", e.target.value)} placeholder="e.g., 25 minutes" />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>Where were you and what was happening around you?</FieldLabel>
+              <Textarea
+                value={data.context}
+                onChange={(e) => update("context", e.target.value)}
+                placeholder="Alone or with people? Device, location, time of day. What had the last few hours looked like? Be specific — the details matter."
+                className="min-h-[100px]"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-base">3) Triggers and internal state</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label>Triggers (external + internal)</Label>
-            <Textarea value={data.triggers} onChange={(e) => update("triggers", e.target.value)} className="min-h-[90px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Emotions</Label>
-            <Textarea value={data.emotions} onChange={(e) => update("emotions", e.target.value)} className="min-h-[80px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Thoughts / beliefs in the moment</Label>
-            <Textarea value={data.thoughts} onChange={(e) => update("thoughts", e.target.value)} className="min-h-[80px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Body state (tired, wired, stressed, hungry, etc.)</Label>
-            <Textarea value={data.body} onChange={(e) => update("body", e.target.value)} className="min-h-[70px]" />
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="border-l-4 border-l-indigo-600">
+          <CardHeader className="pb-4">
+            <SectionHeader
+              number={3}
+              icon={Brain}
+              title="What drove it"
+              description="The internal state — triggers, emotions, thoughts, body — that built the momentum toward the behavior."
+              accent="bg-indigo-600"
+            />
+          </CardHeader>
+          <CardContent className="grid gap-5">
+            <div className="grid gap-2">
+              <FieldLabel>What set it off?</FieldLabel>
+              <Textarea
+                value={data.triggers}
+                onChange={(e) => update("triggers", e.target.value)}
+                placeholder="List both external triggers (something you saw, heard, a situation) and internal ones (a thought, a memory, a craving that appeared). What was the first thing that moved you in this direction?"
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>What were you feeling before and during?</FieldLabel>
+              <Textarea
+                value={data.emotions}
+                onChange={(e) => update("emotions", e.target.value)}
+                placeholder="Name the emotions specifically — not just 'stressed.' Lonely? Angry? Bored? Rejected? Ashamed? What emotional state created the opening?"
+                className="min-h-[90px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>What was your mind telling you?</FieldLabel>
+              <Textarea
+                value={data.thoughts}
+                onChange={(e) => update("thoughts", e.target.value)}
+                placeholder="What thoughts gave you permission? What rationalizations ran? 'Just this once.' 'I've been doing well.' 'No one will know.' Write the actual thought, not a summary."
+                className="min-h-[90px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>What was your physical state? (HALT check)</FieldLabel>
+              <Textarea
+                value={data.body}
+                onChange={(e) => update("body", e.target.value)}
+                placeholder="Hungry, Angry, Lonely, Tired — plus anything else physical. Sleep-deprived? Sick? Coming off a stressful day? The body sets the table."
+                className="min-h-[80px]"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-base">4) Breakdown points</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label>Boundaries broken</Label>
-            <Textarea value={data.boundariesBroken} onChange={(e) => update("boundariesBroken", e.target.value)} className="min-h-[80px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Warning signs you ignored</Label>
-            <Textarea value={data.warningSigns} onChange={(e) => update("warningSigns", e.target.value)} className="min-h-[80px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Decision points (where you could have exited)</Label>
-            <Textarea value={data.decisionPoints} onChange={(e) => update("decisionPoints", e.target.value)} className="min-h-[90px]" />
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="pb-4">
+            <SectionHeader
+              number={4}
+              icon={AlertOctagon}
+              title="Where it broke down"
+              description="The specific failure points — where the prevention plan didn't hold and why."
+              accent="bg-amber-500"
+            />
+          </CardHeader>
+          <CardContent className="grid gap-5">
+            <div className="grid gap-2">
+              <FieldLabel>What boundaries or commitments did you cross?</FieldLabel>
+              <Textarea
+                value={data.boundariesBroken}
+                onChange={(e) => update("boundariesBroken", e.target.value)}
+                placeholder="Which specific lines from your prevention plan, your bottom lines, or commitments to your mentor or yourself did you cross — and in what order?"
+                className="min-h-[90px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>What warning signs were present?</FieldLabel>
+              <Textarea
+                value={data.warningSigns}
+                onChange={(e) => update("warningSigns", e.target.value)}
+                placeholder="Looking back: what were the yellow and orange zone signs that were showing? Mood changes, isolation, fantasy, skipping check-ins, minimizing? List what was there to see."
+                className="min-h-[90px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>Where could you have exited?</FieldLabel>
+              <Textarea
+                value={data.decisionPoints}
+                onChange={(e) => update("decisionPoints", e.target.value)}
+                placeholder="Identify the specific moments where a different choice was available. What would you have needed to do at each of those points to change the outcome?"
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>What gap in your prevention plan did this reveal?</FieldLabel>
+              <Textarea
+                value={data.ruleChanges}
+                onChange={(e) => update("ruleChanges", e.target.value)}
+                placeholder="This is the key question. Your plan had a hole — what was it? A trigger not accounted for, a boundary that wasn't specific enough, a warning sign you didn't know to watch for? Name the gap precisely."
+                className="min-h-[100px]"
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle className="text-base">5) Corrective action plan</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label>Immediate actions (today)</Label>
-            <Textarea value={data.immediateActions} onChange={(e) => update("immediateActions", e.target.value)} className="min-h-[90px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Rule changes (boundaries you will enforce)</Label>
-            <Textarea value={data.ruleChanges} onChange={(e) => update("ruleChanges", e.target.value)} className="min-h-[90px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Environment changes (remove access)</Label>
-            <Textarea value={data.environmentChanges} onChange={(e) => update("environmentChanges", e.target.value)} className="min-h-[90px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Support plan (who you will involve)</Label>
-            <Textarea value={data.supportPlan} onChange={(e) => update("supportPlan", e.target.value)} className="min-h-[90px]" />
-          </div>
-          <div className="grid gap-2">
-            <Label>Next 24 hours plan</Label>
-            <Textarea value={data.next24HoursPlan} onChange={(e) => update("next24HoursPlan", e.target.value)} className="min-h-[90px]" />
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="border-l-4 border-l-green-600">
+          <CardHeader className="pb-4">
+            <SectionHeader
+              number={5}
+              icon={ShieldCheck}
+              title="Moving forward"
+              description="Concrete, specific action — not intentions. What changes, who you tell, what the next 24 hours look like."
+              accent="bg-green-600"
+            />
+          </CardHeader>
+          <CardContent className="grid gap-5">
+            <div className="grid gap-2">
+              <FieldLabel>What will you do today?</FieldLabel>
+              <Textarea
+                value={data.immediateActions}
+                onChange={(e) => update("immediateActions", e.target.value)}
+                placeholder="Immediate, concrete actions — not vague intentions. 'I will call my accountability partner by 8pm.' 'I will delete the app.' 'I will tell my mentor.' What happens in the next few hours?"
+                className="min-h-[90px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>What environment changes will you make?</FieldLabel>
+              <Textarea
+                value={data.environmentChanges}
+                onChange={(e) => update("environmentChanges", e.target.value)}
+                placeholder="Remove access, change the setup, close the opening. What specifically changes in your physical or digital environment to close the door this came through?"
+                className="min-h-[90px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>Who will you tell, and what do you need from them?</FieldLabel>
+              <Textarea
+                value={data.supportPlan}
+                onChange={(e) => update("supportPlan", e.target.value)}
+                placeholder="Name the people. What will you say? What do you need from each of them — accountability, support, a check-in at a specific time? Be specific about the ask."
+                className="min-h-[90px]"
+              />
+            </div>
+            <div className="grid gap-2">
+              <FieldLabel>What does the next 24 hours look like?</FieldLabel>
+              <Textarea
+                value={data.next24HoursPlan}
+                onChange={(e) => update("next24HoursPlan", e.target.value)}
+                placeholder="Hour by hour if needed. Not a general intention — an actual plan. Where will you be, what will you do, who will you be in contact with, and what are your commitments for the next 24 hours?"
+                className="min-h-[100px]"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         <Button onClick={handleSave} disabled={isSaving} data-testid="button-save-draft-bottom">
