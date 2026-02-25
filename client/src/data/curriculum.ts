@@ -2394,120 +2394,119 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       }
     ],
     homeworkChecklist: [
-      "Read all Week 11 material",
-      "Complete the Values Clarification exercise for all life domains",
-      "Identify and rank your top 5 core values",
-      "Complete the Values-Action Gap Analysis",
-      "Take at least one values-based action this week",
-      "Notice when you're living according to your values and when you're not",
-      "Share your values with your accountability partner",
-      "Complete daily monitoring logs for all 7 days"
+      "Read all Week 12 material",
+      "Complete the Values Clarification exercise for all life domains — be specific, not generic",
+      "Identify and rank your top 5 core values with a real explanation of why each one matters",
+      "Complete the Values-Action Gap Analysis honestly — rate where you actually are, not where you want to be",
+      "Take at least one concrete values-based action this week and record what it was",
+      "Share your top three values with your accountability partner and discuss the gap",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
-  12: {
-    weekNumber: 12,
-    title: "Acceptance & Mindfulness",
+  13: {
+    weekNumber: 13,
+    title: "Stop Running",
     phase: 2,
     phaseName: "Integration & Values",
-    overview: "This week deepens your practice of acceptance and mindfulness - the willingness to experience the present moment fully, including uncomfortable thoughts and feelings, without defense.",
+    overview: "You've spent nine weeks building tools. You've learned to see the cycle, challenge the thoughts, defuse from your mind's stories, find the stable ground of the observer self, and identify what you're actually living for. This week brings you to the hardest skill in the entire program: acceptance. Not resignation. Not giving up. The active, courageous choice to stop running from what hurts.",
     teaching: [
       {
         id: "what-is-acceptance",
-        title: "What Is Acceptance?",
+        title: "What Acceptance Actually Is",
         content: [
-          "Acceptance means making room for uncomfortable experiences - thoughts, feelings, urges, sensations - instead of fighting them.",
-          "Acceptance is NOT approval. You don't have to like something to accept it. You can accept that you have an urge while disagreeing with acting on it.",
-          "Acceptance is NOT resignation or giving up. It's the opposite - it frees you to take effective action instead of wasting energy on an internal war.",
-          "Acceptance is NOT weakness. It takes enormous strength to face difficult experiences openly rather than running from them."
+          "Acceptance does not mean wanting the pain. It does not mean thinking the pain is acceptable. It does not mean giving up. Acceptance means stopping the war — choosing to no longer spend energy trying to force reality into a shape it refuses to take.",
+          "You cannot think your way out of an urge. You cannot shame yourself free of grief. You cannot will away the anxiety that precedes a high-risk situation. These are not logical failures. They are the nature of internal experience. It does not respond to force. It responds to observation.",
+          "The willingness introduced in Week 9 gets deepened here into a full practice. Willingness was the concept. Acceptance is the embodied skill — the moment-by-moment choice to have what you're having, feel what you're feeling, and continue to act according to your values anyway.",
+          "This is the most difficult thing you will be asked to do in this program. Not because it requires great willpower — it actually requires the opposite of willpower. It requires that you put down the weapon you've been using against yourself and stand in the presence of what you've been running from."
         ]
       },
       {
         id: "clean-vs-dirty-pain",
-        title: "Clean Pain vs. Dirty Pain",
+        title: "Clean Pain and Dirty Pain",
         content: [
-          "CLEAN PAIN is the unavoidable pain of being human. Loss, disappointment, fear, sadness - these are part of life. Clean pain hurts, but it doesn't destroy.",
-          "DIRTY PAIN is the suffering we add on top of clean pain through struggle and avoidance. It's the pain about the pain. Examples: Shame about feeling sad. Anxiety about feeling anxious. Frustration with having urges.",
-          "Much of our suffering comes from dirty pain. We have an urge, which is uncomfortable (clean pain), and then we beat ourselves up for having the urge (dirty pain).",
-          "Acceptance reduces dirty pain. You still have the clean pain of urges and difficult feelings, but you don't pile on additional suffering by fighting them."
+          "CLEAN PAIN is the unavoidable cost of being alive and caring about things. The anxiety before a difficult conversation. The grief after a loss. The shame after acting out. The loneliness of a Friday night you don't know what to do with. Clean pain is real, and it hurts. It is not optional.",
+          "DIRTY PAIN is what you add. The shame about the shame. The anxiety about the anxiety. 'I shouldn't be feeling this.' 'What's wrong with me that I still want this?' 'If I were really in recovery, I wouldn't be struggling.' Dirty pain is self-inflicted. It is created by the fight against clean pain.",
+          "Most of what makes CSBD so persistent is dirty pain. The behavior produces clean pain — guilt, relational damage, loss of integrity. The man then responds to that clean pain with dirty pain — self-punishment, hiding, despair — which creates more vulnerability, which drives more behavior. The cycle is powered by dirty pain.",
+          "Acceptance does not eliminate clean pain. Clean pain is the cost of living a full life. Acceptance eliminates dirty pain by removing the fight. When you stop fighting the anxiety, the anxiety is just anxiety — not a catastrophe. When you stop fighting the urge, the urge is just an urge — not a verdict about your character."
         ]
       },
       {
         id: "mindfulness-basics",
-        title: "Mindfulness: Being Present",
+        title: "Present Moment as Anchor",
         content: [
-          "Mindfulness is paying attention to the present moment, on purpose, without judgment.",
-          "When you're mindful, you notice what's happening right now - sensations in your body, thoughts in your mind, the environment around you - without getting lost in stories about the past or future.",
-          "CSBD often involves disconnection from the present. Acting out happens in a 'trance' state, disconnected from consequences, values, and reality. Mindfulness is the antidote.",
-          "Mindfulness isn't about achieving a special state. It's about being fully present with whatever is happening, even if what's happening is uncomfortable."
+          "The behavior almost never happens in the present moment. It happens in the imagined future ('I'll feel better if I do this') or the remembered past ('I always do this eventually'). It happens in fantasy, in anticipation, in the story your mind tells about what relief will feel like.",
+          "The present moment is where the behavior doesn't exist yet. It's where there is only this breath, this sensation, this choice. Mindfulness — present moment awareness — is not a relaxation technique. It's a relocation. You return from the mental future where the behavior is already happening to the actual present where it is not.",
+          "CSBD acts in a dissociative fog. The decision to act out often happens before conscious awareness catches up — the man is already deep in the ritual before he recognizes what's happening. Mindfulness interrupts this by maintaining contact with the present, where he can see the choice clearly.",
+          "Present moment awareness doesn't require meditation. It requires the practice of returning — when you notice you've drifted into mental rehearsal or fantasy, you return to now. What do you see? What do you hear? What do you feel in your body right now? That's it. Return to now. Again and again."
         ]
       },
       {
         id: "urge-mindfulness",
-        title: "Mindfulness with Urges",
+        title: "Sitting With an Urge",
         content: [
-          "When an urge arises, mindfulness means observing it with curiosity rather than reacting to it with fear or action.",
-          "Notice where the urge lives in your body. What physical sensations are present? Is there tension, heat, pressure? What happens to these sensations as you observe them?",
-          "Notice the thoughts that accompany the urge. Don't engage with them - just observe them passing through, like clouds across the sky.",
-          "Watch the urge rise, peak, and fall. Like a wave, it will pass. You don't have to fight it or act on it. You just have to be willing to experience it."
+          "The standard response to an urge is to run — to distract, suppress, escape, or act out. Week 13 asks you to try something different: sit with the urge and observe it. Not endure it heroically. Not fight it. Observe it.",
+          "When an urge is present, locate it in your body first. Where exactly is it? What does it feel like as pure physical sensation — before you put any words or meanings on it? Heat? Pressure? Tension? Restlessness? Most men discover that the urge, as a physical sensation, is actually not that intense. It's the story around the sensation — 'I can't stand this,' 'this is going to keep getting worse,' 'I have to do something' — that makes it overwhelming.",
+          "Observe the sensation with curiosity: 'There is a pull right now. I can feel it in my chest. It's about a 6 out of 10. I'm watching it.' Notice what happens over the next few minutes. Urges peak and fall. Every time. If you observe an urge without feeding it with fantasy or fighting it with suppression, it will fall within minutes.",
+          "You are practicing what researchers call 'urge surfing.' You ride the wave. You don't paddle into it (acting out) or try to stop the ocean (suppression). You stay on the board and let the wave pass. With repetition, this becomes automatic — and the waves become shorter and less powerful."
         ]
       },
       {
         id: "expansion",
-        title: "The Expansion Technique",
+        title: "Creating Space for Difficult Emotions",
         content: [
-          "Expansion is a way of making space for difficult emotions instead of pushing them away.",
-          "HOW TO PRACTICE: (1) Notice the difficult emotion (anxiety, shame, loneliness, anger). (2) Find where you feel it in your body. (3) Imagine breathing into that area. (4) Visualize creating space around the sensation - like opening a tight fist. (5) Allow the feeling to be there without fighting it. (6) Say to yourself: 'I can make room for this.'",
-          "This doesn't make the feeling go away. It reduces the struggle and suffering around it.",
-          "With practice, you develop the capacity to have difficult feelings without being overwhelmed by them."
+          "Acceptance operates through the body as much as through the mind. Here is the core practice, called expansion: when you notice a difficult emotion, you stop trying to make it smaller and instead make space for it to be present.",
+          "THE PRACTICE: Name what you're feeling. Find it in your body — where is it located, what does it feel like? Breathe into that area of your body, as if the breath can enter the space where the emotion lives. Imagine the space around the sensation expanding — not to make it go away, but to make room for it. Say to yourself: 'I can have this feeling. It doesn't have to leave for me to be okay.'",
+          "This feels counterintuitive because every instinct says 'make it smaller.' The practice asks you to make it bigger — to expand your tolerance rather than compress the emotion. What typically happens is that the emotion loses its urgency when it's no longer being fought. It may still be present, but it is no longer driving.",
+          "Practice this with every significant emotion this week. Not just urges — shame, loneliness, anxiety, grief, anger. The men who make the most progress in Phase 2 are the ones who practice acceptance with the full range of their emotional life, not just with the symptoms of the behavior."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What feelings or experiences are you most unwilling to have? What do you fight against or try to escape?"
+        question: "What emotions or experiences are you most unwilling to have? What do you do — automatically, without thinking — to avoid them?"
       },
       {
         id: "q2",
-        question: "How much of your suffering is 'dirty pain' - pain you add through struggle rather than the original difficult experience?"
+        question: "Identify a specific instance of dirty pain from this week. What was the clean pain (the original feeling)? What did you add on top of it?"
       },
       {
         id: "q3",
-        question: "What would change if you could make room for uncomfortable feelings without acting to escape them?"
+        question: "When you imagine accepting a urge fully — not fighting it, not acting on it, just having it — what do you notice? What comes up? What's the fear?"
       },
       {
         id: "q4",
-        question: "When do you feel most present and aware? When are you most likely to 'check out' or disconnect?"
+        question: "What has the running actually cost you? Not in abstract — specifically. What have you missed, numbed, or avoided being fully present for?"
       }
     ],
     exercises: [
       {
         id: "clean-dirty-pain",
-        title: "Clean Pain vs. Dirty Pain Analysis",
-        instructions: "Examine a recent difficult experience and separate the clean and dirty pain.",
+        title: "Clean Pain vs. Dirty Pain",
+        instructions: "Use a real, recent experience — not a hypothetical. Separate what actually happened from what you added.",
         fields: [
           {
             id: "experience",
-            label: "Describe a recent difficult experience (urge, feeling, situation):",
+            label: "Describe a specific recent difficult experience — an urge, an emotional state, a conflict:",
             type: "textarea",
-            placeholder: "Describe the experience..."
+            placeholder: "Describe the experience specifically..."
           },
           {
             id: "clean-pain",
-            label: "What was the clean pain? (The original uncomfortable feeling or experience)",
+            label: "What was the clean pain? The original, unavoidable discomfort — before you responded to it:",
             type: "textarea",
             placeholder: "Describe the clean pain..."
           },
           {
             id: "dirty-pain",
-            label: "What dirty pain did you add? (Struggle, self-criticism, anxiety about the feeling, etc.)",
+            label: "What dirty pain did you add? Shame about feeling this. Anxiety about the anxiety. Self-criticism. Catastrophizing.",
             type: "textarea",
-            placeholder: "Describe the dirty pain..."
+            placeholder: "Describe the dirty pain you added..."
           },
           {
             id: "acceptance",
-            label: "What would it look like to accept the clean pain without adding dirty pain?",
+            label: "What would it look like to fully accept the clean pain without adding any dirty pain? What would you do differently?",
             type: "textarea",
             placeholder: "Describe an acceptance response..."
           }
@@ -2515,68 +2514,68 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "body-scan",
-        title: "Body Scan Practice",
-        instructions: "Practice a mindful body scan and record your experience.",
+        title: "Present Moment Practice",
+        instructions: "Sit quietly for 10 minutes. Move your attention through your body slowly, noticing sensations without trying to change them. Record what you found.",
         fields: [
           {
             id: "practice",
-            label: "Practice: Sit quietly for 5-10 minutes. Move your attention slowly through your body from head to toe, noticing whatever sensations are present without judgment. What did you notice?",
+            label: "What did you notice during the practice? Where was there tension, discomfort, ease? What surprised you?",
             type: "textarea",
-            placeholder: "Describe what you noticed during the body scan..."
+            placeholder: "Describe what you noticed..."
           },
           {
             id: "difficult",
-            label: "Were there areas of discomfort? How did you respond to them?",
+            label: "Were there areas of discomfort? What was your instinct — to move away from them, or stay with them? What did you choose?",
             type: "textarea",
-            placeholder: "Describe areas of discomfort and your response..."
+            placeholder: "Describe your response to discomfort..."
           }
         ]
       },
       {
         id: "expansion-practice",
-        title: "Expansion Technique Practice",
-        instructions: "Practice the expansion technique with a difficult emotion.",
+        title: "Expansion Practice",
+        instructions: "Practice the expansion technique with a real difficult emotion this week — not a mild one. Choose something with actual charge.",
         fields: [
           {
             id: "emotion",
-            label: "What emotion did you practice with?",
+            label: "What emotion did you practice with? Be specific — not just 'anxiety,' but what kind, about what:",
             type: "textarea",
-            placeholder: "Name the emotion..."
+            placeholder: "Name the emotion and its context..."
           },
           {
             id: "location",
-            label: "Where was it in your body?",
+            label: "Where was it in your body? What did it actually feel like as physical sensation?",
             type: "textarea",
-            placeholder: "Describe the location..."
+            placeholder: "Describe the physical experience..."
           },
           {
             id: "result",
-            label: "What happened when you created space for it instead of fighting it?",
+            label: "What happened when you made room for it instead of fighting it? Did the intensity change? What did you notice?",
             type: "textarea",
             placeholder: "Describe what happened..."
           },
           {
             id: "intensity",
-            label: "What did you notice about the intensity? Did it change?",
+            label: "What was difficult about this practice? What did your mind tell you while you were trying to do it?",
             type: "textarea",
-            placeholder: "Describe any changes..."
+            placeholder: "Describe the difficulty and what your mind said..."
           }
         ]
       },
       {
         id: "daily-acceptance",
-        title: "Daily Acceptance Practice Log",
-        instructions: "Practice acceptance daily using this prompt: 'What am I unwilling to feel right now?' Then practice making room for it.",
+        title: "Daily Acceptance Log",
+        instructions: "Each day this week, notice one moment when you were unwilling to have an experience, and practice acceptance with it. Record what happened.",
         fields: [
           {
             id: "log",
-            label: "Record your daily acceptance practice (what you were unwilling to feel and what happened when you practiced acceptance):",
+            label: "Daily log — what you were unwilling to have, what you did instead, and what practicing acceptance looked like:",
             type: "textarea",
             placeholder: "Day 1:\nDay 2:\nDay 3:\nDay 4:\nDay 5:\nDay 6:\nDay 7:"
           },
           {
             id: "learning",
-            label: "What did you learn about your relationship with discomfort this week?",
+            label: "What did you learn about your relationship with discomfort over this week? What changed, even slightly?",
             type: "textarea",
             placeholder: "Key learnings..."
           }
@@ -2584,134 +2583,134 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       }
     ],
     homeworkChecklist: [
-      "Read all Week 12 material",
-      "Complete Clean Pain vs. Dirty Pain exercise",
-      "Practice body scan at least 3 times this week",
-      "Complete body scan practice log",
-      "Practice urge mindfulness with at least one real urge",
-      "Practice expansion technique with a difficult emotion",
-      "Use daily acceptance practice prompt all 7 days",
-      "Complete daily acceptance practice log",
-      "Complete daily monitoring logs for all 7 days"
+      "Read all Week 13 material",
+      "Complete the Clean Pain vs. Dirty Pain exercise using a real recent experience",
+      "Practice the body scan at least three times and record what you found each time",
+      "Practice the expansion technique with a genuinely difficult emotion — not a mild one",
+      "Complete the daily acceptance log for all 7 days",
+      "Practice urge surfing with at least one real urge this week — observe without acting or fighting",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
-  13: {
-    weekNumber: 13,
-    title: "Committed Action",
+  14: {
+    weekNumber: 14,
+    title: "From Knowing to Doing",
     phase: 2,
     phaseName: "Integration & Values",
-    overview: "This week moves you from insight to action. Committed action means doing what matters - living according to your values - even when it's uncomfortable, even when urges or fear show up.",
+    overview: "You've clarified your values. You know what you're living for. You've built the internal skills — defusion, acceptance, present moment awareness, the observer self. Now comes the simplest and hardest part: doing it. Not perfectly. Not when you feel ready. Not when the conditions are ideal. Now, with whatever discomfort is present, moving in the direction that matters.",
     teaching: [
       {
         id: "what-is-committed-action",
-        title: "What Is Committed Action?",
+        title: "The Gap Between Knowing and Doing",
         content: [
-          "Committed action means doing what matters - living according to your values - even when you don't feel like it, even when it's hard, even when urges or fear show up.",
-          "This is the backbone of long-term recovery. Values clarification tells you where you want to go. Committed action gets you there.",
-          "The key insight: You don't have to feel ready to take action. Most men wait until the urge goes away, they feel motivated, they're confident they can succeed, or the fear subsides. ACT says: You can feel anxious, unmotivated, fearful, or have urges AND still take values-based action.",
-          "The 'do what works' principle: Does this action move me toward my values or away from them?"
+          "Most men in recovery know exactly what they should do. They've read the books, attended the groups, completed the exercises. They know that isolation is a risk factor. They know that certain thoughts are distortions. They know what their values are. And they still act out.",
+          "The gap between knowing and doing is not an information problem. It's not solved by more insight, more understanding, more content. It's solved by one thing: doing the next right action regardless of how you feel about it.",
+          "Committed action is the ACT term for this. It means acting in the direction of your values — not your feelings, not your urges, not your comfort, not your mood. You might feel anxious, unmotivated, discouraged, or terrified. You act according to your values anyway. That's it. That's committed action.",
+          "This sounds simple. It is not easy. It requires everything you've built over the last thirteen weeks — the defusion, the acceptance, the present moment contact, the observer self, the values clarity — all of it deployed in service of a single act in a single moment."
         ]
       },
       {
         id: "motivation-vs-commitment",
-        title: "Motivation vs. Commitment",
+        title: "Motivation Is the Wrong Goal",
         content: [
-          "MOTIVATION is a feeling. It comes and goes. 'I feel inspired to change.' 'I'm excited about recovery.' Feels good, but unreliable.",
-          "COMMITMENT is a choice. It stays regardless of feelings. 'I will do this even when I don't feel like it.' 'This matters, so I'm showing up.' Doesn't always feel good, but it's reliable.",
-          "Recovery requires commitment, not motivation. You'll have days when you don't feel motivated - days when you're tired, discouraged, or overwhelmed.",
-          "Committed action means showing up anyway. You do what your values dictate, not what your feelings dictate."
+          "Motivation is a feeling. It rises and falls. It responds to novelty, to success, to social reinforcement. It disappears in the face of fatigue, discouragement, and monotony. Waiting for motivation is how men stay stuck for years — endlessly starting, slipping, starting again, always at the mercy of an emotional state they cannot control.",
+          "Commitment is a choice, made in advance, maintained by values rather than feelings. 'I will do this because it reflects who I am trying to be, not because I feel like it.' Commitment survives the morning when you don't want to get up. It survives the evening when the urge is strong. It survives the day when nothing feels worth it.",
+          "Recovery requires commitment, not motivation. You will have periods of high motivation — early on, after a close call, when something costs you. You will have long stretches of low motivation — when recovery feels routine, when you're tired, when the behavior's consequences feel distant. The commitment has to hold through both.",
+          "Here is the practical implication: never make your recovery practices conditional on how you feel. Don't say 'I'll do my check-in when I feel up to it.' Say 'I do my check-in. That's who I am now.' The unconditional practice is the one that actually holds."
         ]
       },
       {
         id: "small-steps",
-        title: "The Power of Small Steps",
+        title: "Small and Consistent Beats Large and Heroic",
         content: [
-          "Don't underestimate the power of small, consistent actions. Small steps work because they're achievable (less overwhelming), they build momentum, they create new neural pathways, and they prove to yourself you can do it.",
-          "Examples of small steps: Call one person from your support network. Practice urge surfing for 5 minutes. Write one thought record. Go for a 10-minute walk. Journal for 5 minutes. Read one page of this workbook.",
-          "The compound effect: Small actions, done consistently, create massive change over time.",
-          "Big leaps often fail because they're overwhelming. Small steps succeed because they're doable."
+          "One of the most common patterns in early recovery is heroic commitment followed by collapse. The man makes enormous promises — he'll do everything perfectly, attend every group, never slip again. He holds it for a few weeks on sheer willpower. Then the willpower runs out and he stops everything.",
+          "Small, consistent, sustainable actions beat large heroic commitments every time. The man who does a 5-minute check-in every day for a year has built more recovery than the man who does an hour-long deep session for two weeks and then quits.",
+          "The compound effect applies to recovery as much as to finance: small deposits, made consistently, grow into something no single large deposit can match. Every day you complete a check-in, call an accountability partner, read a page, do a brief defusion practice — that compounds. Six months of daily small acts builds a nervous system that knows how to be in recovery.",
+          "This week, don't aim for heroic change. Aim for sustainable daily action. Choose three to five specific behaviors that reflect your values — behaviors small enough to do on your worst day — and commit to doing them every day without exception."
         ]
       },
       {
         id: "barriers-to-action",
-        title: "Barriers to Committed Action",
+        title: "The Barriers Are the Practice",
         content: [
-          "Common obstacles include: Fear, shame, avoidance, perfectionism, urges, fatigue, emotional discomfort, relationship tension, and 'I don't feel like it' thinking.",
-          "ACT teaches you to move forward WITH the discomfort, not after it disappears.",
-          "Common barrier responses: 'I don't feel like it' - Feeling follows action, not the other way around. Take action based on values, not feelings. 'I'm too tired' - Do a smaller version. Can't do 30 minutes? Do 5. 'It won't make a difference anyway' - This is the 'hopelessness' story. Thank your mind. Then act anyway. 'I'll start tomorrow' - Tomorrow never comes. What's one thing you can do in the next 60 seconds? 'I'm afraid I'll fail' - Failure is guaranteed if you don't try. Taking action is success, regardless of outcome."
+          "Every barrier to committed action is an invitation to practice everything you've learned. 'I don't feel like it' — defuse from the feeling and act anyway. 'I'll fail' — defuse from the prediction and act anyway. 'It won't make a difference' — defuse from the hopelessness story and act anyway. 'I'm too tired' — accept the tiredness and do the smaller version of the action. The barrier is not the obstacle to practice. The barrier IS the practice.",
+          "The barriers you encounter most often are your specific practice areas. If 'I don't feel like it' is your main barrier, your practice is acting on values when motivation is low. If fear of failure is your barrier, your practice is tolerating the fear and moving forward. If perfectionism is your barrier, your practice is doing it imperfectly and continuing.",
+          "Write down the top three barriers that have historically stopped you from taking values-based action. For each one, write a prepared response you will use when it shows up this week. Not a motivational response — a practical one. 'When I notice the thought [barrier], I will [specific action].' The response needs to be decided before the barrier appears, not during.",
+          "Track your committed actions daily. Not to grade yourself — to see patterns. What kinds of days make action easier? What situations make it harder? What does the barrier look like when it first appears? The data will refine your plan."
         ]
       },
       {
         id: "smart-goals",
-        title: "SMART Goals for Values",
+        title: "Translating Values Into Specific Behavior",
         content: [
-          "SMART goals help translate values into specific, actionable commitments. SMART = Specific, Measurable, Achievable, Relevant, Time-bound.",
-          "The committed action process: (1) Identify a value (e.g., 'Be a present and emotionally available husband'). (2) Choose a specific behavior (e.g., 'Check in emotionally with my wife for 10 minutes each night'). (3) Set a realistic frequency (e.g., '5 nights per week'). (4) Prepare for barriers (e.g., 'I'm tired,' 'We're busy' - plan responses). (5) Track and review.",
-          "Action without review becomes inconsistent. Set up a way to track your committed actions and review them regularly."
+          "A value is a direction. A committed action is a specific behavior in that direction, with a time and a frequency. 'Being a present father' is a value. 'Putting my phone in another room during dinner and asking my kids one question about their day' is a committed action.",
+          "The more specific the action, the more likely it happens. 'I'll be more honest' fails. 'I will tell my wife one true thing about my week every Sunday evening' succeeds. Specificity removes ambiguity and ambiguity is where avoidance hides.",
+          "For each of your top three values, identify one specific committed action you will take this week. It should be: specific enough that you know exactly when you've done it, small enough to do on a bad day, connected clearly to a value you've identified as important.",
+          "Share your committed actions with your accountability partner before the week begins. Their knowing increases your likelihood of follow-through. Their asking about it at the end of the week closes the loop."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What values-based actions have you been avoiding? What would committed action look like?"
+        question: "Where has the knowing-doing gap been most costly in your recovery? Where have you known what to do and not done it — repeatedly?"
       },
       {
         id: "q2",
-        question: "What barriers most often prevent you from taking action aligned with your values?"
+        question: "What are the three barriers that most reliably stop you from taking values-based action? Be specific about what they look and sound like."
       },
       {
         id: "q3",
-        question: "Think of a time when you took action despite not feeling ready. What happened?"
+        question: "Name one time you took action despite not feeling ready or motivated. What happened? What did that cost you? What did it give you?"
       },
       {
         id: "q4",
-        question: "What small step could you take today toward one of your core values?"
+        question: "What are the three smallest possible actions you could take daily — actions small enough to complete on your worst day — that would still reflect your values?"
       }
     ],
     exercises: [
       {
         id: "smart-goals",
-        title: "SMART Goals for Committed Action",
-        instructions: "Create SMART goals for three different timeframes.",
+        title: "Values-to-Action Translation",
+        instructions: "For each of your top three values, identify one specific committed action — with a time, a frequency, and a way of tracking it.",
         fields: [
           {
             id: "this-week",
-            label: "THIS WEEK: Value I'm acting on, specific action, how often, how I'll track it:",
+            label: "VALUE 1 — Action I'm committing to, when, how often, how I'll know I did it:",
             type: "textarea",
-            placeholder: "Value:\nSpecific action:\nHow often:\nHow I'll track it:"
+            placeholder: "Value:\nSpecific action:\nWhen/how often:\nHow I'll know I did it:"
           },
           {
             id: "this-month",
-            label: "THIS MONTH: Value I'm acting on, specific action, how often, how I'll track it:",
+            label: "VALUE 2 — Action I'm committing to, when, how often, how I'll know I did it:",
             type: "textarea",
-            placeholder: "Value:\nSpecific action:\nHow often:\nHow I'll track it:"
+            placeholder: "Value:\nSpecific action:\nWhen/how often:\nHow I'll know I did it:"
           },
           {
             id: "three-months",
-            label: "NEXT 3 MONTHS: Value I'm acting on, specific action, how often, how I'll track it:",
+            label: "VALUE 3 — Action I'm committing to, when, how often, how I'll know I did it:",
             type: "textarea",
-            placeholder: "Value:\nSpecific action:\nHow often:\nHow I'll track it:"
+            placeholder: "Value:\nSpecific action:\nWhen/how often:\nHow I'll know I did it:"
           }
         ]
       },
       {
         id: "barrier-plan",
-        title: "Barrier Troubleshooting",
-        instructions: "Identify your personal barriers to committed action and plan responses.",
+        title: "Barrier Response Plan",
+        instructions: "Identify your top three barriers to committed action and write your prepared response to each — decided now, before the barrier appears.",
         fields: [
           {
             id: "barrier1",
-            label: "Barrier 1: What commonly stops you from taking values-based action?",
+            label: "Barrier 1: What specifically stops you most often? What does it look and sound like?",
             type: "textarea",
             placeholder: "Barrier:"
           },
           {
             id: "response1",
-            label: "How will you respond to this barrier?",
+            label: "Prepared response: When I notice this barrier, I will...",
             type: "textarea",
-            placeholder: "My response:"
+            placeholder: "My prepared response:"
           },
           {
             id: "barrier2",
@@ -2721,9 +2720,9 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           },
           {
             id: "response2",
-            label: "Response:",
+            label: "Prepared response:",
             type: "textarea",
-            placeholder: "My response:"
+            placeholder: "My prepared response:"
           },
           {
             id: "barrier3",
@@ -2733,38 +2732,38 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
           },
           {
             id: "response3",
-            label: "Response:",
+            label: "Prepared response:",
             type: "textarea",
-            placeholder: "My response:"
+            placeholder: "My prepared response:"
           }
         ]
       },
       {
         id: "weekly-tracker",
-        title: "Weekly Action Tracker",
-        instructions: "Track your committed actions daily this week.",
+        title: "Daily Action Tracker",
+        instructions: "Track your committed actions each day. Include the action, whether you completed it, and what barrier (if any) you encountered and how you responded.",
         fields: [
           {
             id: "tracking",
-            label: "For each day, record: Values-based action taken, difficulty level, what helped, barriers faced:",
+            label: "Daily log — action taken, completed or not, barrier encountered, how you responded:",
             type: "textarea",
             placeholder: "Day 1:\nDay 2:\nDay 3:\nDay 4:\nDay 5:\nDay 6:\nDay 7:"
           },
           {
             id: "easier",
-            label: "What made it easier to take committed action?",
+            label: "What made it easier to take committed action this week?",
             type: "textarea",
             placeholder: "What helped..."
           },
           {
             id: "harder",
-            label: "What made it harder?",
+            label: "What made it harder? What do you want to adjust next week?",
             type: "textarea",
-            placeholder: "What was challenging..."
+            placeholder: "What was challenging and what you'll adjust..."
           },
           {
             id: "impact",
-            label: "How did taking values-based action affect your urges or mood?",
+            label: "What effect did consistent values-based action have on your urges, mood, or sense of yourself?",
             type: "textarea",
             placeholder: "Impact observed..."
           }
@@ -2772,602 +2771,346 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       }
     ],
     homeworkChecklist: [
-      "Read all Week 13 material",
-      "Create 3 SMART goals (this week, this month, next 3 months)",
-      "Complete barrier troubleshooting exercise",
-      "Identify and reach out to accountability partner(s)",
-      "Take at least one values-based action every day this week",
-      "Complete weekly action tracker",
-      "Notice: What makes committed action easier? What makes it harder?",
-      "Complete daily monitoring logs for all 7 days"
-    ]
-  },
-
-  14: {
-    weekNumber: 14,
-    title: "Self-as-Context & Identity",
-    phase: 2,
-    phaseName: "Integration & Values",
-    overview: "This week explores one of the most transformative ACT principles: Self-as-Context - the observing self. You'll learn to separate who you are from what you think, feel, or have done.",
-    teaching: [
-      {
-        id: "observer-self",
-        title: "The Observer Self",
-        content: [
-          "One of the most profound insights from ACT is this: You are not your thoughts, feelings, or behaviors. You are the one observing them. This is called self-as-context or the observer self.",
-          "Think of it this way: You've had thousands of thoughts throughout your life. Some you remember, most you've forgotten. But YOU - the one noticing those thoughts - has remained constant.",
-          "You've experienced countless emotions. Joy, anger, shame, peace. They've all come and gone. But YOU - the one experiencing those emotions - has been there all along.",
-          "You've engaged in many behaviors. Some you're proud of, some you regret. But YOU - the one choosing those behaviors - is not defined by any single action.",
-          "You are the container, not the contents."
-        ]
-      },
-      {
-        id: "conceptualized-self",
-        title: "The Conceptualized Self Problem",
-        content: [
-          "Most men with CSBD are fused with their 'conceptualized self' - the story their mind tells about who they are.",
-          "Common fused identities: 'I AM an addict.' 'I AM broken.' 'I AM my urges.' 'I AM my behavior.' 'I AM a failure.' 'I AM disgusting.'",
-          "When you're fused with this identity: The behavior becomes who you are, not what you do. Shame becomes overwhelming. Change feels impossible. Recovery feels like fighting yourself.",
-          "Self-as-context offers a different perspective. You've done things. You've had experiences. But those things are not who you ARE."
-        ]
-      },
-      {
-        id: "two-selves",
-        title: "The Two 'Selves'",
-        content: [
-          "THE THINKING SELF (Conceptualized Self): The part of you filled with thoughts, judgments, urges, stories. This is the voice that says 'I'm broken,' 'I'll always fail,' 'I need to act out,' 'I'm worthless.'",
-          "THE OBSERVING SELF (Self-as-Context): The calm, steady awareness that watches thoughts, emotions, urges, sensations, and experiences come and go.",
-          "Nothing you've felt, thought, or done has ever damaged the observing self. It's always there, always aware, always capable of noticing what's happening.",
-          "When you identify with the observing self rather than the thinking self, difficult experiences lose their power to define you."
-        ]
-      },
-      {
-        id: "identity-transformation",
-        title: "Identity Transformation",
-        content: [
-          "Recovery involves identity transformation. You're not just changing behavior - you're changing your relationship to who you are.",
-          "The old identity: 'I am someone who struggles with this.' The new identity: 'I am someone who is building a life of integrity.'",
-          "This doesn't mean denying your past. It means not being defined by it. You can acknowledge what you've done without concluding that it defines who you are.",
-          "Key truths of the observing self: You are not your thoughts. You are not your urges. You are not your emotions. You are not your past behavior. You are not your diagnosis. You are not your shame. You are the one who notices all of these."
-        ]
-      },
-      {
-        id: "values-aligned-identity",
-        title: "Building a Values-Aligned Identity",
-        content: [
-          "Instead of defining yourself by your behavior or your struggles, define yourself by your values and direction.",
-          "Complete this sentence based on your values (not your behavior): 'I am a man who...'",
-          "Examples: 'I am a man who chooses honesty.' 'I am a man who shows up with courage.' 'I am a man who protects his integrity.' 'I am a man who is learning and growing.' 'I am a man who takes responsibility.'",
-          "This isn't about pretending you're perfect. It's about orienting your identity around where you're going, not where you've been."
-        ]
-      }
-    ],
-    reflectionQuestions: [
-      {
-        id: "q1",
-        question: "What labels or identities have you fused with? How have these defined your sense of self?"
-      },
-      {
-        id: "q2",
-        question: "If you could step back and observe your thoughts and feelings without being defined by them, what would change?"
-      },
-      {
-        id: "q3",
-        question: "Who are you beyond your behavior? What is true about you that your struggles haven't touched?"
-      },
-      {
-        id: "q4",
-        question: "What values-based identity statement would you like to grow into? 'I am a man who...'"
-      }
-    ],
-    exercises: [
-      {
-        id: "identity-assessment",
-        title: "Identity Fusion Assessment",
-        instructions: "Explore the identities you've fused with.",
-        fields: [
-          {
-            id: "labels",
-            label: "What labels or identities do you apply to yourself? (e.g., 'I am an addict,' 'I am broken,' etc.)",
-            type: "textarea",
-            placeholder: "List the identities you've fused with..."
-          },
-          {
-            id: "origins",
-            label: "Where did these labels come from? How did they develop?",
-            type: "textarea",
-            placeholder: "Explore the origins..."
-          },
-          {
-            id: "cost",
-            label: "What has fusing with these identities cost you? How have they limited you?",
-            type: "textarea",
-            placeholder: "Consider the costs..."
-          }
-        ]
-      },
-      {
-        id: "observer-practice",
-        title: "Observer Self Practice",
-        instructions: "Practice connecting with the observing self through meditation.",
-        fields: [
-          {
-            id: "meditation",
-            label: "Sit quietly. Notice your thoughts without engaging them. Notice your feelings without drowning in them. Notice sensations in your body. Now notice the part of you that is noticing all of this. What was this experience like?",
-            type: "textarea",
-            placeholder: "Describe your experience..."
-          },
-          {
-            id: "insight",
-            label: "What did you learn about the difference between who you are and what you experience?",
-            type: "textarea",
-            placeholder: "Key insights..."
-          },
-          {
-            id: "application",
-            label: "How does this perspective change how you view urges or shame?",
-            type: "textarea",
-            placeholder: "Application of insights..."
-          }
-        ]
-      },
-      {
-        id: "beyond-behavior",
-        title: "Who Am I Beyond My Behavior?",
-        instructions: "Explore who you are independent of your struggles.",
-        fields: [
-          {
-            id: "qualities",
-            label: "What positive qualities do you have that remain true regardless of your behavior? (e.g., loyal, caring, creative)",
-            type: "textarea",
-            placeholder: "List your enduring qualities..."
-          },
-          {
-            id: "roles",
-            label: "What roles do you play that aren't defined by CSBD? (e.g., father, friend, professional)",
-            type: "textarea",
-            placeholder: "List your roles..."
-          },
-          {
-            id: "contributions",
-            label: "What do you contribute to others' lives?",
-            type: "textarea",
-            placeholder: "Your contributions..."
-          },
-          {
-            id: "values-statement",
-            label: "Complete this: 'I am a man who...' (based on your values, not your behavior)",
-            type: "textarea",
-            placeholder: "I am a man who..."
-          }
-        ]
-      }
-    ],
-    homeworkChecklist: [
       "Read all Week 14 material",
-      "Complete the Identity Fusion Assessment",
-      "Practice observer self meditation at least once",
-      "Complete 'Who Am I Beyond My Behavior?' exercise",
-      "Write your values-aligned identity statement",
-      "Notice when you're fusing with CSBD identity vs. observing experiences",
-      "Practice separating behavior from identity throughout the week",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete the Values-to-Action Translation for your top three values",
+      "Complete the Barrier Response Plan — decide your responses before the barriers appear",
+      "Share your committed actions with your accountability partner before the week starts",
+      "Take at least one committed action daily — small enough to do on a bad day",
+      "Complete the Daily Action Tracker honestly, including when you didn't follow through",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   15: {
     weekNumber: 15,
-    title: "Comprehensive Relapse Prevention",
+    title: "Protect What You've Built",
     phase: 2,
     phaseName: "Integration & Values",
-    overview: "This week integrates everything you've learned into a comprehensive relapse prevention plan. You'll combine CBT skills and ACT principles into a sustainable recovery lifestyle.",
+    overview: "You are two weeks from the end of this program. Which means you are not at the finish line — you are entering the most dangerous territory in recovery: the stretch when the initial urgency has faded, the early wins are behind you, and the long game begins. This week you build the structure that protects everything you've worked for.",
     teaching: [
       {
-        id: "integrated-approach",
-        title: "The Integrated Approach",
+        id: "observer-self",
+        title: "Why This Moment Is Risky",
         content: [
-          "You've learned CBT skills (Weeks 1-8) and ACT principles (Weeks 9-14). Now it's time to integrate everything into a comprehensive relapse prevention plan.",
-          "This isn't just about stopping behavior. It's about building a sustainable recovery lifestyle.",
-          "PHASE 1 SKILLS (CBT): Understanding the CSBD cycle, identifying triggers, cognitive restructuring, urge surfing and coping strategies, self-compassion practices, communication and problem-solving.",
-          "PHASE 2 SKILLS (ACT): Acceptance of uncomfortable experiences, cognitive defusion, values clarification, committed action despite discomfort, mindfulness practices, self-as-context.",
-          "The integrated approach uses BOTH sets of tools together."
+          "There is a predictable danger zone in recovery that claims a disproportionate number of men: the period after the acute crisis has passed. You came into this program with something broken — a relationship, a secret that finally surfaced, a level of self-disgust that made continuing impossible. That urgency drove you through the early weeks.",
+          "Urgency is a fuel. It burns hot and it runs out. As the worst of the crisis recedes, as the initial relief of starting recovery fades into the grind of maintenance, the urgency diminishes. And with it, so does the vigilance. This is when men stop checking in, start letting structure slip, begin rationalizing small exceptions.",
+          "This is not weakness. It is a predictable neurological pattern. The brain that found the behavior rewarding does not stop finding it rewarding because you decided to recover. It waits. It exploits the complacency that comes when the crisis fades. The structure you build now — in the next two weeks — is what holds when the urgency is gone.",
+          "The question this week is not 'how do I recover?' You've been answering that for fourteen weeks. The question is 'how do I protect what I've built when I no longer feel like I need to?'"
         ]
       },
       {
-        id: "integrated-urge-response",
+        id: "conceptualized-self",
         title: "The Integrated Response to Urges",
         content: [
-          "When an urge appears, you now have a complete toolkit:",
-          "1. NOTICE (Mindfulness) - Observe the urge without judgment. 'An urge is present.'",
-          "2. DEFUSE (ACT) - 'I'm having the thought that I need to act out' (not 'I MUST act out').",
-          "3. ACCEPT (ACT) - Make room for discomfort. Don't fight the urge, allow it.",
-          "4. CONNECT TO VALUES (ACT) - What matters right now? What kind of person do I want to be?",
-          "5. CHALLENGE THOUGHTS (CBT) - Check for cognitive distortions. What's the evidence?",
-          "6. USE COPING SKILLS (CBT) - Implement specific strategies: urge surfing, opposite action, reach out.",
-          "7. COMMIT TO ACTION (ACT) - Do what aligns with values, regardless of how you feel."
+          "You now have a complete toolkit, and you need to know how to deploy it under pressure — when the urge is active, when the cognitive distortions are running, when the emotional state is compromised. Here is the full sequence.",
+          "STEP 1 — NOTICE: 'An urge is present.' Name it. Don't react. Make contact with present moment. Where are you? What do you see? What is the actual situation?",
+          "STEP 2 — DEFUSE: 'I'm having the thought that I need to act out.' Not 'I NEED to act out.' Create the gap between the thought and the action. Name the story your mind is running.",
+          "STEP 3 — ACCEPT: Make room for the urge without fighting it or feeding it. Locate it in your body. Breathe into it. 'I can have this urge without obeying it.'",
+          "STEP 4 — CONNECT TO VALUES: 'What kind of man do I want to be right now?' Pull your answer from the work you did in Week 12. This is why that work was real work, not a worksheet.",
+          "STEP 5 — ACT: Do the next right thing — the values-based action that reflects who you're becoming, not who you've been. Call someone. Leave the room. Complete a check-in. The action doesn't have to be large."
         ]
       },
       {
-        id: "four-zones",
-        title: "The Four Relapse Zones",
+        id: "two-selves",
+        title: "Your Zone System — In Depth",
         content: [
-          "GREEN ZONE (Stable): Connected, using tools, following structure, honest, practicing awareness. Maintain current practices.",
-          "YELLOW ZONE (Warning): Increased stress, avoidance, skipping routines, strong urges, emotional withdrawal. Increase accountability, boost coping strategies.",
-          "ORANGE ZONE (High Risk): Preoccupation, rituals beginning, opportunity seeking, secrecy, loss of emotional regulation. Emergency protocol - reach out immediately.",
-          "RED ZONE (Critical): About to act out, already acted out, shame spike, avoidance of accountability. Crisis response - use all resources.",
-          "Your plan determines which direction you go after a warning sign."
+          "Week 8 introduced the zone system. You're now equipped to build it out with real specificity — specific to your patterns, your triggers, your early warning signs, your emergency contacts.",
+          "GREEN ZONE: What does stability actually look like for you — not in general, but in your specific life? What practices are you maintaining? What relationships are you showing up in? What does your sleep, your physicality, your emotional honesty look like when you're stable? The green zone is not the absence of difficulty — it's the presence of functioning systems.",
+          "YELLOW ZONE: What are your first warning signs — not the obvious ones, but the subtle early ones? The ones that precede the more visible symptoms by days or weeks? For most men, these are behavioral: skipping check-ins, spending more time alone, letting phone calls go unanswered, rationalizing small exceptions to environmental controls. Know YOUR first signs.",
+          "ORANGE/RED ZONES: You need a written emergency protocol — not a plan you'll figure out in the moment, because in the moment you won't think clearly. The protocol includes: who you call first, what you do if they don't answer, where you physically go, what you do with device access, and what you commit to in the first 24 hours after a slip."
         ]
       },
       {
-        id: "recovery-lifestyle",
-        title: "Building a Recovery Lifestyle",
+        id: "identity-transformation",
+        title: "Structure Is Not Optional",
         content: [
-          "Relapse prevention isn't just about managing urges. It's about building a life that supports recovery.",
-          "PHYSICAL HEALTH: Regular exercise, adequate sleep (7-9 hours), nutritious food, limit alcohol and substances.",
-          "EMOTIONAL REGULATION: Ongoing therapy, regular mindfulness practice, journaling, healthy emotional outlets.",
-          "SOCIAL CONNECTION: Strong support network, regular accountability check-ins, support group attendance, healthy friendships.",
-          "SPIRITUAL PRACTICE: Prayer or meditation, faith community, values-based reflection, practices that create meaning.",
-          "MEANINGFUL WORK: Engagement in meaningful activities, contributing to others, using your strengths, pursuing growth.",
-          "JOY AND RECREATION: Hobbies, play, rest, activities that bring genuine joy."
+          "Unstructured time is high-risk time. This is empirical — not a moral statement. Men who maintain structure in sleep, exercise, work, social connection, and accountability practice have dramatically better outcomes than men who don't. The structure is not a cage. It is a container that makes other choices automatic.",
+          "The daily practices that matter most are small and consistent: the check-in, the brief reflection, the physical movement, the honest conversation with someone who knows what you're working on. None of these take more than 15 minutes. Together, they create a nervous system that knows how to be in recovery.",
+          "Build a morning anchor — something you do every morning without exception that signals to your nervous system that this is a day lived with integrity. It doesn't have to be elaborate. Five minutes of writing. Three minutes of reflection on your values. A single honest sentence about your state. The consistency matters more than the content.",
+          "Review your warning signs and your plan with your mentor or accountability partner this week. Make sure they know your zone system — not so they can manage your recovery, but so they can see what you might miss when you're in the yellow zone and your insight is compromised."
         ]
       },
       {
-        id: "structure-and-routine",
-        title: "Life Structure and Routines",
+        id: "values-aligned-identity",
+        title: "After the Program Ends",
         content: [
-          "Structure is the foundation of relapse prevention. Unstructured time is risky time.",
-          "Key areas to structure: Sleep schedule, morning routine, evening routine, work hours, exercise, connection time, accountability check-ins.",
-          "Build routines that support your values and make healthy choices automatic. When you don't have to decide what to do, you're less vulnerable to making poor choices.",
-          "Review your structure weekly. Adjust as needed. When you notice you're slipping on structure, that's a yellow zone warning sign."
+          "This program ends in one week. That is not the end of recovery. It is the end of the structured introduction to recovery. What happens after is the actual work — the long game, the years of daily practice, the maintenance of relationships and accountability and values-based living.",
+          "The men who stay well after a program like this are not the men who were most compliant during it. They're the men who internalized the framework — who took ownership of the tools and made them their own — who built lives with enough meaning and connection that the behavior lost its comparative appeal.",
+          "What does your post-program structure look like? Who are you accountable to? What are your daily practices? What happens if you slip — what is your 24-hour protocol? These answers need to exist before the program ends, not after.",
+          "This week you build the bridge. Not because the structure of a 16-week program is where your recovery lives — but because what you build now carries you into the years ahead."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "Which skills from Phase 1 (CBT) have been most helpful? Which from Phase 2 (ACT)?"
+        question: "When has complacency hit you before — in this program or in previous recovery attempts? What were the early warning signs you missed? What would you notice earlier now?"
       },
       {
         id: "q2",
-        question: "What does your current recovery lifestyle look like? What areas need strengthening?"
+        question: "Write out your personal zone system in detail — not the generic version, but what green, yellow, and orange/red actually look like for you specifically."
       },
       {
         id: "q3",
-        question: "What are your top 5 high-risk situations? What's your plan for each?"
+        question: "What is your emergency protocol? Write out the specific steps, in order, including names and phone numbers. What do you do if your first contact doesn't answer?"
       },
       {
         id: "q4",
-        question: "What daily and weekly practices will you commit to for ongoing recovery?"
+        question: "What does your post-program structure look like? Be specific: daily practices, weekly accountability, what happens after a slip."
       }
     ],
     exercises: [
       {
         id: "zone-identification",
-        title: "My Zone Identification",
-        instructions: "Describe your personal indicators for each zone.",
+        title: "Your Personal Zone System",
+        instructions: "Build out your zone system with your specific indicators — not generic descriptions, but what these zones actually look like in your life.",
         fields: [
           {
             id: "green",
-            label: "GREEN ZONE: What behaviors, thoughts, and emotions indicate I'm stable?",
+            label: "GREEN ZONE: What does stability look like for you specifically? What behaviors, emotional states, and relationship patterns indicate you're stable?",
             type: "textarea",
-            placeholder: "Behaviors:\nThoughts:\nEmotions:"
+            placeholder: "Behaviors:\nEmotional state:\nRelationship patterns:\nPractices I'm maintaining:"
           },
           {
             id: "yellow",
-            label: "YELLOW ZONE: What warning signs indicate I'm at elevated risk?",
+            label: "YELLOW ZONE: What are your earliest warning signs — the ones that appear before the more obvious symptoms? Be specific about what slipping looks like for you.",
             type: "textarea",
-            placeholder: "Behaviors:\nThoughts:\nEmotions:"
+            placeholder: "First signs (behavioral):\nFirst signs (emotional):\nFirst signs (cognitive):\nWhat I tell myself to explain it away:"
           },
           {
             id: "orange",
-            label: "ORANGE ZONE: What indicates I'm at high risk?",
+            label: "ORANGE/RED ZONE: What indicates you're in high risk or crisis? What is your emergency protocol — specific steps, specific names, specific actions?",
             type: "textarea",
-            placeholder: "Behaviors:\nThoughts:\nEmotions:"
+            placeholder: "High-risk indicators:\nStep 1:\nStep 2:\nStep 3:\nWho I call:\nWhat I do with device access:"
           },
           {
-            id: "red",
-            label: "RED ZONE: What indicates I'm in crisis?",
+            id: "lapse-protocol",
+            label: "24-HOUR PROTOCOL AFTER A SLIP: What do you commit to doing within 24 hours of a lapse — specifically?",
             type: "textarea",
-            placeholder: "Behaviors:\nThoughts:\nEmotions:"
+            placeholder: "Within the first hour:\nWithin 24 hours:\nWho knows about my protocol:"
           }
         ]
       },
       {
         id: "emergency-plan",
-        title: "Emergency Action Plan",
-        instructions: "Create your plan for when urges become overwhelming.",
+        title: "Post-Program Structure",
+        instructions: "Define the structure you're carrying into life after this program ends.",
         fields: [
           {
             id: "contact1",
-            label: "Person I will call immediately (name and phone):",
+            label: "DAILY PRACTICES: What will you do every day without exception? Small enough to do on a bad day.",
             type: "textarea",
-            placeholder: "Name:\nPhone:"
+            placeholder: "List your non-negotiable daily practices..."
           },
           {
             id: "contact2",
-            label: "Backup person (name and phone):",
+            label: "WEEKLY ACCOUNTABILITY: Who will you be accountable to after the program? How often? What will that look like?",
             type: "textarea",
-            placeholder: "Name:\nPhone:"
+            placeholder: "Name, frequency, format..."
           },
           {
             id: "location",
-            label: "Where I will go (leave the situation):",
+            label: "ONGOING SUPPORT: What ongoing support are you committing to — groups, individual work, couples work, faith community?",
             type: "textarea",
-            placeholder: "Location..."
+            placeholder: "List your ongoing support commitments..."
           },
           {
             id: "grounding",
-            label: "How I will ground myself (3 specific actions):",
+            label: "RISK MANAGEMENT: What environmental controls are you maintaining after the program? What stays in place?",
             type: "textarea",
-            placeholder: "1.\n2.\n3."
+            placeholder: "Environmental controls, accountability software, boundaries..."
           },
           {
             id: "remove-access",
-            label: "How I will remove access (device, location, etc.):",
+            label: "COMPLACENCY PROTOCOL: What specifically will you do if you notice you're slipping in your practices — if structure starts to erode?",
             type: "textarea",
-            placeholder: "Steps to remove access..."
-          },
-          {
-            id: "values-action",
-            label: "One immediate values-based action I will take:",
-            type: "textarea",
-            placeholder: "Values-based action..."
+            placeholder: "Your plan for when complacency appears..."
           }
         ]
       },
       {
         id: "complete-plan",
-        title: "My Complete Relapse Prevention Plan",
-        instructions: "Create your comprehensive plan.",
+        title: "Comprehensive Relapse Prevention Plan",
+        instructions: "Build your complete, specific, living relapse prevention plan. This replaces and updates the initial plan from Week 8.",
         fields: [
           {
             id: "warning-signs",
-            label: "MY TOP 5 WARNING SIGNS:",
+            label: "MY TOP 5 WARNING SIGNS — in order, from earliest to latest:",
             type: "textarea",
-            placeholder: "1.\n2.\n3.\n4.\n5."
+            placeholder: "1. (earliest)\n2.\n3.\n4.\n5. (latest before acting out)"
           },
           {
             id: "high-risk",
-            label: "MY TOP 5 HIGH-RISK SITUATIONS:",
+            label: "MY TOP 5 HIGH-RISK SITUATIONS — with a specific response plan for each:",
             type: "textarea",
-            placeholder: "1.\n2.\n3.\n4.\n5."
+            placeholder: "1. Situation / Response:\n2.\n3.\n4.\n5."
           },
           {
             id: "coping",
-            label: "MY GO-TO COPING STRATEGIES:",
+            label: "MY GO-TO COPING TOOLS — the ones that have actually worked, not the ones that sound good:",
             type: "textarea",
             placeholder: "1.\n2.\n3.\n4.\n5."
           },
           {
             id: "support",
-            label: "MY SUPPORT SYSTEM (accountability partner, mentor, support group):",
+            label: "MY SUPPORT SYSTEM — names, roles, and what they know about my recovery:",
             type: "textarea",
-            placeholder: "List your support system..."
+            placeholder: "List each person, their role, and what they know..."
           },
           {
             id: "daily",
-            label: "MY DAILY RECOVERY PRACTICES:",
+            label: "MY DAILY NON-NEGOTIABLES — what I will do every day regardless of how I feel:",
             type: "textarea",
-            placeholder: "What I will do every day..."
+            placeholder: "List your daily practices..."
           },
           {
             id: "weekly",
-            label: "MY WEEKLY RECOVERY PRACTICES:",
+            label: "MY WEEKLY NON-NEGOTIABLES — structured accountability, connection, review:",
             type: "textarea",
-            placeholder: "What I will do every week..."
-          }
-        ]
-      },
-      {
-        id: "lifestyle-assessment",
-        title: "Recovery Lifestyle Assessment",
-        instructions: "Rate each area from 1-10 (1 = needs major work, 10 = thriving).",
-        fields: [
-          {
-            id: "physical",
-            label: "Physical Health: Rating and what needs improvement:",
-            type: "textarea",
-            placeholder: "Rating: /10\nNeeds improvement:"
-          },
-          {
-            id: "emotional",
-            label: "Emotional Regulation: Rating and what needs improvement:",
-            type: "textarea",
-            placeholder: "Rating: /10\nNeeds improvement:"
-          },
-          {
-            id: "social",
-            label: "Social Connection: Rating and what needs improvement:",
-            type: "textarea",
-            placeholder: "Rating: /10\nNeeds improvement:"
-          },
-          {
-            id: "spiritual",
-            label: "Spiritual Practice: Rating and what needs improvement:",
-            type: "textarea",
-            placeholder: "Rating: /10\nNeeds improvement:"
-          },
-          {
-            id: "meaning",
-            label: "Meaningful Work/Purpose: Rating and what needs improvement:",
-            type: "textarea",
-            placeholder: "Rating: /10\nNeeds improvement:"
-          },
-          {
-            id: "joy",
-            label: "Joy and Recreation: Rating and what needs improvement:",
-            type: "textarea",
-            placeholder: "Rating: /10\nNeeds improvement:"
+            placeholder: "List your weekly practices..."
           }
         ]
       }
     ],
     homeworkChecklist: [
       "Read all Week 15 material",
-      "Complete Zone Identification exercise",
-      "Create your Emergency Action Plan",
-      "Complete your Comprehensive Relapse Prevention Plan",
-      "Complete Recovery Lifestyle Assessment",
-      "Share your plan with your accountability partner or mentor",
-      "Begin implementing daily and weekly recovery practices",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete Your Personal Zone System exercise with real specificity — not generic descriptions",
+      "Complete the Post-Program Structure exercise — your plan for after the program ends",
+      "Complete your Comprehensive Relapse Prevention Plan with your updated understanding",
+      "Share your plan with your accountability partner or mentor and get their feedback",
+      "Identify one area where complacency has already started to appear and name it honestly",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   16: {
     weekNumber: 16,
-    title: "Integration & Moving Forward",
+    title: "Who You've Become",
     phase: 2,
     phaseName: "Integration & Values",
-    overview: "Congratulations on reaching the final week. This week is about integrating everything you've learned, celebrating your progress, and preparing for the ongoing journey ahead.",
+    overview: "Sixteen weeks ago you came to this program with something you needed to change. This week you take honest stock of what has actually changed — not what you hoped would change, not what you're supposed to say in the final week, but what is genuinely different. You look clearly at who you are becoming. You write the commitments that carry you forward. And you acknowledge that this ending is also a beginning.",
     teaching: [
       {
-        id: "journey-review",
-        title: "Your 16-Week Journey",
+        id: "integrated-approach",
+        title: "The Honest Inventory",
         content: [
-          "Over the past 16 weeks, you've done profound work. Let's review what you've learned:",
-          "PHASE 1 (Foundation & Stabilization): Understanding the CSBD cycle and how to interrupt it, your personal triggers and warning signs, challenging cognitive distortions, urge management and coping strategies, the difference between shame and guilt, self-compassion practices, how CSBD affects relationships and attachment, problem-solving and assertive communication.",
-          "PHASE 2 (Integration & Values): Acceptance vs. control, cognitive defusion techniques, values clarification, mindfulness and present-moment awareness, committed action despite discomfort, self-as-context (the observer self), comprehensive relapse prevention.",
-          "You are not the same person who started this workbook 16 weeks ago."
+          "The final week of this program is not a celebration ceremony. It is an honest inventory. A clear-eyed look at what has changed, what has not, what you've learned, and what still needs work. Not because you should end on a somber note — because recovery that proceeds from honesty lasts, and recovery that proceeds from performance doesn't.",
+          "Some things have genuinely changed for you over these sixteen weeks. You understand the cycle differently. You have tools you didn't have before. You've named things you had been running from. Some version of your life is different — in your relationships, your self-understanding, your daily practices.",
+          "Some things have not changed as much as you'd like. There are patterns that proved more resilient than expected. There were weeks you went through the motions. There are relationships that are still broken. There is work still ahead. This is true for every man who completes this program honestly.",
+          "Both things are true at once. You have made real progress AND the work continues. You are genuinely different AND there is more to do. Holding both without collapsing into either false pride or despair — that is the final skill of this program."
         ]
       },
       {
-        id: "definition-of-integrity",
-        title: "Your Definition of Sexual Integrity",
+        id: "integrated-urge-response",
+        title: "What Actually Changed",
         content: [
-          "Sexual integrity means living: With honesty, with clarity, with alignment to your values, without secrecy, without compulsion, with courage and connection.",
-          "This isn't about perfection. It's about direction. It's about consistently moving toward the person you want to be.",
-          "Your definition of sexual integrity is personal. It's based on your values, your commitments, and your vision for your life.",
-          "Sexual integrity isn't a destination you arrive at. It's a way of living that you practice every day."
+          "You've completed fourteen weeks of clinical curriculum. You know the cycle. You can name the triggers. You've practiced defusion under real conditions. You've identified your values and attempted committed action. You've sat with urges without acting on them. You've told someone something you'd never told anyone.",
+          "That is real. Take stock of it without inflation. Not 'I'm cured' and not 'none of it mattered.' Something has changed. The question is: what specifically? What can you do now that you couldn't do before? What do you understand about yourself that you didn't understand? What conversations have happened that wouldn't have happened?",
+          "Write the real answer. Not the answer you'd give in a group setting, performing recovery. The answer you'd write if no one was reading — the honest inventory of what is genuinely different.",
+          "That inventory is your starting point for the years ahead. It tells you what works, what tools to continue, what relationships have been repaired or strengthened, what you've learned to stop running from."
         ]
       },
       {
-        id: "values-lifestyle-plan",
-        title: "Your Long-Term Values Plan",
+        id: "four-zones",
+        title: "What Has Not Changed Yet",
         content: [
-          "Values remain the foundation. Your long-term plan should address multiple life domains: Relationships, marriage/intimacy, parenting (if applicable), spirituality/faith, health, career, community, and personal growth.",
-          "For each domain, consider: Why this area matters, what actions support your values, what obstacles may arise, and how you will respond to those obstacles.",
-          "This isn't a rigid plan but a living document. Review it regularly and adjust as your life evolves.",
-          "Remember: The goal is not perfection but direction. Every day is a new opportunity to live according to your values."
+          "There are also things that haven't changed as much as you'd hoped. Patterns that proved more durable than expected. Relationships that aren't repaired yet — that may take years. An underlying wound you've touched but not healed. A vulnerability that remains. An aspect of the behavior that still has pull.",
+          "Name those too. Not as reasons for despair. As the next items on the map. Knowing where the work continues is not failure — it is orientation. The man who knows his remaining vulnerabilities is in a better position than the man who declares victory and stops watching.",
+          "The most dangerous thing that can happen in Week 16 is overconfidence. The sense that the program is done, the work is done, the problem is solved. Recovery is not an event you complete. It is a direction you maintain. The program ends. The direction continues.",
+          "Name honestly: where are you still vulnerable? What patterns are still operating at a lower intensity? What relationships are still affected? What areas of your inner life haven't yet been fully addressed? That list is your continued agenda."
         ]
       },
       {
-        id: "recovery-blueprint",
-        title: "Your Recovery Blueprint",
+        id: "recovery-lifestyle",
+        title: "The Long Game",
         content: [
-          "Long-term recovery requires: Accountability, structure, connection, ongoing reflection, and rituals of integrity.",
-          "MORNING STRUCTURE: How will you begin your day aligned with integrity?",
-          "EVENING STRUCTURE: How will you review your day and reset?",
-          "WEEKLY STRUCTURE: Check-ins, habit review, faith or mindfulness practice, relationship connection.",
-          "MONTHLY STRUCTURE: Evaluate progress, adjust goals, strengthen values-aligned habits.",
-          "Your recovery lifestyle is the container that holds all the skills you've learned."
+          "Long-term recovery from CSBD is measured in years, not weeks. The research is clear: the men who maintain long-term behavioral change are not the men who were most motivated during a program. They are the men who built sustainable systems — daily practices, ongoing accountability, relationships that include honesty, and a life with enough meaning that the behavior loses its comparative appeal.",
+          "The daily practices matter. Not the heroic ones — the small ones, done every day, that create a nervous system that knows how to be in recovery. The check-in. The morning anchor. The weekly conversation with someone who knows what you're working on. The monthly review of where you are against your values.",
+          "The relationships matter. You cannot recover in isolation. Not because you're weak — because the behavior was partly driven by isolation, and recovery requires connection. The accountability partnership, the mentor relationship, the honest conversations that recovery makes possible — these are not program features. They are the medicine.",
+          "The meaning matters. A life with no direction worth caring about is a life with diminished resistance to the behavior. The values work of Phase 2 was not therapeutic fluff. It was the construction of a reason. Keep building that reason. Let it grow."
         ]
       },
       {
-        id: "moving-forward",
-        title: "Moving Forward",
+        id: "structure-and-routine",
+        title: "If You Slip After the Program",
         content: [
-          "This isn't the end. This is the beginning. The work you've done here has prepared you for the life you're building.",
-          "Remember: Your story is still being written. You are capable of healing. You are defined not by your past but by your direction. Every day is a new opportunity to live your values.",
-          "Continue the practices that have helped you. Stay connected to your support system. When you struggle (and you will), return to what you've learned.",
-          "You've completed something significant. Take time to acknowledge that. Then take the next step."
-        ]
-      },
-      {
-        id: "if-i-relapse",
-        title: "If I Relapse After the Program",
-        content: [
-          "Let's be honest: Many men will experience lapses or relapses after completing this program. This doesn't mean the program failed or that you failed. It means you're human and recovery is a process.",
-          "WHAT TO DO IMMEDIATELY: (1) Stop as soon as you realize what's happening. A lapse doesn't have to become a full relapse. (2) Reach out to someone - your mentor, accountability partner, or support group. Isolation is the enemy. (3) Don't let shame spiral you further. Use the self-compassion tools you learned.",
-          "WITHIN 24-48 HOURS: (1) Complete a relapse analysis - what led to this? What warning signs did you miss? (2) Review your relapse prevention plan. Does it need updating? (3) Recommit to your daily practices. Don't wait until you 'feel ready.'",
-          "WHAT NOT TO DO: Don't conclude that recovery is impossible. Don't use 'I already messed up' thinking to continue acting out. Don't hide or isolate. Don't punish yourself - it fuels the cycle.",
-          "IMPORTANT: A relapse is data, not destiny. It shows you where your plan needs strengthening. Every person who has achieved long-term recovery has faced setbacks. What matters is what you do next."
-        ]
-      },
-      {
-        id: "ongoing-support",
-        title: "Ongoing Support Resources",
-        content: [
-          "Recovery doesn't end when the program ends. Here are resources for continued support:",
-          "INDIVIDUAL THERAPY: Continue working with a therapist who specializes in sexual compulsivity. EMDR or trauma-focused therapy may be helpful if you haven't addressed underlying trauma.",
-          "SUPPORT GROUPS: Sex Addicts Anonymous (SAA), Celebrate Recovery, SMART Recovery, and similar groups provide ongoing community and accountability.",
-          "COUPLES THERAPY: If you're in a relationship, consider ongoing couples work with a therapist trained in betrayal trauma.",
-          "RETREAT PROGRAMS: Intensive multi-day workshops and retreats can provide breakthrough experiences at critical moments.",
-          "BOOKS AND RESOURCES: Continue reading and learning. Recommended: 'Out of the Shadows' by Patrick Carnes, 'Unwanted' by Jay Stringer, 'The Happiness Trap' by Russ Harris.",
-          "BOOSTER SESSIONS: Consider scheduling quarterly 'booster' sessions with your mentor to review your progress and address any emerging issues."
+          "Many men will experience a lapse after completing this program. This is not an indictment of the program or of you. It is a data point. A lapse after sixteen weeks of serious work is categorically different from a lapse before you had tools — because now you know what to do with it.",
+          "The 24 hours after a lapse are the most important 24 hours in the entire arc of a man's recovery. If he tells someone immediately, completes a reflection on what happened, recommits to his practices, and treats it as information rather than verdict — it stays a lapse. If he hides, catastrophizes, uses 'I've already blown it' thinking to continue — it becomes a relapse.",
+          "Decide now, while you are thinking clearly, what you will do in those 24 hours. Not vaguely — specifically. Who will you call? What will you write? What practice will you return to first? The decision made in clarity is the one that gets executed under pressure.",
+          "A slip after this program is not the end of the story. It is a chapter. What matters is not that it happened. What matters is what you do next — how fast you get back to the path, how honest you are about what the slip revealed, how you adjust your plan based on what you learned."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What have you learned about yourself over these 16 weeks? What patterns do you now understand?"
+        question: "Write the honest inventory: what has actually changed over these sixteen weeks? Not what you hoped would change — what demonstrably has. Be specific."
       },
       {
         id: "q2",
-        question: "What tools and skills have helped you the most? Which do you still need to strengthen?"
+        question: "What has not changed as much as you'd hoped? Where are you still vulnerable? What work continues?"
       },
       {
         id: "q3",
-        question: "How has your identity begun to change? Who are you becoming?"
+        question: "Who are you becoming? Not who you were, not who you should be — who are you, right now, in this moment of the story? How is that man different from the one who started Week 1?"
       },
       {
         id: "q4",
-        question: "What do you want to carry into the future? What is your vision for your life?"
+        question: "What do you want your life to look like one year from now? Be concrete. What is different? What are you doing? Who are you showing up for? What have you stopped running from?"
       }
     ],
     exercises: [
       {
         id: "16-week-reflection",
         title: "16-Week Reflection",
-        instructions: "Reflect on your journey through this program.",
+        instructions: "The honest inventory. Write what is actually true — not what sounds right, not what is impressive, but what you genuinely know.",
         fields: [
           {
             id: "learned",
-            label: "What have I learned about myself?",
+            label: "What have you learned about yourself that you didn't know before — or knew but hadn't faced? Be specific.",
             type: "textarea",
-            placeholder: "Reflect on your learning..."
+            placeholder: "What you've genuinely learned..."
           },
           {
             id: "patterns",
-            label: "What patterns do I now understand?",
+            label: "What patterns do you now understand that you didn't before? How has your understanding of the cycle changed?",
             type: "textarea",
-            placeholder: "Describe the patterns you've identified..."
+            placeholder: "Patterns you now understand..."
           },
           {
             id: "tools",
-            label: "What tools have helped me the most?",
+            label: "What tools have actually helped you — not the ones that sound good, but the ones you've actually used under real pressure?",
             type: "textarea",
-            placeholder: "List your most helpful tools..."
+            placeholder: "Tools that genuinely worked..."
           },
           {
             id: "strengthen",
-            label: "What skills do I still need to strengthen?",
+            label: "What areas need continued work? What vulnerabilities remain? What is not yet resolved?",
             type: "textarea",
-            placeholder: "Areas for continued growth..."
+            placeholder: "Work that continues..."
           },
           {
             id: "identity",
-            label: "How has my identity begun to change?",
+            label: "Who are you now that's different from who you were at Week 1? What has the program changed about how you see yourself?",
             type: "textarea",
-            placeholder: "Describe your identity shift..."
+            placeholder: "Who you're becoming..."
           },
           {
             id: "relationships",
-            label: "What relationships have shifted, healed, or grown?",
+            label: "What has changed in your relationships? What conversations have happened? What repairs have begun? What still needs to be addressed?",
             type: "textarea",
-            placeholder: "Describe relationship changes..."
+            placeholder: "Relationship changes and what remains..."
           }
         ]
       },
       {
         id: "integrity-definition",
-        title: "My Definition of Sexual Integrity",
-        instructions: "Write your personal definition of sexual integrity.",
+        title: "Your Definition of Sexual Integrity",
+        instructions: "Write your personal definition — not the textbook definition, but what it means for you, in your specific life, with your specific history.",
         fields: [
           {
             id: "definition",
-            label: "Sexual integrity means that I...",
+            label: "Sexual integrity for me means... (Write as much as you need. This is your definition. It should sound like you.)",
             type: "textarea",
             placeholder: "Write your definition..."
           }
@@ -3375,80 +3118,80 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "values-lifestyle",
-        title: "Values-Based Lifestyle Plan",
-        instructions: "Create your plan for each major life domain.",
+        title: "Your Life in One Year",
+        instructions: "Write your vision for your life twelve months from now — concrete and specific, not aspirational and vague.",
         fields: [
           {
             id: "relationships",
-            label: "RELATIONSHIPS: Why this matters, actions that support my values, potential obstacles, how I'll respond:",
+            label: "RELATIONSHIPS: What are your closest relationships like a year from now? What is different? What conversations have happened? What repairs are underway or complete?",
             type: "textarea",
-            placeholder: "Your relationships plan..."
+            placeholder: "Your relationships in one year..."
           },
           {
             id: "intimacy",
-            label: "MARRIAGE/INTIMACY: Why this matters, actions that support my values, potential obstacles, how I'll respond:",
+            label: "INTEGRITY: What does your daily life look like when you're consistently living according to your values? What does a typical Tuesday look like?",
             type: "textarea",
-            placeholder: "Your intimacy plan..."
+            placeholder: "Your integrity in daily life..."
           },
           {
             id: "spirituality",
-            label: "SPIRITUALITY/FAITH: Why this matters, actions that support my values, potential obstacles, how I'll respond:",
+            label: "MEANING: What are you building, contributing to, or working toward that matters to you? What gives your life a sense of direction and purpose?",
             type: "textarea",
-            placeholder: "Your spirituality plan..."
+            placeholder: "What you're living for..."
           },
           {
             id: "health",
-            label: "HEALTH: Why this matters, actions that support my values, potential obstacles, how I'll respond:",
+            label: "WELLBEING: How are you taking care of yourself physically, emotionally, and relationally? What sustainable practices are in place?",
             type: "textarea",
-            placeholder: "Your health plan..."
+            placeholder: "Your self-care and wellbeing..."
           },
           {
             id: "growth",
-            label: "PERSONAL GROWTH: Why this matters, actions that support my values, potential obstacles, how I'll respond:",
+            label: "CONTINUING WORK: What is the ongoing recovery work you're committed to after this program ends? Who are you accountable to? What does that look like?",
             type: "textarea",
-            placeholder: "Your growth plan..."
+            placeholder: "Your continued recovery work..."
           }
         ]
       },
       {
         id: "recovery-blueprint",
-        title: "My Recovery Blueprint",
-        instructions: "Define your daily, weekly, and monthly structure.",
+        title: "Your Recovery Blueprint",
+        instructions: "Define the structure that carries you forward — daily, weekly, and monthly. Be specific enough that you can execute it without thinking.",
         fields: [
           {
             id: "morning",
-            label: "MORNING STRUCTURE: How I will begin each day:",
+            label: "DAILY ANCHOR: What will you do every morning without exception to begin the day in integrity? Small enough to do when you don't feel like it.",
             type: "textarea",
-            placeholder: "Morning routine..."
+            placeholder: "Your morning anchor..."
           },
           {
             id: "evening",
-            label: "EVENING STRUCTURE: How I will end each day:",
+            label: "DAILY REVIEW: How will you end each day? What brief practice marks the close?",
             type: "textarea",
-            placeholder: "Evening routine..."
+            placeholder: "Your daily review..."
           },
           {
             id: "weekly",
-            label: "WEEKLY STRUCTURE: Check-ins, practices, connections:",
+            label: "WEEKLY ACCOUNTABILITY: Who are you accountable to? What does that conversation look like? When does it happen?",
             type: "textarea",
-            placeholder: "Weekly practices..."
+            placeholder: "Your weekly accountability..."
           },
           {
             id: "monthly",
-            label: "MONTHLY STRUCTURE: Review, adjust, strengthen:",
+            label: "MONTHLY REVIEW: How will you evaluate your month? What do you look at? What adjustments do you make?",
             type: "textarea",
-            placeholder: "Monthly review..."
+            placeholder: "Your monthly review..."
           }
         ]
       },
       {
         id: "commitment-statement",
-        title: "Final Commitment Statement",
-        instructions: "Write your commitment for the next 12 months.",
+        title: "Your Forward Commitment",
+        instructions: "Write your commitment for the year ahead — not a general aspiration, but a specific statement of what you are committed to doing.",
         fields: [
           {
             id: "commitment",
-            label: "Over the next 12 months, I commit to living with sexual integrity by...",
+            label: "In the year ahead, I commit to the following specific practices and ways of living — because they reflect who I am becoming and what I'm actually living for:",
             type: "textarea",
             placeholder: "Write your commitment..."
           }
@@ -3456,12 +3199,12 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "letter-to-future-self",
-        title: "Letter to My Future Self",
-        instructions: "Write a letter to yourself 6 months from now. Include your values, reminders of challenges you might face, encouragement, and the tools that work for you.",
+        title: "Letter to Your Future Self",
+        instructions: "Write a letter to yourself to be read six months from now. Include what you want him to remember, what you know about the challenges he'll face, what tools have helped, and what you believe he's capable of.",
         fields: [
           {
             id: "letter",
-            label: "Dear Future Self,",
+            label: "Dear Future Self,\n\n(Write what you want him to remember. Be honest. Be specific. Write it like it matters — because it does.)",
             type: "textarea",
             placeholder: "Write your letter..."
           }
@@ -3469,15 +3212,15 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       }
     ],
     homeworkChecklist: [
-      "Complete the 16-Week Reflection",
+      "Read all Week 16 material",
+      "Complete the 16-Week Reflection — the honest version, not the performance version",
       "Write your personal definition of sexual integrity",
-      "Create your Values-Based Lifestyle Plan for all domains",
-      "Build your Recovery Blueprint with daily/weekly/monthly structure",
-      "Write your Final Commitment Statement",
-      "Write a letter to your future self (to read in 6 months)",
-      "Share your plan with your mentor or accountability partner",
-      "Schedule your first post-program check-in",
-      "Celebrate completing this program - you've done significant work"
+      "Complete Your Life in One Year — concrete and specific",
+      "Build your Recovery Blueprint with your actual daily/weekly/monthly structure",
+      "Write your Forward Commitment",
+      "Write the letter to your future self",
+      "Share your reflection and commitment with your mentor or accountability partner",
+      "Complete daily check-ins for all 7 days"
     ]
   }
 };
@@ -3486,19 +3229,19 @@ export const WEEK_TITLES: Record<number, string> = {
   1: "The Moment You Stop Pretending",
   2: "Nothing About This Is Random",
   3: "Your Mind Is Not Telling You the Truth",
-  4: "Self-Regulation & Impulse Management",
-  5: "Understanding Shame & Guilt",
-  6: "Relationships, Attachment & Intimacy",
-  7: "Problem-Solving & Communication",
-  8: "Relapse Prevention - Part 1",
-  9: "Introduction to ACT & Psychological Flexibility",
-  10: "Cognitive Defusion",
-  11: "Values Clarification",
-  12: "Acceptance & Mindfulness",
-  13: "Committed Action",
-  14: "Self-as-Context & Identity",
-  15: "Comprehensive Relapse Prevention",
-  16: "Integration & Moving Forward"
+  4: "When the Urge Hits",
+  5: "Shame Is Not Your Conscience",
+  6: "The People You've Been Living Around",
+  7: "What Needs to Be Said",
+  8: "The Architecture of Not Going Back",
+  9: "What Fighting Has Cost You",
+  10: "Your Thoughts Don't Have Permission",
+  11: "The Part of You That Doesn't Change",
+  12: "What You're Actually Living For",
+  13: "Stop Running",
+  14: "From Knowing to Doing",
+  15: "Protect What You've Built",
+  16: "Who You've Become"
 };
 
 export const PHASE_INFO: Record<1 | 2, { name: string; weeks: number[]; description: string }> = {

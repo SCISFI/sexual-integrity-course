@@ -66,119 +66,119 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[]; ne
     nextWeekTeaser: "You can see the thoughts now. But seeing isn't stopping. Week 4 gives you the physiological tools — techniques that work on your nervous system in real-time when an urge hits. This is where insight becomes capability."
   },
   4: {
-    congrats: "Excellent progress on Week 4! Self-regulation is a cornerstone of recovery.",
+    congrats: "You didn't just understand the urge cycle this week — you started interrupting it at the physiological level. That's a different kind of work, and you did it.",
     learnings: [
-      "You learned practical self-regulation skills for managing urges and emotions",
-      "You practiced techniques for calming your nervous system",
-      "You developed a personal toolkit for emotional regulation"
+      "You learned what actually happens in your brain and body when an urge hits — and why willpower alone can't override it",
+      "You practiced the 10-second window technique: creating a gap between trigger and automatic response",
+      "You built a personal toolkit of physiological regulation tools that work in real conditions"
     ],
-    nextWeekTeaser: "You have tools. But there's a fuel source you haven't fully confronted. Week 5 goes after the emotion that drives more relapse than any trigger: shame. Understanding how it operates — and how to dismantle it — changes everything."
+    nextWeekTeaser: "You have tools for the urge. But there's an emotion underneath almost every relapse that none of those tools can touch on their own. Week 5 goes directly after shame — the fuel source you haven't fully confronted. Understanding how it operates, and how it's different from guilt, changes everything."
   },
   5: {
-    congrats: "Week 5 complete! Understanding shame versus guilt is transformative for recovery.",
+    congrats: "You went directly at the emotion that drives more relapse than any trigger. That's not comfortable work. You did it anyway.",
     learnings: [
-      "You learned the crucial difference between shame (I am bad) and guilt (I did something bad)",
-      "You understood how shame fuels the addiction cycle",
-      "You began developing self-compassion practices"
+      "You drew the line between shame ('I am broken') and guilt ('I did something wrong') — and understood why that distinction is the difference between spiral and recovery",
+      "You traced your shame origins: where the core belief that you are fundamentally defective came from",
+      "You began building self-compassion not as self-excuse but as a strategic counter to the shame cycle"
     ],
-    nextWeekTeaser: "You've been working on yourself. Week 6 turns the lens outward. Your patterns didn't develop in a vacuum — they developed in relationship. The relational roots of this behavior may be the most important territory you explore."
+    nextWeekTeaser: "You've been working on yourself. Week 6 turns the lens outward — toward the people you've been living around, and what the space between you has actually looked like. Your patterns didn't develop in a vacuum."
   },
   6: {
-    congrats: "Great work on Week 6! Healthy relationships are vital for lasting recovery.",
+    congrats: "You looked at what this behavior has done to the relationships that matter most to you. That's one of the hardest things in the program. You didn't flinch.",
     learnings: [
-      "You explored how CSBD has impacted your relationships",
-      "You learned about healthy boundaries and intimacy",
-      "You began developing strategies for rebuilding trust"
+      "You examined how your attachment history shaped the relational wounds underneath the behavior",
+      "You named the impact on specific relationships — not in general, but in concrete terms",
+      "You identified where emotional intimacy has been replaced by digital escape, and what rebuilding actually requires"
     ],
-    nextWeekTeaser: "You understand what's driven the distance. Week 7 teaches you what to do about it — specifically how to have the conversations you've been avoiding, express what you actually need, and begin rebuilding trust through honest communication."
+    nextWeekTeaser: "You understand what's driven the distance. Week 7 teaches you what to do about it — specifically how to have the conversations you've been avoiding, say what you actually need, and start building real accountability with the people who matter."
   },
   7: {
-    congrats: "Week 7 complete! Communication skills will serve you well beyond recovery.",
+    congrats: "You did the work of naming what needs to be said — and started building the communication tools to actually say it. That's harder than it sounds.",
     learnings: [
-      "You learned assertive communication techniques",
-      "You practiced expressing needs and boundaries clearly",
-      "You developed skills for difficult conversations"
+      "You learned assertive communication as a recovery tool, not just a life skill",
+      "You identified the specific conversations you've been avoiding and what's kept you from having them",
+      "You practiced expressing needs and boundaries in ways that can rebuild trust rather than erode it"
     ],
-    nextWeekTeaser: "Week 8 is where everything comes together. Seven weeks of understanding — the cycle, triggers, thoughts, body, shame, relationships — get encoded into a single plan. The plan that will hold when things get hard."
+    nextWeekTeaser: "Seven weeks of understanding — the cycle, the triggers, the thoughts, the body, the shame, the relationships — now get encoded into a single plan. Week 8 is where everything comes together into the structure that holds when things get hard."
   },
   8: {
-    congrats: "Congratulations on completing Phase 1! You've built a strong foundation for recovery.",
+    congrats: "Phase 1 is complete. You built the foundation — cycle awareness, trigger mapping, cognitive tools, physiological regulation, shame work, relational honesty, communication, prevention planning. That is real work.",
     learnings: [
-      "You developed your initial relapse prevention plan",
-      "You reviewed and consolidated all the CBT skills from Phase 1",
-      "You're now prepared to begin the deeper work of Phase 2"
+      "You mapped the full spectrum of warning signs — emotional, behavioral, cognitive, physical — and built your initial zone-based prevention plan",
+      "You understood the critical difference between a lapse and a relapse, and what happens in the 24 hours that determines which one it becomes",
+      "You identified what Phase 1 tools are strongest for you, and where the work continues"
     ],
-    nextWeekTeaser: "Phase 1 is complete. Phase 2 starts with something fundamentally different. You've been fighting your urges. Week 9 will challenge whether fighting is the right strategy — and introduce an approach that changes your relationship with the struggle itself."
+    nextWeekTeaser: "Phase 1 gave you better weapons for the fight. Phase 2 asks a harder question: what if fighting is the wrong strategy? Week 9 challenges everything you've been doing — and introduces an approach that changes your relationship with the struggle itself."
   },
   9: {
-    congrats: "Welcome to Phase 2! Week 9 introduces powerful new approaches to lasting change.",
+    congrats: "You examined the control strategy honestly. Most men never do — they just try harder. You asked whether trying harder has been working. That's the beginning of something different.",
     learnings: [
-      "You were introduced to Acceptance and Commitment Therapy (ACT)",
-      "You learned about psychological flexibility",
-      "You began understanding how acceptance differs from giving up"
+      "You calculated the real cost of the control strategy — the energy, the life unlived, the relationships organized around hiding",
+      "You understood why suppression backfires neurologically: the rebound effect, experiential avoidance, the cycle powered by dirty pain",
+      "You encountered willingness — not as wanting the discomfort, but as choosing to make room for it rather than running from it"
     ],
-    nextWeekTeaser: "You've seen what psychological flexibility can do. Week 10 takes it further. Defusion — the ability to step back from a thought until it loses its grip — turns 'I need to act out' into just a thought. Watch what happens to an urge you stop arguing with."
+    nextWeekTeaser: "You've seen what the control strategy costs. Week 10 gives you the first major ACT tool: defusion. The ability to step back from a thought — to see it as a thought rather than a command — is one of the most powerful skills in Phase 2. Watch what happens to an urge you stop arguing with."
   },
   10: {
-    congrats: "Week 10 complete! Cognitive defusion is a game-changing skill.",
+    congrats: "You practiced defusion under real conditions — with actual thoughts, actual urges, actual pressure. That's where it matters. You showed up for it.",
     learnings: [
-      "You learned to observe thoughts without being controlled by them",
-      "You practiced defusion techniques to create distance from unhelpful thoughts",
-      "You understood that thoughts are not facts or commands"
+      "You identified the specific thoughts and stories your mind runs that most reliably hook you into the behavior",
+      "You practiced naming the recurring stories, adding 'I'm having the thought that...', and watching the grip loosen",
+      "You applied defusion to urges specifically: the separation between 'I am this urge' and 'I am noticing this urge'"
     ],
-    nextWeekTeaser: "You can step back from thoughts. But what are you stepping toward? Week 11 answers that. Clarifying your core values isn't therapy-speak — it's the architecture of a life that doesn't need escape."
+    nextWeekTeaser: "You can step back from your thoughts. Week 11 goes deeper — behind the thoughts to the one who is doing the noticing. The observer self is the most stable ground in recovery. You're going to find it."
   },
   11: {
-    congrats: "Great work on Week 11! Your values will guide you toward the life you truly want.",
+    congrats: "You found the part of you that hasn't been broken — that couldn't be broken — by anything you've done or felt. That's the ground everything else is built on.",
     learnings: [
-      "You clarified your core personal values",
-      "You explored what truly matters to you across different life domains",
-      "You began connecting your values to daily actions"
+      "You identified the identity labels you've fused with — 'I am broken,' 'I am my behavior' — and began to see them as stories rather than facts",
+      "You practiced connecting with the observing self: the continuous aware presence that has been watching this whole story without being defined by it",
+      "You built a values-based identity — 'I am a man who...' — grounded in direction rather than history"
     ],
-    nextWeekTeaser: "You know your values. But the gap between knowing and living is where most men stumble. Week 12 teaches you how to stay present when discomfort arrives — not by eliminating it, but by moving through it without running."
+    nextWeekTeaser: "You found stable ground. Week 12 asks: what are you actually living for? Not what you should care about — what you genuinely do. Clarifying your values isn't therapy-speak. It's the architecture of a life that doesn't need escape."
   },
   12: {
-    congrats: "Week 12 complete! Acceptance and mindfulness are powerful allies in recovery.",
+    congrats: "You did real work this week — not a worksheet, but an honest examination of what you're actually living for. The values you identified are the reason the rest of this makes sense.",
     learnings: [
-      "You deepened your understanding of acceptance - making room for difficult experiences",
-      "You practiced mindfulness techniques",
-      "You learned to be present rather than escaping into compulsive behavior"
+      "You distinguished values from goals — values are the direction you face, not the finish line you cross — and understood why that makes recovery more durable",
+      "You clarified what you genuinely care about across the full span of your life: relationships, integrity, health, meaning, contribution",
+      "You mapped the gap between your values and how you're actually living — and understood that gap as motivation rather than just evidence of failure"
     ],
-    nextWeekTeaser: "Acceptance is not the finish line — it's the starting line. Week 13 is where values stop being an idea and start being daily behavior. Committed action is the difference between insight and actual change."
+    nextWeekTeaser: "You know what you're living for. Week 13 brings the hardest skill in the program: acceptance. Not resignation — the active, courageous choice to stop running from what hurts. This is where everything changes."
   },
   13: {
-    congrats: "Excellent work on Week 13! Committed action turns values into reality.",
+    congrats: "You practiced acceptance — the hardest skill in the program. Not performing it, but actually sitting with discomfort and making room for it instead of running. That's real.",
     learnings: [
-      "You learned about committed action - values-guided behavior even when it's difficult",
-      "You practiced setting values-aligned goals",
-      "You developed strategies for taking action despite discomfort"
+      "You separated clean pain from dirty pain — and understood that most of your suffering comes not from the original discomfort, but from the war you wage against it",
+      "You practiced urge surfing: observing without acting, watching the wave rise and fall without feeding it or fighting it",
+      "You built a daily acceptance practice — not as a technique to get through, but as a fundamental shift in how you relate to your inner experience"
     ],
-    nextWeekTeaser: "Who are you beyond your behavior? Week 14 answers that in a way that permanently shifts how you relate to your struggle. The observing self — the part of you that can notice urges without becoming them — may be your most powerful recovery tool."
+    nextWeekTeaser: "You've stopped running. Week 14 is where you start moving — specifically, with intention, toward the values you've identified. Committed action is the difference between insight and actual change."
   },
   14: {
-    congrats: "Week 14 complete! Self-as-context provides a stable foundation for change.",
+    congrats: "You closed the gap between knowing and doing — at least for this week. That gap is where most men stay permanently. You chose to cross it.",
     learnings: [
-      "You explored the observing self - the part of you that notices all experiences",
-      "You practiced dis-identifying from thoughts, feelings, and roles",
-      "You developed a more flexible sense of identity"
+      "You identified where the knowing-doing gap has been most costly in your recovery — and what has lived in that gap",
+      "You learned that commitment is a choice maintained by values, not motivation — and built practices unconditional on how you feel",
+      "You translated your values into specific committed actions with time, frequency, and a way of tracking — and shared them with someone before the week started"
     ],
-    nextWeekTeaser: "You've built a new identity. Week 15 protects it. Everything you've learned gets encoded into a comprehensive plan — your early warning system, your response protocols, your accountability structure. The plan that holds when things get hard."
+    nextWeekTeaser: "You've built something real over fourteen weeks. Week 15 is about protecting it — understanding why the next phase is actually the most dangerous one, and building the structure that holds when the urgency fades."
   },
   15: {
-    congrats: "Great progress on Week 15! Your comprehensive relapse prevention plan is taking shape.",
+    congrats: "You did the hardest planning work in the program — not the exciting early planning, but the sober, realistic planning for the long game. That's where recovery actually lives.",
     learnings: [
-      "You developed a detailed, personalized relapse prevention plan",
-      "You identified early warning signs and intervention strategies",
-      "You built a support network and accountability system"
+      "You built your zone system with your specific indicators — not generic descriptions, but what green, yellow, and orange/red actually look like in your life",
+      "You wrote your emergency protocol in advance — decided now, while thinking clearly, for the version of yourself who won't be thinking clearly",
+      "You designed your post-program structure: the daily practices, weekly accountability, and ongoing support that carry you forward after this program ends"
     ],
-    nextWeekTeaser: "One week left. Not the end — the beginning of what this was always building toward. Week 16 integrates everything: who you've become, what you've rebuilt, and how you carry this forward. Most men don't make it this far. You did."
+    nextWeekTeaser: "One week left. Not the end — the beginning of what this was always building toward. Week 16 is the honest inventory: what has actually changed, what work continues, and who you're becoming. Most men don't make it this far. You did."
   },
   16: {
-    congrats: "Congratulations on completing the entire 16-week Integrity Protocol! This is a remarkable achievement. The work you've done takes tremendous courage and commitment.",
+    congrats: "You completed all 16 weeks. Not perfectly — honestly. You showed up for the hard weeks, the ones that asked you to look at things you'd been avoiding for years. You looked. That changes a person.",
     learnings: [
-      "You've integrated all the skills and insights from both phases",
-      "You've created a vision for your continued growth and recovery",
-      "You've written a letter to your future self as a reminder of your journey"
+      "You completed the honest inventory — what genuinely changed, what work continues, who you're becoming — without inflating the progress or dismissing it",
+      "You wrote your personal definition of sexual integrity, your vision for the year ahead, and your forward commitment in your own words",
+      "You wrote the letter to your future self — the man six months from now who will need to remember what you learned and why it matters"
     ]
   }
 };
