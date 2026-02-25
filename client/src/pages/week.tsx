@@ -25,12 +25,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Map, Brain, Anchor, Sunset, Heart, MessageCircle, Shield, Leaf, Feather, Compass, Droplets, Footprints, Circle, ShieldCheck, Sunrise, RefreshCw, Lightbulb, Waves, Users, Wind, Star, Mountain, Target, BookOpen, Infinity } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, type Exercise } from "@/data/curriculum";
 import { useToast } from "@/hooks/use-toast";
-import { AIEncouragement } from "@/components/AIEncouragement";
 import { CrisisResources } from "@/components/CrisisResources";
-import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
 import { TextToSpeech } from "@/components/TextToSpeech";
 import { MilestoneDialog, isMilestoneWeek } from "@/components/MilestoneDialog";
 
@@ -39,14 +37,15 @@ function safeNumber(v: unknown, fallback: number) {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> = {
+const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[]; nextWeekTeaser?: string }> = {
   1: {
     congrats: "You showed up. You were honest. That's not a small thing — it's the foundation everything else is built on.",
     learnings: [
       "You named what brought you here — not just the behavior, but the relational impact",
       "You recognized the cycle and isolation as the hidden drivers",
       "You made a commitment — not just to yourself, but to what you're rebuilding"
-    ]
+    ],
+    nextWeekTeaser: "You've named the cycle. Next week, you'll map YOUR specific version of it — every trigger, every ritual, every exit ramp. The more precisely you can see it, the earlier you can stop it."
   },
   2: {
     congrats: "Great work completing Week 2! Understanding your triggers is a crucial skill for lasting change.",
@@ -54,7 +53,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You identified the difference between internal triggers (emotions, thoughts) and external triggers (situations, people, places)",
       "You created your personal trigger inventory",
       "You learned strategies for managing high-risk situations"
-    ]
+    ],
+    nextWeekTeaser: "You know your triggers. But what happens in the 10 seconds between trigger and choice? Week 3 exposes the thought patterns — the distortions, the rationalizations your mind runs automatically — and gives you tools to interrupt them before they gain momentum."
   },
   3: {
     congrats: "Week 3 complete! You're building powerful skills for changing unhelpful thought patterns.",
@@ -62,7 +62,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You learned cognitive restructuring techniques to identify and challenge distorted thinking",
       "You practiced recognizing cognitive distortions in your own thoughts",
       "You developed alternative, more balanced ways of thinking"
-    ]
+    ],
+    nextWeekTeaser: "You can see the thoughts now. But seeing isn't stopping. Week 4 gives you the physiological tools — techniques that work on your nervous system in real-time when an urge hits. This is where insight becomes capability."
   },
   4: {
     congrats: "Excellent progress on Week 4! Self-regulation is a cornerstone of recovery.",
@@ -70,7 +71,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You learned practical self-regulation skills for managing urges and emotions",
       "You practiced techniques for calming your nervous system",
       "You developed a personal toolkit for emotional regulation"
-    ]
+    ],
+    nextWeekTeaser: "You have tools. But there's a fuel source you haven't fully confronted. Week 5 goes after the emotion that drives more relapse than any trigger: shame. Understanding how it operates — and how to dismantle it — changes everything."
   },
   5: {
     congrats: "Week 5 complete! Understanding shame versus guilt is transformative for recovery.",
@@ -78,7 +80,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You learned the crucial difference between shame (I am bad) and guilt (I did something bad)",
       "You understood how shame fuels the addiction cycle",
       "You began developing self-compassion practices"
-    ]
+    ],
+    nextWeekTeaser: "You've been working on yourself. Week 6 turns the lens outward. Your patterns didn't develop in a vacuum — they developed in relationship. The relational roots of this behavior may be the most important territory you explore."
   },
   6: {
     congrats: "Great work on Week 6! Healthy relationships are vital for lasting recovery.",
@@ -86,7 +89,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You explored how CSBD has impacted your relationships",
       "You learned about healthy boundaries and intimacy",
       "You began developing strategies for rebuilding trust"
-    ]
+    ],
+    nextWeekTeaser: "You understand what's driven the distance. Week 7 teaches you what to do about it — specifically how to have the conversations you've been avoiding, express what you actually need, and begin rebuilding trust through honest communication."
   },
   7: {
     congrats: "Week 7 complete! Communication skills will serve you well beyond recovery.",
@@ -94,7 +98,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You learned assertive communication techniques",
       "You practiced expressing needs and boundaries clearly",
       "You developed skills for difficult conversations"
-    ]
+    ],
+    nextWeekTeaser: "Week 8 is where everything comes together. Seven weeks of understanding — the cycle, triggers, thoughts, body, shame, relationships — get encoded into a single plan. The plan that will hold when things get hard."
   },
   8: {
     congrats: "Congratulations on completing Phase 1! You've built a strong foundation for recovery.",
@@ -102,7 +107,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You developed your initial relapse prevention plan",
       "You reviewed and consolidated all the CBT skills from Phase 1",
       "You're now prepared to begin the deeper work of Phase 2"
-    ]
+    ],
+    nextWeekTeaser: "Phase 1 is complete. Phase 2 starts with something fundamentally different. You've been fighting your urges. Week 9 will challenge whether fighting is the right strategy — and introduce an approach that changes your relationship with the struggle itself."
   },
   9: {
     congrats: "Welcome to Phase 2! Week 9 introduces powerful new approaches to lasting change.",
@@ -110,7 +116,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You were introduced to Acceptance and Commitment Therapy (ACT)",
       "You learned about psychological flexibility",
       "You began understanding how acceptance differs from giving up"
-    ]
+    ],
+    nextWeekTeaser: "You've seen what psychological flexibility can do. Week 10 takes it further. Defusion — the ability to step back from a thought until it loses its grip — turns 'I need to act out' into just a thought. Watch what happens to an urge you stop arguing with."
   },
   10: {
     congrats: "Week 10 complete! Cognitive defusion is a game-changing skill.",
@@ -118,7 +125,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You learned to observe thoughts without being controlled by them",
       "You practiced defusion techniques to create distance from unhelpful thoughts",
       "You understood that thoughts are not facts or commands"
-    ]
+    ],
+    nextWeekTeaser: "You can step back from thoughts. But what are you stepping toward? Week 11 answers that. Clarifying your core values isn't therapy-speak — it's the architecture of a life that doesn't need escape."
   },
   11: {
     congrats: "Great work on Week 11! Your values will guide you toward the life you truly want.",
@@ -126,7 +134,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You clarified your core personal values",
       "You explored what truly matters to you across different life domains",
       "You began connecting your values to daily actions"
-    ]
+    ],
+    nextWeekTeaser: "You know your values. But the gap between knowing and living is where most men stumble. Week 12 teaches you how to stay present when discomfort arrives — not by eliminating it, but by moving through it without running."
   },
   12: {
     congrats: "Week 12 complete! Acceptance and mindfulness are powerful allies in recovery.",
@@ -134,7 +143,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You deepened your understanding of acceptance - making room for difficult experiences",
       "You practiced mindfulness techniques",
       "You learned to be present rather than escaping into compulsive behavior"
-    ]
+    ],
+    nextWeekTeaser: "Acceptance is not the finish line — it's the starting line. Week 13 is where values stop being an idea and start being daily behavior. Committed action is the difference between insight and actual change."
   },
   13: {
     congrats: "Excellent work on Week 13! Committed action turns values into reality.",
@@ -142,7 +152,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You learned about committed action - values-guided behavior even when it's difficult",
       "You practiced setting values-aligned goals",
       "You developed strategies for taking action despite discomfort"
-    ]
+    ],
+    nextWeekTeaser: "Who are you beyond your behavior? Week 14 answers that in a way that permanently shifts how you relate to your struggle. The observing self — the part of you that can notice urges without becoming them — may be your most powerful recovery tool."
   },
   14: {
     congrats: "Week 14 complete! Self-as-context provides a stable foundation for change.",
@@ -150,7 +161,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You explored the observing self - the part of you that notices all experiences",
       "You practiced dis-identifying from thoughts, feelings, and roles",
       "You developed a more flexible sense of identity"
-    ]
+    ],
+    nextWeekTeaser: "You've built a new identity. Week 15 protects it. Everything you've learned gets encoded into a comprehensive plan — your early warning system, your response protocols, your accountability structure. The plan that holds when things get hard."
   },
   15: {
     congrats: "Great progress on Week 15! Your comprehensive relapse prevention plan is taking shape.",
@@ -158,7 +170,8 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You developed a detailed, personalized relapse prevention plan",
       "You identified early warning signs and intervention strategies",
       "You built a support network and accountability system"
-    ]
+    ],
+    nextWeekTeaser: "One week left. Not the end — the beginning of what this was always building toward. Week 16 integrates everything: who you've become, what you've rebuilt, and how you carry this forward. Most men don't make it this far. You did."
   },
   16: {
     congrats: "Congratulations on completing the entire 16-week Integrity Protocol! This is a remarkable achievement. The work you've done takes tremendous courage and commitment.",
@@ -168,6 +181,34 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[] }> 
       "You've written a letter to your future self as a reminder of your journey"
     ]
   }
+};
+
+type LucideIcon = React.ComponentType<{ className?: string }>;
+
+interface WeekHero {
+  icon: LucideIcon;
+  accent: LucideIcon;
+  gradient: string;
+  tagline: string;
+}
+
+const WEEK_HERO: Record<number, WeekHero> = {
+  1:  { icon: Eye,          accent: BookOpen,     gradient: "from-slate-900 to-cyan-900",    tagline: "Face what you've been hiding" },
+  2:  { icon: Map,          accent: RefreshCw,    gradient: "from-slate-900 to-indigo-900",  tagline: "Know your triggers. Stop the cycle." },
+  3:  { icon: Brain,        accent: Lightbulb,    gradient: "from-slate-900 to-blue-900",    tagline: "Rewire the thoughts that drive the behavior" },
+  4:  { icon: Anchor,       accent: Waves,        gradient: "from-slate-900 to-cyan-800",    tagline: "Hold steady when the urge hits" },
+  5:  { icon: Sunset,       accent: Cloud,        gradient: "from-slate-900 to-amber-900",   tagline: "Shame fuels the cycle. Break it." },
+  6:  { icon: Heart,        accent: Users,        gradient: "from-slate-900 to-rose-900",    tagline: "The damage done. The repair begins." },
+  7:  { icon: MessageCircle,accent: ArrowRight,   gradient: "from-slate-900 to-blue-800",    tagline: "Say what needs to be said" },
+  8:  { icon: Shield,       accent: CheckCircle2, gradient: "from-slate-900 to-green-900",   tagline: "Build the plan that holds" },
+  9:  { icon: Leaf,         accent: Wind,         gradient: "from-slate-900 to-emerald-900", tagline: "Stop fighting. Start moving." },
+  10: { icon: Cloud,        accent: Feather,      gradient: "from-slate-900 to-sky-900",     tagline: "A thought is not a command" },
+  11: { icon: Compass,      accent: Star,         gradient: "from-slate-900 to-yellow-900",  tagline: "What actually matters to you?" },
+  12: { icon: Droplets,     accent: Mountain,     gradient: "from-slate-900 to-teal-900",    tagline: "Present. Not running." },
+  13: { icon: Target,       accent: Footprints,   gradient: "from-slate-900 to-green-800",   tagline: "Values in motion, not just in mind" },
+  14: { icon: Eye,          accent: Circle,       gradient: "from-slate-900 to-purple-900",  tagline: "You are not your urges" },
+  15: { icon: ShieldCheck,  accent: Lock,         gradient: "from-slate-900 to-blue-900",    tagline: "Protect what you've built" },
+  16: { icon: Sunrise,      accent: Infinity,     gradient: "from-slate-900 to-orange-900",  tagline: "The beginning of what comes next" },
 };
 
 export default function WeekPage() {
@@ -587,15 +628,14 @@ export default function WeekPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <UrgeSurfingTool />
           <Button
             variant="ghost"
-            size="icon"
             onClick={() => setLocation("/analytics")}
             data-testid="button-analytics"
-            title="View Analytics"
+            className="flex items-center gap-1.5"
           >
-            <BarChart3 className="h-5 w-5" />
+            <BarChart3 className="h-4 w-4" />
+            <span className="text-sm">Analytics</span>
           </Button>
           <CrisisResources />
         </div>
@@ -604,6 +644,37 @@ export default function WeekPage() {
       <main className="mx-auto max-w-3xl px-4 py-6 md:py-8 space-y-6 md:space-y-8">
         {/* Hero Section */}
         <Card className="overflow-hidden" data-testid="section-hero">
+          {/* Themed Hero Graphic */}
+          {(() => {
+            const hero = WEEK_HERO[weekNumber];
+            if (!hero) return null;
+            const PrimaryIcon = hero.icon;
+            const AccentIcon = hero.accent;
+            return (
+              <div className={`relative flex flex-col items-center justify-center bg-gradient-to-br ${hero.gradient} h-44 md:h-52 overflow-hidden px-6`}>
+                {/* Decorative large faint background icons */}
+                <PrimaryIcon className="absolute left-4 top-4 h-28 w-28 text-white opacity-5 rotate-12" />
+                <AccentIcon className="absolute right-4 bottom-4 h-24 w-24 text-white opacity-5 -rotate-12" />
+                {/* Central icon cluster */}
+                <div className="relative flex items-center justify-center gap-4 mb-3">
+                  <AccentIcon className="h-7 w-7 text-white/40" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-2 ring-white/20">
+                    <PrimaryIcon className="h-8 w-8 text-white" />
+                  </div>
+                  <AccentIcon className="h-7 w-7 text-white/40" />
+                </div>
+                {/* Tagline */}
+                <p className="text-white/90 text-sm md:text-base font-medium tracking-wide text-center max-w-xs">
+                  {hero.tagline}
+                </p>
+                {/* Week badge */}
+                <span className="absolute top-3 right-3 rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/70 font-medium">
+                  Week {weekNumber} of 16
+                </span>
+              </div>
+            );
+          })()}
+
           <CardContent className="p-6 md:p-8 space-y-4">
             <div className="flex items-center gap-3 flex-wrap">
               <Badge variant="secondary">
@@ -628,7 +699,7 @@ export default function WeekPage() {
             {/* Progress Indicator */}
             <div className="flex items-center gap-3 pt-2">
               <Progress value={(weekNumber / 16) * 100} className="h-1.5 flex-1" />
-              <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">Week {weekNumber} of 16</span>
+              <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">{Math.round((weekNumber / 16) * 100)}% complete</span>
             </div>
           </CardContent>
         </Card>
@@ -645,11 +716,6 @@ export default function WeekPage() {
               </p>
             </CardContent>
           </Card>
-        )}
-
-        {/* AI Encouragement section - only show if week is accessible */}
-        {!isTimeLocked && (
-          <AIEncouragement weekNumber={weekNumber} />
         )}
 
         {/* Show time-locked message if week is not yet accessible */}
@@ -1072,30 +1138,31 @@ export default function WeekPage() {
               </div>
             )}
 
-            {/* Daily Check-in Reminder */}
-            {weekNumber < 16 && (
-              <div className="rounded-md border p-4">
-                <h3 className="text-sm font-semibold mb-1">Daily Check-ins</h3>
+            {/* Next Week Cliffhanger / Continuing Journey */}
+            {weekNumber === 16 ? (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold">Your Continuing Journey</h3>
                 <p className="text-sm text-muted-foreground">
-                  Complete your daily check-in every day to track your progress and stay accountable.
+                  Remember: recovery is a journey, not a destination. Continue practicing the skills you've learned, stay connected to your support network, and be compassionate with yourself. You've done remarkable work.
                 </p>
               </div>
-            )}
-
-            {/* Next Steps */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold">
-                {weekNumber === 16 ? "Your Continuing Journey" : "Next Steps"}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {weekNumber === 16 
-                  ? "Remember: recovery is a journey, not a destination. Continue practicing the skills you've learned, stay connected to your support network, and be compassionate with yourself. You've done remarkable work."
-                  : nextWeekUnlocked 
-                    ? `Week ${weekNumber + 1} is available. Take some time to let this week's lessons settle before moving on. Remember to practice what you've learned and complete any homework assignments.`
-                    : `Great work! Week ${weekNumber + 1} will unlock ${weekNumber * 7} days after your program start date. In the meantime, continue practicing what you've learned and complete any homework assignments.`
-                }
-              </p>
-            </div>
+            ) : weekSummary.nextWeekTeaser ? (
+              <div className="rounded-md border-l-4 border-l-primary bg-muted/40 p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-primary flex-shrink-0" />
+                  <h3 className="text-sm font-semibold">Coming in Week {weekNumber + 1}</h3>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground">
+                  {weekSummary.nextWeekTeaser}
+                </p>
+                {!nextWeekUnlocked && (
+                  <p className="text-xs text-muted-foreground pt-1 flex items-center gap-1.5">
+                    <Lock className="h-3 w-3" />
+                    Unlocks based on your program schedule
+                  </p>
+                )}
+              </div>
+            ) : null}
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 pt-4">
