@@ -57,11 +57,11 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[]; ne
     nextWeekTeaser: "You know your triggers. But what happens in the 10 seconds between trigger and choice? Week 3 exposes the thought patterns — the distortions, the rationalizations your mind runs automatically — and gives you tools to interrupt them before they gain momentum."
   },
   3: {
-    congrats: "Week 3 complete! You're building powerful skills for changing unhelpful thought patterns.",
+    congrats: "You looked directly at the voice your mind uses to justify the cycle — and you started learning to talk back to it. That's not easy. Most men never do it.",
     learnings: [
-      "You learned cognitive restructuring techniques to identify and challenge distorted thinking",
-      "You practiced recognizing cognitive distortions in your own thoughts",
-      "You developed alternative, more balanced ways of thinking"
+      "You identified the automatic thoughts that bridge your triggers to your behavior — and named them as thoughts, not facts",
+      "You mapped your personal distortion profile: the specific patterns your mind runs and the more accurate versions of each",
+      "You practiced urge surfing — observing the wave without feeding it — and proved to yourself it's survivable"
     ],
     nextWeekTeaser: "You can see the thoughts now. But seeing isn't stopping. Week 4 gives you the physiological tools — techniques that work on your nervous system in real-time when an urge hits. This is where insight becomes capability."
   },

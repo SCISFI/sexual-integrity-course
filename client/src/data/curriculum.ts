@@ -419,191 +419,206 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
 
   3: {
     weekNumber: 3,
-    title: "Cognitive Restructuring",
+    title: "Your Mind Is Not Telling You the Truth",
     phase: 1,
     phaseName: "Foundation & Stabilization",
-    overview: "This week introduces cognitive restructuring - the practice of identifying, examining, and changing the distorted thoughts that fuel compulsive behavior. You'll learn to recognize cognitive distortions and develop more balanced thinking.",
+    overview: "You know when you're triggered. You know your cycle. But there's something happening in the space between trigger and choice that you may never have looked at directly — a voice that runs automatically, faster than conscious thought, generating conclusions that feel like facts. This week, you examine that voice. And you learn what to do with it.",
     teaching: [
       {
-        id: "thoughts-and-behavior",
-        title: "The Connection Between Thoughts and Behavior",
+        id: "the-gap",
+        title: "The Ten Seconds Between Trigger and Choice",
         content: [
-          "Cognitive Behavioral Therapy (CBT) is built on a fundamental insight: Our thoughts influence our emotions, and our emotions influence our behavior.",
-          "The sequence typically works like this: Situation → Automatic Thought → Emotion → Behavior. The same situation can lead to very different behaviors depending on how we think about it.",
-          "In CSBD, distorted thinking patterns have become automatic. They happen so fast that they feel like facts rather than interpretations. The goal of cognitive restructuring is to slow down this process and examine your thoughts.",
-          "Important: The goal isn't to think 'positively' or to suppress thoughts. It's to think accurately and respond to reality rather than to distortions."
+          "Last week you mapped your triggers. You identified the states that make you vulnerable and the situations that start the chain. But here's what most men discover when they look closely: the trigger and the acting out are not directly connected. There is a gap between them.",
+          "In that gap, something happens. Fast — often faster than you can consciously track. Your brain generates a thought. Not a random thought. A specific thought, shaped by years of reinforcement, that moves you from triggered to committed. That thought is the subject of this week.",
+          "The sequence works like this: Trigger → Automatic Thought → Emotion → Behavior. Same trigger, different thought, completely different outcome. This is the fundamental insight of cognitive behavioral therapy — and the most practically useful thing you will learn in Phase 1.",
+          "The goal is not to think positively. The goal is not to suppress thoughts. The goal is to think accurately — to catch the thought that is running you and ask whether it is actually true. Most of the time, it is not."
+        ]
+      },
+      {
+        id: "automatic-thoughts",
+        title: "What Your Brain Does Without Permission",
+        content: [
+          "Automatic thoughts are not chosen. They arise involuntarily, in milliseconds, in response to situations. You didn't decide to have them. They feel like facts because they arrive with the authority of facts — but they're interpretations. And interpretations can be wrong.",
+          "Your brain has been running the same interpretive software for years, possibly decades. It has learned, through repetition, to generate specific thoughts in response to specific triggers. Those thoughts have become so automatic that most men don't experience them as thoughts at all. They experience them as reality.",
+          "'I need this.' That doesn't feel like a thought. It feels like a statement of fact about your internal state. 'I can't handle this.' That doesn't feel like an interpretation. It feels like a report from the inside. 'No one will know.' That doesn't feel like a decision to deceive. It feels like a simple observation.",
+          "None of these are facts. They are automatic thoughts — and they are the bridge between your trigger and your behavior. Learn to catch them, and you've found the single most powerful intervention point in your entire cycle."
         ]
       },
       {
         id: "cognitive-distortions",
-        title: "Common Cognitive Distortions in CSBD",
+        title: "The Distortions Running Your Mind",
         content: [
-          "ALL-OR-NOTHING THINKING: Seeing things in black and white. 'I slipped once, so I've completely failed.' 'If I can't be perfect, why try at all?'",
-          "CATASTROPHIZING: Expecting disaster. 'This urge will never end.' 'I'll never be able to change.' 'My life is ruined.'",
-          "EMOTIONAL REASONING: Treating feelings as facts. 'I feel hopeless, so recovery must be impossible.' 'I feel like I need this, so I must need it.'",
-          "MINIMIZATION: Downplaying the seriousness. 'It's not that bad.' 'No one is really hurt.' 'Other people do worse things.'",
-          "ENTITLEMENT: Believing you deserve to act out. 'I work hard, I deserve this.' 'After the day I had, I earned this escape.'",
-          "FORTUNE-TELLING: Predicting negative outcomes. 'I know I'll fail again.' 'This will never get better.' 'It's only a matter of time until I relapse.'",
-          "PERSONALIZATION: Taking excessive responsibility or blame. 'This is proof I'm fundamentally broken.' 'I'm the only one who struggles this much.'"
-        ]
-      },
-      {
-        id: "thought-records",
-        title: "Using Thought Records",
-        content: [
-          "A thought record is a tool for slowing down and examining your automatic thoughts. It helps you catch distortions in real-time and develop more balanced responses.",
-          "The basic process: (1) Identify the situation or trigger, (2) Notice your automatic thoughts, (3) Identify the emotions and their intensity, (4) Look for cognitive distortions, (5) Develop a more balanced thought, (6) Notice how emotions change.",
-          "The goal isn't to talk yourself out of feelings or to pretend everything is fine. It's to respond to reality more accurately.",
-          "With practice, this process becomes faster and more automatic. You'll catch distortions earlier and respond more effectively."
+          "Automatic thoughts that fuel compulsive behavior follow recognizable patterns. These aren't character flaws — they're cognitive errors. And like all errors, they can be identified and corrected.",
+          "ALL-OR-NOTHING THINKING: 'I've already looked — might as well go all the way.' 'I slipped once, so I've already failed this week.' 'If I can't be perfect at this, what's the point?' This thinking eliminates the middle ground where most recovery actually happens.",
+          "MINIMIZATION: 'It's not that bad compared to what other men do.' 'No one is actually getting hurt.' 'This is small compared to my other problems.' Minimization is particularly dangerous because it sounds reasonable. It's the thought that keeps the cycle invisible.",
+          "ENTITLEMENT: 'I work harder than most people — I deserve this.' 'After the week I've had, I've earned this.' 'She hasn't been available, so what am I supposed to do?' Entitlement converts a choice into a conclusion. It makes acting out feel not just acceptable but deserved.",
+          "EMOTIONAL REASONING: 'I feel like I need this, so I must need it.' 'The urge feels irresistible, so it must be irresistible.' 'I feel hopeless about changing, so change must be impossible.' Emotions are real. They are not, however, reliable guides to what is true.",
+          "FORTUNE-TELLING: 'I know I'm going to fail eventually — I always do.' 'This program won't work for me.' 'I'll never be able to stop.' Fortune-telling predicts the future based on the past and then uses that prediction to justify not trying.",
+          "CATASTROPHIZING RECOVERY: 'If she finds out how bad this really is, she'll leave.' 'If I'm honest, everything will fall apart.' This thought keeps secrecy intact and makes change feel more dangerous than continuing. It is the cycle's most powerful self-protection mechanism."
         ]
       },
       {
         id: "challenging-thoughts",
-        title: "How to Challenge Distorted Thoughts",
+        title: "The Challenge",
         content: [
-          "Once you've identified a distorted thought, you can challenge it by asking questions: What evidence supports this thought? What evidence contradicts it? Is there another way to look at this situation? What would I tell a friend who had this thought?",
-          "Replace 'I need this' with 'I want this, but I don't need it. I can handle discomfort.' Replace 'I can't resist' with 'Resistance is difficult, but I have choices.' Replace 'One more time won't hurt' with 'Every choice matters. This will set me back.'",
-          "The balanced thought doesn't have to be positive. It just has to be more accurate than the distortion."
+          "Challenging a distorted thought is not the same as replacing it with a positive one. Positive thinking fails in high-urge moments because it doesn't hold up to internal scrutiny. What works is accuracy.",
+          "When you catch an automatic thought, run it through four questions: What is the actual evidence for this thought? What evidence contradicts it? Am I confusing a feeling with a fact? What would I tell another man who had this exact thought?",
+          "The goal is not a thought that feels better. The goal is a thought that is more true. 'I need this' becomes: 'I want this. I am not in danger. This urge is uncomfortable, not irresistible. I have tolerated discomfort before and I can tolerate it now.' That's not optimism. That's accuracy.",
+          "'I've already failed this week' becomes: 'I looked at something I shouldn't have. That is one decision. It does not determine the rest of the day or the week. The next choice is still mine.' Again — not positive. Accurate.",
+          "The challenge works because the brain's threat-response system responds to accurate information, not cheerful information. You are not trying to feel better. You are trying to see clearly. Those are different targets, and accuracy hits more reliably.",
+          "This takes practice. The distortion is fast; the challenge is slower. But with repetition, the gap narrows. The challenge becomes faster. The distortion loses authority. That is the neurological reality of what you are doing when you practice this skill."
         ]
       },
       {
         id: "urge-surfing",
-        title: "Urge Surfing: Riding the Wave",
+        title: "When the Wave Hits",
         content: [
-          "Urges feel permanent, but they're temporary. An urge typically peaks and subsides within 20-30 minutes if you don't feed it.",
-          "Urge surfing is a technique where you observe the urge without acting on it. You notice it rise, peak, and fall, like a wave in the ocean.",
-          "The steps: (1) Notice the urge without judgment, (2) Describe it to yourself: Where do you feel it? How intense is it on a 1-10 scale? (3) Breathe and observe as it changes, (4) Notice that you are not the urge - you are the one observing it.",
-          "You don't have to fight the urge or push it away. You simply don't feed it. Like a wave, it will pass on its own."
+          "An urge is not a command. It is a wave — it rises, peaks, and falls, regardless of whether you act on it. The average urge, left unfed, peaks within 15–20 minutes and subsides. You have tolerated urges before. You are doing it right now.",
+          "Urge surfing is the practice of observing an urge without acting on it. Not fighting it. Not suppressing it. Observing it — the way you would observe weather from inside a building. It is real. It is outside you. It does not have to come in.",
+          "When a strong urge hits: Stop moving. If you can, sit down. Notice where you feel it in your body — chest, stomach, jaw, hands. Give it a number: 1 to 10. Don't try to make it go away. Just describe it accurately to yourself.",
+          "Then watch what happens. The number changes. It may go up first — that's normal. It will come down. Urges that are observed without being fed do not stay at their peak. The neuroscience is unambiguous on this: the wave breaks.",
+          "What you are proving to your brain, every time you surf an urge, is that the urge is survivable. That the discomfort does not require relief. That you are capable of tolerating something your brain has been treating as an emergency. Each time you do this, the next urge is slightly less urgent. Not because the biology changes overnight — but because the evidence accumulates.",
+          "You are not the urge. You are the one who can watch it and choose."
+        ]
+      },
+      {
+        id: "real-time-practice",
+        title: "Using This When It Actually Matters",
+        content: [
+          "Everything in this week's material is useless unless you can access it in the moment — when you're triggered, when the automatic thought has already fired, when the urge is real and present and the cycle is moving.",
+          "Here's the honest truth about cognitive restructuring: you will not remember to do it perfectly in high-urge moments. The distortion is fast and practiced. The challenge is new and slower. This is normal. The goal is not perfection — it's repetition.",
+          "In low-intensity moments — before the cycle is moving — practice identifying your distortions. Use the exercises below. Get familiar with your specific patterns. The men who know their three or four most common distortions by name, who have written down the challenge for each one, are the men who can actually access this skill when the urge is at a seven.",
+          "When the cycle is moving, one question is enough: Is this thought actually true? Not 'is this thought comfortable?' Not 'does this thought make me feel better?' Just: is it true? That single question, asked honestly, can create a gap. And gaps are where choices live.",
+          "The urge surfing and thought challenging work together. The urge surfing buys you time. The thought challenging uses that time. Together, they make the cycle interruptible at a point where, before this week, it felt automatic."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "Which cognitive distortions do you use most often? Give a specific example of each one."
+        question: "Which two or three cognitive distortions do you recognize most clearly in yourself? Give a specific, real example of each — the actual thought your mind generates, not a generic version."
       },
       {
         id: "q2",
-        question: "What is the most powerful permission-giving thought your mind uses? How could you challenge it?"
+        question: "Think about a recent moment when you were close to acting out but didn't — or a moment when you did. What was the automatic thought? What did your mind tell you that made continuing feel justified or inevitable?"
       },
       {
         id: "q3",
-        question: "Think of a recent urge. What automatic thoughts preceded it? What emotions were you experiencing?"
+        question: "Take your most powerful permission-giving thought from last week. Apply the four challenge questions to it. What does the more accurate version of that thought actually say?"
       },
       {
         id: "q4",
-        question: "How have your thoughts about yourself contributed to the cycle? What do you believe about your ability to change?"
+        question: "What do you believe, at a gut level, about your ability to change? Write that belief down. Then ask: is this a fact, or is it a thought that has been running long enough to feel like one?"
       }
     ],
     exercises: [
       {
         id: "distortion-identification",
-        title: "Cognitive Distortion Identification",
-        instructions: "For each category, write an example of a distorted thought you commonly have, then identify which type of distortion it represents.",
+        title: "Your Distortion Profile",
+        instructions: "Name the automatic thoughts you actually use — not the generic examples from the reading, but your specific thoughts. For each one, identify which distortion type it is and write the more accurate version. This is your personal distortion map. The more precisely you know your patterns, the earlier you can catch them.",
         fields: [
           {
             id: "distortion1",
-            label: "A distorted thought I have about myself:",
+            label: "Distorted thought about yourself (e.g., about who you are or whether you can change) — write the thought, name the distortion, write the accurate version:",
             type: "textarea",
-            placeholder: "Write the thought and identify the distortion type..."
+            placeholder: "Thought / Distortion type / More accurate version..."
           },
           {
             id: "distortion2",
-            label: "A distorted thought I have about my ability to change:",
+            label: "Distorted thought you use to minimize or justify the behavior — write the thought, name the distortion, write the accurate version:",
             type: "textarea",
-            placeholder: "Write the thought and identify the distortion type..."
+            placeholder: "Thought / Distortion type / More accurate version..."
           },
           {
             id: "distortion3",
-            label: "A distorted thought I have when experiencing urges:",
+            label: "Distorted thought that appears when an urge is strong — write the thought, name the distortion, write the accurate version:",
             type: "textarea",
-            placeholder: "Write the thought and identify the distortion type..."
+            placeholder: "Thought / Distortion type / More accurate version..."
           }
         ]
       },
       {
         id: "thought-record",
-        title: "Thought Record Practice",
-        instructions: "Think of a recent situation where you experienced an urge. Complete this thought record.",
+        title: "Thought Record — A Real Incident",
+        instructions: "Use a real situation from this week or recently — a moment when an urge was present or when you acted out. Work through it honestly. The goal is not to feel better about what happened. The goal is to see exactly what your mind was doing.",
         fields: [
           {
             id: "situation",
-            label: "Situation: What happened? Where were you? What triggered this?",
+            label: "The situation: What happened? Where were you, what time was it, what had the day been like?",
             type: "textarea",
-            placeholder: "Describe the situation..."
+            placeholder: "Describe the situation specifically..."
           },
           {
             id: "automatic-thoughts",
-            label: "Automatic Thoughts: What went through your mind?",
+            label: "Automatic thoughts: What went through your mind? Capture the actual words — especially the ones that gave permission.",
             type: "textarea",
-            placeholder: "List your automatic thoughts..."
+            placeholder: "Write your actual automatic thoughts..."
           },
           {
             id: "emotions",
-            label: "Emotions: What did you feel? Rate intensity 0-100.",
+            label: "Emotions: What were you feeling before the thought? During? Rate the intensity of each (0–10).",
             type: "textarea",
-            placeholder: "List emotions and intensity..."
+            placeholder: "List emotions and intensity ratings..."
           },
           {
             id: "distortions",
-            label: "Distortions: Which cognitive distortions do you notice?",
+            label: "Distortions: Which patterns do you recognize? Be specific.",
             type: "textarea",
-            placeholder: "Identify the distortions..."
+            placeholder: "Name the distortions present..."
           },
           {
             id: "balanced-thought",
-            label: "Balanced Thought: What is a more accurate way to view this?",
+            label: "The accurate version: What would a more honest, evidence-based thought look like? (Not positive — accurate.)",
             type: "textarea",
-            placeholder: "Write a more balanced thought..."
+            placeholder: "Write the more accurate thought..."
           },
           {
             id: "outcome",
-            label: "Outcome: How do you feel now? What changed?",
+            label: "What changed when you looked at it this way? What does this tell you about the next time?",
             type: "textarea",
-            placeholder: "Describe the outcome..."
+            placeholder: "What shifted, and what does it mean going forward..."
           }
         ]
       },
       {
         id: "urge-surfing-practice",
-        title: "Urge Surfing Practice Log",
-        instructions: "Practice urge surfing at least once this week. Record your experience.",
+        title: "Urge Surfing Log",
+        instructions: "This week, when an urge arises, don't fight it and don't feed it. Observe it. Complete this log after the experience — even if you acted on the urge. What you're building here is awareness of the wave: how it feels, how it moves, and what actually happens when you don't immediately respond to it.",
         fields: [
           {
             id: "urge-description",
-            label: "Describe the urge: When did it occur? How intense was it (1-10)?",
+            label: "When did it occur? What triggered it? How intense was it at its peak (1–10)?",
             type: "textarea",
-            placeholder: "Describe the urge..."
+            placeholder: "Describe the urge and its context..."
           },
           {
             id: "physical-sensations",
             label: "Where did you feel it in your body? What physical sensations were present?",
             type: "textarea",
-            placeholder: "Describe physical sensations..."
+            placeholder: "Chest, stomach, jaw, hands — where and what did it feel like..."
           },
           {
             id: "observation",
-            label: "What happened as you observed without acting? How long did the urge last?",
+            label: "What happened to the intensity as you observed it? Did it peak and fall? How long did the full wave last?",
             type: "textarea",
-            placeholder: "Describe your observation..."
+            placeholder: "Describe how the urge moved over time..."
           },
           {
             id: "learning",
-            label: "What did you learn from this experience?",
+            label: "What did this experience show you about the urge — specifically about whether it is actually irresistible?",
             type: "textarea",
-            placeholder: "What did you learn?"
+            placeholder: "What did you learn about the nature of urges..."
           }
         ]
       }
     ],
     homeworkChecklist: [
       "Read all Week 3 material",
-      "Complete the Cognitive Distortion Identification exercise",
-      "Complete at least 3 thought records this week",
-      "Practice urge surfing at least once and complete the practice log",
-      "Notice your automatic thoughts throughout the week",
-      "Identify which distortions you use most frequently",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete your Distortion Profile — name your three specific patterns and write the accurate version of each",
+      "Complete at least one full Thought Record using a real incident this week",
+      "Practice urge surfing at least once and complete the log honestly — even if you acted on the urge",
+      "This week, when an automatic thought fires, ask one question: Is this actually true?",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
@@ -3346,7 +3361,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
 export const WEEK_TITLES: Record<number, string> = {
   1: "The Moment You Stop Pretending",
   2: "Nothing About This Is Random",
-  3: "Cognitive Restructuring",
+  3: "Your Mind Is Not Telling You the Truth",
   4: "Self-Regulation & Impulse Management",
   5: "Understanding Shame & Guilt",
   6: "Relationships, Attachment & Intimacy",
