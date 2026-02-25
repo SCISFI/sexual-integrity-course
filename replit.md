@@ -24,7 +24,7 @@ The application uses a React frontend (Vite, Wouter, TanStack React Query, Tailw
 
 -   **Frontend**: React 18 with Vite, Wouter for routing, TanStack React Query for server state, React Context for authentication, Tailwind CSS with shadcn/ui for styling, React Hook Form with Zod for forms.
 -   **Backend**: Express.js with TypeScript, Passport.js for authentication, PostgreSQL for session storage.
--   **Database Schema**: Core tables include `users`, `week_completions`, `daily_checkins`, `week_reflections`, `homework_completions`, `therapist_clients`, `therapist_feedback`, `week_fee_waivers`, and `password_reset_tokens`.
+-   **Database Schema**: Core tables include `users`, `week_completions`, `daily_checkins`, `week_reflections`, `homework_completions`, `therapist_clients`, `therapist_feedback` (extended with `status`, `sent_at`, `subject`), `week_fee_waivers`, `password_reset_tokens`, and `dismissed_guidance_suggestions`.
 -   **Authentication**: Passport.js Local Strategy.
 -   **Email Service**: Gmail integration for notifications (password reset, week completion, feedback).
 -   **AI Service**: Replit AI Integrations for personalized encouragement and feedback generation.
@@ -36,12 +36,12 @@ The application uses a React frontend (Vite, Wouter, TanStack React Query, Tailw
 -   **User Roles**: Admin (full access), Mentor (client progress, feedback), Client (curriculum, daily check-ins, homework, payments).
 -   **Daily Check-ins**: Unified system covering recovery, wellness, relationships, values, integrity, HALT-BS, mood/urge levels, and journal entries.
 -   **Homework & Reflections**: Trackable homework checklists, auto-saving reflection forms, and differentiated reflection questions for specific weeks.
--   **Mentor Tools**: View client progress, provide feedback on weeks, check-ins, and autopsies; generate AI draft feedback, track overdue reviews, manage clients. **Guidance tab** on each client's detail page surfaces rule-based, prioritized action suggestions (urgent / follow-up / curriculum / recognition) driven by check-in trends, curriculum pace, and relapse autopsy data. `/api/therapist/clients/:clientId/suggestions` endpoint.
+-   **Mentor Tools**: View client progress, send messages to clients, track overdue reviews, manage clients. **Guidance tab** on each client's detail page surfaces rule-based, prioritized suggestions (urgent / follow-up / curriculum / recognition). Each suggestion has a "Write Message" button that opens an inline compose panel with an AI-generated draft — mentor reviews and edits before saving as a draft or sending. Draft messages persist and surface in a draft inbox on the Guidance tab. Non-urgent suggestions can be dismissed with "Mark Addressed". Relevant endpoints: `/api/therapist/clients/:clientId/suggestions`, `/api/therapist/clients/:clientId/generate-guidance-message`, `/api/therapist/clients/:clientId/messages/drafts`, `/api/therapist/clients/:clientId/dismiss-suggestion`, `/api/therapist/clients/:clientId/feedback` (POST/PUT).
 -   **Admin Tools**: User management, fee waivers, client deletion, revenue tracking, and editing of any feedback.
 -   **AI-Powered Features**: Personalized encouragement, technique reminders, and draft feedback generation (including relapse autopsy analysis and trend analysis) with anti-hallucination instructions.
 -   **Client Account Management**: Account deactivation, subscription cancellation, crisis resources, and user manual access.
 -   **Analytics**: Client-specific analytics page for mentors/admins with trend analysis for check-in data.
--   **Feedback System**: Clients receive email notifications for mentor feedback, mentors can provide per-check-in feedback, and items are auto-marked reviewed upon feedback submission.
+-   **Mentor Message System**: Terminology: "Message" (not "feedback") in all mentor/client UI. `therapist_feedback` table stores messages with status (draft/sent), sentAt, and subject fields. Guidance-tab-originated messages use `feedbackType='guidance'` and trigger the branded `sendMentorMessage()` email (full body in email, navy/slate design). Clients only see `status='sent'` messages. `dismissed_guidance_suggestions` table allows mentors to dismiss non-urgent suggestions per client. Draft messages persist and are surfaced in the Guidance tab draft inbox.
 
 ## External Dependencies
 

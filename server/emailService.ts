@@ -462,3 +462,98 @@ export async function sendNudgeEmail(
     return false;
   }
 }
+
+export async function sendMentorMessage(
+  clientEmail: string,
+  clientName: string | undefined,
+  mentorName: string,
+  subject: string,
+  messageContent: string,
+  loginUrl?: string
+): Promise<boolean> {
+  try {
+    const gmail = await getUncachableGmailClient();
+
+    const escapedContent = messageContent
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .split('\n')
+      .map(line => line.trim() === '' ? '<br/>' : `<p style="margin:0 0 14px 0">${line}</p>`)
+      .join('');
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f1f5f9; color: #1e293b; }
+    .wrapper { background-color: #f1f5f9; padding: 32px 16px; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .header { background-color: #0f172a; padding: 28px 32px 24px; }
+    .header-wordmark { color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 6px; }
+    .header-from { color: #38bdf8; font-size: 17px; font-weight: 600; margin: 0; }
+    .subject-bar { background-color: #1e293b; padding: 14px 32px; }
+    .subject-text { color: #e2e8f0; font-size: 15px; font-weight: 600; margin: 0; }
+    .body-outer { padding: 28px 32px 24px; }
+    .salutation { font-size: 15px; color: #475569; margin: 0 0 20px; }
+    .message-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px 22px; font-size: 15px; line-height: 1.7; color: #1e293b; }
+    .message-box p { margin: 0 0 14px 0; }
+    .message-box p:last-child { margin-bottom: 0; }
+    .cta-block { text-align: center; padding: 24px 32px 0; }
+    .cta-button { display: inline-block; background-color: #0891b2; color: #ffffff; padding: 13px 28px; text-decoration: none; border-radius: 7px; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; }
+    .mentor-sig { padding: 20px 32px 0; font-size: 14px; color: #64748b; border-top: 1px solid #f1f5f9; margin-top: 24px; }
+    .footer-block { padding: 16px 32px 28px; text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.6; }
+    .footer-block a { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <p class="header-wordmark">The Integrity Protocol</p>
+        <p class="header-from">A message from ${mentorName}</p>
+      </div>
+      <div class="subject-bar">
+        <p class="subject-text">${subject}</p>
+      </div>
+      <div class="body-outer">
+        <p class="salutation">Hello${clientName ? ` ${clientName}` : ''},</p>
+        <div class="message-box">
+          ${escapedContent}
+        </div>
+      </div>
+      <div class="cta-block">
+        ${loginUrl ? `<a href="${loginUrl}" class="cta-button">Log In to Your Program</a>` : ''}
+      </div>
+      <div class="mentor-sig">
+        &mdash; ${mentorName}
+      </div>
+      <div class="footer-block">
+        ${getEmailFooter(loginUrl)}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const rawMessage = createEmailMessage(
+      clientEmail,
+      `${subject} — The Integrity Protocol`,
+      htmlContent
+    );
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: { raw: rawMessage }
+    });
+
+    console.log(`Mentor message sent to ${clientEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send mentor message:', error);
+    return false;
+  }
+}

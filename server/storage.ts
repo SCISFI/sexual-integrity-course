@@ -8,6 +8,7 @@ import {
   payments,
   weekFeeWaivers,
   therapistFeedback,
+  dismissedGuidanceSuggestions,
   passwordResetTokens,
   homeworkCompletions,
   exerciseAnswers,
@@ -104,10 +105,16 @@ export interface IStorage {
   resetWeekCompletion(userId: string, weekNumber: number): Promise<void>;
 
   // Therapist feedback
-  addTherapistFeedback(therapistId: string, clientId: string, feedbackType: string, content: string, weekNumber?: number, checkinDateKey?: string): Promise<TherapistFeedback>;
+  addTherapistFeedback(therapistId: string, clientId: string, feedbackType: string, content: string, weekNumber?: number, checkinDateKey?: string, status?: string, subject?: string): Promise<TherapistFeedback>;
+  updateTherapistFeedback(feedbackId: string, updates: { content?: string; subject?: string; status?: string; sentAt?: Date; editedAt?: Date; editedBy?: string }): Promise<TherapistFeedback | undefined>;
+  getDraftMessages(therapistId: string, clientId: string): Promise<TherapistFeedback[]>;
   getClientFeedback(clientId: string): Promise<TherapistFeedback[]>;
   getFeedbackForTherapist(therapistId: string, clientId: string): Promise<TherapistFeedback[]>;
+  getFeedbackById(feedbackId: string): Promise<TherapistFeedback | undefined>;
   updateFeedbackContent(feedbackId: string, content: string, editedBy: string): Promise<TherapistFeedback | undefined>;
+  // Dismissed guidance suggestions
+  dismissSuggestion(therapistId: string, clientId: string, suggestionId: string): Promise<void>;
+  getDismissedSuggestions(therapistId: string, clientId: string): Promise<string[]>;
 
   // Password reset tokens
   createPasswordResetToken(userId: string): Promise<PasswordResetToken>;
@@ -527,18 +534,55 @@ export class DatabaseStorage implements IStorage {
 
   // Therapist feedback
   async addTherapistFeedback(
-    therapistId: string, 
-    clientId: string, 
-    feedbackType: string, 
-    content: string, 
+    therapistId: string,
+    clientId: string,
+    feedbackType: string,
+    content: string,
     weekNumber?: number,
-    checkinDateKey?: string
+    checkinDateKey?: string,
+    status?: string,
+    subject?: string
   ): Promise<TherapistFeedback> {
+    const resolvedStatus = status ?? "sent";
     const [created] = await db
       .insert(therapistFeedback)
-      .values({ therapistId, clientId, feedbackType, content, weekNumber, checkinDateKey })
+      .values({
+        therapistId,
+        clientId,
+        feedbackType,
+        content,
+        weekNumber,
+        checkinDateKey,
+        status: resolvedStatus,
+        sentAt: resolvedStatus === "sent" ? new Date() : null,
+        subject: subject ?? null,
+      })
       .returning();
     return created;
+  }
+
+  async updateTherapistFeedback(
+    feedbackId: string,
+    updates: { content?: string; subject?: string; status?: string; sentAt?: Date; editedAt?: Date; editedBy?: string }
+  ): Promise<TherapistFeedback | undefined> {
+    const [updated] = await db
+      .update(therapistFeedback)
+      .set(updates)
+      .where(eq(therapistFeedback.id, feedbackId))
+      .returning();
+    return updated;
+  }
+
+  async getDraftMessages(therapistId: string, clientId: string): Promise<TherapistFeedback[]> {
+    return db
+      .select()
+      .from(therapistFeedback)
+      .where(and(
+        eq(therapistFeedback.therapistId, therapistId),
+        eq(therapistFeedback.clientId, clientId),
+        eq(therapistFeedback.status, "draft")
+      ))
+      .orderBy(desc(therapistFeedback.createdAt));
   }
 
   async updateFeedbackContent(feedbackId: string, content: string, editedBy: string): Promise<TherapistFeedback | undefined> {
@@ -551,16 +595,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClientFeedback(clientId: string): Promise<TherapistFeedback[]> {
-    const results = await db
+    return db
       .select()
       .from(therapistFeedback)
-      .where(eq(therapistFeedback.clientId, clientId))
+      .where(and(
+        eq(therapistFeedback.clientId, clientId),
+        eq(therapistFeedback.status, "sent")
+      ))
       .orderBy(desc(therapistFeedback.createdAt));
-    return results;
+  }
+
+  async getFeedbackById(feedbackId: string): Promise<TherapistFeedback | undefined> {
+    const [result] = await db
+      .select()
+      .from(therapistFeedback)
+      .where(eq(therapistFeedback.id, feedbackId));
+    return result;
   }
 
   async getFeedbackForTherapist(therapistId: string, clientId: string): Promise<TherapistFeedback[]> {
-    const results = await db
+    return db
       .select()
       .from(therapistFeedback)
       .where(and(
@@ -568,7 +622,24 @@ export class DatabaseStorage implements IStorage {
         eq(therapistFeedback.clientId, clientId)
       ))
       .orderBy(desc(therapistFeedback.createdAt));
-    return results;
+  }
+
+  async dismissSuggestion(therapistId: string, clientId: string, suggestionId: string): Promise<void> {
+    await db
+      .insert(dismissedGuidanceSuggestions)
+      .values({ therapistId, clientId, suggestionId })
+      .onConflictDoNothing();
+  }
+
+  async getDismissedSuggestions(therapistId: string, clientId: string): Promise<string[]> {
+    const rows = await db
+      .select({ suggestionId: dismissedGuidanceSuggestions.suggestionId })
+      .from(dismissedGuidanceSuggestions)
+      .where(and(
+        eq(dismissedGuidanceSuggestions.therapistId, therapistId),
+        eq(dismissedGuidanceSuggestions.clientId, clientId)
+      ));
+    return rows.map(r => r.suggestionId);
   }
 
   // Password reset tokens

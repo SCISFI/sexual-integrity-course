@@ -944,6 +944,7 @@ export async function registerRoutes(
       const checkins = await storage.getUserCheckinHistory(clientId, 30);
       const completedWeeks = await storage.getCompletedWeeks(clientId);
       const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
+      const dismissedIds = await storage.getDismissedSuggestions(therapistId, clientId);
 
       const { analyzeTrends } = await import("./trendAnalysis");
       const trends = analyzeTrends(checkins);
@@ -1083,7 +1084,12 @@ export async function registerRoutes(
       const priorityOrder: MentorSuggestion["priority"][] = ["urgent", "followup", "curriculum", "recognition"];
       suggestions.sort((a, b) => priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority));
 
-      res.json({ suggestions });
+      // Filter out dismissed suggestions (never filter urgent ones)
+      const filteredSuggestions = suggestions.filter(
+        (s) => s.priority === "urgent" || !dismissedIds.includes(s.id)
+      );
+
+      res.json({ suggestions: filteredSuggestions });
     } catch (error) {
       console.error("Get mentor suggestions error:", error);
       res.status(500).json({ message: "Failed to generate suggestions" });
@@ -2422,12 +2428,12 @@ Write the summary now:`;
       try {
         const therapistId = (req.user as any).id;
         const { clientId } = req.params;
-        const { feedbackType, content, weekNumber, checkinDateKey } = req.body;
+        const { feedbackType, content, weekNumber, checkinDateKey, status, subject } = req.body;
 
         if (!content || !feedbackType) {
           return res
             .status(400)
-            .json({ message: "Feedback type and content are required" });
+            .json({ message: "Content and type are required" });
         }
 
         // Verify therapist is assigned to this client
@@ -2435,9 +2441,11 @@ Write the summary now:`;
         const isAssigned = clients.some((c) => c.id === clientId);
         if (!isAssigned) {
           return res.status(403).json({
-            message: "Not authorized to provide feedback for this client",
+            message: "Not authorized to message this client",
           });
         }
+
+        const resolvedStatus = status === "draft" ? "draft" : "sent";
 
         const feedback = await storage.addTherapistFeedback(
           therapistId,
@@ -2446,62 +2454,270 @@ Write the summary now:`;
           content,
           weekNumber,
           checkinDateKey,
+          resolvedStatus,
+          subject,
         );
 
-        // Auto-mark the corresponding item as reviewed
-        try {
-          if (feedbackType === 'checkin' && checkinDateKey) {
-            await storage.markItemReviewed(therapistId, clientId, 'checkin', checkinDateKey);
-          } else if (feedbackType === 'week' && weekNumber) {
-            await storage.markItemReviewed(therapistId, clientId, 'reflection', String(weekNumber));
-            await storage.markItemReviewed(therapistId, clientId, 'exercise', String(weekNumber));
-            // Also mark all check-ins within this week's date range as reviewed
-            try {
-              const clientData = await storage.getUser(clientId);
-              if (clientData?.startDate) {
-                const startMs = new Date(clientData.startDate).getTime();
-                const weekStartMs = startMs + (weekNumber - 1) * 7 * 86400000;
-                const weekEndMs = weekStartMs + 7 * 86400000;
-                const allCheckins = await storage.getUserCheckinHistory(clientId, 365);
-                for (const c of allCheckins) {
-                  const cMs = new Date(c.dateKey).getTime();
-                  if (cMs >= weekStartMs && cMs < weekEndMs) {
-                    await storage.markItemReviewed(therapistId, clientId, 'checkin', c.dateKey);
+        // Only auto-mark reviewed and send email when actually sending (not drafting)
+        if (resolvedStatus === "sent") {
+          try {
+            if (feedbackType === 'checkin' && checkinDateKey) {
+              await storage.markItemReviewed(therapistId, clientId, 'checkin', checkinDateKey);
+            } else if (feedbackType === 'week' && weekNumber) {
+              await storage.markItemReviewed(therapistId, clientId, 'reflection', String(weekNumber));
+              await storage.markItemReviewed(therapistId, clientId, 'exercise', String(weekNumber));
+              try {
+                const clientData = await storage.getUser(clientId);
+                if (clientData?.startDate) {
+                  const startMs = new Date(clientData.startDate).getTime();
+                  const weekStartMs = startMs + (weekNumber - 1) * 7 * 86400000;
+                  const weekEndMs = weekStartMs + 7 * 86400000;
+                  const allCheckins = await storage.getUserCheckinHistory(clientId, 365);
+                  for (const c of allCheckins) {
+                    const cMs = new Date(c.dateKey).getTime();
+                    if (cMs >= weekStartMs && cMs < weekEndMs) {
+                      await storage.markItemReviewed(therapistId, clientId, 'checkin', c.dateKey);
+                    }
                   }
                 }
+              } catch (weekCheckinErr) {
+                console.error("Auto-mark week check-ins error (non-fatal):", weekCheckinErr);
               }
-            } catch (weekCheckinErr) {
-              console.error("Auto-mark week check-ins error (non-fatal):", weekCheckinErr);
             }
+          } catch (reviewErr) {
+            console.error("Auto-mark reviewed error (non-fatal):", reviewErr);
           }
-        } catch (reviewErr) {
-          console.error("Auto-mark reviewed error (non-fatal):", reviewErr);
         }
 
         res.status(201).json({ feedback });
 
-        // Send email notification to the client
-        try {
-          const clientData = await storage.getUser(clientId);
-          if (clientData && clientData.email) {
-            const { sendFeedbackNotification } = await import("./emailService");
-            const therapistData = req.user as any;
-            const loginUrl = `${req.protocol}://${req.get("host")}/login`;
-            await sendFeedbackNotification(
-              clientData.email,
-              clientData.name || undefined,
-              therapistData.name || "Your mentor",
-              weekNumber,
-              loginUrl,
-            );
+        // Send email only when status is 'sent'
+        if (resolvedStatus === "sent") {
+          try {
+            const clientData = await storage.getUser(clientId);
+            if (clientData && clientData.email) {
+              const therapistData = req.user as any;
+              const loginUrl = `${req.protocol}://${req.get("host")}/dashboard`;
+              if (feedbackType === 'guidance' && subject) {
+                const { sendMentorMessage } = await import("./emailService");
+                await sendMentorMessage(
+                  clientData.email,
+                  clientData.name || undefined,
+                  therapistData.name || "Your mentor",
+                  subject,
+                  content,
+                  loginUrl,
+                );
+              } else {
+                const { sendFeedbackNotification } = await import("./emailService");
+                await sendFeedbackNotification(
+                  clientData.email,
+                  clientData.name || undefined,
+                  therapistData.name || "Your mentor",
+                  weekNumber,
+                  loginUrl,
+                );
+              }
+            }
+          } catch (notifyError) {
+            console.error("Failed to send message notification:", notifyError);
           }
-        } catch (notifyError) {
-          console.error("Failed to send feedback notification:", notifyError);
-          // Don't fail the request if notification fails
         }
       } catch (error) {
         console.error("Add therapist feedback error:", error);
-        res.status(500).json({ message: "Failed to add feedback" });
+        res.status(500).json({ message: "Failed to add message" });
+      }
+    },
+  );
+
+  // Update (or promote from draft to sent) a therapist message
+  app.put(
+    "/api/therapist/clients/:clientId/feedback/:feedbackId",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId, feedbackId } = req.params;
+        const { content, subject, status } = req.body;
+
+        const existing = await storage.getFeedbackById(feedbackId);
+        if (!existing || existing.therapistId !== therapistId || existing.clientId !== clientId) {
+          return res.status(404).json({ message: "Message not found" });
+        }
+
+        const isPromoting = existing.status === "draft" && status === "sent";
+        const updates: any = { editedAt: new Date(), editedBy: therapistId };
+        if (content !== undefined) updates.content = content;
+        if (subject !== undefined) updates.subject = subject;
+        if (status !== undefined) updates.status = status;
+        if (isPromoting) updates.sentAt = new Date();
+
+        const updated = await storage.updateTherapistFeedback(feedbackId, updates);
+
+        res.json({ feedback: updated });
+
+        // Send email when promoting draft to sent
+        if (isPromoting && updated) {
+          try {
+            const clientData = await storage.getUser(clientId);
+            if (clientData && clientData.email) {
+              const therapistData = req.user as any;
+              const loginUrl = `${req.protocol}://${req.get("host")}/dashboard`;
+              const messageSubject = updated.subject || "A message from your mentor";
+              const messageContent = updated.content;
+              const { sendMentorMessage } = await import("./emailService");
+              await sendMentorMessage(
+                clientData.email,
+                clientData.name || undefined,
+                therapistData.name || "Your mentor",
+                messageSubject,
+                messageContent,
+                loginUrl,
+              );
+            }
+          } catch (notifyError) {
+            console.error("Failed to send message on promotion:", notifyError);
+          }
+        }
+      } catch (error) {
+        console.error("Update therapist feedback error:", error);
+        res.status(500).json({ message: "Failed to update message" });
+      }
+    },
+  );
+
+  // Get draft messages for a client
+  app.get(
+    "/api/therapist/clients/:clientId/messages/drafts",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        if (!clients.some((c) => c.id === clientId)) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        const drafts = await storage.getDraftMessages(therapistId, clientId);
+        res.json({ drafts });
+      } catch (error) {
+        console.error("Get draft messages error:", error);
+        res.status(500).json({ message: "Failed to get drafts" });
+      }
+    },
+  );
+
+  // Generate AI guidance message draft
+  app.post(
+    "/api/therapist/clients/:clientId/generate-guidance-message",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+        const { suggestionId, suggestionTitle, suggestionDetail, suggestionAction } = req.body;
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        if (!clients.some((c) => c.id === clientId)) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        const client = await storage.getUser(clientId);
+        const checkins = await storage.getUserCheckinHistory(clientId, 14);
+        const completedWeeks = await storage.getCompletedWeeks(clientId);
+        const currentWeek = Math.min(16, completedWeeks.length + 1);
+
+        const { analyzeTrends } = await import("./trendAnalysis");
+        const trends = analyzeTrends(checkins);
+
+        const checkinCount = checkins.length;
+        const daysCovered = checkins.length > 0
+          ? Math.ceil((Date.now() - new Date(checkins[checkins.length - 1].dateKey).getTime()) / 86400000) + 1
+          : 0;
+        const consistencyRate = daysCovered > 0 ? Math.round((checkinCount / daysCovered) * 100) : 0;
+
+        const contextBlock = `
+CLIENT CONTEXT:
+- Name: ${client?.name || "the client"}
+- Currently on: Week ${currentWeek} of 16
+- Check-ins last 14 days: ${checkinCount} (${consistencyRate}% consistency over ${daysCovered} days)
+- Mood trend (14-day): ${trends.mood.trend} (${trends.mood.firstHalfAvg}/10 → ${trends.mood.secondHalfAvg}/10)
+- Urge trend (14-day): ${trends.urge.trend} (${trends.urge.firstHalfAvg}/10 → ${trends.urge.secondHalfAvg}/10)
+
+GUIDANCE SITUATION:
+- Title: ${suggestionTitle}
+- Detail: ${suggestionDetail}
+- Suggested mentor action: ${suggestionAction}
+`.trim();
+
+        const defaultSubjects: Record<string, string> = {
+          "unreviewed-autopsy": "After your relapse autopsy",
+          "checkin-gap": "Checking in on you",
+          "no-checkins": "Let's get started",
+          "urge-spike": "I noticed something in your data",
+          "mood-decline": "Checking in",
+          "low-consistency": "Daily check-ins",
+          "curriculum-behind": "Your curriculum progress",
+          "positive-momentum": "Your progress this week",
+        };
+        const defaultSubject = defaultSubjects[suggestionId]
+          || (suggestionId.startsWith("curriculum-w") ? `On Week ${currentWeek}` : "A note on your progress");
+
+        const prompt = `You are an expert recovery mentor writing directly to a client. Write a personal, direct message to ${client?.name || "them"} (150–220 words).
+
+${contextBlock}
+
+WRITING RULES:
+- Write in second person ("you", "your") — address them directly
+- Reference specific data from the context when available (e.g., their check-in rate, week number, trend direction). Do NOT invent statistics not shown above.
+- Do NOT use power words: fantastic, amazing, incredible, proud, honored, grateful
+- Do NOT give medical advice or diagnoses
+- Short paragraphs (2–3 sentences max). No bullet points. No headers.
+- Tone: direct, warm, honest — like a mentor who genuinely knows this person and isn't afraid to name what they see
+- End with a single concrete ask or next step
+
+Write only the message body. No salutation, no sign-off, no subject line.`;
+
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(process.env.AI_INTEGRATIONS_GEMINI_API_KEY!);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent(prompt);
+        const draftText = result.response.text().trim();
+
+        res.json({ subject: defaultSubject, draftText });
+      } catch (error) {
+        console.error("Generate guidance message error:", error);
+        res.status(500).json({ message: "Failed to generate message" });
+      }
+    },
+  );
+
+  // Dismiss a guidance suggestion
+  app.post(
+    "/api/therapist/clients/:clientId/dismiss-suggestion",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+        const { suggestionId } = req.body;
+
+        if (!suggestionId) {
+          return res.status(400).json({ message: "suggestionId is required" });
+        }
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        if (!clients.some((c) => c.id === clientId)) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
+
+        await storage.dismissSuggestion(therapistId, clientId, suggestionId);
+        res.json({ success: true });
+      } catch (error) {
+        console.error("Dismiss suggestion error:", error);
+        res.status(500).json({ message: "Failed to dismiss suggestion" });
       }
     },
   );

@@ -218,14 +218,30 @@ export const therapistFeedback = pgTable("therapist_feedback", {
   clientId: varchar("client_id").notNull().references(() => users.id),
   weekNumber: integer("week_number"),
   checkinDateKey: varchar("checkin_date_key", { length: 50 }),
-  feedbackType: varchar("feedback_type", { length: 50 }).notNull(), // 'general', 'week', 'checkin'
+  feedbackType: varchar("feedback_type", { length: 50 }).notNull(), // 'general', 'week', 'checkin', 'guidance'
   content: text("content").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("sent"), // 'draft' or 'sent'
+  sentAt: timestamp("sent_at"),
+  subject: varchar("subject", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   editedAt: timestamp("edited_at"),
   editedBy: varchar("edited_by").references(() => users.id),
 });
 
 export type TherapistFeedback = typeof therapistFeedback.$inferSelect;
+
+// Dismissed guidance suggestions — mentor can dismiss non-urgent suggestions
+export const dismissedGuidanceSuggestions = pgTable("dismissed_guidance_suggestions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  therapistId: varchar("therapist_id").notNull().references(() => users.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  suggestionId: varchar("suggestion_id", { length: 100 }).notNull(),
+  dismissedAt: timestamp("dismissed_at").defaultNow(),
+}, (table) => [
+  unique("dismissed_suggestion_unique").on(table.therapistId, table.clientId, table.suggestionId),
+]);
+
+export type DismissedGuidanceSuggestion = typeof dismissedGuidanceSuggestions.$inferSelect;
 
 // Password reset tokens
 export const passwordResetTokens = pgTable("password_reset_tokens", {

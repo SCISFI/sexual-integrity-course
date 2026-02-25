@@ -481,10 +481,10 @@ export default function Dashboard() {
           <CardHeader className="gap-1">
             <CardTitle className="text-lg flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-muted-foreground" />
-              Mentor Feedback
+              Messages from Your Mentor
             </CardTitle>
             <CardDescription>
-              Personalized feedback from your mentor on your progress.
+              Personalized messages from your mentor on your progress.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -493,13 +493,12 @@ export default function Dashboard() {
                 className="text-sm text-muted-foreground py-4"
                 data-testid="text-no-feedback"
               >
-                No feedback from your mentor yet. They'll provide personalized
-                feedback as you progress through the program.
+                No messages from your mentor yet. They'll reach out as you progress through the program.
               </p>
             ) : (
               <div
                 className="space-y-3 max-h-96 overflow-y-auto"
-                data-testid="section-mentor-feedback"
+                data-testid="section-mentor-messages"
               >
                 {[...feedbackData.feedback]
                   .sort(
@@ -521,7 +520,9 @@ export default function Dashboard() {
                               ? `Check-in: ${fb.checkinDateKey}`
                               : fb.feedbackType === "checkin"
                                 ? "Check-in"
-                                : "General"}
+                                : fb.feedbackType === "guidance"
+                                  ? "Message"
+                                  : "General"}
                         </Badge>
                         <div className="flex items-center gap-2 flex-wrap">
                           {fb.editedAt && (
