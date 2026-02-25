@@ -624,103 +624,101 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
 
   4: {
     weekNumber: 4,
-    title: "Self-Regulation & Impulse Management",
+    title: "When the Urge Hits",
     phase: 1,
     phaseName: "Foundation & Stabilization",
-    overview: "This week focuses on building practical skills for managing urges and regulating your emotional and physical states. You'll develop a toolkit of strategies for when triggers arise.",
+    overview: "You know your triggers. You can name your thoughts. But when the urge actually arrives — in your body, in your chest, behind your eyes — knowing things doesn't help much. This week is about what you actually do in that moment. Not theory. Not insight. Action.",
     teaching: [
       {
         id: "self-regulation",
-        title: "Understanding Self-Regulation",
+        title: "What's Actually Happening in Your Brain",
         content: [
-          "Self-regulation is your ability to manage your thoughts, emotions, and behaviors in pursuit of long-term goals. It's the capacity to pause between stimulus and response.",
-          "In CSBD, self-regulation has been compromised. The behavior has become automatic, and the pause between trigger and response has shortened to almost nothing.",
-          "Good news: Self-regulation is a skill that can be strengthened with practice. Like a muscle, it grows stronger the more you use it.",
-          "The goal isn't to never experience urges. The goal is to increase your capacity to experience urges without automatically acting on them."
+          "When a strong urge hits, your prefrontal cortex — the part responsible for long-term thinking, values, and consequences — essentially goes offline. Your limbic system, the emotional and survival-driven center, takes over. This is not a character flaw. This is neuroscience.",
+          "Neurobiologist Jill Bolte Taylor documented that the physiological spike of an emotion — the actual chemical surge — lasts about 90 seconds. After 90 seconds, if you don't feed the feeling with additional thought, it begins to dissipate. What keeps it alive is your attention.",
+          "This means the goal in the first 90 seconds isn't to think your way out. It's to survive them without making a decision. If you can buy 90 seconds, you're back in the game. If you can buy 15 minutes, you're probably safe.",
+          "The behavior you're trying to stop has been your primary nervous system regulator. Your brain learned early that this sequence reliably produced relief. That's the whole problem — it works, in the short term. Recovery is the process of teaching your nervous system a different path to relief."
         ]
       },
       {
         id: "coping-strategies",
-        title: "Building Your Coping Strategy Toolkit",
+        title: "The Window Between Urge and Action",
         content: [
-          "DISTRACTION STRATEGIES: Engage your mind and body in something else. Exercise, call a friend, work on a project, go for a walk, play a game. The key is to choose activities that genuinely engage your attention.",
-          "OPPOSITE ACTION: Do the opposite of what the urge wants. If the urge says 'isolate,' connect with someone. If it says 'stay in this room,' leave. If it says 'pick up the phone,' put it in another room.",
-          "STIMULUS CONTROL: Remove or limit access to triggers. Install blocking software, rearrange your environment, avoid high-risk locations, change your routine to eliminate opportunity.",
-          "GROUNDING TECHNIQUES: Bring yourself back to the present moment. The 5-4-3-2-1 technique: Name 5 things you see, 4 you hear, 3 you can touch, 2 you smell, 1 you taste.",
-          "REACH OUT: Contact your support system. Call your accountability partner, text a trusted friend, attend a meeting. Connection is powerful medicine for urges rooted in isolation."
+          "Week 3 gave you the cognitive tools — thought records, distortion challenges, urge surfing. Those are your mid-range tools. They work when the urge is a 4 or 5 out of 10. This week is about what to do when it's an 8.",
+          "At high-intensity urges, your thinking brain is impaired. You won't challenge a cognitive distortion when the urge is screaming. You need pre-decided, automatic responses that don't require much thought.",
+          "OPPOSITE ACTION: Whatever the urge wants, do the opposite. Urge says close the door? Open it. Urge says pick up the phone? Put it in another room and walk out. Urge says stay in bed? Get up and put your shoes on. The specific opposite doesn't matter. The direction does.",
+          "CHANGE YOUR PHYSIOLOGY: Your body is in an arousal state. Change it. Cold water on your face. Ten pushups. A brisk walk. Call someone. Your nervous system can't maintain a high-intensity urge state if you actively disrupt the physiology driving it.",
+          "GROUNDING: When you're flooded, bring yourself back to the present sensory environment. Name five things you can see. Four you can hear. Three you can touch. Two you can smell. One you can taste. This is not a gimmick — it interrupts rumination by forcing your attention into the present moment where the imagined reward does not exist."
         ]
       },
       {
         id: "delay-strategies",
-        title: "The Power of Delay",
+        title: "The 15-Minute Protocol",
         content: [
-          "Research shows that if you can delay acting on an urge, the urge's power diminishes significantly. Every minute you wait, you take back control.",
-          "The 15-Minute Rule: When an urge hits, commit to waiting just 15 minutes before making a decision. Use that time to employ coping strategies. Often, the urge will pass or significantly decrease.",
-          "Play the tape forward: Before acting, imagine the entire sequence. Not just the behavior, but the aftermath. How will you feel in one hour? Tomorrow? How does this fit with your values and goals?",
-          "Remember: Urges are like waves. They rise, they peak, and they fall. You don't have to fight them - you just have to not feed them."
+          "You are not making a lifetime commitment right now. You're making a 15-minute commitment. That's it. When the urge hits, commit to one thing: you will not act on this urge for 15 minutes.",
+          "Set a timer. Tell someone. Change your physical location. The 15 minutes is not about willpower. It's about creating enough distance from the peak of the urge that your prefrontal cortex can come back online.",
+          "Play the tape all the way forward. Not to the moment of relief — your brain will do that automatically. Past it. To the 2 a.m. feeling afterward. To the conversation you'll have to have. To who you were trying to be when you started this program.",
+          "Urges move in waves. They rise. They peak. They fall. Every urge you have ever had in your life has eventually passed — whether you acted on it or not. The wave breaks whether you feed it or not. You just have to outlast the peak."
         ]
       },
       {
         id: "emotional-regulation",
-        title: "Emotional Regulation Skills",
+        title: "The Emotion Under the Urge",
         content: [
-          "Many urges are driven by underlying emotional states. Learning to recognize and manage emotions reduces vulnerability to triggers.",
-          "Step 1 - Name It: Simply labeling an emotion reduces its intensity. 'I am feeling anxious' or 'I notice anger' creates distance between you and the emotion.",
-          "Step 2 - Accept It: Emotions are information, not commands. You can feel anxious without needing to escape anxiety. You can feel bored without needing stimulation.",
-          "Step 3 - Express It: Find healthy outlets for emotions. Journal, talk to someone, exercise, create something. Unexpressed emotions often drive compulsive behavior.",
-          "Step 4 - Address It: If possible, address the underlying need. If you're lonely, seek connection. If you're stressed, address the stressor. If you're tired, rest."
+          "Before you had this behavior, you had an emotional need that wasn't getting met. The behavior became the answer. Understanding this doesn't excuse the behavior — but it tells you what you're actually fighting.",
+          "When an urge appears, there is almost always an emotion underneath it. Loneliness. Boredom. Anxiety. Anger. Shame. Rejection. The urge is the brain's solution to the emotion. Your job is to identify the actual emotion and address that instead.",
+          "The four-step sequence: Name it — 'I'm feeling anxious.' Own it — 'This is a real feeling.' Sit with it — don't immediately reach for relief. Address it — what does the emotion actually need? Anxiety might need movement. Loneliness might need a phone call. Anger might need an honest conversation you've been avoiding.",
+          "This takes practice. The default is still the old path. But every time you identify the emotion and address it directly, you are literally building new neural pathways. The old pathway weakens. The new one strengthens. Recovery is, in part, a neurological process."
         ]
       },
       {
         id: "environment-setup",
-        title: "Environmental Restructuring",
+        title: "Your Environment Should Be Doing Half the Work",
         content: [
-          "Don't rely on willpower when you can change your environment. Make acting out harder and healthy choices easier.",
-          "Device Management: Use accountability software, keep devices in public spaces, remove apps that trigger you, consider downgrading to a simpler phone during vulnerable periods.",
-          "Home Environment: Remove or secure devices at night, change your routine to avoid high-risk times, create spaces that are trigger-free.",
-          "Time Management: Unstructured time is dangerous. Build structure into your day. Fill lonely times with meaningful activities or connection.",
-          "Remember: The goal is to buy yourself time. Every barrier between you and the behavior gives you more opportunity to choose differently."
+          "Willpower is a finite resource. It depletes. At the end of a long day, after a hard conversation, when you're tired and alone — your willpower reserves are low. This is when most slips happen. You cannot rely on willpower alone.",
+          "Your environment should be working for you. Every barrier between you and the behavior buys you time. Every piece of accountability software is a reminder that someone else will see. Every device out of the bedroom is one fewer opportunity.",
+          "Be ruthlessly honest about what your high-risk situations look like: time of day, physical location, emotional state, device proximity, level of isolation. Then engineer your environment to make those situations less dangerous. This is not weakness. It's strategy.",
+          "Device management is non-negotiable. Covenant Eyes, Bark, Ever Accountable — pick one and use it. Charge your phone outside the bedroom. Remove browsers from your phone. These are not suggestions. Men who act out in this area almost universally do it late at night, alone, on a device in a private space. Change those variables."
         ]
       },
       {
         id: "technology-safety",
-        title: "Technology Safety and Digital Boundaries",
+        title: "The Technology Problem Is Specific",
         content: [
-          "In the digital age, technology is both a primary access point for problematic behavior and an essential part of daily life. Effective technology management is critical for recovery.",
-          "ACCOUNTABILITY SOFTWARE: Tools like Covenant Eyes, Bark, or Ever Accountable send reports to someone you trust. This isn't about surveillance - it's about support. Knowing someone will see your activity creates a pause before impulsive action.",
-          "DEVICE MANAGEMENT STRATEGIES: Charge phones outside the bedroom. Use app blockers during high-risk hours. Consider a 'dumb phone' or basic phone for evenings/weekends. Enable SafeSearch on all devices. Remove browsers from phones if feasible - use only apps.",
-          "SOCIAL MEDIA BOUNDARIES: Unfollow or mute accounts that trigger you. Set time limits on apps. Consider deleting problematic apps entirely. Be honest: if 'just scrolling' often leads to problems, it's not innocent.",
-          "LOCATION-BASED TRIGGERS: Avoid browsing in bed, bathrooms, or other private spaces. Create device-free zones in your home. If a particular location is linked to acting out, change your patterns."
+          "This isn't a generic internet-safety conversation. Smartphones with private browser access are the primary access point for compulsive sexual behavior for most men in this program. That's the honest picture.",
+          "If you have full private browser access on your phone with no accountability software, you have built a relapse into your weekly schedule. At some point, the right combination of emotions, isolation, and opportunity will line up. The behavior will happen. Not because you're weak — because the access makes it nearly inevitable.",
+          "ACCOUNTABILITY SOFTWARE: This is not surveillance. It is support infrastructure. The knowledge that your browsing will be seen by someone you respect creates a pause where no pause existed before. That pause is where recovery happens. One person in your life should receive these reports.",
+          "SOCIAL MEDIA HYGIENE: Unfollow, mute, or delete accounts that predictably lead you down the path. 'Just scrolling' is not innocent if you know where it ends. Your brain is not neutral — it's looking for the hit. Don't give it the opening.",
+          "LOCATION-BASED RULES: Devices do not enter the bedroom. If that's where it happens, that's the rule. Hotels are high risk. Plan specifically for travel — request TV blocking, keep your accountability partner informed, schedule check-ins."
         ]
       },
       {
         id: "building-digital-structure",
-        title: "Building Digital Structure",
+        title: "Structure Replaces Decision-Making",
         content: [
-          "Structure is your ally. The more decisions you automate, the fewer opportunities for impulsive choices.",
-          "MORNING ROUTINE: Don't check devices for the first 30-60 minutes. Start with something grounding: exercise, meditation, reading, or journaling before screen time.",
-          "EVENING ROUTINE: Set a 'screens off' time at least 1 hour before bed. Charge devices in a common area, not your bedroom. Replace screen time with connection, reading, or rest.",
-          "HIGH-RISK TIMES: Identify your vulnerable hours (often late night, early morning, or during transitions). Build accountability or activity into these times.",
-          "TRAVEL PROTOCOLS: Hotels and travel are high-risk. Plan ahead: request TV blocking, use accountability software, schedule check-ins with your accountability partner, stay connected to your support system."
+          "The more you pre-decide, the less vulnerable you are in the moment. When you're already in a high-risk emotional state is not when you want to be making decisions about technology access and bedtime.",
+          "MORNING: No devices for the first 30 minutes. Start with something that puts you in contact with your values — a brief reflection, prayer, physical movement, journaling. Set the tone before your day starts setting it for you.",
+          "EVENING: Screens off at least an hour before bed. Phone charging in the kitchen or living room. This isn't just about preventing late-night slips — sleep quality matters directly to emotional regulation the following day.",
+          "HIGH-RISK HOURS: You know what they are. For most men it's late night, early morning, or specific windows during the week when they're alone. Build accountability into those times. Tell someone. Have a plan. Don't leave yourself with open time and open access.",
+          "TRAVEL: This is where men who are stable at home tend to slip. You're out of your routine, often alone in a hotel, with a TV and no accountability infrastructure. Plan it specifically. Request TV blocking. Check in with your accountability partner when you arrive and before bed."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What coping strategies have worked for you in the past? What made them effective?"
+        question: "What does a high-intensity urge feel like in your body? Where do you feel it? What are the physical sensations — and what is the earliest signal you can catch before it escalates?"
       },
       {
         id: "q2",
-        question: "What environmental changes could you make to reduce your exposure to triggers and limit access during vulnerable times?"
+        question: "What emotion is most often underneath your urges? If you had to name the feeling the behavior is trying to solve, what is it?"
       },
       {
         id: "q3",
-        question: "What emotions are most likely to drive your urges? How do you typically handle these emotions?"
+        question: "What environmental changes would most reduce your access and vulnerability? Be specific: devices, locations, times, people."
       },
       {
         id: "q4",
-        question: "Who is in your support network? Who can you reach out to when you're struggling?"
+        question: "Who in your life could be your accountability person — someone who gets real reports, not just someone who knows you're 'trying to be better'?"
       }
     ],
     exercises: [
@@ -857,91 +855,89 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     ],
     homeworkChecklist: [
       "Read all Week 4 material",
-      "Complete the Coping Strategy Toolkit exercise",
-      "Create your Environmental Restructuring Plan",
-      "Develop your Emergency Coping Plan",
-      "Implement at least 2 environmental changes this week",
-      "Practice the 15-minute delay at least once when an urge arises",
-      "Use at least 3 different coping strategies this week",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete your Coping Strategy Toolkit — don't just list ideas, pre-decide which ones for which urge intensities",
+      "Complete your Environmental Restructuring Plan and implement at least 2 changes this week",
+      "Install accountability software if you haven't already — and tell someone who will receive the reports",
+      "Complete your Emergency Coping Plan before you need it, not during",
+      "Use the 15-minute delay when an urge hits — record what happened",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   5: {
     weekNumber: 5,
-    title: "Understanding Shame & Guilt",
+    title: "Shame Is Not Your Conscience",
     phase: 1,
     phaseName: "Foundation & Stabilization",
-    overview: "This week explores the critical difference between shame and guilt, and how shame fuels the cycle of compulsive behavior. You'll learn self-compassion practices that break the shame cycle.",
+    overview: "There is a voice that comes after acting out. It's vicious. It tells you that you're disgusting, that you'll never change, that you're broken at the core. Most men in this program believe that voice is their conscience. It isn't. It's shame. And it's one of the primary reasons the cycle continues.",
     teaching: [
       {
         id: "shame-vs-guilt-deep",
-        title: "Shame vs. Guilt: A Deeper Look",
+        title: "The Difference Between the Two Voices",
         content: [
-          "GUILT is about behavior: 'I did something bad.' It's focused on a specific action. It motivates repair and change. It can be resolved through amends and different behavior.",
-          "SHAME is about identity: 'I am bad.' It's focused on the self. It paralyzes and perpetuates cycles. It leads to hiding, isolation, and hopelessness.",
-          "The crucial difference: Guilt says, 'I made a mistake.' Shame says, 'I am a mistake.'",
-          "Research by Dr. Brene Brown shows that shame is positively correlated with addiction, depression, and destructive behavior. Guilt, on the other hand, is inversely correlated with these outcomes.",
-          "This means: The more shame you feel, the more likely you are to continue the behavior. Shame doesn't motivate change - it fuels the cycle."
+          "Guilt says: 'I did something that violated my values.' It's about the action. It's specific, bounded, and oriented toward repair. Guilt can motivate change because it points at a behavior — something you can actually do something about.",
+          "Shame says: 'I am the thing I did.' It's about your identity. It's global, diffuse, and oriented toward hiding. Shame cannot motivate change because it's not telling you something went wrong — it's telling you that YOU are wrong. And if you are the problem, there is no solution.",
+          "This distinction sounds philosophical until you see what shame does to a man in the middle of a relapse. Guilt says: 'You violated your integrity — that matters.' Shame says: 'You're exactly what you've always been. Why fight it?' Guess which one wins in that moment.",
+          "Dr. Brené Brown's research across thousands of interviews is unambiguous: shame is positively correlated with addiction, depression, aggression, and destructive behavior. Guilt is inversely correlated with those outcomes. The most dangerous thing the cycle does is generate shame, because shame guarantees the cycle continues."
         ]
       },
       {
         id: "shame-cycle",
-        title: "How Shame Fuels the Cycle",
+        title: "The Cycle Shame Creates",
         content: [
-          "After acting out, shame floods in. You feel fundamentally flawed, disgusting, hopeless. This shame creates intense emotional pain.",
-          "To escape this pain, you need relief. And the behavior you're trying to stop has been your primary source of relief. So shame drives you back to the very behavior that caused the shame.",
-          "The shame cycle: Act Out → Shame → Emotional Pain → Need for Escape → Act Out → More Shame. It's a vicious, self-reinforcing loop.",
-          "Breaking this cycle requires replacing shame with accountability. You take responsibility for behavior without attacking your worth as a person."
+          "Here is what the shame loop looks like in practice: You act out. Shame floods in — the visceral sense of being disgusting, broken, hopeless. That shame creates intense emotional pain. You need relief from that pain. The most available source of relief is the behavior. So you act out again, now generating even more shame.",
+          "The cycle is not: Act out → feel bad → want to stop. The cycle is: Act out → feel shame → shame creates unbearable pain → act out to escape the pain → more shame. The behavior is both the cause and the solution. That's why it's so difficult to stop with willpower alone.",
+          "The shame also drives isolation. And isolation — the absence of honest human connection — is the ecosystem where CSBD thrives. The man who is most ashamed is the man who tells no one, which means the man who has no accountability, which means the man most likely to relapse.",
+          "Breaking the loop doesn't mean minimizing what you've done. It means replacing shame — which attacks your person — with accountability — which addresses your behavior. You did something you don't want to do. That's real. You are not, at your core, your worst behavior. That's also real."
         ]
       },
       {
         id: "self-compassion",
-        title: "The Power of Self-Compassion",
+        title: "What Self-Compassion Actually Is",
         content: [
-          "Self-compassion is treating yourself with the same kindness you would offer a good friend. It's not self-pity or letting yourself off the hook. It's recognizing your humanity.",
-          "Dr. Kristin Neff identifies three components of self-compassion: (1) Self-kindness instead of self-judgment, (2) Common humanity instead of isolation, (3) Mindfulness instead of over-identification with thoughts.",
-          "Research shows that self-compassion is associated with: Less depression and anxiety, greater motivation to change, more resilience after failure, and better ability to take responsibility.",
-          "Counter-intuitively, being kind to yourself makes you more likely to change, not less. Shame paralyzes. Compassion mobilizes."
+          "Most men in this program resist self-compassion. It sounds like permission. Like letting yourself off the hook. Like saying what you did doesn't matter. None of that is what self-compassion means.",
+          "Self-compassion, as Dr. Kristin Neff defines it, has three components. Self-kindness: treating yourself with the same basic decency you'd offer a person you respect who made a serious mistake. Common humanity: recognizing that suffering and struggle are not unique to you — they are part of what it means to be human. Mindfulness: being able to observe your emotional state without being consumed by it or shutting it down.",
+          "The research on self-compassion is counterintuitive and clear: people who practice self-compassion after failure are MORE likely to take responsibility, MORE likely to change, and MORE resilient when they struggle again. Shame makes men hide. Compassion makes them get back up.",
+          "This is not the same as self-pity, which focuses inward and stays stuck. Self-compassion acknowledges the pain AND orients toward the future. 'That was hard. I did something I regret. I am still a person capable of doing better. What now?'"
         ]
       },
       {
         id: "practicing-self-compassion",
-        title: "How to Practice Self-Compassion",
+        title: "Practicing Accountability Without Assault",
         content: [
-          "WHEN YOU FAIL: Notice the self-critical voice. Ask: 'What would I say to a friend in this situation?' Then say that to yourself.",
-          "COMMON HUMANITY: Remind yourself that you are not alone. Millions of people struggle with this. Your struggle is part of the human experience, not proof that you're uniquely broken.",
-          "MINDFUL AWARENESS: Notice your emotions without drowning in them. Say 'I am experiencing shame' rather than 'I am shameful.' Create distance between you and the feeling.",
-          "SELF-COMPASSION BREAK: When struggling, try this: (1) 'This is a moment of suffering' (mindfulness), (2) 'Suffering is part of life' (common humanity), (3) 'May I be kind to myself' (self-kindness)."
+          "There is a version of 'taking responsibility' that is actually just shame in disguise. It looks responsible — all that self-flagellation, the vows, the remorse. But it's not oriented toward change. It's oriented toward punishment. And punishment without a path forward is just suffering.",
+          "Real accountability sounds like this: 'I acted out on Tuesday night. I know what triggered it — I was alone, I was angry about the conversation with my wife, I didn't use any of my tools. I didn't reach out to anyone. I need to look at my environment and my plan for that situation.' That's accountability. It's specific. It's behavioral. It points at something changeable.",
+          "The self-compassion break, when shame is acute: Name it — 'This is a moment of real pain.' Normalize it — 'Other men in recovery have felt exactly this.' Kindness — not to what you did, but to the person experiencing the consequence: 'I am going to treat myself with basic decency while I figure out what to do next.'",
+          "When your inner critic fires after a slip, try this question: 'What would I actually say to a man I respected who came to me and told me he'd just done what I did?' That is what you are allowed to say to yourself. Not more brutal. Not softer either. Exactly that."
         ]
       },
       {
         id: "distinguishing-behavior-identity",
-        title: "Separating Behavior from Identity",
+        title: "You Are Not the Worst Thing You've Done",
         content: [
-          "You are not your behavior. You are a person who has engaged in certain behaviors. These are not the same thing.",
-          "Your behavior can change. Your worth as a person is not contingent on your behavior. You don't have to earn the right to be treated with dignity.",
-          "This doesn't mean avoiding accountability. It means taking responsibility for actions without concluding that you are fundamentally defective.",
-          "The shift: From 'I am an addict' to 'I am a person who has struggled with compulsive behavior and is working to change.' From 'I am disgusting' to 'I have done things I regret and am committed to doing differently.'"
+          "The behavior is real. The impact is real. The harm — to yourself, to people you love — is real. None of that is minimized by what comes next.",
+          "You are also not the behavior. You are a person who has engaged in behaviors that violate your values and cause harm. The behavior can change. The harm can, in many cases, be addressed. Neither of those things is possible if you've collapsed your entire identity into what you've done.",
+          "The shift is subtle but critical. Not: 'I am an addict.' But: 'I am a man who has struggled with compulsive sexual behavior and I'm in the process of changing that.' Not: 'I am disgusting.' But: 'I have done things I'm not proud of and I'm committed to doing differently.' The first framing closes the door. The second leaves it open.",
+          "This is not optimism. It's not positive thinking. It's accurate thinking. Who you are is not fixed at your worst moment. It is shaped by what you do in the hundreds of moments that follow."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "Describe a moment when you felt the weight of shame most intensely. What did you do with that feeling? Looking back, what would a compassionate response have looked like?"
+        question: "What does your inner critic say to you after you act out? Write out the actual words. What tone does it take? Does it sound like a voice from your past?"
       },
       {
         id: "q2",
-        question: "What does your inner critic say to you after you act out? What tone does it use? What words?"
+        question: "How has shame — not guilt, but shame about who you are — functioned in the cycle? Has it ever actually stopped you from acting out, or does it drive you back?"
       },
       {
         id: "q3",
-        question: "What would it mean to take responsibility for your behavior without attacking your worth as a person?"
+        question: "What would it sound like to hold yourself accountable for your behavior without attacking your worth as a person? Write that out."
       },
       {
         id: "q4",
-        question: "If a good friend came to you with this struggle, what would you say to them? Can you say that to yourself?"
+        question: "If a man you deeply respected came to you and described exactly what you've done — what would you actually say to him? Write it. Then direct it at yourself."
       }
     ],
     exercises: [
@@ -1017,132 +1013,100 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     ],
     homeworkChecklist: [
       "Read all Week 5 material",
-      "Complete the Shame Inventory exercise",
-      "Write your Self-Compassion Letter",
-      "Complete the Reframing Shame to Accountability exercise",
-      "Practice the Self-Compassion Break at least once daily",
-      "Notice when shame arises and practice reframing it",
-      "Share your experience with shame with your accountability partner",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete the Shame Inventory — write out the actual words your inner critic uses, not a summary of them",
+      "Write your Self-Compassion Letter — write it as if to a man you deeply respect who is going through exactly what you are",
+      "Complete the Reframing Shame to Accountability exercise for your three most common shame statements",
+      "This week when shame hits after a slip or a close call, practice the self-compassion break before going into self-attack mode",
+      "Tell your accountability partner specifically what shame sounds like for you — not what you did, but how your inner critic responds",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   6: {
     weekNumber: 6,
-    title: "Relationships, Attachment & Intimacy",
+    title: "The People You've Been Living Around",
     phase: 1,
     phaseName: "Foundation & Stabilization",
-    overview: "This week explores how CSBD affects relationships and how attachment patterns influence sexual behavior. You'll examine the difference between pseudo-intimacy and genuine connection.",
+    overview: "CSBD does not happen in a vacuum. It happens inside a life with real people in it — people you love, people you've hurt, people you've kept out. This week is about understanding what the behavior has done to the relationships you care about most, why intimacy feels dangerous, and what the wounds in your history have to do with all of it.",
     teaching: [
       {
         id: "csbd-relationships",
-        title: "How CSBD Affects Relationships",
+        title: "Living a Double Life",
         content: [
-          "CSBD doesn't happen in isolation. It profoundly affects relationships - both intimate partnerships and other connections.",
-          "Common relationship impacts include: Erosion of trust, emotional disconnection, secrecy creating distance, partner trauma and betrayal, decreased sexual intimacy in the relationship, and using relationships to manage image rather than connect.",
-          "The paradox: The behavior often begins as an escape from relationship difficulties, but it creates more relationship difficulties, which increases the need to escape.",
-          "Many men with CSBD report feeling like they're living a double life. The gap between their public persona and their private behavior creates isolation and shame."
+          "Most men in this program describe the same experience: the life that other people see, and the life that happens when no one's looking. The curated version and the real one. The man who shows up at family dinner and the man who's alone late at night.",
+          "That gap — the double life — is not just a moral problem. It's a relational one. Every hour you spend maintaining secrecy is an hour you're not present. Every interaction filtered through 'they can't know about this' is an interaction you're not fully in.",
+          "The paradox that traps men here: the behavior often starts as an escape from relationship pain. But it creates more relationship pain, which increases the need to escape, which drives more of the behavior. CSBD is, in part, a relational disorder that wears a sexual mask.",
+          "The men in this program who recover — really recover, not just white-knuckle through it — are almost universally men who stopped maintaining the double life. Not necessarily through dramatic disclosure, but through ending the fundamental posture of hiding."
         ]
       },
       {
         id: "attachment-patterns",
-        title: "Understanding Attachment Patterns",
+        title: "Why You Are This Way With People",
         content: [
-          "Attachment theory explains how early relationships shape our patterns of connection throughout life. These patterns influence how we handle intimacy, trust, and emotional needs.",
-          "SECURE ATTACHMENT: Comfortable with intimacy and independence. Can express needs. Trusts others. Handles conflict well.",
-          "ANXIOUS ATTACHMENT: Fears abandonment. Seeks constant reassurance. May be clingy or jealous. Relationships feel unstable.",
-          "AVOIDANT ATTACHMENT: Uncomfortable with closeness. Values independence highly. May dismiss emotional needs. Keeps partners at distance.",
-          "Many men with CSBD have insecure attachment patterns. The behavior becomes a way to meet emotional needs without the vulnerability of real intimacy."
+          "Attachment theory asks a simple question: when you were a child and you needed comfort, connection, or safety — what happened? The answer to that question, repeated hundreds of times across your childhood, hardwired your nervous system to expect certain things from closeness.",
+          "SECURE ATTACHMENT: Closeness was generally safe. Needs were mostly met. Connection and independence could coexist. People with this pattern find intimacy manageable, even nourishing.",
+          "ANXIOUS ATTACHMENT: Connection was inconsistent or conditional. You learned that love required performance, and that people could withdraw without warning. In adulthood this looks like fear of abandonment, needing reassurance, difficulty tolerating relationship uncertainty.",
+          "AVOIDANT ATTACHMENT: Closeness was dangerous or unreliable. You learned to suppress emotional needs and self-regulate in isolation. In adulthood this looks like discomfort with emotional intimacy, preference for independence, difficulty letting people in.",
+          "Many men with CSBD have avoidant or anxious patterns. The behavior is often a solution to the vulnerability problem that genuine intimacy creates. You can get the neurochemical hit without the relational exposure."
         ]
       },
       {
         id: "pseudo-intimacy",
-        title: "Pseudo-Intimacy vs. Genuine Intimacy",
+        title: "The Substitute That Never Satisfies",
         content: [
-          "CSBD often provides pseudo-intimacy - the appearance or feeling of connection without the reality of it.",
-          "Pseudo-intimacy characteristics: No risk of rejection, no vulnerability required, predictable and controllable, one-sided, leaves you feeling more alone afterward.",
-          "Genuine intimacy characteristics: Requires vulnerability, involves mutual sharing, unpredictable and sometimes uncomfortable, leaves you feeling more connected afterward.",
-          "The brain can be fooled by pseudo-intimacy in the short term, but it doesn't meet the deeper need for connection. This is why the behavior doesn't satisfy - it can't provide what you actually need."
-        ]
-      },
-      {
-        id: "intimacy-avoidance",
-        title: "How CSBD Functions as Intimacy Avoidance",
-        content: [
-          "For many men, compulsive sexual behavior serves as a way to avoid the vulnerability of genuine intimacy. It provides sexual release without the risk of emotional exposure.",
-          "Signs that CSBD may be intimacy avoidance: Choosing the behavior over connection with a partner, using the behavior after conflict or rejection, feeling more comfortable with fantasy than reality, difficulty being emotionally present during sex with a partner.",
-          "Recovery involves not just stopping the behavior but developing the capacity for genuine intimacy. This often means facing the fears that drove the avoidance in the first place."
-        ]
-      },
-      {
-        id: "rebuilding-trust",
-        title: "The Path to Rebuilding Trust",
-        content: [
-          "If your behavior has been discovered, rebuilding trust is a long process. Trust is rebuilt through consistent actions over time, not words or promises.",
-          "Key principles: Complete honesty going forward - no more secrets. Actions match words consistently. Patience with your partner's healing process - they didn't create this wound and shouldn't have to rush to heal it. Taking full responsibility without defensiveness.",
-          "If disclosure hasn't happened, consider whether, when, and how to disclose. This is a complex decision that should ideally involve professional guidance.",
-          "Whether or not you're in a relationship, building healthy connection is essential for recovery. Isolation is fuel for the cycle."
+          "The behavior provides what could be called pseudo-intimacy: the feeling of connection, desire, or being wanted — without any of the vulnerability, risk, or reciprocity of real intimacy.",
+          "Pseudo-intimacy is controlled. It requires nothing from you emotionally. It cannot reject you. It cannot disappoint you. It cannot see you and decide you're not enough. This is precisely why it's compelling — and precisely why it doesn't work.",
+          "The brain cannot be fully satisfied by pseudo-intimacy because the need it's trying to meet is a genuine relational need. You need to be known, to matter, to be in real connection with another person. A screen cannot provide that. An anonymous encounter cannot provide that. The pseudo-intimacy can temporarily mute the need, but the need returns stronger.",
+          "This is why the behavior escalates over time for most men. Not because they're depraved, but because what they're using to meet the need provides diminishing returns. The only thing that actually meets the need is genuine intimacy — which requires everything the behavior was designed to avoid."
         ]
       },
       {
         id: "trauma-and-csbd",
-        title: "Understanding Trauma's Role in CSBD",
+        title: "The Wound Beneath the Pattern",
         content: [
-          "Many men with CSBD have experienced some form of trauma, often in childhood. Research shows a strong correlation between Adverse Childhood Experiences (ACEs) and compulsive sexual behavior.",
-          "ADVERSE CHILDHOOD EXPERIENCES (ACEs) include: Physical, emotional, or sexual abuse. Physical or emotional neglect. Household dysfunction (substance abuse, mental illness, domestic violence, incarceration, divorce). Witnessing violence or traumatic events.",
-          "How trauma connects to CSBD: The behavior becomes a coping mechanism for unresolved pain. Sexual arousal can temporarily regulate difficult emotions. Dissociation during the behavior mirrors trauma responses. The cycle recreates patterns of secrecy, shame, and violation.",
-          "Important: Recognizing trauma's role is not about making excuses. It's about understanding the full picture so you can heal completely. You are responsible for your behavior AND you deserve compassion for what you've experienced."
-        ]
-      },
-      {
-        id: "trauma-responses",
-        title: "Trauma Responses and Sexual Behavior",
-        content: [
-          "Trauma affects the nervous system in profound ways. The behavior may have become a way to manage these effects.",
-          "HYPERAROUSAL: Feeling constantly on edge, anxious, or unable to relax. The behavior may provide temporary relief or numbing.",
-          "HYPOAROUSAL: Feeling numb, disconnected, or emotionally flat. The behavior may be an attempt to 'feel something.'",
-          "DISSOCIATION: Feeling disconnected from yourself or reality. The trance-like state during compulsive behavior is often dissociative.",
-          "If you recognize trauma in your history, specialized trauma treatment (such as EMDR, Somatic Experiencing, or trauma-focused therapy) may be essential alongside this program. Consider discussing this with your mentor."
+          "Research on Adverse Childhood Experiences — ACEs — consistently shows that early trauma is significantly overrepresented in men who develop compulsive sexual behavior. Physical abuse. Emotional abuse. Sexual abuse. Neglect. Household dysfunction. Witnessing violence. These are not excuses. They are causal factors.",
+          "Here's the mechanism: Trauma disrupts the nervous system's ability to regulate itself. The child who learns that adults are dangerous, that closeness leads to pain, that needs are met with rejection or punishment — that child develops ways to survive. Sexual behavior, discovered at puberty, can become a powerful self-regulating mechanism. A reliable escape from a dysregulated nervous system.",
+          "The trance-like quality of compulsive sexual behavior — the way time disappears, the dissociation from everything outside the moment — is not accidental. That dissociation is a trauma response. It's the same mechanism children use to survive overwhelming experiences. The behavior hijacked it.",
+          "Recognizing trauma's role is not about removing your responsibility. You are responsible for your behavior. And you deserve compassion for what created the conditions. Both are true. If you recognize significant trauma in your history, the work you do here is important AND you likely need specialized trauma support — EMDR, somatic therapy, or a trauma-trained therapist — alongside this program."
         ]
       },
       {
         id: "partner-betrayal-trauma",
-        title: "Understanding Partner/Betrayal Trauma",
+        title: "What Your Partner Is Actually Experiencing",
         content: [
-          "When CSBD is discovered, partners often experience what's called betrayal trauma. This is a real psychological injury, not just disappointment or anger.",
-          "Betrayal trauma symptoms include: Intrusive thoughts and flashbacks. Hypervigilance and checking behaviors. Difficulty trusting their own perceptions. Anxiety, depression, and PTSD symptoms. Physical symptoms like sleep disruption and appetite changes.",
-          "Your partner's reactions are trauma responses, not attempts to punish you. Understanding this can help you respond with patience rather than defensiveness.",
-          "Partners deserve their own support and healing process. Encourage (but don't force) them to seek their own therapy or support groups for betrayed partners."
+          "If your partner knows about your behavior, or if they've discovered it, what they're experiencing has a clinical name: betrayal trauma. This is not an informal description. It is a recognized psychological injury with symptoms that mirror PTSD.",
+          "Intrusive thoughts about what happened. Flashbacks triggered by ordinary moments. Hypervigilance — checking your phone, your location, your affect. A fundamental rupture in their sense of reality. Difficulty trusting their own perceptions. Anxiety, depression, physical symptoms — disrupted sleep, appetite changes, somatic tension.",
+          "Your partner's reactions — the anger, the obsessive checking, the oscillation between rage and grief — are trauma responses. They are not overreactions. They are not manipulation tactics. They are a nervous system that has been genuinely injured processing something genuinely injurious.",
+          "The most important thing to understand here: your partner cannot heal on your timeline. The normal defensive response — 'How long do I have to keep paying for this?' — is the wrong frame entirely. They didn't do this to themselves. Demanding that they recover on your schedule is another layer of the same fundamental disregard. Their healing is their work. Your work is to stop doing things that are harming them, and to make space for their process."
         ]
       },
       {
-        id: "disclosure-guidance",
-        title: "Disclosure: If, When, and How",
+        id: "rebuilding-trust",
+        title: "The Path Back Into Real Connection",
         content: [
-          "Disclosure is one of the most difficult decisions in recovery. There's no one-size-fits-all answer.",
-          "REASONS TO DISCLOSE: Honesty is foundational to genuine intimacy. Secrets maintain the double life. Partners deserve to make informed decisions. Disclosure often brings relief from the burden of secrecy.",
-          "CONSIDERATIONS: Timing matters - disclosure during crisis may cause more harm. Professional guidance is highly recommended. Therapeutic disclosure (facilitated by a professional) is often more effective. Consider your partner's support system and resources.",
-          "WHAT DISCLOSURE IS NOT: It's not a detailed confession of every act. It's not meant to relieve your guilt at your partner's expense. It's not a one-time event but an ongoing commitment to honesty.",
-          "If you're considering disclosure, work with a qualified professional experienced in sexual addiction and betrayal trauma. They can help both of you navigate this process."
+          "Trust is not rebuilt through remorse. It is rebuilt through consistent, verifiable behavior over time. The words 'I'll never do it again' have no value — you've said them before, and so have your predecessors. What rebuilds trust is doing differently, consistently, long enough that a pattern of integrity is established.",
+          "That means complete honesty going forward — not just absence of lies, but proactive transparency. It means accountability software, check-ins, openness about where you are and who you're with. It means not asking your partner to simply trust you while you continue to give them no rational basis to do so.",
+          "It also means taking full responsibility without defensive caveats. 'I did this and I take full responsibility' is different from 'I did this, but you should know that I was under a lot of pressure.' One closes the wound slightly. The other re-opens it.",
+          "Whether you're in a relationship or not, your recovery depends on genuine human connection. Isolation is the substrate in which this behavior grows. Recovery requires the opposite: people who know the real version of you, who can see when you're struggling, and who are authorized to challenge you. That's not optional. It's structural."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "If the people closest to you could see the version of you that you want to become, what would be different about how you show up for them?"
+        question: "Describe the double life honestly — the gap between who people see and what's actually been happening. What has maintaining that gap cost you? What has it cost the people in your life?"
       },
       {
         id: "q2",
-        question: "Which attachment pattern do you identify with? How might early experiences have shaped this pattern?"
+        question: "Which attachment pattern resonates most? How do you think your early experiences shaped your relationship with closeness and vulnerability?"
       },
       {
         id: "q3",
-        question: "Have you experienced any Adverse Childhood Experiences (ACEs)? If so, how might these connect to your current struggles? (Note: This is for your reflection - share with your mentor if appropriate)"
+        question: "Have there been significant early experiences — abuse, neglect, household dysfunction, loss — that you've never fully addressed? How might those experiences connect to the pattern you're working to change?"
       },
       {
         id: "q4",
-        question: "If your partner knows about your behavior, what do they need from you right now? If they don't know, what considerations are you weighing about disclosure?"
+        question: "If you're in a relationship affected by this behavior: what does your partner need from you right now that you haven't been giving? Be honest. Don't write what sounds good — write what's true."
       }
     ],
     exercises: [
@@ -1297,92 +1261,91 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       }
     ],
     homeworkChecklist: [
-      "Read all Week 6 material, including the trauma-informed sections",
-      "Complete the Relationship Impact Assessment",
-      "Complete the Attachment Pattern Exploration",
-      "Complete the Trauma and History Exploration exercise (at your own pace)",
-      "If in a relationship, complete the Trust Rebuilding Plan",
-      "Identify your Barriers to Genuine Intimacy",
-      "Take one small step toward greater connection this week",
-      "Consider whether additional trauma support (EMDR, trauma therapy) might be beneficial",
-      "Complete daily monitoring logs for all 7 days"
+      "Read all Week 6 material",
+      "Complete the Relationship Impact Assessment honestly — not what you've already apologized for, but the full picture",
+      "Complete the Attachment Pattern Exploration — trace where your current patterns came from",
+      "Complete the Trauma and History Exploration at whatever depth feels safe — and consider bringing what you find to your mentor",
+      "If in a relationship, complete the Trust Rebuilding Plan with specific actions, not intentions",
+      "Identify your single biggest barrier to genuine intimacy and name it honestly",
+      "Take one concrete step toward real connection this week — not a gesture, but a real one",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   7: {
     weekNumber: 7,
-    title: "Problem-Solving & Communication",
+    title: "What Needs to Be Said",
     phase: 1,
     phaseName: "Foundation & Stabilization",
-    overview: "This week develops practical problem-solving skills and healthy communication patterns. Many urges arise from unresolved problems and unmet needs that haven't been clearly expressed.",
+    overview: "There are conversations you've been avoiding. You know which ones they are. The thing you haven't said to your partner. The resentment you've been swallowing. The need you've never found the words for. Unspoken things don't disappear — they go underground and come out as something else. This week, we name them.",
     teaching: [
       {
         id: "problem-solving-model",
-        title: "A Model for Problem-Solving",
+        title: "What You've Been Using Instead of Words",
         content: [
-          "Many men with CSBD have used the behavior as their primary coping mechanism. When problems arise, instead of addressing them, they escape into the behavior.",
-          "Effective problem-solving involves: (1) Define the problem clearly, (2) Generate possible solutions (brainstorm without judging), (3) Evaluate each solution (pros and cons), (4) Choose a solution and create an action plan, (5) Implement the plan, (6) Evaluate the results and adjust.",
-          "This sounds simple, but when you're stressed, upset, or triggered, your brain often skips to the familiar escape route. Having a structured approach helps.",
-          "Many problems that seem overwhelming become manageable when broken down into steps."
+          "For most men in this program, the behavior has served a communication function. Not just a relief function, not just an escape function — it has been the answer to problems that needed different solutions.",
+          "You felt disconnected from your partner. Instead of addressing it, you found connection elsewhere. You were under enormous stress at work. Instead of acknowledging that and asking for support, you escaped. You were angry about something you couldn't bring yourself to say. The behavior absorbed the tension.",
+          "This is not a character flaw. It's a skill deficit. Most men were not taught how to identify emotional needs, articulate them clearly, and make direct requests of people they depend on. The behavior filled the gap. Recovery means learning to do the thing the behavior was doing, in a different, better way.",
+          "The problem-solving sequence for things the behavior has been solving: Define the actual problem — the real one, not the symptom. Generate possible solutions. Choose one. Act on it. Evaluate. This is slower, more exposed, and harder than acting out. It's also the only thing that actually works."
         ]
       },
       {
         id: "needs-identification",
-        title: "Identifying and Expressing Needs",
+        title: "What You're Actually Hungry For",
         content: [
-          "Underneath every urge is often an unmet need. You might need connection, validation, rest, meaning, or relief from stress. The behavior is an attempt to meet these needs, but it doesn't actually fulfill them.",
-          "Common needs that drive CSBD: Need for connection and intimacy, need for validation or to feel desired, need for escape from stress or pain, need for excitement or stimulation, need to feel powerful or in control.",
-          "When you can identify the underlying need, you can find healthier ways to meet it. Instead of acting out to feel connected, you can reach out to a real person. Instead of acting out to escape stress, you can address the stressor.",
-          "The question to ask when an urge arises: 'What need is this trying to meet? How can I meet that need in a healthy way?'"
+          "Under almost every urge is an unmet need. The urge is your brain's proposed solution. Before you can solve the problem differently, you have to name the problem accurately.",
+          "Common needs that drive CSBD: Connection — real contact with another person who knows and accepts you. Validation — feeling that you matter, that you're desired, that you're enough. Relief — from stress, fear, anger, or pain that has nowhere to go. Control — a sense of power or agency when life feels unmanageable. Sensation — aliveness, intensity, escape from numbness.",
+          "When an urge appears, try this question: 'What am I actually hungry for right now?' Not the behavior — but the need the behavior is trying to solve. Name it. Anxiety about tomorrow's meeting? Loneliness from the distance between you and your wife? Anger at something you said nothing about?",
+          "Once you've named the actual need, you can ask the next question: how do I meet this directly? Loneliness is addressed by contact — pick up the phone. Stress is addressed by movement, rest, or conversation. Anger usually needs a conversation you've been postponing. The need has an answer. The behavior is just the wrong one."
         ]
       },
       {
         id: "assertive-communication",
-        title: "Assertive Communication",
+        title: "The Language You Were Never Taught",
         content: [
-          "PASSIVE COMMUNICATION: Not expressing needs or opinions. Leads to resentment. Example: 'Whatever you want is fine.'",
-          "AGGRESSIVE COMMUNICATION: Expressing needs in a way that violates others' rights. Creates conflict. Example: 'You never listen to me!'",
-          "ASSERTIVE COMMUNICATION: Expressing needs clearly and respectfully. Builds connection. Example: 'I feel unheard when we don't discuss this. I need us to talk about it.'",
-          "Assertive communication uses 'I' statements. The formula: 'I feel [emotion] when [situation]. I need [need].' This expresses your experience without attacking the other person."
+          "Most men were socialized away from direct emotional communication. 'I'm fine.' 'It doesn't matter.' 'Just drop it.' The language of male stoicism is extremely efficient for a lot of situations. It is catastrophic in intimate relationships and in recovery.",
+          "PASSIVE COMMUNICATION is not saying what you mean. 'Whatever you want.' 'It's fine.' The words say one thing. The resentment says another. Passive communication doesn't prevent conflict — it defers and amplifies it.",
+          "AGGRESSIVE COMMUNICATION is saying what you feel in a way that makes the other person defensive. 'You never...' 'You always...' 'You make me...' The message might even be accurate. The delivery closes the other person down.",
+          "ASSERTIVE COMMUNICATION is saying what is true from your experience, without attacking. The formula: 'I feel [emotion] when [specific situation]. I need [specific request].' Not: 'You never make me feel wanted.' But: 'I feel disconnected from you when we go days without talking about anything real. I need us to have a real conversation tonight.' Same content. Different outcome."
         ]
       },
       {
         id: "conflict-resolution",
-        title: "Healthy Conflict Resolution",
+        title: "Conflict Is Recovery Work",
         content: [
-          "Conflict is inevitable in relationships. The goal isn't to avoid conflict but to handle it well. Unresolved conflict often triggers the cycle.",
-          "Principles for healthy conflict: Address issues when calm, not in the heat of anger. Listen to understand, not just to respond. Focus on the issue, not attacking the person. Be willing to compromise. Take breaks if needed to regulate emotions.",
-          "After conflict, check in with yourself. Are you triggered? Are you rationalizing a reason to act out? Conflict is a high-risk time.",
-          "Some conflicts can't be resolved in one conversation. That's okay. Progress matters more than immediate resolution."
+          "Unresolved conflict is a primary trigger for most men in this program. You have a hard conversation with your partner. Or you need to have one and you don't. You walk away with the tension still in your body. You're alone. You have access to your phone. The next part of the story is predictable.",
+          "Recovery requires getting competent at conflict. Not comfortable — competent. The goal is not to avoid conflict or win it. The goal is to process it without it becoming a trigger.",
+          "The principles: Address conflict when you're regulated enough to listen, not just respond. Use your body as a signal — if you're flooded, take a break and come back. Listen to understand what the other person is experiencing, not just to prepare your counterargument. Attack the problem, not the person.",
+          "After a difficult conversation, check in with yourself honestly. Are you still carrying it? Are you rationalizing? Is that unresolved energy becoming a trigger? Conflict that doesn't get processed doesn't go away — it goes somewhere."
         ]
       },
       {
         id: "boundary-setting",
-        title: "Setting and Maintaining Boundaries",
+        title: "A Boundary Is Not a Wall",
         content: [
-          "Boundaries are limits that define where you end and others begin. Healthy boundaries protect your recovery and your relationships.",
-          "External boundaries: Limits on what others can do to you. Internal boundaries: Limits on your own behavior. Both are essential for recovery.",
-          "Examples of recovery boundaries: No devices in the bedroom. No social media after 10 PM. No being alone in triggering environments. Commitment to honesty with accountability partner.",
-          "Setting boundaries often feels uncomfortable at first, especially if you're used to avoiding conflict. But boundaries are acts of self-care and respect."
+          "Boundaries get misunderstood in recovery conversations. They're not about controlling other people. They're not ultimatums. They are clear statements of what you will and won't do — commitments you make to yourself that you communicate to others.",
+          "Recovery boundaries are structural. No devices in the bedroom is not a conversation or a hope — it's a boundary you've set with yourself. Accountability software reporting to someone specific is a boundary. A check-in time with your accountability partner is a boundary. These work because you don't renegotiate them in real time.",
+          "Relational boundaries are different — they're about what you're willing to participate in. 'I'm not willing to go to that situation without having a plan and telling someone.' 'I'm not willing to keep secrets about where I am.' These require communication and sometimes negotiation.",
+          "Setting a boundary often feels aggressive to men who've been passive. It isn't. A clearly communicated limit is more respectful than passive compliance followed by resentment. The discomfort of setting a boundary is almost always less costly than the behavior you engage in when you don't."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What problems in your life have you been avoiding or escaping from? How has the behavior served as a substitute for problem-solving?"
+        question: "What problem in your life has the behavior been 'solving'? What is the actual need underneath your most frequent urges? Be specific."
       },
       {
         id: "q2",
-        question: "What underlying needs does your behavior try to meet? How else could you meet those needs?"
+        question: "What conversation are you avoiding right now? What would you say if you weren't afraid of the response?"
       },
       {
         id: "q3",
-        question: "How would you describe your communication style? Where could you be more assertive?"
+        question: "Where in your life are you communicating passively — saying 'it's fine' when it isn't, going along rather than saying what you need?"
       },
       {
         id: "q4",
-        question: "Think about a time you said 'yes' when you should have said 'no,' or stayed silent when you needed to speak up. What held you back, and what would you do differently now?"
+        question: "What boundaries do you need to set — with yourself, with your environment, with other people — that you haven't set yet? What's stopping you?"
       }
     ],
     exercises: [
@@ -1489,91 +1452,89 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     ],
     homeworkChecklist: [
       "Read all Week 7 material",
-      "Complete the Problem-Solving Practice exercise",
-      "Complete Needs Mapping exercise",
-      "Practice Assertive Communication",
-      "Create your Boundary Setting Plan",
-      "Practice at least one assertive conversation this week",
-      "Identify one boundary and begin implementing it",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete the Problem-Solving Practice exercise for a real, current problem — not a hypothetical",
+      "Complete your Needs Mapping — for each recent urge, name the need underneath it",
+      "Practice one assertive conversation this week using the I-feel-when-I-need format. Write down how it went.",
+      "Create your Boundary Setting Plan and set at least one boundary this week — with yourself or someone else",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   8: {
     weekNumber: 8,
-    title: "Relapse Prevention - Part 1",
+    title: "The Architecture of Not Going Back",
     phase: 1,
     phaseName: "Foundation & Stabilization",
-    overview: "This week introduces the first phase of relapse prevention - understanding warning signs, creating initial prevention plans, and preparing for the transition to Phase 2.",
+    overview: "You've spent seven weeks understanding the pattern — the triggers, the thoughts, the emotions, the relational wounds underneath it. Now you build the structure that protects what you're trying to create. A relapse prevention plan is not a set of rules. It's a map of yourself that you've prepared in advance, for the version of yourself that will be less capable of thinking clearly.",
     teaching: [
       {
         id: "understanding-relapse",
-        title: "Understanding Lapse vs. Relapse",
+        title: "The Difference Between a Lapse and a Relapse",
         content: [
-          "LAPSE: A slip. A single incident. A return to the behavior that is quickly interrupted. It doesn't have to become a pattern.",
-          "RELAPSE: A return to the old pattern. Not just one slip, but re-engaging with the cycle. A surrender to the old way of living.",
-          "The difference is what happens after. A lapse becomes relapse when you give up, hide, and return to the full cycle. A lapse can become a learning experience when you respond with honesty and recommitment.",
-          "Important: A lapse is not a failure. It's data. It shows you where your plan needs strengthening. The only true failure is refusing to get back up."
+          "A LAPSE is a single incident. One slip. The behavior happened. It is data — painful data — about where the plan wasn't strong enough, what situation wasn't anticipated, what emotional state bypassed the tools. A lapse does not have to become anything more than a single incident.",
+          "A RELAPSE is what happens after the lapse if you respond to it with shame, hiding, and surrender. It's not the slip that creates relapse — it's the 'I've already blown it' thinking that follows, that gives you permission to keep going. Relapse is the return to the full cycle, not just the moment of acting out.",
+          "The critical window is the 24 hours after a lapse. What you do in those 24 hours determines whether it stays a lapse. If you tell someone immediately, if you complete a reflection on what happened and why, if you recommit and adjust your plan — it ends there. If you hide, rationalize, and continue in silence — it doesn't.",
+          "A lapse is not a failure. It is the most specific possible information about where your plan needs work. Every man who achieves long-term recovery has had slips. What distinguishes them is not that they were perfect — it's that they got back up faster and more honestly each time."
         ]
       },
       {
         id: "warning-signs",
-        title: "Recognizing Your Warning Signs",
+        title: "The Signals Before the Signal",
         content: [
-          "Relapse doesn't usually happen suddenly. It's a process that unfolds over time, with warning signs along the way.",
-          "EMOTIONAL WARNING SIGNS: Increasing isolation, irritability, anxiety, depression, feeling 'off,' loss of motivation.",
-          "BEHAVIORAL WARNING SIGNS: Skipping accountability check-ins, letting routines slip, testing boundaries, 'forgetting' to use tools, rationalizing small compromises.",
-          "COGNITIVE WARNING SIGNS: Permission-giving thoughts returning, fantasizing, minimizing consequences, romanticizing the behavior.",
-          "PHYSICAL WARNING SIGNS: Disrupted sleep, poor self-care, physical tension, feeling physically depleted."
+          "Relapse almost never comes out of nowhere. There is a process. It unfolds over hours or days — sometimes weeks — before the behavior happens. The problem is that the warning signs can feel like normal life until you know what to look for.",
+          "EMOTIONAL SIGNALS: Increasing isolation. Irritability that doesn't match the situation. Low-grade anxiety you're not addressing. A flatness or numbness you're not naming. Feeling 'off' in a way that's hard to articulate. These are yellow zone signs.",
+          "BEHAVIORAL SIGNALS: Skipping your check-ins. Letting the accountability software lapse. Rationalizing exceptions to your boundaries. Spending more time alone in high-risk environments. 'Testing' your edges without admitting that's what you're doing.",
+          "COGNITIVE SIGNALS: The permission-giving thoughts returning. Fantasizing or mental rehearsing. Minimizing what the behavior costs. Romanticizing what it provides. 'I've been good for a while' thinking. The distortions from Week 3 showing up in force.",
+          "PHYSICAL SIGNALS: Disrupted sleep. Not exercising. Not eating well. Physical tension held in the body. These aren't just lifestyle issues — they are vulnerability states that lower the threshold at which urges become unmanageable."
         ]
       },
       {
         id: "traffic-light",
-        title: "The Traffic Light System",
+        title: "The Four Zones",
         content: [
-          "GREEN ZONE (Stable): Connected to support, using tools, following structure, practicing honesty, managing urges well. Action: Maintain current practices.",
-          "YELLOW ZONE (Caution): Warning signs appearing, stress increasing, urges more frequent, starting to isolate or avoid. Action: Increase accountability, boost coping strategies, address what's happening.",
-          "RED ZONE (Danger): Strong urges, active rationalization, close to or already acting out, losing perspective. Action: Emergency plan - reach out immediately, leave the situation, use all tools available.",
-          "Knowing what zone you're in helps you take appropriate action. Don't wait until you're in the red zone to respond."
+          "GREEN: Connected. Using your tools. Following your structure. Honest with the people in your accountability network. Urges are manageable. This is the zone your plan should keep you in. The work in the green zone is maintenance — staying consistent, not getting complacent.",
+          "YELLOW: Warning signs have appeared. Stress is elevated. Urges are more frequent. You've started to isolate or let some practices slip. You're not in danger yet, but you're moving toward it. Response: Increase accountability immediately. Tell someone what's happening. Return to your core practices. Address whatever is driving the drift.",
+          "ORANGE: Preoccupation is increasing. You're mentally rehearsing. You've moved toward opportunity or access in ways you're rationalizing. You may be fantasizing. Your emotional regulation is compromised. Response: Emergency contact — call someone now. Remove access. Get out of the physical space you're in. Use every tool available.",
+          "RED: You're about to act out, or you already have. Response: Crisis protocol. Reach out within the hour. Don't let shame drive you underground. The next 24 hours are critical."
         ]
       },
       {
         id: "initial-prevention-plan",
-        title: "Building Your Initial Prevention Plan",
+        title: "Your First Prevention Plan",
         content: [
-          "A relapse prevention plan includes: Your personal warning signs, your coping strategies for each stage, your support contacts, your environmental controls, and your emergency action plan.",
-          "The plan should be specific and accessible. Know exactly what you'll do when warning signs appear. Don't wait until you're in crisis to figure it out.",
-          "Share your plan with someone who can help you implement it. An accountability partner or mentor who knows your plan can spot warning signs you might miss.",
-          "Review and update your plan regularly. As you learn more about your patterns, the plan should evolve."
+          "A relapse prevention plan is built in the green zone, where you're thinking clearly — not in the yellow or orange zone, where you're not. If you don't build it now, you'll be improvising when you need to execute.",
+          "The plan answers five questions in advance: What are my earliest warning signs — the first things that appear before I'm in trouble? What specific actions will I take at each zone level? Who will I call, and at what point? What environmental controls are in place? What do I do in the first 24 hours after a slip?",
+          "The plan needs to live somewhere you'll access it under pressure. Not just in this workbook — on your phone, or in a conversation with your accountability partner who knows the plan and will hold you to it.",
+          "Review and update the plan every 30 days. Your patterns will become clearer over time. The plan should evolve with your understanding."
         ]
       },
       {
         id: "phase-transition",
-        title: "Transitioning to Phase 2",
+        title: "What Phase 2 Offers That Phase 1 Can't",
         content: [
-          "Phase 1 has focused on understanding your behavior, building skills, and stabilizing. You've learned about triggers, cognitive restructuring, coping strategies, and relationship patterns.",
-          "Phase 2 will shift focus from behavior management to values-based living. You'll learn Acceptance and Commitment Therapy (ACT) principles that will help you build a life of meaning and purpose.",
-          "The goal is not just to stop the behavior but to create a life so full of meaning that the behavior loses its appeal. This is the key to long-term recovery.",
-          "Remember: Recovery is not a destination but a journey. The skills you've learned in Phase 1 will continue to be used alongside the new approaches in Phase 2."
+          "Phase 1 has been about stabilization and understanding. You've mapped the cycle, challenged the thoughts, built coping strategies, examined your relationships, confronted your shame. This is critical foundational work. It is not enough.",
+          "Here's the honest limitation of behavior management: it is running away from something. And you can run for a while. But men who only ever run — who stop the behavior without replacing it with something — often eventually stop running.",
+          "Phase 2 turns the frame around. Instead of running from the behavior, you start moving toward a life. Acceptance and Commitment Therapy gives you tools not for managing discomfort better, but for building something worth choosing over the behavior. Values. Meaning. Committed action in the directions that matter.",
+          "The goal is not just to not do the thing. The goal is to want something else more. Phase 2 builds that. It doesn't replace what you learned in Phase 1 — it gives it somewhere to go."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What are your earliest warning signs that you're moving away from stability? What happens first?"
+        question: "What are your earliest warning signs? Not the last-moment signs — the first ones. What's the earliest signal that you're drifting?"
       },
       {
         id: "q2",
-        question: "What zone are you typically in before acting out? How quickly do you move from green to red?"
+        question: "What zone are you typically in when you act out? How long did the drift from green to red take last time? What did you miss or ignore?"
       },
       {
         id: "q3",
-        question: "If you could go back and talk to yourself on Day 1 of this program, what would you say? What do you know now that you wish you knew then?"
+        question: "Looking at the seven weeks of this program so far: what have you learned about yourself that you didn't know before? What surprised you?"
       },
       {
         id: "q4",
-        question: "What areas still need the most work? What will you focus on strengthening?"
+        question: "What does 'a life worth choosing over the behavior' look like to you? What would have to be true about your life for this to be genuinely unappealing?"
       }
     ],
     exercises: [
@@ -1667,93 +1628,88 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     ],
     homeworkChecklist: [
       "Read all Week 8 material",
-      "Complete your Personal Warning Signs Inventory",
-      "Create your Traffic Light Plan",
-      "Complete the Phase 1 Reflection exercise",
-      "Share your warning signs and plan with accountability partner",
-      "Review all Phase 1 materials and note areas for continued growth",
-      "Prepare mentally for Phase 2's focus on values and meaning",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete your Personal Warning Signs Inventory — be specific, not generic",
+      "Build your Traffic Light Plan with specific actions at each zone, not vague intentions",
+      "Complete the Phase 1 Reflection — what you've actually learned, not what you were supposed to learn",
+      "Share your warning signs and plan with your accountability partner so they can help you see what you miss",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   9: {
     weekNumber: 9,
-    title: "Introduction to ACT & Psychological Flexibility",
+    title: "What Fighting Has Cost You",
     phase: 2,
     phaseName: "Integration & Values",
-    overview: "Welcome to Phase 2. This week introduces Acceptance and Commitment Therapy (ACT) and the concept of psychological flexibility - the key to long-term recovery and a meaningful life.",
+    overview: "You've been fighting for a long time. Fighting the urges. Fighting the thoughts. Fighting the feelings. Fighting the version of yourself you don't want to be. Phase 1 gave you better weapons. This week begins Phase 2, which asks a harder question: what if fighting isn't the right strategy?",
     teaching: [
       {
         id: "what-is-act",
-        title: "What Is ACT?",
+        title: "The Strategy That Hasn't Worked",
         content: [
-          "Acceptance and Commitment Therapy (ACT) is a form of behavioral therapy that uses acceptance, mindfulness, and values-based action to increase psychological flexibility.",
-          "Unlike approaches that focus on eliminating unwanted thoughts or feelings, ACT teaches you to change your relationship with them. You learn to have difficult thoughts and feelings without being controlled by them.",
-          "ACT is based on the idea that suffering comes not from painful experiences themselves, but from our struggle against them. When we fight reality, we lose.",
-          "The goal of ACT is not to feel better (though that often happens), but to build a rich and meaningful life while handling the pain that inevitably comes with it."
+          "Think honestly about your history with this behavior. How long have you been trying to control it, suppress it, white-knuckle through it? Months? Years? Decades? And the strategy — trying harder, resolving harder, punishing yourself harder — has produced what results?",
+          "This is not an accusation. Most men in this program are trying extremely hard. The problem is not the effort. The problem is the strategy. And the strategy that most men are using — the control agenda, the war against their own internal experience — is making things worse, not better.",
+          "Acceptance and Commitment Therapy begins with what's called 'creative hopelessness' — a frank examination of whether the control strategy has actually worked. Not as a reason to give up. As a reason to try something fundamentally different.",
+          "ACT does not ask you to try harder. It asks you to try differently. The difference is this: instead of fighting your internal experience, you change your relationship to it. You stop running from the storm and start learning to walk through it."
         ]
       },
       {
         id: "psychological-flexibility",
-        title: "Psychological Flexibility",
+        title: "Why Fighting Makes It Worse",
         content: [
-          "Psychological flexibility is the ability to be present, open up to difficult experiences, and do what matters. It's the opposite of getting stuck.",
-          "When you're psychologically flexible, you can: Contact the present moment rather than being lost in the past or future. Open up to thoughts and feelings rather than fighting them. Connect with your values rather than acting on impulse. Take committed action rather than staying stuck.",
-          "Psychological inflexibility looks like: Fusion with thoughts (believing everything your mind says), experiential avoidance (running from discomfort), disconnection from values (acting on impulse rather than purpose), and inaction or impulsive action.",
-          "CSBD is often a symptom of psychological inflexibility. The behavior is an attempt to escape uncomfortable internal experiences."
+          "Here is the counterintuitive truth about internal experiences: the harder you fight them, the stronger they get. Try right now not to think about a white bear. What happened? The instruction itself creates the thought.",
+          "Psychologists call this the 'rebound effect.' Suppression backfires. When you tell yourself 'don't think about this, don't feel this, don't have this urge,' you are placing those things at the center of your attention. You are making them louder.",
+          "CSBD is, in part, driven by experiential avoidance — the attempt to control or escape uncomfortable internal states. You feel anxious. You can't tolerate the anxiety. The behavior provides relief. The anxiety comes back. You've actually trained your nervous system to need the escape.",
+          "The alternative is not enduring pain heroically. It's changing your fundamental relationship to discomfort. Not: 'I must destroy this urge.' But: 'I can have this urge and not be controlled by it.' Not: 'I must not feel this shame.' But: 'I can feel shame and still act with integrity.' The difference is everything."
         ]
       },
       {
         id: "six-processes",
-        title: "The Six Core Processes of ACT",
+        title: "Six Tools, One Goal",
         content: [
-          "ACT develops psychological flexibility through six interrelated processes:",
-          "1. PRESENT MOMENT AWARENESS: Being here now, not lost in past regrets or future worries.",
-          "2. ACCEPTANCE: Opening up to experiences as they are, rather than fighting them.",
-          "3. COGNITIVE DEFUSION: Seeing thoughts as thoughts, not as commands or absolute truths.",
-          "4. SELF-AS-CONTEXT: The observing self - the 'you' who notices thoughts and feelings without being defined by them.",
-          "5. VALUES: Clarifying what truly matters to you - your chosen direction in life.",
-          "6. COMMITTED ACTION: Taking concrete steps toward your values, even when it's uncomfortable."
+          "ACT builds what researchers call psychological flexibility — the ability to be fully present with your experience, to have thoughts and feelings without being dictated by them, and to take action in the direction of your values regardless of how you feel. This is exactly what CSBD takes from you.",
+          "The six interrelated processes: PRESENT MOMENT AWARENESS — being here, now, where the behavior doesn't actually exist. ACCEPTANCE — making room for discomfort rather than running from it. COGNITIVE DEFUSION — seeing thoughts as thoughts, not commands. SELF-AS-CONTEXT — the observer self, the part of you that cannot be broken. VALUES — your compass, your reason. COMMITTED ACTION — moving toward what matters, despite discomfort.",
+          "You'll spend the next several weeks working through each of these in depth. They build on each other. They also reinforce the CBT skills from Phase 1 — they don't replace them. A defusion technique and a thought record used together are more powerful than either alone.",
+          "The overall goal of Phase 2 is not just 'not doing the behavior.' It's building a life with enough meaning, connection, and direction that the behavior loses its comparative appeal. That's long-term recovery."
         ]
       },
       {
         id: "control-agenda",
-        title: "The Problem with the Control Agenda",
+        title: "The Cost of the Control Strategy",
         content: [
-          "Most of us have been taught that the solution to uncomfortable feelings is to control or eliminate them. Feel anxious? Calm down. Feel sad? Cheer up. Feel an urge? Suppress it.",
-          "This 'control agenda' works for external problems. If your house is cold, you turn up the heat. If you're hungry, you eat. But internal experiences don't work the same way.",
-          "Trying to control or suppress thoughts and feelings often backfires. Try not to think of a pink elephant. What happened? The more you fight a thought, the stronger it gets.",
-          "In CSBD, the control agenda has likely been your strategy: trying to suppress urges, fighting off thoughts, avoiding uncomfortable feelings. How has that worked? ACT offers a different approach."
+          "Take stock honestly: What has the control strategy cost you? How much mental energy has gone into suppression, avoidance, and management of your internal life? How much of your life has been organized around not feeling certain things, not thinking certain thoughts, not being in certain situations?",
+          "The cost of the control strategy is enormous and rarely calculated. It's the exhaustion of constant vigilance. It's the life you haven't lived because you were too busy managing the one you were trying to suppress. It's the relationships that couldn't be fully entered because you were carrying a secret.",
+          "ACT calls this 'the struggle switch.' When the switch is on, every uncomfortable experience becomes a problem to solve, a battle to win. When the switch is off, a difficult experience is just... a difficult experience. You can have it without it defining you or dictating your next move.",
+          "Turning off the struggle switch is not passive. It is one of the most active, courageous things you can do. It requires you to face what you've been running from — to stand in the presence of discomfort without reaching for escape. The men who do this consistently are the men who recover."
         ]
       },
       {
         id: "willingness",
-        title: "From Control to Willingness",
+        title: "Willingness Is Not Approval",
         content: [
-          "Instead of fighting your internal experiences, ACT invites you to be willing to have them. Not wanting them, not enjoying them - just making room for them.",
-          "Willingness means: I can have this urge and not act on it. I can feel this shame and still take action. I can have the thought 'I'm a failure' and still keep going.",
-          "This is radically different from what you've been doing. It's not resignation or giving up. It's choosing to engage with life fully, including the parts that hurt.",
-          "When you stop fighting internal experiences, you free up enormous energy for what actually matters - living according to your values."
+          "The concept that will anchor Phase 2 is willingness. Willingness is not wanting something. It's not enjoying something. It's not agreeing that something should be happening. It is making room for something to be present without fighting it or running from it.",
+          "'I am willing to have this urge.' Not: 'I want this urge.' Not: 'I'm okay with this urge.' Just: 'This urge is present, and I can make room for it to be present without acting on it.' That's a fundamentally different relationship to your experience.",
+          "'I am willing to feel this shame without letting it make my decisions for me.' Not suppressing it. Not drowning in it. Just — holding it. Being with it. Continuing to act with integrity despite it.",
+          "Willingness is a practice. You will not be immediately good at it. The years of habitual avoidance don't disappear in a week. But every time you practice — every time you have an uncomfortable experience and make room for it rather than reaching for escape — you are literally changing your nervous system. This is how recovery becomes sustainable."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "How have you tried to control or eliminate unwanted thoughts, feelings, or urges? How well has that worked?"
+        question: "Be honest about the control strategy: how long have you been fighting this? What results has that strategy produced? Not what you hoped — what actually happened?"
       },
       {
         id: "q2",
-        question: "What would it mean to be 'willing' to have uncomfortable experiences without acting on them or running from them?"
+        question: "What internal experiences — emotions, thoughts, physical sensations — are you most unwilling to have? What do you do to avoid them?"
       },
       {
         id: "q3",
-        question: "When you're 'stuck,' what usually has you stuck? Thoughts? Feelings? Avoidance? Old habits?"
+        question: "What has the control strategy cost you — in energy, in relationships, in life unlived? Try to actually add this up."
       },
       {
         id: "q4",
-        question: "What would a more psychologically flexible response to urges look like for you?"
+        question: "What would it mean to be 'willing' to have an urge without acting on it? Not happy about it — just willing. Does that feel possible? What gets in the way?"
       }
     ],
     exercises: [
@@ -1847,90 +1803,89 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     ],
     homeworkChecklist: [
       "Read all Week 9 material",
-      "Complete the Control Agenda Assessment",
-      "Complete the Psychological Flexibility Self-Assessment",
-      "Practice one Willingness Experiment and record results",
-      "Notice times you're using the control agenda during the week",
-      "Practice being willing to have urges without acting on them",
-      "Continue daily monitoring logs for all 7 days"
+      "Complete the Control Agenda Assessment — be brutal about what the control strategy has actually cost you",
+      "Complete the Psychological Flexibility Self-Assessment honestly — where you actually are, not where you want to be",
+      "Practice one Willingness Experiment and record what happened when you made room instead of fighting",
+      "Notice this week every time you use a control strategy — suppression, avoidance, distraction — and write it down",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   10: {
     weekNumber: 10,
-    title: "Cognitive Defusion",
+    title: "Your Thoughts Don't Have Permission",
     phase: 2,
     phaseName: "Integration & Values",
-    overview: "This week teaches cognitive defusion - the skill of stepping back from your thoughts and seeing them as mental events rather than literal truths you must obey.",
+    overview: "Last week you examined the cost of fighting your internal experience. This week you learn the first major ACT skill: defusion — the ability to step back from your thoughts and see them for what they are. Thoughts are not facts. They are not commands. They are not you. They are events passing through your mind. You get to decide whether to obey them.",
     teaching: [
       {
         id: "fusion-vs-defusion",
-        title: "Fusion vs. Defusion",
+        title: "Hooked vs. Free",
         content: [
-          "FUSION is when you're 'hooked' by your thoughts. You believe them absolutely, react to them automatically, and let them dictate your behavior. When fused with a thought, it feels like the truth, not like a thought.",
-          "DEFUSION is stepping back from thoughts. You see them as mental events - words and pictures passing through your mind - rather than absolute truths you must act on.",
-          "Examples of fusion: 'I have an urge, so I have to act on it.' 'I feel hopeless, so there's no point in trying.' 'I had the thought that I'm broken, so I must be broken.'",
-          "Defusion doesn't mean the thoughts go away. It means they have less control over your behavior. You can have the thought 'I need to act out' and not act on it."
+          "FUSION is when your thoughts have you. You believe them automatically. You react to them without choice. The thought 'I need to act out' arrives and the next moment you're acting. The thought 'I'm hopeless' arrives and the next moment you've stopped trying. Fusion feels like reality. It feels like what's true.",
+          "DEFUSION is when you have your thoughts — when you can see them as events, as words and images produced by a brain, rather than as commands or facts about the world. You can have the thought 'I need to act out' and notice it as a thought. You can have the thought 'I'm broken' and recognize it as one more output of a machine that has been programmed by experience.",
+          "The difference is not in what thoughts appear. The difference is in the relationship to the thought. Fusion and defusion produce entirely different behaviors from exactly the same thought.",
+          "This is the most practically powerful skill in Phase 2. When you can defuse from an urge — when you can step back from 'I NEED this' and observe 'there is a pull toward this behavior' — you have created a gap. In that gap is your life."
         ]
       },
       {
         id: "thoughts-not-facts",
-        title: "Thoughts Are Not Facts",
+        title: "Your Mind Is a Story Machine",
         content: [
-          "Your mind is a thought-generating machine. It produces thousands of thoughts every day. Not all of them are true, useful, or worth acting on.",
-          "Many thoughts are just echoes of the past, stories your mind tells on repeat, or predictions about the future that may never happen.",
-          "The thought 'I'm a failure' is just a thought. It's not a fact. It's not a command. It's just words in your head.",
-          "When you're fused with a thought, it feels like reality. When you're defused, you can see: 'Oh, there's my mind again, telling me that story.'"
+          "Your mind produces thoughts at a rate of thousands per day. Most of them are automatic — driven by pattern, by habit, by the accumulated weight of your history. They are not curated by wisdom. They are not filtered for accuracy. They simply arrive.",
+          "Many of the most powerful thoughts driving compulsive behavior are not true. 'I deserve this.' 'I've earned it.' 'I'll stop tomorrow.' 'No one will ever know.' 'I'm broken anyway, so why fight it.' These feel true when they're active. They are not facts. They are the output of a machine that has learned what to say to get you to act.",
+          "Week 3 taught you to challenge thoughts — to interrogate their accuracy. Defusion is different. You don't argue with the thought. You step back and recognize it as a thought. 'Oh. There's the I-deserve-this story again. My mind is running that program.' You don't have to fight it. You just don't have to obey it.",
+          "The thought 'I'm a failure' and the statement 'I'm having the thought that I'm a failure' describe exactly the same mental event. They produce entirely different emotional responses and entirely different behaviors. That is the power of defusion."
         ]
       },
       {
         id: "defusion-techniques",
-        title: "Defusion Techniques",
+        title: "The Tools",
         content: [
-          "'I'M HAVING THE THOUGHT THAT...': Instead of 'I'm worthless,' say 'I'm having the thought that I'm worthless.' This creates distance between you and the thought.",
-          "'THANKING YOUR MIND': When your mind offers unhelpful commentary, try: 'Thanks, mind. I notice you're trying to protect me, but I've got this.'",
-          "'NAMING THE STORY': If you have a recurring thought pattern, give it a name. 'Oh, there's the I'm Broken Story again.' 'Here comes the Permission Story.'",
-          "'SINGING THE THOUGHT': Take an intrusive thought and sing it to the tune of 'Happy Birthday' or another silly song. Notice how it changes the thought's power.",
-          "'LEAVES ON A STREAM': Imagine placing each thought on a leaf and watching it float down a stream. You observe the thoughts passing without grabbing onto them."
+          "'I'M HAVING THE THOUGHT THAT...': Simply add this prefix. 'I'm worthless' becomes 'I'm having the thought that I'm worthless.' The thought may still be present. Its grip on you is fundamentally different. Practice this until it becomes automatic.",
+          "'NAMING THE STORY': Your mind runs recurring programs — the same thought patterns, the same justifications, the same catastrophic predictions. Give them names. 'Oh — the Permission Story.' 'There's the I'm-Already-Broken Story.' 'The Nobody-Cares Story is running.' A named story has far less authority than an unnamed one.",
+          "'THANKING YOUR MIND': When the thought arrives, try: 'Thanks for that, mind.' Not sarcastically — genuinely acknowledging that your mind is trying to protect you or solve a problem, even when it's doing it badly. 'Thanks for reminding me of that risk. I've got this.'",
+          "'LEAVES ON A STREAM': Close your eyes. Imagine a gentle stream. Place each thought on a leaf and watch it float away. You don't grab onto the leaves. You don't push them under. You just watch them move. Practice this with urge-related thoughts specifically.",
+          "'DEFUSING AN URGE': When an urge is present, notice it rather than fighting it or feeding it. 'There's a pull toward the behavior right now. I notice it in my chest. I notice the thought that relief is nearby. This is an urge. I am the one noticing it.' That last line is everything."
         ]
       },
       {
         id: "urge-defusion",
-        title: "Defusing from Urges",
+        title: "Using This When an Urge Is Active",
         content: [
-          "Urges can feel like commands. 'I NEED to do this.' But an urge is just a physical sensation plus thoughts. It's not a command you must obey.",
-          "When an urge arises, try: 'I'm having the urge to act out.' 'There's a pull toward the behavior.' 'My mind is telling me I need relief.'",
-          "Notice the urge as a physical sensation. Where is it in your body? What does it actually feel like? Observe it with curiosity rather than fear.",
-          "Remember: You are not your urge. You are the one noticing the urge. This awareness gives you choice."
+          "Defusion is not a cold-weather exercise. It has to work when the urge is hot — when the pull is strong, when the thoughts are insistent, when the whole system is pushing you toward acting out.",
+          "Here is the sequence for high-intensity urge defusion: Name what's happening — 'An urge is present.' Locate it physically — where in your body? What does it actually feel like as sensation, separate from the story? Defuse the primary thought — 'I'm having the thought that I need this.' Separate yourself from the urge — 'I am the one noticing this urge. The urge does not have permission to make my decisions.'",
+          "Notice that this is not fighting the urge. You are not pushing it down or trying to make it go away. You're observing it. And here's what happens when you observe something fully without acting on it: the urge rises, peaks, and falls. Every time. You don't have to destroy it. You just have to outlast the peak.",
+          "You are not your urge. You are the one noticing the urge. That distinction — experienced in the body, in the moment, under real pressure — is one of the most important things you will learn in this program."
         ]
       },
       {
         id: "defusion-limitations",
-        title: "What Defusion Is NOT",
+        title: "What Defusion Is Not",
         content: [
-          "Defusion is NOT positive thinking. You're not replacing negative thoughts with positive ones. You're changing your relationship to all thoughts.",
-          "Defusion is NOT getting rid of thoughts. The thoughts may still be there. But they have less grip on you.",
-          "Defusion is NOT denying or suppressing. You fully acknowledge the thought. You just don't let it drive your behavior.",
-          "The goal is not to never have unwanted thoughts. The goal is to have them without being controlled by them."
+          "Defusion is not positive thinking. You are not trying to replace negative thoughts with positive ones. You are not trying to convince yourself that everything is fine. The thought may still be unpleasant. The urge may still be strong. You're changing your relationship to them, not their content.",
+          "Defusion is not suppression. You're not pushing thoughts away or refusing to acknowledge them. Defusion requires you to fully acknowledge the thought — and then hold it differently. 'I'm noticing this thought fully, and I am not this thought.'",
+          "Defusion is not a quick fix. It is a practice. The first few times you try it, the thought will still feel powerful. With repetition, the automaticity weakens. The gap between thought and action grows. That gap is where your freedom lives.",
+          "Defusion doesn't always work. Under very high emotional intensity, defusion is harder. That's why you also have the physiological tools from Week 4, the thought records from Week 3, and the support network from Week 1. No single tool is the whole answer."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What thoughts do you commonly get 'hooked' by? Which thoughts have the most power over your behavior?"
+        question: "What thoughts do you most commonly get hooked by? Not generic thoughts — your specific ones. The permission-giving ones, the hopeless ones, the justifying ones. Name them."
       },
       {
         id: "q2",
-        question: "If you could step back from your thoughts and see them as just thoughts, how might your behavior change?"
+        question: "What recurring 'stories' does your mind run? What would you name them? Practice naming them out loud."
       },
       {
         id: "q3",
-        question: "What 'story' does your mind tell you most often? Can you give it a name?"
+        question: "Try saying your most powerful negative self-belief as 'I'm having the thought that...' What happens? Does it land differently? Why or why not?"
       },
       {
         id: "q4",
-        question: "What's the difference between 'I'm a failure' and 'I'm having the thought that I'm a failure'?"
+        question: "What is the difference between 'I am broken' and 'I am having the thought that I am broken'? Write about this — don't just answer in your head."
       }
     ],
     exercises: [
@@ -2018,122 +1973,291 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
     ],
     homeworkChecklist: [
       "Read all Week 10 material",
-      "Complete the Identifying Fusion exercise",
-      "Name at least 2 recurring 'stories' your mind tells",
-      "Practice 'I'm having the thought that...' at least 5 times",
-      "Practice defusing from at least one urge",
-      "Complete the Defusion Practice Log",
-      "Notice when you're fused with thoughts throughout the week",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete the Identifying Fusion exercise — name your specific hooks, not generic ones",
+      "Name at least two recurring stories your mind runs and give them names you'll actually use",
+      "Practice 'I'm having the thought that...' with real thoughts this week — not hypothetical ones",
+      "Practice defusing from at least one urge this week and record what happened",
+      "Complete the Defusion Practice Log honestly — including times it didn't work",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
   11: {
     weekNumber: 11,
-    title: "Values Clarification",
+    title: "The Part of You That Doesn't Change",
     phase: 2,
     phaseName: "Integration & Values",
-    overview: "This week focuses on clarifying what truly matters to you. Values are the compass that guides committed action and gives life meaning beyond the avoidance of pain.",
+    overview: "You've learned to step back from your thoughts. Now you go deeper: you learn to step back from your identity. Who you are is not the same as what you've done, what you feel, or what your mind tells you. There is a part of you that has been watching this whole story unfold. That part cannot be broken. This week, you find it.",
     teaching: [
       {
-        id: "what-are-values",
-        title: "What Are Values?",
+        id: "observer-self",
+        title: "The Steady Observer",
         content: [
-          "Values are your heart's deepest desires for how you want to behave as a human being. They're about who you want to be and what you want to stand for.",
-          "Values are not goals. Goals can be achieved and checked off. Values are ongoing directions - you never 'arrive' at a value, you live it moment by moment.",
-          "Examples: 'Being a loving partner' is a value. 'Getting married' is a goal. 'Being honest' is a value. 'Telling the truth about this one thing' is a goal.",
-          "Values are freely chosen. They're not 'shoulds' imposed from outside. They're what YOU would choose if you could live according to your deepest convictions."
+          "Here is something worth considering carefully: you have had thousands of thoughts throughout your life. Thoughts about who you are, what you're worth, what you're capable of. Most of those thoughts have changed — the beliefs you held at fifteen are not the beliefs you hold now. But YOU — the one who had those thoughts, and noticed them changing — you have been present through all of it.",
+          "You have experienced enormous pain. Shame, fear, grief, anger. You have experienced good things too. Joy, connection, moments of real clarity. All of those emotions have come and gone. But YOU — the one experiencing them — have been continuously present. The contents of your experience have changed constantly. The container has remained.",
+          "ACT calls this the 'observing self' or 'self-as-context.' It is the part of you that is aware of your thoughts without being your thoughts. The part that notices your feelings without being your feelings. The part that is watching this recovery process happen — that can see the cycle, name the triggers, recognize the distortions.",
+          "You are not your thoughts. You are not your urges. You are not your emotions. You are not your history. You are not your diagnosis. You are not your shame. You are the one who has been noticing all of these things. That observer — stable, aware, unchosen — is who you are at the deepest level."
         ]
       },
       {
-        id: "values-vs-goals",
-        title: "Values vs. Goals",
+        id: "conceptualized-self",
+        title: "The Problem With the Story You Tell About Yourself",
         content: [
-          "GOALS are specific outcomes you can achieve. They have endpoints. Examples: Stop acting out for 90 days. Get a promotion. Repair my marriage.",
-          "VALUES are directions you travel. They have no endpoint. Examples: Living with integrity. Being a committed partner. Pursuing growth.",
-          "You can fail a goal but you can't fail a value. If you slip, you haven't 'failed' at the value of integrity - you just stepped away from it momentarily. You can step back toward it in the next moment.",
-          "Goals are important, but they serve values. Ask: 'What value does this goal serve? Why does it matter?'"
+          "Most of us relate to ourselves through a conceptualized self — the story we tell about who we are. 'I am an addict.' 'I am broken.' 'I am a failure.' 'I am my urges.' 'I am what I've done.' These stories feel like facts. They are not facts. They are narratives constructed from experience, often painful experience, and they have been mistaken for identity.",
+          "When you're fused with your conceptualized self, change feels impossible. If 'I AM broken,' then being broken is what I am. If 'I AM my behavior,' then stopping the behavior would mean ceasing to exist in some fundamental sense. The fused identity makes recovery feel like self-destruction.",
+          "Men with CSBD who stay stuck are very often men who have fused with an identity that either excuses the behavior ('this is just who I am') or makes change feel futile ('I'm too broken to be different'). Both forms of fusion serve the same function: they protect you from the painful work of actual change by making change seem impossible.",
+          "Self-as-context offers a different frame entirely. You are not your behavior. You have engaged in behavior. You are not your shame. You have experienced shame. You are not your history. You have a history. The difference is everything."
         ]
       },
       {
-        id: "why-values-matter",
-        title: "Why Values Matter in Recovery",
+        id: "two-selves",
+        title: "The Two Parts of You",
         content: [
-          "Without clear values, recovery becomes about what you're running from (the behavior and its consequences) rather than what you're moving toward (a meaningful life).",
-          "Running from pain is exhausting and unsustainable. Moving toward meaning is energizing and sustainable.",
-          "Values provide the 'why' for the hard work of recovery. When you know WHY integrity matters, you can endure the discomfort of change.",
-          "Values also provide a compass when you're lost. When urges are strong, you can ask: 'What would the person I want to be do right now?'"
+          "THE THINKING SELF is the part of you generating content: thoughts, judgments, stories, urges, memories, predictions. It's busy, loud, and often wrong. It's the voice that says 'I'll never change,' 'I deserve this,' 'Nobody knows what I'm really like.' It's also the voice that said 'I need to do something about this' and brought you here.",
+          "THE OBSERVING SELF is the part of you that notices all of that content. It doesn't generate thoughts — it watches them. It doesn't have urges — it observes them. It doesn't tell stories about you — it watches the stories being told.",
+          "A useful way to access the observer: Close your eyes and notice that you can observe your thoughts without being them. Notice that you can observe your emotional state without drowning in it. Notice that you can observe your urges without obeying them. Whatever you just noticed from — that's it. That's the observer. That's the stable ground.",
+          "Nothing you have ever felt, thought, or done has damaged the observing self. It is always there. Always aware. Always capable of noticing what is happening. Recovery, in part, is the practice of identifying with the observer rather than with the content it observes."
         ]
       },
       {
-        id: "value-domains",
-        title: "Life Domains for Values",
+        id: "identity-transformation",
+        title: "Nothing You've Done Has Broken This",
         content: [
-          "Values can be explored across different life domains:",
-          "RELATIONSHIPS & FAMILY: What kind of partner, parent, family member do you want to be?",
-          "WORK & CAREER: What qualities do you want to bring to your work? What do you want to contribute?",
-          "PERSONAL GROWTH: Who do you want to become? What qualities do you want to develop?",
-          "HEALTH & WELLBEING: How do you want to treat your body? What does self-care mean to you?",
-          "COMMUNITY & SOCIAL: How do you want to contribute to your community? What kind of friend do you want to be?",
-          "SPIRITUALITY & MEANING: What gives your life meaning? What connects you to something larger than yourself?"
+          "This is probably the most important thing in Week 11: the observer self — your deepest level of selfhood — is intact. It has not been corrupted by the behavior. It has not been destroyed by the shame. It is not defined by the worst things you've done.",
+          "This is not a therapeutic reassurance. It's not someone being kind to you. It's a structural claim. If you can observe your behavior — if you can see that it's a pattern, name it, and recognize that you don't want to live this way — then there is a part of you that is not the behavior. That part is where recovery is possible.",
+          "The men who recover from CSBD are not men who had less severe patterns or more willpower. They are men who found something stable inside themselves to stand on while they did the work of change. The observing self is that stable ground.",
+          "Whatever you've done, whatever you feel, whatever your mind is telling you about who you are: there is a part of you that is noticing all of that, that has been present through all of it, and that cannot be reduced to any of it. Find that. Stand there. Do the work from there."
         ]
       },
       {
-        id: "values-and-behavior",
-        title: "Connecting Values to Behavior",
+        id: "values-aligned-identity",
+        title: "Building a Values-Aligned Identity",
         content: [
-          "Values only matter when they're translated into action. A value you never act on is just an idea.",
-          "For each value, ask: 'What would I be doing if I were living this value? What would someone see me doing?'",
-          "Then ask: 'Am I doing those things? If not, what's stopping me?'",
-          "Often, what's stopping us is discomfort. ACT teaches that we can feel the discomfort and take the action anyway. This is committed action - the subject of next week."
+          "Identifying with the observer self doesn't mean having no identity. It means your identity is no longer defined by your worst behavior or your most painful history. It can be defined instead by your values and the direction you're choosing.",
+          "Complete this sentence: 'I am a man who...' Not based on your history. Based on your values. 'I am a man who chooses honesty even when it's costly.' 'I am a man who shows up for the people who depend on him.' 'I am a man who is doing the hard work of becoming who he wants to be.'",
+          "These statements are not positive affirmations pretending the past didn't happen. They're directional claims — about where you're headed, not where you've been. Identity formed around direction is flexible enough to survive setbacks. Identity formed around behavior is destroyed by every slip.",
+          "Next week you'll clarify your values in depth. For now, begin practicing the identity shift: when you catch yourself saying 'I am broken' or 'I am my behavior,' try: 'I am a man who has struggled with this, and I am the one who is choosing to change.' Both of those things can be true."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "What kind of person do you want to be? What do you want to stand for?"
+        question: "What labels or identities have you fused with? 'I am an addict.' 'I am broken.' 'I am my urges.' Write them out. Where did they come from?"
       },
       {
         id: "q2",
-        question: "If you were living fully according to your values, what would be different about your life?"
+        question: "Try sitting quietly for two minutes and observing your thoughts without engaging them. What did you notice? Was there a part of you that was doing the noticing? Describe that experience."
       },
       {
         id: "q3",
-        question: "How has your behavior conflicted with your values? What has that cost you?"
+        question: "What is true about you — qualities, commitments, ways of being — that your behavior hasn't touched? What does the behavior not define?"
       },
       {
         id: "q4",
-        question: "What values have been most neglected during your struggle with CSBD? How would you like to reclaim them?"
+        question: "Complete this: 'I am a man who...' Based on your values, not your history. Write three versions. Which one feels most true to who you're becoming?"
+      }
+    ],
+    exercises: [
+      {
+        id: "identity-assessment",
+        title: "Identity Fusion Assessment",
+        instructions: "Explore the identities you have fused with — the stories you tell about who you are.",
+        fields: [
+          {
+            id: "labels",
+            label: "What labels or identities do you apply to yourself? Write the actual statements your mind uses — 'I am broken,' 'I am an addict,' 'I am my urges,' etc.",
+            type: "textarea",
+            placeholder: "List the identities you've fused with..."
+          },
+          {
+            id: "origins",
+            label: "Where did these labels come from? What experiences, relationships, or moments created them?",
+            type: "textarea",
+            placeholder: "Explore the origins..."
+          },
+          {
+            id: "cost",
+            label: "What has fusing with these identities cost you? How have they made change feel impossible or have they justified the behavior?",
+            type: "textarea",
+            placeholder: "Consider the costs..."
+          }
+        ]
+      },
+      {
+        id: "observer-practice",
+        title: "Observer Self Practice",
+        instructions: "Practice connecting with the observing self — the part of you that notices without being what it notices.",
+        fields: [
+          {
+            id: "meditation",
+            label: "Find a quiet place. Sit for five minutes. Notice your thoughts without engaging them — observe them passing. Notice your feelings without drowning in them. Notice sensations in your body. Then notice: there is something doing all this noticing. That is you at the deepest level. What was this experience like?",
+            type: "textarea",
+            placeholder: "Describe your experience..."
+          },
+          {
+            id: "insight",
+            label: "What did you learn about the difference between who you are and what you experience? What was the observer noticing?",
+            type: "textarea",
+            placeholder: "Key insights..."
+          },
+          {
+            id: "application",
+            label: "How does the observer self perspective change how you relate to urges, shame, or the belief that you're broken? Be specific.",
+            type: "textarea",
+            placeholder: "Application of insights..."
+          }
+        ]
+      },
+      {
+        id: "beyond-behavior",
+        title: "Who Am I Beyond This Behavior?",
+        instructions: "Explore who you are independent of your struggle — and begin building a values-based identity.",
+        fields: [
+          {
+            id: "qualities",
+            label: "What positive qualities do you have that the behavior hasn't taken from you? What remains true about you regardless of what you've done?",
+            type: "textarea",
+            placeholder: "List your enduring qualities..."
+          },
+          {
+            id: "roles",
+            label: "What roles do you play that aren't defined by CSBD? Father, husband, friend, professional, community member. What do you bring to those roles?",
+            type: "textarea",
+            placeholder: "List your roles and what you bring to them..."
+          },
+          {
+            id: "contributions",
+            label: "What do you contribute to the lives of others? What would be missing if you weren't there?",
+            type: "textarea",
+            placeholder: "Your contributions..."
+          },
+          {
+            id: "values-statement",
+            label: "Complete this three times: 'I am a man who...' Base it on your values and direction, not your history.",
+            type: "textarea",
+            placeholder: "I am a man who...\nI am a man who...\nI am a man who..."
+          }
+        ]
+      }
+    ],
+    homeworkChecklist: [
+      "Read all Week 11 material",
+      "Complete the Identity Fusion Assessment — write out the actual labels, not summaries of them",
+      "Practice the observer self meditation at least three times this week and record what you notice each time",
+      "Complete the 'Who Am I Beyond This Behavior?' exercise with real specificity",
+      "Write your three 'I am a man who...' statements and read them each morning this week",
+      "Notice this week when you fuse with a negative identity label — and practice seeing it as a label rather than a fact",
+      "Complete daily check-ins for all 7 days"
+    ]
+  },
+
+  12: {
+    weekNumber: 12,
+    title: "What You're Actually Living For",
+    phase: 2,
+    phaseName: "Integration & Values",
+    overview: "You now have a stable observer to stand on. You can defuse from thoughts. You can make room for discomfort. Now comes the question that makes all of that work worth doing: what are you actually living for? Not what you should care about. Not what would make other people approve of you. What actually matters to you — deeply, truly — when you strip away the noise?",
+    teaching: [
+      {
+        id: "what-are-values",
+        title: "What Values Actually Are",
+        content: [
+          "Values are not rules. They are not the things you're supposed to want or the things your parents told you to care about. Values are your deepest freely chosen commitments about how you want to live — what kind of person you want to be, what you want to stand for, what you want your life to be about when it's over.",
+          "Values are not goals. A goal is something you can achieve and check off: stop acting out for 90 days, repair the marriage, get the promotion. A value is a direction — something you move toward continuously, that you never fully arrive at. 'Being a faithful and present husband' is a value. 'Having the conversation I've been avoiding' is a goal that serves that value.",
+          "You cannot fail a value. If you have a slip, you haven't failed at the value of integrity — you've stepped away from it momentarily. And you can step back toward it in the very next moment. That's what makes values more resilient than goals as a foundation for recovery.",
+          "This week is real work, not a worksheet. Don't write what sounds good. Write what's actually true — what you care about when you're most honest with yourself, in your quietest moments, without anyone watching."
+        ]
+      },
+      {
+        id: "values-vs-goals",
+        title: "Values vs. Goals: The Distinction That Changes Everything",
+        content: [
+          "GOALS have endpoints. They can be achieved, and then they're done. Goals are critical — they translate values into specific, measurable actions. But goals without values are arbitrary. They're just things on a list. Values give goals meaning.",
+          "VALUES have no endpoint. 'Being honest' is not a finish line you cross. It's a direction you face every moment. 'Being a committed father' is not something you complete. It's who you choose to be, in every interaction, for as long as you live.",
+          "This is also why values-based recovery is more durable than goal-based recovery. If your goal is '90 days sober,' what happens at day 91? If your value is 'living with integrity,' the direction never expires.",
+          "For every goal you have in recovery, ask: what value does this serve? Why does it actually matter? Get to the heart of it. 'I want to stop this behavior because... it's ruining my marriage. Why does that matter? Because being a faithful partner is one of the most important things I can be. That's a value.' That's what you're actually working toward."
+        ]
+      },
+      {
+        id: "why-values-matter",
+        title: "Why This Changes Recovery",
+        content: [
+          "Here is the limitation of Phase 1, stated plainly: running from the behavior is exhausting. You can maintain it through willpower and fear for a while. But eventually, the tension between the discomfort of abstinence and the relief of the behavior tips back in the wrong direction. Phase 1 tools help. They're not enough on their own.",
+          "Phase 2 turns the frame. Instead of running away from the behavior, you start running toward something. Values provide the destination — the direction that is more compelling than the relief the behavior provides. Men who recover long-term are almost universally men who found something to live FOR, not just something to live WITHOUT.",
+          "When an urge hits and you can ask 'what kind of man do I want to be right now?' and have a real answer — an answer that is more compelling than the urge — you have something that no amount of willpower or cognitive restructuring can provide.",
+          "That answer only comes from doing this week's work honestly. Not aspirationally. Not performing recovery. Sitting with the actual question of what matters to you, and writing what's actually true."
+        ]
+      },
+      {
+        id: "value-domains",
+        title: "Your Values Across Your Life",
+        content: [
+          "Values appear across all of life's domains. The work here is to identify what you genuinely care about in each area — not what you think you should care about.",
+          "RELATIONSHIPS AND FAMILY: What kind of partner, father, son, brother do you want to be? Not who you've been — who you want to be.",
+          "WORK AND VOCATION: What do you want to contribute through your work? What qualities do you want to bring to it? What matters to you professionally beyond just making money?",
+          "PERSONAL INTEGRITY AND GROWTH: What kind of man are you trying to become? What qualities do you want to be known for — inside your family, inside yourself?",
+          "HEALTH AND PHYSICAL CARE: How do you want to treat the only body you have? What does caring for yourself actually look like?",
+          "COMMUNITY AND FAITH: What do you owe to others beyond your immediate circle? What larger commitments — to faith, to community, to humanity — matter to you?",
+          "Be specific. 'Being a good dad' is a start. 'Being the kind of father who shows up for the hard conversations, who my kids can come to about anything, who doesn't live a double life' is a value."
+        ]
+      },
+      {
+        id: "values-and-behavior",
+        title: "The Gap Between What You Believe and How You Live",
+        content: [
+          "Most men in this program have values they believe in genuinely. They love their families. They believe in honesty. They care about who they're becoming. The CSBD exists in direct conflict with all of those values, and they know it.",
+          "The gap between values and behavior is painful. It produces shame. It also produces motivation — if you can stay with it instead of numbing it. The question 'am I living according to what I actually believe?' is one of the most clarifying questions available to you.",
+          "For each value, ask: what would I be doing if I were actually living this? What would someone watching me see? Then ask honestly: am I doing those things? If not, what's stopping me?",
+          "Next week we move into committed action — specific, concrete steps toward your values. For this week, the work is to get the values right. Spend real time with the exercises. Don't rush. What you write here is the compass you'll carry into the rest of the program."
+        ]
+      }
+    ],
+    reflectionQuestions: [
+      {
+        id: "q1",
+        question: "When you're most honest with yourself — not performing, not aspiring — what do you actually care about most? What does your life being well-lived mean to you?"
+      },
+      {
+        id: "q2",
+        question: "What values has your behavior most directly violated? Name the conflict plainly, without softening it."
+      },
+      {
+        id: "q3",
+        question: "If you were living fully according to your deepest values, what would be concretely different about your life one year from now?"
+      },
+      {
+        id: "q4",
+        question: "What values have been neglected or buried during this struggle? What would it mean to reclaim them?"
       }
     ],
     exercises: [
       {
         id: "values-clarification",
         title: "Values Clarification",
-        instructions: "Explore your values in each major life domain.",
+        instructions: "Explore your values in each major life domain. Be specific and honest. Don't write what sounds good — write what's actually true for you.",
         fields: [
           {
             id: "relationships",
-            label: "RELATIONSHIPS: What kind of partner, parent, or family member do you want to be? What values matter most here?",
+            label: "RELATIONSHIPS: What kind of partner, parent, or family member do you want to be? Be specific about the qualities and behaviors that matter, not just the role.",
             type: "textarea",
             placeholder: "Describe your relationship values..."
           },
           {
             id: "work",
-            label: "WORK: What values do you want to bring to your work or career? What matters to you professionally?",
+            label: "WORK: What do you want to contribute through your work? What qualities do you want to bring to it?",
             type: "textarea",
             placeholder: "Describe your work values..."
           },
           {
             id: "personal",
-            label: "PERSONAL GROWTH: What kind of person are you striving to become? What qualities do you want to develop?",
+            label: "PERSONAL INTEGRITY: What kind of man are you striving to become? What qualities do you want to be known for — not publicly, but in the privacy of your own integrity?",
             type: "textarea",
-            placeholder: "Describe your growth values..."
+            placeholder: "Describe your integrity values..."
           },
           {
             id: "health",
-            label: "HEALTH: How do you want to care for yourself physically, mentally, and emotionally?",
+            label: "HEALTH: How do you want to treat your body? What does taking care of yourself actually look like?",
             type: "textarea",
             placeholder: "Describe your health values..."
           },
