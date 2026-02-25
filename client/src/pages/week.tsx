@@ -48,11 +48,11 @@ const WEEK_SUMMARIES: Record<number, { congrats: string; learnings: string[]; ne
     nextWeekTeaser: "You've named the cycle. Next week, you'll map YOUR specific version of it — every trigger, every ritual, every exit ramp. The more precisely you can see it, the earlier you can stop it."
   },
   2: {
-    congrats: "Great work completing Week 2! Understanding your triggers is a crucial skill for lasting change.",
+    congrats: "You built the map. That's not a small thing — most men spend years inside a cycle they've never looked at directly. You looked.",
     learnings: [
-      "You identified the difference between internal triggers (emotions, thoughts) and external triggers (situations, people, places)",
-      "You created your personal trigger inventory",
-      "You learned strategies for managing high-risk situations"
+      "You named the lie — 'it just happens' — and replaced it with the truth: there is always a sequence",
+      "You mapped your specific triggers, rituals, and permission slips in your own words",
+      "You identified your exit ramps and understood why early intervention is the only intervention that works"
     ],
     nextWeekTeaser: "You know your triggers. But what happens in the 10 seconds between trigger and choice? Week 3 exposes the thought patterns — the distortions, the rationalizations your mind runs automatically — and gives you tools to interrupt them before they gain momentum."
   },
@@ -194,7 +194,7 @@ interface WeekHero {
 
 const WEEK_HERO: Record<number, WeekHero> = {
   1:  { icon: Eye,          accent: BookOpen,     gradient: "from-slate-900 to-cyan-900",    tagline: "Face what you've been hiding" },
-  2:  { icon: Map,          accent: RefreshCw,    gradient: "from-slate-900 to-indigo-900",  tagline: "Know your triggers. Stop the cycle." },
+  2:  { icon: Map,          accent: RefreshCw,    gradient: "from-slate-900 to-indigo-900",  tagline: "Every trigger. Every ritual. Every exit ramp." },
   3:  { icon: Brain,        accent: Lightbulb,    gradient: "from-slate-900 to-blue-900",    tagline: "Rewire the thoughts that drive the behavior" },
   4:  { icon: Anchor,       accent: Waves,        gradient: "from-slate-900 to-cyan-800",    tagline: "Hold steady when the urge hits" },
   5:  { icon: Sunset,       accent: Cloud,        gradient: "from-slate-900 to-amber-900",   tagline: "Shame fuels the cycle. Break it." },

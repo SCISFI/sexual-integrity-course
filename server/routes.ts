@@ -1762,7 +1762,7 @@ export async function registerRoutes(
 
   const WEEK_TITLES: Record<number, string> = {
     1: "The Moment You Stop Pretending",
-    2: "Understanding Your Cycle & Triggers",
+    2: "Nothing About This Is Random",
     3: "Cognitive Restructuring",
     4: "Self-Regulation & Impulse Management",
     5: "Understanding Shame & Guilt",

@@ -232,168 +232,188 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
 
   2: {
     weekNumber: 2,
-    title: "Understanding Your Cycle & Triggers",
+    title: "Nothing About This Is Random",
     phase: 1,
     phaseName: "Foundation & Stabilization",
-    overview: "This week focuses on understanding your personal triggers and the specific cycle that drives your compulsive behavior. By mapping your unique patterns, you gain the awareness needed to interrupt them.",
+    overview: "The cycle doesn't care how smart you are. It runs the same way on successful men as it does on everyone else. This week, you stop watching it from a distance and start mapping it precisely — your triggers, your rituals, your permission slips, your exit ramps. A cycle you can see is a cycle you can interrupt.",
     teaching: [
       {
-        id: "trigger-types",
-        title: "Understanding Triggers",
+        id: "not-random",
+        title: "The Lie You've Been Telling Yourself",
         content: [
-          "A trigger is anything that starts your cycle moving. It's the spark that ignites preoccupation. Triggers aren't the same for everyone, but they follow predictable patterns.",
-          "EMOTIONAL TRIGGERS: These are internal states that create vulnerability. Common ones include loneliness, boredom, stress, anxiety, anger, rejection, shame, and feeling overwhelmed. Many men are surprised to find that positive emotions like excitement or celebration can also be triggers.",
-          "ENVIRONMENTAL TRIGGERS: These are external cues in your surroundings. Examples include being home alone, certain times of day, specific locations, access to devices, hotel rooms during travel, and visual cues like advertisements or social media content.",
-          "RELATIONAL TRIGGERS: These arise from your relationships. Conflict with a partner, feeling disconnected, rejection (real or perceived), lack of intimacy, and criticism can all trigger the cycle.",
-          "PHYSICAL TRIGGERS: Your body state matters. Fatigue, hunger, illness, physical arousal, and disrupted sleep can all lower your defenses and trigger urges."
+          "\"It just happened.\" \"I wasn't thinking.\" \"I don't know why I do it.\" These aren't lies you tell other people. They're lies you tell yourself — and they're costing you.",
+          "Here's what's actually true: there is a sequence. There has always been a sequence. Every single time. You've been living that sequence on autopilot, which is why it feels spontaneous. It isn't.",
+          "Think about the last time. Not the acting out itself — the hours before it. You were feeling something. You went somewhere, opened something, started something small. You told yourself something. There was a chain of events. There always is.",
+          "This matters because chains can be broken. But only if you can see them. A behavior that 'just happens' cannot be interrupted. A behavior that follows a predictable sequence — with identifiable steps and decision points — can be stopped at any one of them.",
+          "This week, you build the map. Not a generic map. Yours."
+        ]
+      },
+      {
+        id: "trigger-types",
+        title: "What Pulls the Trigger",
+        content: [
+          "A trigger is whatever starts the chain — not the behavior itself, but the first link. The thing that moves you from baseline to preoccupied. It's rarely dramatic. Most of the time it's completely ordinary.",
+          "EMOTIONAL TRIGGERS: Loneliness is probably the most common. Not always the sharp kind — sometimes the quiet kind. You're surrounded by people and still feel like no one actually knows you. Stress. Anger you haven't processed. Boredom — which is often low-grade depression in disguise. And here's one that surprises most men: celebration. Success. Relief. Positive emotion can trigger the cycle just as reliably as negative emotion, because the brain has learned to pair reward with this behavior.",
+          "ENVIRONMENTAL TRIGGERS: Hotel rooms. Being home alone after everyone goes to bed. A specific time of day — often late at night, after the house is quiet. A certain device in a certain location. The loss of structure that weekends bring. Travel. Most men can list their environmental triggers in under two minutes — because they've encountered them hundreds of times without naming them.",
+          "RELATIONAL TRIGGERS: An argument with your partner. Feeling dismissed or criticized. Going to bed in silence. The slow erosion of a week where every conversation was surface-level. Feeling rejected — whether or not the rejection was real. Disconnection in your primary relationship is one of the most consistent precursors to relapse in this population.",
+          "PHYSICAL TRIGGERS: Fatigue is underestimated. When you're exhausted, your prefrontal cortex — the part of your brain responsible for impulse control — is running at reduced capacity. Poor sleep is particularly dangerous: after a bad night, urge intensity measurably increases and resistance measurably decreases. Hunger. Illness. Physical tension with no outlet.",
+          "Your triggers are specific. This week, you write them down — not a list of categories, but a list of actual moments, situations, and states that you know from your own experience start the cycle."
         ]
       },
       {
         id: "halt-states",
-        title: "The HALT-BS Framework",
+        title: "Your Vulnerability Window",
         content: [
-          "HALT-BS is a powerful tool for recognizing vulnerability states. When you're Hungry, Angry, Lonely, Tired, Bored, or Stressed, your brain's executive function weakens and urges intensify.",
-          "HUNGRY: Not just physical hunger, but any unmet need. Are you hungry for connection, validation, rest, or meaning?",
-          "ANGRY: Unprocessed anger creates internal pressure. Instead of dealing with anger directly, the behavior becomes an escape valve.",
-          "LONELY: Isolation is fuel for compulsive behavior. Loneliness includes emotional disconnection even when physically around others.",
-          "TIRED: When exhausted, your prefrontal cortex (the brake pedal) is weakened. Decision-making suffers and urges feel more powerful.",
-          "BORED: An understimulated mind seeks stimulation. Boredom is a major trigger - idle hands and minds are vulnerable to compulsive urges.",
-          "STRESSED: Overwhelming pressure and anxiety drain your willpower. Stress makes escape behaviors feel more appealing as a coping mechanism."
+          "HALT-BS isn't a slogan. It's a clinical observation: when you're in any of these six states, your neurological resistance to urges drops significantly. These aren't excuses. They're intelligence.",
+          "HUNGRY: Physical hunger is one layer. But 'hungry' in this context also means any unmet need — connection, meaning, rest, validation. The men most at risk are often not physically hungry. They're starving for something they can't name.",
+          "ANGRY: Anger that hasn't been expressed or processed doesn't disappear — it becomes pressure. The behavior becomes a pressure valve. You're not acting out because you want to. You're acting out because sitting with unprocessed anger feels impossible and this has always provided relief.",
+          "LONELY: We said it last week. We'll say it again: isolation is the engine of this behavior. The cycle requires secrecy. It feeds on disconnection. Loneliness — including the loneliness of being physically surrounded by people who don't actually know you — is not just a trigger. It's the climate this behavior needs to survive.",
+          "TIRED: Sleep deprivation impairs the prefrontal cortex the same way alcohol does. You wouldn't make a major decision drunk. Exhausted men are making relapse decisions with equivalent impairment — and almost never recognizing it.",
+          "BORED: An unstimulated mind looks for stimulation. Boredom is rarely just boredom — it's often a signal that something important is missing: purpose, engagement, connection, meaning. Men who are invested in their lives — their work, their relationships, their growth — are less bored. That's not coincidence.",
+          "STRESSED: Cortisol — the primary stress hormone — directly activates the brain's reward-seeking systems. Under stress, the brain does not reason toward healthy choices. It seeks relief. You've trained it to find relief in one specific place. Under stress, that training intensifies.",
+          "Check in on HALT-BS daily this week. Not as a ritual — as intelligence gathering. You are learning the conditions under which your cycle becomes most dangerous."
         ]
       },
       {
-        id: "your-cycle",
-        title: "Mapping Your Personal Cycle",
+        id: "ritual-mapping",
+        title: "The Ritual You Don't Think of as a Ritual",
         content: [
-          "While the four-stage cycle (Preoccupation → Ritualization → Acting Out → Despair) is universal, the specific details are unique to you.",
-          "Your cycle has predictable elements: What time of day are you most vulnerable? What emotions typically precede urges? What are your specific rituals that lead to acting out? What do you tell yourself to give permission?",
-          "Mapping your cycle involves identifying: Your most common triggers, your typical time of day for vulnerability, your specific ritualization behaviors, and the thoughts that give you permission to continue.",
-          "The more specific you can be about your cycle, the earlier you can recognize it and intervene."
+          "Most men can identify their triggers. Fewer can identify their rituals. This is where the cycle becomes nearly unstoppable — and where you need the most precision.",
+          "Ritualization is the bridge between preoccupation and acting out. It's the sequence of small behaviors that create opportunity and build momentum. Opening a specific browser. Picking up the phone after everyone's asleep. Telling yourself 'I'm just going to check.' Closing the door. Deleting the history before you've even started. These feel unremarkable in the moment. They are not.",
+          "Here's why rituals matter: by the time ritualization is moving, your brain has already flooded with anticipatory dopamine. The decision, neurologically, has already been made. You're not choosing at that point. You're executing a program that started several steps ago.",
+          "Your rituals are specific, repeatable, and recognizable — if you're looking for them. Most men haven't been looking. They've been experiencing the ritual as 'it just happened.' But replay any incident carefully and the ritual is there. It always is.",
+          "Map your ritual this week. Every step you can remember. The earlier in the sequence you can recognize where you are, the more effectively you can interrupt it. Interrupting the ritual at step one is possible. Interrupting it at step seven — when the window is open, the door is locked, and the anticipation is at its peak — is nearly impossible.",
+          "The ritual is not the problem. The ritual is the map."
         ]
       },
       {
         id: "permission-thoughts",
-        title: "Permission-Giving Thoughts",
+        title: "The Permission Slip",
         content: [
-          "Before acting out, your mind generates thoughts that give you permission to continue. These are cognitive distortions that bypass your values and override your commitment to change.",
-          "Common permission-giving thoughts include: 'Just this once, then I'll stop,' 'I deserve this after the day I've had,' 'No one will know,' 'I've already messed up, might as well continue,' 'I'll start over tomorrow,' 'This isn't that bad compared to what I used to do.'",
-          "These thoughts feel true in the moment, but they're part of the cycle, not rational decisions. Learning to recognize them is crucial for interruption."
+          "Before every incident, your mind does something specific: it generates a thought that makes continuing feel acceptable. This is not random. This is not weakness. This is the cycle's internal lawyer — and it is very good at its job.",
+          "'I've had a hard week. I deserve this.' 'Just this once, then I'll stop for good.' 'No one's going to know.' 'I've already started — might as well finish.' 'This doesn't count because...' 'I'll deal with it tomorrow.' 'She's been distant anyway.'",
+          "These thoughts don't feel like permission slips when you're inside them. They feel like facts. They feel like relief. They feel reasonable. That's the design. The permission slip isn't supposed to look like a permission slip — it's supposed to feel like a conclusion you arrived at honestly.",
+          "Here's what's actually happening: the cycle is generating the thought to justify what it has already started moving toward. You're not deciding to act out and then rationalizing it. The rationalization is part of the cycle — it comes up automatically, precisely when you need a reason to stop, and gives you a reason not to.",
+          "Learning to recognize your specific permission-giving thoughts — the exact language your mind uses — is one of the highest-leverage skills in this program. Because the moment you can see a thought as a thought rather than a fact, you've created a gap. And gaps are where choices live.",
+          "Write yours down this week. Use your actual language — not generic examples. The more precisely you can name your permission slip, the less power it has."
         ]
       },
       {
-        id: "early-intervention",
-        title: "The Power of Early Intervention",
+        id: "exit-ramps",
+        title: "Your Exit Ramps",
         content: [
-          "The earlier you intervene in your cycle, the easier it is to stop. Think of it like a train: stopping a slow-moving train is much easier than stopping one at full speed.",
-          "In the Preoccupation phase, intervention is still relatively easy. You can redirect attention, reach out to support, or change your environment.",
-          "Once Ritualization begins, stopping becomes much harder. The brain is already flooded with anticipatory dopamine, and the 'point of no return' approaches rapidly.",
-          "Your goal is to catch yourself in the earliest possible phase and take action before momentum builds."
+          "Here is the most important thing you will take from this week: you have exit ramps. More than you think. But they disappear as the cycle progresses.",
+          "AT PREOCCUPATION: The exit ramp is wide. You can redirect attention. You can reach out to someone. You can change your environment — leave the room, leave the house. You can do a HALT-BS check and address whatever underlying state is driving the vulnerability. The urge has momentum, but it isn't overwhelming yet. This is the easiest point to stop — and the point most men don't recognize they've reached.",
+          "AT RITUALIZATION: The ramp is narrowing. It's still there, but using it requires deliberate, effortful disruption — not a small course correction. Calling someone, leaving the physical environment, doing something physiologically disruptive — exercise, cold water, hard physical movement — can work here. But passive resistance, just trying not to while staying in the same room with the same device, almost never works at this stage. The brain needs a pattern interrupt, not willpower.",
+          "AT ACTING OUT: There is no meaningful exit ramp. The brain has committed. The neurological decision was made several steps ago. Attempting to stop here is possible but the psychological cost is high and the success rate is low. This is not a character failure. This is what happens when a pattern that has been reinforced hundreds of times reaches its destination.",
+          "This is why your goal for this week is not 'resist acting out.' Your goal is to learn to recognize preoccupation — the familiar drift, the restlessness, the beginning of planning — and to intervene there, before momentum builds.",
+          "The more precisely you map your cycle, the earlier you'll see it coming. And the earlier you see it, the more exit ramps you have. That is the math of recovery."
         ]
       }
     ],
     reflectionQuestions: [
       {
         id: "q1",
-        question: "Think about the last time you acted out. Walk through what happened in the hours before - what were you feeling, thinking, and doing? What does this tell you about your pattern?"
+        question: "Walk back through the last time you acted out. Start 24 hours before. What were you feeling? Where were you, and what were you doing in the hours leading up to it? What told you something was building — and did you notice it at the time? Map the sequence as precisely as you can."
       },
       {
         id: "q2",
-        question: "What environmental factors make you more vulnerable? (Time of day, location, access to devices, etc.)"
+        question: "What are your two or three most consistent triggers — the states or situations that most reliably start your cycle? How long have you known this about yourself without naming it out loud?"
       },
       {
         id: "q3",
-        question: "What permission-giving thoughts do you most commonly use? What does your mind tell you to justify continuing?"
+        question: "Write down the exact language your mind uses to give you permission. Not the generic examples from the reading — your actual words. What does your internal lawyer say?"
       },
       {
         id: "q4",
-        question: "At what point in your cycle is it easiest to stop? At what point does it become nearly impossible?"
+        question: "Where in your cycle is your earliest realistic exit ramp? What would you have to do to take it — and what would you have to be willing to feel in that moment instead of continuing?"
       }
     ],
     exercises: [
       {
         id: "trigger-inventory",
         title: "Personal Trigger Inventory",
-        instructions: "List your personal triggers in each category. Be as specific as possible.",
+        instructions: "Name your specific triggers in each category. Not the category definitions — your actual triggers. The more specific you are, the more useful this map becomes. Generic answers protect the cycle. Specific answers interrupt it.",
         fields: [
           {
             id: "emotional",
-            label: "Emotional Triggers (feelings that make you vulnerable)",
+            label: "Emotional Triggers — the internal states that reliably start your cycle",
             type: "textarea",
-            placeholder: "List your emotional triggers..."
+            placeholder: "Be specific: what feelings, not just categories..."
           },
           {
             id: "environmental",
-            label: "Environmental Triggers (places, times, situations)",
+            label: "Environmental Triggers — specific places, times, situations, and access points",
             type: "textarea",
-            placeholder: "List your environmental triggers..."
+            placeholder: "Be specific: what locations, times of day, devices, situations..."
           },
           {
             id: "relational",
-            label: "Relational Triggers (relationship situations)",
+            label: "Relational Triggers — specific relationship dynamics that activate vulnerability",
             type: "textarea",
-            placeholder: "List your relational triggers..."
+            placeholder: "Be specific: what interactions, conflicts, or disconnections..."
           },
           {
             id: "physical",
-            label: "Physical Triggers (body states)",
+            label: "Physical Triggers — body states that lower your resistance",
             type: "textarea",
-            placeholder: "List your physical triggers..."
+            placeholder: "Be specific: what physical conditions make you most vulnerable..."
           }
         ]
       },
       {
         id: "cycle-map",
-        title: "Map Your Personal Cycle",
-        instructions: "Describe your personal version of each stage in the cycle.",
+        title: "Your Cycle Map",
+        instructions: "Map your personal version of each stage. Use a real incident as your reference point — not a hypothetical. Write what actually happens for you, not what the cycle is supposed to look like. The more honest and specific you are, the more useful this becomes.",
         fields: [
           {
             id: "preoccupation",
-            label: "Preoccupation Stage: What does this look like for you? What thoughts, behaviors, or feelings indicate you're entering this stage?",
+            label: "Preoccupation: What does it feel like when you first enter this stage? What are the early signs — the mental drift, the restlessness, the beginning of planning?",
             type: "textarea",
-            placeholder: "Describe your preoccupation stage..."
+            placeholder: "What does preoccupation actually look like and feel like for you..."
           },
           {
             id: "ritualization",
-            label: "Ritualization Stage: What are your specific rituals? What steps do you take that lead toward acting out?",
+            label: "Ritualization: What are your specific steps? Walk through the sequence — every small behavior that creates opportunity and builds momentum toward acting out.",
             type: "textarea",
-            placeholder: "Describe your ritualization behaviors..."
+            placeholder: "List your actual ritual steps in sequence..."
           },
           {
             id: "acting-out",
-            label: "Acting Out Stage: What specific behaviors constitute acting out for you?",
+            label: "Acting Out: What specifically constitutes acting out for you? Be honest — this is the behavior you're here to change.",
             type: "textarea",
-            placeholder: "Describe your acting out behaviors..."
+            placeholder: "Describe specifically what acting out means for you..."
           },
           {
             id: "despair",
-            label: "Despair Stage: What do you feel and think after acting out? How does this set up the next cycle?",
+            label: "Despair: What do you feel and think immediately after? How long does it last — and how does it set up the next cycle?",
             type: "textarea",
-            placeholder: "Describe your despair experience..."
+            placeholder: "Describe what happens in you after acting out..."
           }
         ]
       },
       {
         id: "permission-thoughts",
-        title: "Permission-Giving Thoughts",
-        instructions: "Identify the specific thoughts your mind uses to give you permission to act out.",
+        title: "Your Permission Slips",
+        instructions: "Write down the specific thoughts your mind generates to justify continuing. Use your actual language — the words you actually use with yourself, not cleaned-up versions. These thoughts are the cycle's last line of defense. Naming them precisely is how you begin to dismantle them.",
         fields: [
           {
             id: "thoughts",
-            label: "What does your mind tell you to justify continuing? List your most common permission-giving thoughts.",
+            label: "What does your internal voice say? List every permission-giving thought you recognize — even the ones that still feel somewhat reasonable.",
             type: "textarea",
-            placeholder: "List your permission-giving thoughts..."
+            placeholder: "Write your actual permission-giving thoughts..."
           }
         ]
       }
     ],
     homeworkChecklist: [
       "Read all Week 2 material",
-      "Complete the Personal Trigger Inventory exercise",
-      "Map your personal cycle in detail",
-      "Identify your permission-giving thoughts",
-      "Practice HALT-BS check-ins at least twice daily",
-      "Notice and record when you enter preoccupation this week",
-      "Complete daily monitoring logs for all 7 days"
+      "Complete the Personal Trigger Inventory — use specific language, not categories",
+      "Complete your Cycle Map using a real incident as your reference point",
+      "Write your permission-giving thoughts in your own words",
+      "Do a HALT-BS check at least twice daily — morning and evening",
+      "When you notice preoccupation this week, write down what triggered it and when you noticed it",
+      "Complete daily check-ins for all 7 days"
     ]
   },
 
@@ -3325,7 +3345,7 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
 
 export const WEEK_TITLES: Record<number, string> = {
   1: "The Moment You Stop Pretending",
-  2: "Understanding Your Cycle & Triggers",
+  2: "Nothing About This Is Random",
   3: "Cognitive Restructuring",
   4: "Self-Regulation & Impulse Management",
   5: "Understanding Shame & Guilt",
