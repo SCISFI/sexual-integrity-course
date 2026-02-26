@@ -346,7 +346,7 @@ export default function TherapistClient() {
         queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'messages', 'drafts'] });
       }
       if (composingForSuggestionId && composingForSuggestionId !== "__draft__") {
-        setDraftedSuggestionIds(prev => new Set([...prev, composingForSuggestionId]));
+        setDraftedSuggestionIds(prev => new Set(prev).add(composingForSuggestionId as string));
       }
       toast({ title: "Draft saved — find it at the top of this tab" });
       closeCompose();
@@ -377,7 +377,7 @@ export default function TherapistClient() {
       }
       const sid = targetSuggestionId || (composingForSuggestionId !== "__draft__" ? composingForSuggestionId : null);
       if (sid) {
-        setSentSuggestionIds(prev => new Set([...prev, sid]));
+        setSentSuggestionIds(prev => new Set(prev).add(sid));
         // Persist dismissal so the suggestion doesn't reappear on reload
         await apiRequest("POST", `/api/therapist/clients/${clientId}/dismiss-suggestion`, { suggestionId: sid });
         queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'suggestions'] });
@@ -461,10 +461,10 @@ export default function TherapistClient() {
 
       if (sheetCtx.kind === 'week') {
         await apiRequest("POST", `/api/therapist/clients/${clientId}/review/${sheetCtx.weekNumber}`, { reviewNotes: "" });
-        setMessagedWeekNums(prev => new Set([...prev, (sheetCtx as { kind: 'week'; weekNumber: number }).weekNumber]));
+        setMessagedWeekNums(prev => new Set(prev).add((sheetCtx as { kind: 'week'; weekNumber: number }).weekNumber));
       } else if (sheetCtx.kind === 'autopsy') {
         await apiRequest("POST", `/api/therapist/clients/${clientId}/autopsies/${sheetCtx.autopsyId}/review`, {});
-        setMessagedAutopsyIds(prev => new Set([...prev, (sheetCtx as { kind: 'autopsy'; autopsyId: string }).autopsyId]));
+        setMessagedAutopsyIds(prev => new Set(prev).add((sheetCtx as { kind: 'autopsy'; autopsyId: string }).autopsyId));
       }
 
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
