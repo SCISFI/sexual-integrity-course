@@ -1084,9 +1084,9 @@ export async function registerRoutes(
       const priorityOrder: MentorSuggestion["priority"][] = ["urgent", "followup", "curriculum", "recognition"];
       suggestions.sort((a, b) => priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority));
 
-      // Filter out dismissed suggestions (never filter urgent ones)
+      // Filter out dismissed suggestions (all priorities, including urgent)
       const filteredSuggestions = suggestions.filter(
-        (s) => s.priority === "urgent" || !dismissedIds.includes(s.id)
+        (s) => !dismissedIds.includes(s.id)
       );
 
       res.json({ suggestions: filteredSuggestions });

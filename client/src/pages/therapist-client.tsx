@@ -376,7 +376,12 @@ export default function TherapistClient() {
         queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
       }
       const sid = targetSuggestionId || (composingForSuggestionId !== "__draft__" ? composingForSuggestionId : null);
-      if (sid) setSentSuggestionIds(prev => new Set([...prev, sid]));
+      if (sid) {
+        setSentSuggestionIds(prev => new Set([...prev, sid]));
+        // Persist dismissal so the suggestion doesn't reappear on reload
+        await apiRequest("POST", `/api/therapist/clients/${clientId}/dismiss-suggestion`, { suggestionId: sid });
+        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'suggestions'] });
+      }
       toast({ title: `Message sent to ${client?.name || "client"}` });
       closeCompose();
     } catch {
@@ -1754,7 +1759,7 @@ export default function TherapistClient() {
                             const isSent = sentSuggestionIds.has(suggestion.id);
                             const isDrafted = draftedSuggestionIds.has(suggestion.id);
                             const isComposing = composingForSuggestionId === suggestion.id;
-                            const canDismiss = priority !== "urgent";
+                            const canDismiss = true;
 
                             return (
                               <div key={suggestion.id} className="space-y-0">
