@@ -13,6 +13,14 @@ import { WebhookHandlers } from './webhookHandlers';
 const app = express();
 const httpServer = createServer(app);
 
+// Prevent unhandled async errors from crashing the server
+process.on('unhandledRejection', (reason: any) => {
+  console.error('Unhandled promise rejection (server kept alive):', reason);
+});
+process.on('uncaughtException', (err: Error) => {
+  console.error('Uncaught exception (server kept alive):', err);
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
