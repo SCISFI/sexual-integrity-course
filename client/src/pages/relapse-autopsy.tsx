@@ -302,6 +302,12 @@ export default function RelapseAutopsyPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16">
+      <div className="pt-6 pb-2 -mx-0">
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-back-to-dashboard">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Link>
+      </div>
       <div className="relative flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 py-10 px-6 -mx-4 mb-8">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 mb-4">
           <Search className="h-7 w-7 text-white" />
