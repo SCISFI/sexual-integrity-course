@@ -140,6 +140,12 @@ export default function TherapistHome() {
     enabled: hasActiveSubscription,
   });
 
+  const { data: urgentSuggestionData } = useQuery<{ urgentCounts: Record<string, number> }>({
+    queryKey: ["/api/therapist/urgent-suggestion-counts"],
+    enabled: hasActiveSubscription,
+  });
+  const urgentSuggestionCounts = urgentSuggestionData?.urgentCounts || {};
+
   const pendingReviewCounts: Record<string, number> = {};
   for (const pr of pendingReviewsData?.pendingReviews || []) {
     pendingReviewCounts[pr.clientId] = (pendingReviewCounts[pr.clientId] || 0) + 1;
@@ -154,10 +160,12 @@ export default function TherapistHome() {
 
   const getClientStatus = (client: ClientWithProgress) => {
     if (!client.startDate) return "Pending";
+    // Urgent guidance flags are the primary "Needs Attention" signal —
+    // cleared when mentor dismisses / sends a message for each flag.
+    if ((urgentSuggestionCounts[client.id] ?? 0) > 0) return "Needs Attention";
     const daysSinceStart = Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24));
     const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
     if (client.completedWeeks.length >= expectedWeek) return "On Track";
-    if (client.completedWeeks.length < expectedWeek - 1) return "Needs Attention";
     return "Active";
   };
 

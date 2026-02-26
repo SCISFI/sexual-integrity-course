@@ -266,6 +266,7 @@ export default function TherapistClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'suggestions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/urgent-suggestion-counts'] });
     },
   });
 
@@ -381,6 +382,7 @@ export default function TherapistClient() {
         // Persist dismissal so the suggestion doesn't reappear on reload
         await apiRequest("POST", `/api/therapist/clients/${clientId}/dismiss-suggestion`, { suggestionId: sid });
         queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'suggestions'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/therapist/urgent-suggestion-counts'] });
       }
       toast({ title: `Message sent to ${client?.name || "client"}` });
       closeCompose();

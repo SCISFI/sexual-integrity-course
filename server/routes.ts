@@ -1096,6 +1096,51 @@ export async function registerRoutes(
     }
   });
 
+  // Batch endpoint: urgent suggestion counts for all clients (drives dashboard "Need Attention")
+  app.get("/api/therapist/urgent-suggestion-counts", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const clients = await storage.getClientsForTherapist(therapistId);
+      const urgentCounts: Record<string, number> = {};
+
+      for (const client of clients) {
+        const [dismissedIds, checkins, autopsies] = await Promise.all([
+          storage.getDismissedSuggestions(therapistId, client.id),
+          storage.getUserCheckinHistory(client.id, 30),
+          storage.getRelapseAutopsies(client.id),
+        ]);
+
+        let urgentCount = 0;
+
+        // Unreviewed relapse autopsies
+        const unreviewedAutopsies = autopsies.filter(
+          (a) => a.status === "completed" && !a.reviewedByTherapist,
+        );
+        if (unreviewedAutopsies.length > 0 && !dismissedIds.includes("unreviewed-autopsy")) {
+          urgentCount++;
+        }
+
+        // Check-in gap or no check-ins at all
+        if (checkins.length === 0) {
+          if (!dismissedIds.includes("no-checkins")) urgentCount++;
+        } else {
+          const lastCheckin = checkins[checkins.length - 1];
+          const daysSince = Math.floor(
+            (Date.now() - new Date(lastCheckin.dateKey).getTime()) / 86400000,
+          );
+          if (daysSince >= 3 && !dismissedIds.includes("checkin-gap")) urgentCount++;
+        }
+
+        urgentCounts[client.id] = urgentCount;
+      }
+
+      res.json({ urgentCounts });
+    } catch (error) {
+      console.error("Get urgent suggestion counts error:", error);
+      res.status(500).json({ message: "Failed to get urgent counts" });
+    }
+  });
+
   app.get("/api/admin/clients/:clientId/checkin-stats", requireRole("admin"), async (req, res) => {
     try {
       const { clientId } = req.params;
