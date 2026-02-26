@@ -1247,6 +1247,7 @@ export default function TherapistClient() {
                                       let fieldLabel = key.replace(/-/g, ' ');
                                       if (weekData?.exercises) {
                                         for (const ex of weekData.exercises) {
+                                          if (!ex) continue;
                                           for (const f of ex.fields) {
                                             if (`${ex.id}-${f.id}` === key) {
                                               fieldLabel = f.label;
