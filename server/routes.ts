@@ -84,7 +84,7 @@ function startNudgeScheduler() {
           const { sendNudgeEmail } = await import("./emailService");
           await sendNudgeEmail(
             client.email,
-            client.firstName || undefined,
+            client.name || undefined,
             encouragement,
             daysSince,
             loginUrl,
@@ -1993,16 +1993,16 @@ export async function registerRoutes(
           return res.status(404).json({ message: "User not found" });
         }
 
-        const checkins = await storage.getCheckins(clientId);
+        const checkins = await storage.getUserCheckinHistory(clientId, 365);
         const weekReflection = await storage.getWeekReflection(
           clientId,
           weekNumber,
         );
-        const homeworkCompletions = await storage.getHomeworkCompletions(
+        const homeworkRecord = await storage.getHomeworkCompletion(
           clientId,
           weekNumber,
         );
-        const feedbackList = await storage.getFeedbackForClient(clientId);
+        const feedbackList = await storage.getFeedbackForTherapist(therapistId, clientId);
         const relapseHistory = await storage.getRelapseAutopsies(clientId);
 
         const weekCheckins = checkins.filter((c) => {
@@ -2011,8 +2011,8 @@ export async function registerRoutes(
               ? c.checkinDate.toISOString().slice(0, 10)
               : String(c.checkinDate).slice(0, 10);
           const checkinTime = new Date(dateStr).getTime();
-          const startDate = client.weekStartDate
-            ? new Date(client.weekStartDate)
+          const startDate = client.startDate
+            ? new Date(client.startDate)
             : new Date(client.createdAt || Date.now());
           const weekStart = new Date(
             startDate.getTime() + (weekNumber - 1) * 7 * 86400000,
@@ -2042,9 +2042,9 @@ export async function registerRoutes(
             : 0;
 
         const hwTotal = 11;
-        const hwDone = homeworkCompletions?.length || 0;
+        const hwDone = JSON.parse(homeworkRecord?.completedItems || '[]').length || 0;
 
-        let contextInfo = `Client: ${client.firstName || ""} ${client.lastName || ""}\nWeek ${weekNumber}: ${WEEK_TITLES[weekNumber] || "Unknown"}\n`;
+        let contextInfo = `Client: ${client.name || ""}\nWeek ${weekNumber}: ${WEEK_TITLES[weekNumber] || "Unknown"}\n`;
         contextInfo += `Check-ins: ${weekCheckins.length}/7 days, Avg Mood: ${avgMood}/10, Avg Urge: ${avgUrge}/10\n`;
         contextInfo += `Homework: ${hwDone}/${hwTotal} completed\n`;
 
@@ -2191,14 +2191,14 @@ Write the summary now:`;
           return res.status(404).json({ message: "User not found" });
         }
 
-        const checkins = await storage.getCheckins(clientId);
-        const homeworkCompletions = await storage.getHomeworkCompletions(
+        const checkins = await storage.getUserCheckinHistory(clientId, 365);
+        const homeworkRecord = await storage.getHomeworkCompletion(
           clientId,
           weekNumber,
         );
 
-        const startDate = client.weekStartDate
-          ? new Date(client.weekStartDate)
+        const startDate = client.startDate
+          ? new Date(client.startDate)
           : new Date(client.createdAt || Date.now());
         const weekCheckins = checkins.filter((c) => {
           const dateStr =
@@ -2234,12 +2234,10 @@ Write the summary now:`;
             : 0;
 
         const hwTotal = 11;
-        const hwDone = homeworkCompletions?.length || 0;
+        const hwDone = JSON.parse(homeworkRecord?.completedItems || '[]').length || 0;
 
         const pdfBuffer = await generateWeeklySummaryPDF({
-          clientName:
-            `${client.firstName || ""} ${client.lastName || ""}`.trim() ||
-            client.email,
+          clientName: client.name || client.email,
           weekNumber,
           weekTitle: WEEK_TITLES[weekNumber] || `Week ${weekNumber}`,
           summaryContent: summary.summaryContent,
@@ -2251,9 +2249,7 @@ Write the summary now:`;
           },
           homeworkCompletion: `${hwDone}/${hwTotal}`,
           hasReflection: true,
-          mentorName:
-            `${therapist.firstName || ""} ${therapist.lastName || ""}`.trim() ||
-            therapist.email,
+          mentorName: therapist.name || therapist.email,
           generatedDate: new Date().toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
@@ -2264,7 +2260,7 @@ Write the summary now:`;
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
           "Content-Disposition",
-          `attachment; filename="week-${weekNumber}-summary-${client.firstName || "client"}.pdf"`,
+          `attachment; filename="week-${weekNumber}-summary-${client.name?.split(' ')[0] || "client"}.pdf"`,
         );
         res.send(pdfBuffer);
       } catch (error) {
@@ -2319,19 +2315,17 @@ Write the summary now:`;
         let mentorName = "N/A";
         if (therapists.length > 0) {
           const therapist = therapists[0];
-          mentorName =
-            `${therapist.firstName || ""} ${therapist.lastName || ""}`.trim() ||
-            therapist.email;
+          mentorName = therapist.name || therapist.email;
         }
 
-        const checkins = await storage.getCheckins(clientId);
-        const homeworkCompletions = await storage.getHomeworkCompletions(
+        const checkins = await storage.getUserCheckinHistory(clientId, 365);
+        const homeworkRecord = await storage.getHomeworkCompletion(
           clientId,
           weekNumber,
         );
 
-        const startDate = client.weekStartDate
-          ? new Date(client.weekStartDate)
+        const startDate = client.startDate
+          ? new Date(client.startDate)
           : new Date(client.createdAt || Date.now());
         const weekCheckins = checkins.filter((c) => {
           const dateStr =
@@ -2367,12 +2361,10 @@ Write the summary now:`;
             : 0;
 
         const hwTotal = 11;
-        const hwDone = homeworkCompletions?.length || 0;
+        const hwDone = JSON.parse(homeworkRecord?.completedItems || '[]').length || 0;
 
         const pdfBuffer = await generateWeeklySummaryPDF({
-          clientName:
-            `${client.firstName || ""} ${client.lastName || ""}`.trim() ||
-            client.email,
+          clientName: client.name || client.email,
           weekNumber,
           weekTitle: WEEK_TITLES[weekNumber] || `Week ${weekNumber}`,
           summaryContent: summary.summaryContent,
