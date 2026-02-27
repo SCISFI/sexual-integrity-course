@@ -582,11 +582,25 @@ export default function TherapistClient() {
   const weekReviews = progressData?.weekReviews || [];
   const unreviewedAutopsies = relapseAutopsies.filter(a => a.status === "completed" && !a.reviewedByTherapist);
   const reviewedWeekNumbers = new Set(weekReviews.map(r => r.weekNumber));
-  const pendingWeekReviewCount = completedWeeks.filter(w => !reviewedWeekNumbers.has(w)).length;
 
   const isItemReviewed = (itemType: string, itemKey: string) => {
     return itemReviews.some(r => r.itemType === itemType && r.itemKey === itemKey);
   };
+
+  // A week is fully reviewed if there's a week-level review record OR
+  // all of its submitted content items (reflection + exercise) are individually reviewed.
+  // This handles cases where items were reviewed through different paths.
+  const isWeekFullyReviewed = (weekNum: number) => {
+    if (reviewedWeekNumbers.has(weekNum)) return true;
+    const hasReflection = reflections.some(r => r.weekNumber === weekNum);
+    const hasExercise = exerciseAnswers.some(e => e.weekNumber === weekNum);
+    if (!hasReflection && !hasExercise) return false;
+    const reflectionOk = !hasReflection || isItemReviewed('reflection', String(weekNum));
+    const exerciseOk = !hasExercise || isItemReviewed('exercise', String(weekNum));
+    return reflectionOk && exerciseOk;
+  };
+
+  const pendingWeekReviewCount = completedWeeks.filter(w => !isWeekFullyReviewed(w)).length;
 
   const getUnreviewedCheckinCount = () => {
     let count = 0;
@@ -1046,7 +1060,7 @@ export default function TherapistClient() {
                             const hw = homeworkCompletions.find(h => h.weekNumber === weekNum);
                             const totalItems = weekContent?.homeworkChecklist?.length || 0;
                             const completedItems = hw ? (Array.isArray(hw.completedItems) ? hw.completedItems.length : JSON.parse(hw.completedItems as any || '[]').length) : 0;
-                            const needsReview = status === "completed" && !reviewedWeekNumbers.has(weekNum);
+                            const needsReview = status === "completed" && !isWeekFullyReviewed(weekNum);
                             return (
                               <div
                                 key={weekNum}
@@ -1090,7 +1104,7 @@ export default function TherapistClient() {
                             </CardHeader>
                             <CardContent>
                               <div className="space-y-2">
-                                {completedWeeks.filter(w => !reviewedWeekNumbers.has(w)).sort((a, b) => a - b).map(weekNum => {
+                                {completedWeeks.filter(w => !isWeekFullyReviewed(w)).sort((a, b) => a - b).map(weekNum => {
                                   const weekContent = WEEK_CONTENT[weekNum];
                                   const hasReflection = reflections.some(r => r.weekNumber === weekNum);
                                   const hasExercise = exerciseAnswers.some(e => e.weekNumber === weekNum);

@@ -2552,6 +2552,15 @@ Write the summary now:`;
             } else if (feedbackType === 'week' && weekNumber) {
               await storage.markItemReviewed(therapistId, clientId, 'reflection', String(weekNumber));
               await storage.markItemReviewed(therapistId, clientId, 'exercise', String(weekNumber));
+              // Ensure a week-level review record exists so the "Weeks Needing Review" banner clears
+              try {
+                const existingWeekReview = await storage.getWeekReview(clientId, weekNumber);
+                if (!existingWeekReview) {
+                  await storage.createWeekReview(therapistId, clientId, weekNumber, "");
+                }
+              } catch (weekReviewErr) {
+                console.error("Auto-create week review error (non-fatal):", weekReviewErr);
+              }
               try {
                 const clientData = await storage.getUser(clientId);
                 if (clientData?.startDate) {
