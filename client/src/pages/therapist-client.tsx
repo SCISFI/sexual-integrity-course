@@ -1056,7 +1056,7 @@ export default function TherapistClient() {
                                     : status === "completed"
                                       ? "border-green-200 dark:border-green-800"
                                       : status === "available"
-                                        ? "border-amber-200 dark:border-amber-800"
+                                        ? "border-border"
                                         : "border-muted"
                                 }`}
                                 data-testid={`week-status-${weekNum}`}
@@ -1068,7 +1068,7 @@ export default function TherapistClient() {
                                 ) : status === "completed" ? (
                                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                                 ) : status === "available" ? (
-                                  <Clock className="mt-0.5 h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                                  <Clock className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" />
                                 ) : null}
                                 {totalItems > 0 && (status === "completed" || status === "available") && (
                                   <span className={`text-[9px] mt-0.5 ${completedItems === totalItems ? 'text-green-600 dark:text-green-400 font-bold' : 'text-muted-foreground'}`}>
@@ -1108,7 +1108,22 @@ export default function TherapistClient() {
                                           size="sm"
                                           onClick={() => {
                                             const el = document.getElementById(`reflection-week-${weekNum}`);
-                                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            if (el) {
+                                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                              el.style.outline = '2px solid #f59e0b';
+                                              el.style.outlineOffset = '3px';
+                                              el.style.borderRadius = '8px';
+                                              setTimeout(() => {
+                                                el.style.transition = 'outline-color 0.8s ease';
+                                                el.style.outline = '2px solid transparent';
+                                                setTimeout(() => {
+                                                  el.style.outline = '';
+                                                  el.style.outlineOffset = '';
+                                                  el.style.borderRadius = '';
+                                                  el.style.transition = '';
+                                                }, 800);
+                                              }, 1500);
+                                            }
                                           }}
                                           data-testid={`button-view-week-${weekNum}`}
                                         >
