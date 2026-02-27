@@ -870,6 +870,55 @@ export async function registerRoutes(
     }
   });
 
+  // ── Relapse Autopsy (client-facing) ──────────────────────────────────────
+  app.get("/api/relapse-autopsies", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const autopsies = await storage.getRelapseAutopsies(userId);
+      res.json({ autopsies });
+    } catch (error) {
+      console.error("Get autopsies error:", error);
+      res.status(500).json({ message: "Failed to get autopsies" });
+    }
+  });
+
+  app.post("/api/relapse-autopsies", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const autopsy = await storage.createRelapseAutopsy(userId, req.body);
+      res.json({ autopsy });
+    } catch (error) {
+      console.error("Create autopsy error:", error);
+      res.status(500).json({ message: "Failed to create autopsy" });
+    }
+  });
+
+  app.put("/api/relapse-autopsies/:id", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { id } = req.params;
+      const updated = await storage.updateRelapseAutopsy(id, userId, req.body);
+      if (!updated) return res.status(404).json({ message: "Autopsy not found" });
+      res.json({ autopsy: updated });
+    } catch (error) {
+      console.error("Update autopsy error:", error);
+      res.status(500).json({ message: "Failed to update autopsy" });
+    }
+  });
+
+  app.post("/api/relapse-autopsies/:id/complete", requireAuth, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { id } = req.params;
+      const completed = await storage.completeRelapseAutopsy(id, userId);
+      if (!completed) return res.status(404).json({ message: "Autopsy not found" });
+      res.json({ autopsy: completed });
+    } catch (error) {
+      console.error("Complete autopsy error:", error);
+      res.status(500).json({ message: "Failed to complete autopsy" });
+    }
+  });
+
   app.get("/api/therapist/clients/:clientId/checkin-stats", requireRole("therapist"), async (req, res) => {
     try {
       const therapistId = (req.user as any).id;
