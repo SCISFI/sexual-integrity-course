@@ -849,9 +849,9 @@ export default function TherapistClient() {
                   </TabsTrigger>
                   <TabsTrigger value="guidance" data-testid="tab-guidance" className="relative flex-1 min-w-[80px]">
                     Guidance
-                    {(suggestionsData?.suggestions.filter(s => s.priority === "urgent").length ?? 0) > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
-                        {suggestionsData!.suggestions.filter(s => s.priority === "urgent").length}
+                    {(suggestionsData?.suggestions.length ?? 0) > 0 && (
+                      <span className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white ${suggestionsData!.suggestions.some(s => s.priority === "urgent") ? "bg-destructive" : "bg-amber-500"}`}>
+                        {suggestionsData!.suggestions.length}
                       </span>
                     )}
                   </TabsTrigger>
