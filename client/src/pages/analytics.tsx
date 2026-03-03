@@ -231,9 +231,9 @@ function getInsights(stats: CheckinStats, moodTrend: TrendDirection, urgeTrend: 
   }
 
   if (stats.dailyCompletionRate >= 80) {
-    insights.push(`Strong consistency: ${isViewingOther ? "checking" : "you're checking"} in on ${stats.dailyCompletionRate}% of days in the current window.`);
+    insights.push(`Strong check-in consistency: checking in on ${stats.dailyCompletionRate}% of days in the current window.`);
   } else if (stats.dailyCompletionRate < 50 && stats.totalCheckins > 5) {
-    insights.push(`Check-in rate is ${stats.dailyCompletionRate}% this window. Daily check-ins are where patterns become trackable.`);
+    insights.push(`Check-in consistency is ${stats.dailyCompletionRate}% this window. Daily check-ins are where patterns become trackable.`);
   }
 
   if (insights.length === 0) {
@@ -307,11 +307,11 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
             <Skeleton className="h-10 w-64 bg-white/10" />
           </div>
         </div>
-        <main className="mx-auto max-w-5xl px-4 py-8">
+        <div className="mx-auto max-w-5xl px-4 py-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
           </div>
-        </main>
+        </div>
       </div>
     );
   }
@@ -418,7 +418,7 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-orange-600 dark:text-orange-400">Current Streak</p>
+                  <p className="text-sm text-orange-600 dark:text-orange-400">Check-in Streak</p>
                   <p className="text-4xl font-bold text-orange-700 dark:text-orange-300">
                     {stats?.currentStreak || 0}
                   </p>
@@ -435,7 +435,7 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-cyan-600 dark:text-cyan-400">Consistency</p>
+                  <p className="text-sm text-cyan-600 dark:text-cyan-400">Check-in Consistency</p>
                   <p className="text-4xl font-bold text-cyan-700 dark:text-cyan-300">
                     {stats?.dailyCompletionRate || 0}%
                   </p>
@@ -536,43 +536,19 @@ export default function AnalyticsPage({ params }: { params?: { clientId?: string
           </Card>
         </div>
 
-        {/* Program Progress + Completion Rate */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Award className="h-4 w-4 text-amber-500" />
-                Program Progress
-              </CardTitle>
-              <CardDescription>16-week journey — each bubble is one week</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <WeekGrid completedWeeks={completedWeeks} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ClipboardCheck className="h-4 w-4 text-cyan-500" />
-                Daily Check-in Rate
-              </CardTitle>
-              <CardDescription>
-                Last {stats?.windowSize || 14} days — consistency builds change
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center py-6 gap-4">
-              <ProgressRing percentage={stats?.dailyCompletionRate || 0} color="#0891b2" size={140} />
-              <p className="text-sm text-center text-muted-foreground max-w-xs">
-                {(stats?.dailyCompletionRate ?? 0) >= 80
-                  ? "Strong consistency. This frequency is where patterns become visible and change becomes trackable."
-                  : (stats?.dailyCompletionRate ?? 0) >= 50
-                  ? "Solid effort. Daily check-ins — even brief ones — compound over time."
-                  : "Aim to check in daily. The data only works if it's there."}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Curriculum Progress */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Award className="h-4 w-4 text-amber-500" />
+              Curriculum Milestone Tracking
+            </CardTitle>
+            <CardDescription>16-week recovery program progress</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <WeekGrid completedWeeks={completedWeeks} />
+          </CardContent>
+        </Card>
 
       </main>
     </div>

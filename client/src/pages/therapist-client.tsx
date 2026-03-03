@@ -1847,18 +1847,16 @@ export default function TherapistClient() {
                                             <><Mail className="h-3.5 w-3.5 mr-1.5" />Write Message</>
                                           )}
                                         </Button>
-                                        {canDismiss && (
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-xs h-8 text-muted-foreground hover:text-foreground"
-                                            onClick={() => dismissSuggestionMutation.mutate(suggestion.id)}
-                                            disabled={dismissSuggestionMutation.isPending}
-                                            data-testid={`button-mark-addressed-${suggestion.id}`}
-                                          >
-                                            Mark Addressed
-                                          </Button>
-                                        )}
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="text-xs h-8 text-muted-foreground hover:text-foreground"
+                                          onClick={() => dismissSuggestionMutation.mutate(suggestion.id)}
+                                          disabled={dismissSuggestionMutation.isPending}
+                                          data-testid={`button-mark-addressed-${suggestion.id}`}
+                                        >
+                                          Mark Addressed
+                                        </Button>
                                       </div>
                                     )}
                                   </CardContent>
