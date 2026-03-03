@@ -25,7 +25,28 @@ export interface TrendReport {
     rate: number;
     summary: string;
   };
+  vulnerabilities: string[];
 }
+
+const DAILY_ITEM_LABELS: Record<string, string> = {
+  "no-acting-out": "sobriety",
+  "no-rituals": "avoiding rituals",
+  "triggers-managed": "trigger management",
+  "sleep": "adequate sleep",
+  "exercise": "physical exercise",
+  "connection": "meaningful connection",
+  "values-aligned": "values-aligned action",
+  "honest": "rigorous honesty"
+};
+
+const HALT_LABELS: Record<string, string> = {
+  "hungry": "hunger",
+  "angry": "anger",
+  "lonely": "loneliness",
+  "tired": "tiredness",
+  "bored": "boredom",
+  "stressed": "stress"
+};
 
 const MIN_ENTRIES_FOR_TREND = 5;
 const MCID_THRESHOLD = 2.0;
@@ -119,7 +140,13 @@ function analyzeMetric(name: string, values: number[]): MetricTrendAnalysis {
 }
 
 export function analyzeTrends(
-  checkins: Array<{ moodLevel: number | null; urgeLevel: number | null; dateKey: string }>,
+  checkins: Array<{ 
+    moodLevel: number | null; 
+    urgeLevel: number | null; 
+    dateKey: string;
+    eveningChecks?: string | null;
+    haltChecks?: string | null;
+  }>,
 ): TrendReport {
   const sorted = [...checkins].sort((a, b) => a.dateKey.localeCompare(b.dateKey));
   const moodValues = sorted.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
@@ -131,6 +158,41 @@ export function analyzeTrends(
     ? Math.ceil((new Date(sortedDates[sortedDates.length - 1]).getTime() - new Date(sortedDates[0]).getTime()) / 86400000) + 1
     : sortedDates.length;
   const rate = daysCovered > 0 ? Math.round((uniqueDates.size / daysCovered) * 100) : 0;
+
+  // Analyze vulnerabilities (unchecked positives, checked negatives)
+  const missedPositives: Record<string, number> = {};
+  const presentNegatives: Record<string, number> = {};
+  const totalEntries = checkins.length;
+
+  if (totalEntries > 0) {
+    checkins.forEach(c => {
+      const daily = c.eveningChecks ? JSON.parse(c.eveningChecks) : [];
+      const halt = c.haltChecks ? JSON.parse(c.haltChecks) : [];
+      
+      const dailySet = new Set(daily);
+      Object.keys(DAILY_ITEM_LABELS).forEach(id => {
+        if (!dailySet.has(id)) missedPositives[id] = (missedPositives[id] || 0) + 1;
+      });
+
+      halt.forEach((id: string) => {
+        presentNegatives[id] = (presentNegatives[id] || 0) + 1;
+      });
+    });
+  }
+
+  const vulnerabilities: string[] = [];
+  
+  // Add top missed positives (missed > 40% of check-ins)
+  Object.entries(missedPositives).forEach(([id, count]) => {
+    const pct = (count / totalEntries) * 100;
+    if (pct >= 40) vulnerabilities.push(`Missing ${DAILY_ITEM_LABELS[id]} (${Math.round(pct)}% of days)`);
+  });
+
+  // Add top present negatives (present > 40% of check-ins)
+  Object.entries(presentNegatives).forEach(([id, count]) => {
+    const pct = (count / totalEntries) * 100;
+    if (pct >= 40) vulnerabilities.push(`Frequent ${HALT_LABELS[id]} (${Math.round(pct)}% of days)`);
+  });
 
   let consistencySummary: string;
   if (uniqueDates.size === 0) {
@@ -152,16 +214,23 @@ export function analyzeTrends(
       rate,
       summary: consistencySummary,
     },
+    vulnerabilities: vulnerabilities.slice(0, 4),
   };
 }
 
 export function formatTrendReportForAI(report: TrendReport): string {
+  const vulnBlock = report.vulnerabilities.length > 0 
+    ? `VULNERABILITIES (Areas for Improvement):\n- ${report.vulnerabilities.join('\n- ')}`
+    : "VULNERABILITIES: No significant negative patterns detected in daily habits.";
+
   return [
     "=== PRE-COMPUTED CLIENT STATISTICS (verified from raw data) ===",
     "",
     `MOOD: ${report.mood.summary}`,
     `URGE: ${report.urge.summary}`,
     `CHECK-IN CONSISTENCY: ${report.checkinConsistency.summary}`,
+    "",
+    vulnBlock,
     "",
     "IMPORTANT: Base your observations strictly on the statistics above.",
     "Do NOT invent, infer, or contradict any trend that is not explicitly stated.",

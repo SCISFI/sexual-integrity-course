@@ -31,6 +31,7 @@ type CheckinStats = {
   dailyCompletionRate: number;
   windowSize?: number;
   recentCheckins: CheckinEntry[];
+  vulnerabilities?: string[];
 };
 
 /**
@@ -240,7 +241,11 @@ function getInsights(stats: CheckinStats, moodTrend: TrendDirection, urgeTrend: 
     insights.push(`${you} data is stable. ${isViewingOther ? "Encourage daily check-ins" : "Keep checking in daily"} to keep the picture current.`);
   }
 
-  return insights.slice(0, 3);
+  if (stats.vulnerabilities && stats.vulnerabilities.length > 0) {
+    stats.vulnerabilities.forEach(v => insights.push(v));
+  }
+
+  return insights.slice(0, 5);
 }
 
 export default function AnalyticsPage({ params }: { params?: { clientId?: string } }) {

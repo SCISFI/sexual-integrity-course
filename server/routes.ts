@@ -2724,30 +2724,17 @@ Write the summary now:`;
         const completedWeeks = await storage.getCompletedWeeks(clientId);
         const currentWeek = Math.min(16, completedWeeks.length + 1);
 
-        const { analyzeTrends } = await import("./trendAnalysis");
-        const trends = analyzeTrends(checkins);
-
-        // checkins is sorted ASC by dateKey (oldest first, newest last)
-        const checkinCount = checkins.length;
-        const windowDays = 14;
-        const daysCovered = windowDays;
-        const consistencyRate = checkinCount > 0
-          ? Math.min(100, Math.round((checkinCount / windowDays) * 100))
-          : 0;
-
-        const contextBlock = `
-CLIENT CONTEXT:
-- Name: ${client?.name || "the client"}
-- Currently on: Week ${currentWeek} of 16
-- Check-ins in last 14 days: ${checkinCount} of 14 days (${consistencyRate}% consistency)
-- Mood trend (14-day): ${trends.mood.trend} (${trends.mood.firstHalfAvg}/10 → ${trends.mood.secondHalfAvg}/10)
-- Urge trend (14-day): ${trends.urge.trend} (${trends.urge.firstHalfAvg}/10 → ${trends.urge.secondHalfAvg}/10)
-
-GUIDANCE SITUATION:
-- Title: ${suggestionTitle}
-- Detail: ${suggestionDetail}
-- Suggested mentor action: ${suggestionAction}
-`.trim();
+        const { analyzeTrends, formatTrendReportForAI } = await import("./trendAnalysis");
+        const trendReport = analyzeTrends(
+          checkins.map((c) => ({ 
+            moodLevel: c.moodLevel ?? null, 
+            urgeLevel: c.urgeLevel ?? null, 
+            dateKey: c.dateKey,
+            eveningChecks: c.eveningChecks,
+            haltChecks: c.haltChecks
+          }))
+        );
+        const trendStatsBlock = formatTrendReportForAI(trendReport);
 
         const defaultSubjects: Record<string, string> = {
           "unreviewed-autopsy": "After your relapse autopsy",
@@ -2764,7 +2751,12 @@ GUIDANCE SITUATION:
 
         const prompt = `You are an expert recovery mentor writing directly to a client. Write a personal, direct message to ${client?.name || "them"} (150–220 words).
 
-${contextBlock}
+${trendStatsBlock}
+
+GUIDANCE SITUATION:
+- Title: ${suggestionTitle}
+- Detail: ${suggestionDetail}
+- Suggested mentor action: ${suggestionAction}
 
 WRITING RULES:
 - Write in second person ("you", "your") — address them directly
@@ -2861,7 +2853,13 @@ Write only the message body. No salutation, no sign-off, no subject line.`;
         // Build context for AI using pre-computed trend analysis
         const { analyzeTrends, formatTrendReportForAI } = await import("./trendAnalysis");
         const trendReport = analyzeTrends(
-          checkins.map((c) => ({ moodLevel: c.moodLevel ?? null, urgeLevel: c.urgeLevel ?? null, dateKey: c.dateKey }))
+          checkins.map((c) => ({ 
+            moodLevel: c.moodLevel ?? null, 
+            urgeLevel: c.urgeLevel ?? null, 
+            dateKey: c.dateKey,
+            eveningChecks: c.eveningChecks,
+            haltChecks: c.haltChecks
+          }))
         );
         const trendStatsBlock = formatTrendReportForAI(trendReport);
 
