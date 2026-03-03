@@ -2727,17 +2727,19 @@ Write the summary now:`;
         const { analyzeTrends } = await import("./trendAnalysis");
         const trends = analyzeTrends(checkins);
 
+        // checkins is sorted ASC by dateKey (oldest first, newest last)
         const checkinCount = checkins.length;
-        const daysCovered = checkins.length > 0
-          ? Math.ceil((Date.now() - new Date(checkins[checkins.length - 1].dateKey).getTime()) / 86400000) + 1
+        const windowDays = 14;
+        const daysCovered = windowDays;
+        const consistencyRate = checkinCount > 0
+          ? Math.min(100, Math.round((checkinCount / windowDays) * 100))
           : 0;
-        const consistencyRate = daysCovered > 0 ? Math.round((checkinCount / daysCovered) * 100) : 0;
 
         const contextBlock = `
 CLIENT CONTEXT:
 - Name: ${client?.name || "the client"}
 - Currently on: Week ${currentWeek} of 16
-- Check-ins last 14 days: ${checkinCount} (${consistencyRate}% consistency over ${daysCovered} days)
+- Check-ins in last 14 days: ${checkinCount} of 14 days (${consistencyRate}% consistency)
 - Mood trend (14-day): ${trends.mood.trend} (${trends.mood.firstHalfAvg}/10 → ${trends.mood.secondHalfAvg}/10)
 - Urge trend (14-day): ${trends.urge.trend} (${trends.urge.firstHalfAvg}/10 → ${trends.urge.secondHalfAvg}/10)
 
@@ -2771,7 +2773,8 @@ WRITING RULES:
 - Do NOT give medical advice or diagnoses
 - Short paragraphs (2–3 sentences max). No bullet points. No headers.
 - Tone: direct, warm, honest — like a mentor who genuinely knows this person and isn't afraid to name what they see
-- End with a single concrete ask or next step
+- End with a clear, encouraging statement or next step — do NOT end with a question asking the client to respond back
+- Clients cannot reply to these messages, so never ask them to share their thoughts or respond
 
 Write only the message body. No salutation, no sign-off, no subject line.`;
 
@@ -2946,7 +2949,8 @@ Guidelines:
 - Offer gentle guidance or suggestions based on their challenges
 - Keep the message focused and under 250 words
 - Do not provide medical advice or crisis intervention
-- End with an encouraging note about their continued journey
+- End with an encouraging statement — do NOT end with a question asking the client to respond or share their thoughts
+- Clients cannot reply to these messages, so never ask them to respond or answer a question
 ${Number(weekNumber) <= 3 ? '- TONE: This is an early week (Week ' + weekNumber + '). Keep tone grounded and steady. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." Acknowledge effort simply.' : '- TONE: Be warm and supportive but measured. Avoid overusing power words like "fantastic," "excellent," "amazing." Reserve them for genuinely significant milestones.'}
 
 Write the feedback message now:`;
@@ -4426,7 +4430,8 @@ INSTRUCTIONS:
 8. Keep the tone urgent but supportive — this needs immediate, caring attention.
 9. Under 300 words. Speak directly to the client using "you" language.
 10. Do not provide medical advice or crisis intervention.
-11. TONE: Be warm but measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible." Keep language grounded and honest. This is a relapse autopsy — be compassionate without being patronizing.`;
+11. TONE: Be warm but measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible." Keep language grounded and honest. This is a relapse autopsy — be compassionate without being patronizing.
+12. End with an encouraging statement or concrete next step — do NOT end with a question asking the client to respond or share more. Clients cannot reply to these messages.`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
