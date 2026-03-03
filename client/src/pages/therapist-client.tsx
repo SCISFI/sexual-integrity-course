@@ -611,8 +611,16 @@ export default function TherapistClient() {
   const getUnreviewedReflectionCount = () => {
     let count = 0;
     const completedSet = new Set(completedWeeks);
-    reflections.forEach(r => { if (completedSet.has(r.weekNumber) && !isItemReviewed('reflection', String(r.weekNumber))) count++; });
-    exerciseAnswers.forEach(e => { if (completedSet.has(e.weekNumber) && !isItemReviewed('exercise', String(e.weekNumber))) count++; });
+    reflections.forEach(r => {
+      if (completedSet.has(r.weekNumber) && !isWeekFullyReviewed(r.weekNumber) && !isItemReviewed('reflection', String(r.weekNumber))) {
+        count++;
+      }
+    });
+    exerciseAnswers.forEach(e => {
+      if (completedSet.has(e.weekNumber) && !isWeekFullyReviewed(e.weekNumber) && !isItemReviewed('exercise', String(e.weekNumber))) {
+        count++;
+      }
+    });
     return count;
   };
 

@@ -1107,6 +1107,12 @@ export class DatabaseStorage implements IStorage {
       .from(exerciseAnswers)
       .where(inArray(exerciseAnswers.userId, clientIds));
 
+    // Batch: get all week reviews for these clients
+    const allWeekReviews = await db.select({ clientId: weekReviews.clientId, weekNumber: weekReviews.weekNumber })
+      .from(weekReviews)
+      .where(inArray(weekReviews.clientId, clientIds));
+    const weekReviewedSet = new Set(allWeekReviews.map(wr => `${wr.clientId}:${wr.weekNumber}`));
+
     const counts: Record<string, number> = {};
 
     for (const c of allCheckins) {
@@ -1116,13 +1122,13 @@ export class DatabaseStorage implements IStorage {
     }
     for (const r of allReflections) {
       const clientCompleted = completedWeeksByClient.get(r.userId);
-      if (clientCompleted && clientCompleted.has(r.weekNumber) && !reviewedSet.has(`${r.userId}:reflection:${r.weekNumber}`)) {
+      if (clientCompleted && clientCompleted.has(r.weekNumber) && !weekReviewedSet.has(`${r.userId}:${r.weekNumber}`) && !reviewedSet.has(`${r.userId}:reflection:${r.weekNumber}`)) {
         counts[r.userId] = (counts[r.userId] || 0) + 1;
       }
     }
     for (const e of allExercises) {
       const clientCompleted = completedWeeksByClient.get(e.userId);
-      if (clientCompleted && clientCompleted.has(e.weekNumber) && !reviewedSet.has(`${e.userId}:exercise:${e.weekNumber}`)) {
+      if (clientCompleted && clientCompleted.has(e.weekNumber) && !weekReviewedSet.has(`${e.userId}:${e.weekNumber}`) && !reviewedSet.has(`${e.userId}:exercise:${e.weekNumber}`)) {
         counts[e.userId] = (counts[e.userId] || 0) + 1;
       }
     }
