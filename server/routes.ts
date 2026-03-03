@@ -2756,7 +2756,7 @@ ${trendStatsBlock}
 GUIDANCE SITUATION:
 - Title: ${suggestionTitle}
 - Detail: ${suggestionDetail}
-- Suggested mentor action: ${suggestionAction}
+- Mentor context (what to address — do NOT copy literally or turn into a question): ${suggestionAction}
 
 WRITING RULES:
 - Write in second person ("you", "your") — address them directly
@@ -2765,8 +2765,8 @@ WRITING RULES:
 - Do NOT give medical advice or diagnoses
 - Short paragraphs (2–3 sentences max). No bullet points. No headers.
 - Tone: direct, warm, honest — like a mentor who genuinely knows this person and isn't afraid to name what they see
-- End with a clear, encouraging statement or next step — do NOT end with a question asking the client to respond back
-- Clients cannot reply to these messages, so never ask them to share their thoughts or respond
+- Do NOT include any questions anywhere in the message. Clients cannot reply — questions serve no purpose and create frustration.
+- End with a clear, encouraging statement or a concrete next step.
 
 Write only the message body. No salutation, no sign-off, no subject line.`;
 
@@ -2947,8 +2947,8 @@ Guidelines:
 - Offer gentle guidance or suggestions based on their challenges
 - Keep the message focused and under 250 words
 - Do not provide medical advice or crisis intervention
-- End with an encouraging statement — do NOT end with a question asking the client to respond or share their thoughts
-- Clients cannot reply to these messages, so never ask them to respond or answer a question
+- Do NOT include any questions anywhere in the message. Clients cannot reply — questions serve no purpose and create frustration.
+- End with an encouraging statement or a concrete next step.
 ${Number(weekNumber) <= 3 ? '- TONE: This is an early week (Week ' + weekNumber + '). Keep tone grounded and steady. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." Acknowledge effort simply.' : '- TONE: Be warm and supportive but measured. Avoid overusing power words like "fantastic," "excellent," "amazing." Reserve them for genuinely significant milestones.'}
 
 Write the feedback message now:`;
@@ -4160,7 +4160,7 @@ ${completedAutopsies
         3. CRITICAL: Do NOT contradict the statistics. If a metric is described as "stable" or "consistently at X", do NOT say it is improving or declining. If data is "insufficient", state that more data is needed.
         4. If there is relapse history, sensitively reference patterns and how today's check-in relates to known triggers or risk factors.
         5. Mention check-in consistency if notably high or low.
-        6. End with a specific, supportive action.
+        6. End with a specific, supportive statement or encouragement. Do NOT include any questions — clients cannot reply to these messages.
         7. TONE: Be warm but measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." Keep language grounded and steady. Acknowledge effort simply.
       `;
 
@@ -4429,7 +4429,7 @@ INSTRUCTIONS:
 9. Under 300 words. Speak directly to the client using "you" language.
 10. Do not provide medical advice or crisis intervention.
 11. TONE: Be warm but measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible." Keep language grounded and honest. This is a relapse autopsy — be compassionate without being patronizing.
-12. End with an encouraging statement or concrete next step — do NOT end with a question asking the client to respond or share more. Clients cannot reply to these messages.`;
+12. End with an encouraging statement or a concrete next step. Do NOT include any questions anywhere in the message — clients cannot reply, so questions only create frustration.`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
