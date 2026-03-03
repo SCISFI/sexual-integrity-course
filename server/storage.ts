@@ -837,9 +837,25 @@ export class DatabaseStorage implements IStorage {
 
       const reviewedWeeks = new Set(reviews.map(r => r.weekNumber));
 
+      // Also consider a week "reviewed" if its individual items are all reviewed
+      const itemReviews = await this.getItemReviews(therapistId, clientId);
+      const itemReviewTypes = new Set(itemReviews.map(ir => `${ir.itemType}:${ir.itemKey}`));
+      
+      const reflections = await db.select().from(weekReflections).where(eq(weekReflections.userId, clientId));
+      const exercises = await db.select().from(exerciseAnswers).where(eq(exerciseAnswers.userId, clientId));
+
       // Find completions without reviews
       for (const completion of completions) {
-        if (!reviewedWeeks.has(completion.weekNumber) && completion.completedAt) {
+        if (reviewedWeeks.has(completion.weekNumber)) continue;
+
+        // Check if all items for this week are individually reviewed
+        const hasReflection = reflections.some(r => r.weekNumber === completion.weekNumber);
+        const hasExercise = exercises.some(e => e.weekNumber === completion.weekNumber);
+        
+        const reflectionOk = !hasReflection || itemReviewTypes.has(`reflection:${completion.weekNumber}`);
+        const exerciseOk = !hasExercise || itemReviewTypes.has(`exercise:${completion.weekNumber}`);
+
+        if (!(reflectionOk && exerciseOk) && completion.completedAt) {
           results.push({
             clientId: client.id,
             clientName: client.name || client.email,
