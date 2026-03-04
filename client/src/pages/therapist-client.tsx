@@ -677,7 +677,7 @@ export default function TherapistClient() {
     return reflectionOk && exerciseOk;
   };
 
-  const pendingWeekReviewCount = completedWeeks.filter(w => !isWeekFullyReviewed(w)).length;
+  const pendingWeekReviewCountLocal = completedWeeks.filter(w => !isWeekFullyReviewed(w)).length;
 
   const getUnreviewedCheckinCount = () => {
     let count = 0;
@@ -920,7 +920,7 @@ export default function TherapistClient() {
                     Progress
                     {reviewCount > 0 && (
                       <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2 ring-background" data-testid="badge-pending-week-reviews">
-                        {reviewCount}
+                        {pendingWeekReviewCountLocal + getUnreviewedReflectionCount()}
                       </span>
                     )}
                   </TabsTrigger>
