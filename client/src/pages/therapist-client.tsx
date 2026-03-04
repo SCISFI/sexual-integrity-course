@@ -918,7 +918,7 @@ export default function TherapistClient() {
                   <TabsTrigger value="progress" data-testid="tab-progress" className="relative flex-1 min-w-[80px]">
                     Progress
                     {(pendingWeekReviewCount + getUnreviewedReflectionCount()) > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white" data-testid="badge-pending-week-reviews">
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2 ring-background" data-testid="badge-pending-week-reviews">
                         {pendingWeekReviewCount + getUnreviewedReflectionCount()}
                       </span>
                     )}
@@ -926,7 +926,7 @@ export default function TherapistClient() {
                   <TabsTrigger value="checkins" data-testid="tab-checkins" className="relative flex-1 min-w-[80px]">
                     Check-ins
                     {getUnreviewedCheckinCount() > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white" data-testid="badge-unreviewed-checkins">
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2 ring-background" data-testid="badge-unreviewed-checkins">
                         {getUnreviewedCheckinCount()}
                       </span>
                     )}
@@ -934,7 +934,7 @@ export default function TherapistClient() {
                   <TabsTrigger value="autopsies" data-testid="tab-autopsies" className="relative flex-1 min-w-[80px]">
                     Autopsies
                     {unreviewedAutopsies.length > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white" data-testid="badge-unreviewed-autopsies">
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white ring-2 ring-background" data-testid="badge-unreviewed-autopsies">
                         {unreviewedAutopsies.length}
                       </span>
                     )}
@@ -942,7 +942,7 @@ export default function TherapistClient() {
                   <TabsTrigger value="guidance" data-testid="tab-guidance" className="relative flex-1 min-w-[80px]">
                     Guidance
                     {(suggestionsData?.suggestions.length ?? 0) > 0 && (
-                      <span className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white ${suggestionsData!.suggestions.some(s => s.priority === "urgent") ? "bg-destructive" : "bg-amber-500"}`}>
+                      <span className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white ring-2 ring-background ${suggestionsData!.suggestions.some(s => s.priority === "urgent") ? "bg-destructive" : "bg-amber-500"}`}>
                         {suggestionsData!.suggestions.length}
                       </span>
                     )}
