@@ -247,8 +247,9 @@ export default function TherapistClient() {
 
   const urgentCount = urgentSuggestionData?.urgentCounts?.[clientId as string] ?? 0;
   const autopsyCount = unreviewedAutopsiesData?.unreviewedCounts?.[clientId as string] || 0;
-  const reviewCount = (unreviewedItemsData?.unreviewedItemCounts?.[clientId as string] || 0) +
-    (pendingReviewsData?.pendingReviews?.filter(r => r.clientId === clientId).length || 0);
+  const unreviewedItemCount = unreviewedItemsData?.unreviewedItemCounts?.[clientId as string] || 0;
+  const pendingWeekReviewCount = pendingReviewsData?.pendingReviews?.filter(r => r.clientId === clientId).length || 0;
+  const reviewCount = unreviewedItemCount + pendingWeekReviewCount;
 
   const isNeedsAttention = urgentCount > 0 || autopsyCount > 0 || reviewCount > 0;
 
@@ -917,9 +918,9 @@ export default function TherapistClient() {
                   <TabsTrigger value="analytics" data-testid="tab-analytics" className="flex-1 min-w-[80px]">Analytics</TabsTrigger>
                   <TabsTrigger value="progress" data-testid="tab-progress" className="relative flex-1 min-w-[80px]">
                     Progress
-                    {(pendingWeekReviewCount + getUnreviewedReflectionCount()) > 0 && (
+                    {reviewCount > 0 && (
                       <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2 ring-background" data-testid="badge-pending-week-reviews">
-                        {pendingWeekReviewCount + getUnreviewedReflectionCount()}
+                        {reviewCount}
                       </span>
                     )}
                   </TabsTrigger>
