@@ -1108,7 +1108,7 @@ export async function registerRoutes(
       const hasExercise = !!exercise?.answers && exercise.answers !== "{}";
       const hasHomework = !!homework?.completedItems && homework.completedItems !== "[]";
 
-      if (hasReflection && hasExercise && hasHomework) {
+      if (hasReflection && hasExercise && hasHomework && !completedWeeks.includes(activeWeek)) {
         suggestions.push({
           id: "submit-week-nudge",
           priority: "urgent",
@@ -1241,7 +1241,7 @@ export async function registerRoutes(
         const hasExercise = !!exercise?.answers && exercise.answers !== "{}";
         const hasHomework = !!homework?.completedItems && homework.completedItems !== "[]";
         
-        if (hasReflection && hasExercise && hasHomework && !completedWeeks.includes(currentActiveWeek)) {
+        if (hasReflection && hasExercise && hasHomework && !completedWeeks.includes(currentActiveWeek) && !dismissedIds.includes("submit-week-nudge")) {
           urgentCount++;
         }
 
