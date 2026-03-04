@@ -163,6 +163,26 @@ export default function Dashboard() {
     setLocation(`/week/${nextAvailableWeek}`);
   };
 
+  const { data: reflectionData } = useQuery<any>({
+    queryKey: [`/api/progress/reflection/${nextAvailableWeek}`],
+    enabled: !!user && nextAvailableWeek <= 16,
+  });
+
+  const { data: exerciseData } = useQuery<any>({
+    queryKey: [`/api/progress/exercise/${nextAvailableWeek}`],
+    enabled: !!user && nextAvailableWeek <= 16,
+  });
+
+  const { data: homeworkData } = useQuery<any>({
+    queryKey: [`/api/progress/homework/${nextAvailableWeek}`],
+    enabled: !!user && nextAvailableWeek <= 16,
+  });
+
+  const hasReflection = !!(reflectionData?.reflection?.q1 || reflectionData?.reflection?.q2 || reflectionData?.reflection?.q3 || reflectionData?.reflection?.q4);
+  const hasExercise = !!exerciseData?.exercise?.answers && exerciseData.exercise.answers !== "{}";
+  const hasHomework = !!homeworkData?.homework?.completedItems && homeworkData.homework.completedItems !== "[]";
+  const showSubmitNudge = hasReflection && hasExercise && hasHomework && !completedWeeks.includes(nextAvailableWeek);
+
   if (isLoading || isAuthenticating) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -333,6 +353,27 @@ export default function Dashboard() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-8">
+        {showSubmitNudge && (
+          <Card className="border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/30">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2 text-orange-800 dark:text-orange-300">
+                <AlertTriangle className="h-5 w-5" />
+                <CardTitle className="text-base font-bold">Action Needed: Submit Week {nextAvailableWeek}</CardTitle>
+              </div>
+              <CardDescription className="text-orange-700 dark:text-orange-400">
+                You've completed your work for Week {nextAvailableWeek}. Don't forget to click "Complete Week" to notify your mentor and unlock the next module.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => setLocation(`/week/${nextAvailableWeek}`)}
+                className="bg-orange-600 hover:bg-orange-700 text-white border-none"
+              >
+                Go to Week {nextAvailableWeek}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" data-testid="text-welcome-greeting">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">

@@ -989,15 +989,26 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Not authorized" });
       }
 
-      const client = await storage.getUser(clientId);
-      const checkins = await storage.getUserCheckinHistory(clientId, 30);
-      const completedWeeks = await storage.getCompletedWeeks(clientId);
-      const relapseAutopsies = await storage.getRelapseAutopsies(clientId);
+      const [checkins, client, relapseAutopsies, completedWeeks] = await Promise.all([
+        storage.getUserCheckinHistory(clientId, 30),
+        storage.getUser(clientId),
+        storage.getRelapseAutopsies(clientId),
+        storage.getCompletedWeeks(clientId),
+      ]);
       const dismissedIds = await storage.getDismissedSuggestions(therapistId, clientId);
 
       const { analyzeTrends } = await import("./trendAnalysis");
-      const trends = analyzeTrends(checkins);
+      const trends = analyzeTrends(checkins.map(c => ({
+        moodLevel: c.moodLevel ?? null,
+        urgeLevel: c.urgeLevel ?? null,
+        dateKey: c.dateKey,
+        eveningChecks: c.eveningChecks,
+        haltChecks: c.haltChecks
+      })));
       const suggestions: MentorSuggestion[] = [];
+
+      const daysSinceStart = client?.startDate ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / 86400000) : 0;
+      const isBrandNew = daysSinceStart < 7 && completedWeeks.length === 0;
 
       const unreviewedAutopsies = relapseAutopsies.filter(
         (a) => a.status === "completed" && !a.reviewedByTherapist,
@@ -1026,7 +1037,7 @@ export async function registerRoutes(
             action: "Reach out directly with a specific question — not 'how are you doing?' but 'what happened to your check-in this week?' Specificity signals that you noticed.",
           });
         }
-      } else {
+      } else if (!isBrandNew) {
         suggestions.push({
           id: "no-checkins",
           priority: "urgent",
@@ -1109,13 +1120,14 @@ export async function registerRoutes(
 
       // Curriculum guidance for the most recently completed week
       const lastCompletedWeek = completedWeeks.length > 0 ? Math.max(...completedWeeks) : 0;
-      if (lastCompletedWeek > 0) {
-        const weekGuide = MENTOR_WEEK_GUIDANCE[lastCompletedWeek];
+      if (lastCompletedWeek > 0 || (!isBrandNew && lastCompletedWeek === 0)) {
+        const activeWeekToShow = lastCompletedWeek > 0 ? lastCompletedWeek : 1;
+        const weekGuide = MENTOR_WEEK_GUIDANCE[activeWeekToShow];
         if (weekGuide) {
           suggestions.push({
-            id: `curriculum-w${lastCompletedWeek}`,
+            id: `curriculum-w${activeWeekToShow}`,
             priority: "curriculum",
-            title: `Week ${lastCompletedWeek}: ${weekGuide.weekTitle}`,
+            title: `Week ${activeWeekToShow}: ${weekGuide.weekTitle}`,
             detail: weekGuide.detail,
             action: weekGuide.action,
           });
@@ -1178,10 +1190,11 @@ export async function registerRoutes(
       const urgentCounts: Record<string, number> = {};
 
       for (const client of clients) {
-        const [dismissedIds, checkins, autopsies] = await Promise.all([
+        const [dismissedIds, checkins, autopsies, completedWeeks] = await Promise.all([
           storage.getDismissedSuggestions(therapistId, client.id),
           storage.getUserCheckinHistory(client.id, 30),
           storage.getRelapseAutopsies(client.id),
+          storage.getCompletedWeeks(client.id),
         ]);
 
         let urgentCount = 0;
