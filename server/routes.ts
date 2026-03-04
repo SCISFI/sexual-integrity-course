@@ -2763,7 +2763,9 @@ GUIDANCE SITUATION:
 
 WRITING RULES:
 - Write in second person ("you", "your") — address them directly
-- Reference specific data from the context when available (e.g., their check-in rate, week number, trend direction). Do NOT invent statistics not shown above.
+- Reference specific data from the context when available (e.g., their check-in rate, week number, trend direction).
+- IMPORTANT: Review the VULNERABILITIES section in the statistics above. If there are missing habits (e.g., missing sleep, exercise, or connection) or frequent HALT-BS factors (e.g., frequent stress or loneliness), address these as specific areas for growth or observation.
+- Do NOT invent statistics not shown above.
 - Do NOT use power words: fantastic, amazing, incredible, proud, honored, grateful
 - Do NOT give medical advice or diagnoses
 - Short paragraphs (2–3 sentences max). No bullet points. No headers.
