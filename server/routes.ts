@@ -997,7 +997,10 @@ export async function registerRoutes(
       ]);
       const dismissedIds = await storage.getDismissedSuggestions(therapistId, clientId);
 
-      const { analyzeTrends } = await import("./trendAnalysis");
+      const daysSinceStart = client?.startDate ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / 86400000) : 0;
+      const isBrandNew = daysSinceStart < 7 && completedWeeks.length === 0;
+
+      const { analyzeTrends, formatTrendReportForAI } = await import("./trendAnalysis");
       const trends = analyzeTrends(checkins.map(c => ({
         moodLevel: c.moodLevel ?? null,
         urgeLevel: c.urgeLevel ?? null,
@@ -1006,9 +1009,6 @@ export async function registerRoutes(
         haltChecks: c.haltChecks
       })));
       const suggestions: MentorSuggestion[] = [];
-
-      const daysSinceStart = client?.startDate ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / 86400000) : 0;
-      const isBrandNew = daysSinceStart < 7 && completedWeeks.length === 0;
 
       const unreviewedAutopsies = relapseAutopsies.filter(
         (a) => a.status === "completed" && !a.reviewedByTherapist,
@@ -1219,7 +1219,7 @@ export async function registerRoutes(
         }
 
         // curriculum-behind (client is trailing their expected week based on start date)
-        if (client.startDate) {
+        if (client.startDate && completedWeeks.length < 16) {
           const daysSinceStart = Math.floor(
             (Date.now() - new Date(client.startDate).getTime()) / 86400000,
           );
