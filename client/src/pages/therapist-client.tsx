@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -137,10 +137,40 @@ export default function TherapistClient() {
   const [activeFeedbackTarget, setActiveFeedbackTarget] = useState<{ type: string; key: string } | null>(null);
 
   // Compose panel state
-  const [composingForSuggestionId, setComposingForSuggestionId] = useState<string | null>(null);
-  const [editingDraftId, setEditingDraftId] = useState<string | null>(null);
-  const [composeSubject, setComposeSubject] = useState("");
-  const [composeMessage, setComposeMessage] = useState("");
+  const [composingForSuggestionId, setComposingForSuggestionId] = useState<string | null>(() => {
+    return localStorage.getItem(`compose_suggestion_id_${clientId}`) || null;
+  });
+  const [editingDraftId, setEditingDraftId] = useState<string | null>(() => {
+    return localStorage.getItem(`editing_draft_id_${clientId}`) || null;
+  });
+  const [composeSubject, setComposeSubject] = useState(() => {
+    return localStorage.getItem(`compose_subject_${clientId}`) || "";
+  });
+  const [composeMessage, setComposeMessage] = useState(() => {
+    return localStorage.getItem(`compose_message_${clientId}`) || "";
+  });
+
+  // Persist compose state
+  useEffect(() => {
+    if (!clientId) return;
+    if (composingForSuggestionId) localStorage.setItem(`compose_suggestion_id_${clientId}`, composingForSuggestionId);
+    else localStorage.removeItem(`compose_suggestion_id_${clientId}`);
+  }, [composingForSuggestionId, clientId]);
+
+  useEffect(() => {
+    if (!clientId) return;
+    if (editingDraftId) localStorage.setItem(`editing_draft_id_${clientId}`, editingDraftId);
+    else localStorage.removeItem(`editing_draft_id_${clientId}`);
+  }, [editingDraftId, clientId]);
+
+  useEffect(() => {
+    if (clientId) localStorage.setItem(`compose_subject_${clientId}`, composeSubject);
+  }, [composeSubject, clientId]);
+
+  useEffect(() => {
+    if (clientId) localStorage.setItem(`compose_message_${clientId}`, composeMessage);
+  }, [composeMessage, clientId]);
+
   const [composeLoading, setComposeLoading] = useState(false);
   const [composeSaving, setComposeSaving] = useState(false);
   const [composeSending, setComposeSending] = useState(false);
@@ -150,9 +180,32 @@ export default function TherapistClient() {
 
   // Sheet compose panel state (for week/autopsy/general messages)
   type SheetCtx = { kind: 'week'; weekNumber: number } | { kind: 'autopsy'; autopsyId: string } | { kind: 'general' } | null;
-  const [sheetCtx, setSheetCtx] = useState<SheetCtx>(null);
-  const [sheetSubject, setSheetSubject] = useState("");
-  const [sheetMessage, setSheetMessage] = useState("");
+  const [sheetCtx, setSheetCtx] = useState<SheetCtx>(() => {
+    const saved = localStorage.getItem(`sheet_ctx_${clientId}`);
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [sheetSubject, setSheetSubject] = useState(() => {
+    return localStorage.getItem(`sheet_subject_${clientId}`) || "";
+  });
+  const [sheetMessage, setSheetMessage] = useState(() => {
+    return localStorage.getItem(`sheet_message_${clientId}`) || "";
+  });
+
+  // Persist sheet state
+  useEffect(() => {
+    if (!clientId) return;
+    if (sheetCtx) localStorage.setItem(`sheet_ctx_${clientId}`, JSON.stringify(sheetCtx));
+    else localStorage.removeItem(`sheet_ctx_${clientId}`);
+  }, [sheetCtx, clientId]);
+
+  useEffect(() => {
+    if (clientId) localStorage.setItem(`sheet_subject_${clientId}`, sheetSubject);
+  }, [sheetSubject, clientId]);
+
+  useEffect(() => {
+    if (clientId) localStorage.setItem(`sheet_message_${clientId}`, sheetMessage);
+  }, [sheetMessage, clientId]);
+
   const [sheetLoading, setSheetLoading] = useState(false);
   const [sheetSending, setSheetSending] = useState(false);
   const [sheetSaving, setSheetSaving] = useState(false);
