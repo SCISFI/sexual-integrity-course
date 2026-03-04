@@ -70,7 +70,7 @@ function analyzeMetric(name: string, values: number[]): MetricTrendAnalysis {
     };
   }
 
-  const avg = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
+  const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
   const min = Math.min(...values);
   const max = Math.max(...values);
 
@@ -89,12 +89,12 @@ function analyzeMetric(name: string, values: number[]): MetricTrendAnalysis {
   const firstHalf = values.slice(0, mid);
   const secondHalf = values.slice(mid);
   const firstHalfAvg = firstHalf.length > 0
-    ? Math.round((firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length) * 10) / 10
+    ? Math.round(firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length)
     : 0;
   const secondHalfAvg = secondHalf.length > 0
-    ? Math.round((secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length) * 10) / 10
+    ? Math.round(secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length)
     : 0;
-  const difference = Math.round((secondHalfAvg - firstHalfAvg) * 10) / 10;
+  const difference = Math.round(secondHalfAvg - firstHalfAvg);
 
   let trend: TrendDirection;
   let summary: string;
