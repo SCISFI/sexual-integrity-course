@@ -162,7 +162,11 @@ export default function TherapistHome() {
     if (!client.startDate) return "Pending";
     // Urgent guidance flags are the primary "Needs Attention" signal —
     // cleared when mentor dismisses / sends a message for each flag.
-    if ((urgentSuggestionCounts[client.id] ?? 0) > 0) return "Needs Attention";
+    const urgentCount = urgentSuggestionCounts[client.id] ?? 0;
+    const autopsyCount = unreviewedCounts[client.id] || 0;
+    const reviewCount = combinedReviewCounts[client.id] || 0;
+
+    if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0) return "Needs Attention";
     const daysSinceStart = Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24));
     const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
     if (client.completedWeeks.length >= expectedWeek) return "On Track";

@@ -861,7 +861,15 @@ export default function TherapistClient() {
                     <User className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-lg font-semibold truncate">{client.name}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-lg font-semibold truncate">{client.name}</h2>
+                      {isNeedsAttention && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400 text-amber-700 dark:text-amber-400">
+                          <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
+                          Needs Attention
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-1 text-sm text-muted-foreground">
                       <span className="truncate">{client.email}</span>
                       <span className="hidden sm:inline">|</span>
