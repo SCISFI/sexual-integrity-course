@@ -1085,6 +1085,28 @@ export async function registerRoutes(
         }
       }
 
+      const activeWeek = Math.min(16, completedWeeks.length + 1);
+      
+      // Check if client has finished all work for the active week but hasn't marked it complete
+      const [reflection, exercise, homework] = await Promise.all([
+        storage.getWeekReflection(clientId, activeWeek),
+        storage.getExerciseAnswers(clientId, activeWeek),
+        storage.getHomeworkCompletion(clientId, activeWeek),
+      ]);
+      const hasReflection = !!(reflection?.q1 || reflection?.q2 || reflection?.q3 || reflection?.q4);
+      const hasExercise = !!exercise?.answers && exercise.answers !== "{}";
+      const hasHomework = !!homework?.completedItems && homework.completedItems !== "[]";
+
+      if (hasReflection && hasExercise && hasHomework) {
+        suggestions.push({
+          id: "submit-week-nudge",
+          priority: "urgent",
+          title: "Week Work Ready for Submission",
+          detail: `Client has drafted a reflection, completed exercises, and checked off homework for Week ${activeWeek}, but the week is not yet marked complete.`,
+          action: "Nudge the client to click 'Complete Week' so you can officially review their work and they can progress to the next module.",
+        });
+      }
+
       // Curriculum guidance for the most recently completed week
       const lastCompletedWeek = completedWeeks.length > 0 ? Math.max(...completedWeeks) : 0;
       if (lastCompletedWeek > 0) {
@@ -1181,6 +1203,33 @@ export async function registerRoutes(
             (Date.now() - new Date(lastCheckin.dateKey).getTime()) / 86400000,
           );
           if (daysSince >= 3 && !dismissedIds.includes("checkin-gap")) urgentCount++;
+        }
+
+        // curriculum-behind (client is trailing their expected week based on start date)
+        if (client.startDate) {
+          const daysSinceStart = Math.floor(
+            (Date.now() - new Date(client.startDate).getTime()) / 86400000,
+          );
+          const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
+          if (completedWeeks.length < expectedWeek - 1) {
+            urgentCount++;
+          }
+        }
+
+        // week-completion-nudge (client has completed all items for a week but hasn't marked it complete)
+        const lastCompletedWeek = completedWeeks.length > 0 ? Math.max(...completedWeeks) : 0;
+        const currentActiveWeek = Math.min(16, lastCompletedWeek + 1);
+        const [reflection, exercise, homework] = await Promise.all([
+          storage.getWeekReflection(client.id, currentActiveWeek),
+          storage.getExerciseAnswers(client.id, currentActiveWeek),
+          storage.getHomeworkCompletion(client.id, currentActiveWeek),
+        ]);
+        const hasReflection = !!(reflection?.q1 || reflection?.q2 || reflection?.q3 || reflection?.q4);
+        const hasExercise = !!exercise?.answers && exercise.answers !== "{}";
+        const hasHomework = !!homework?.completedItems && homework.completedItems !== "[]";
+        
+        if (hasReflection && hasExercise && hasHomework && !completedWeeks.includes(currentActiveWeek)) {
+          urgentCount++;
         }
 
         urgentCounts[client.id] = urgentCount;
@@ -2743,6 +2792,7 @@ Write the summary now:`;
           "unreviewed-autopsy": "After your relapse autopsy",
           "checkin-gap": "Checking in on you",
           "no-checkins": "Let's get started",
+          "submit-week-nudge": "Ready to submit your week?",
           "urge-spike": "I noticed something in your data",
           "mood-decline": "Checking in",
           "low-consistency": "Daily check-ins",
