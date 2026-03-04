@@ -1085,16 +1085,19 @@ export async function registerRoutes(
         }
       }
 
-      const activeWeek = Math.min(16, completedWeeks.length + 1);
-      const weekGuide = MENTOR_WEEK_GUIDANCE[activeWeek];
-      if (weekGuide) {
-        suggestions.push({
-          id: `curriculum-w${activeWeek}`,
-          priority: "curriculum",
-          title: `Week ${activeWeek}: ${weekGuide.weekTitle}`,
-          detail: weekGuide.detail,
-          action: weekGuide.action,
-        });
+      // Curriculum guidance for the most recently completed week
+      const lastCompletedWeek = completedWeeks.length > 0 ? Math.max(...completedWeeks) : 0;
+      if (lastCompletedWeek > 0) {
+        const weekGuide = MENTOR_WEEK_GUIDANCE[lastCompletedWeek];
+        if (weekGuide) {
+          suggestions.push({
+            id: `curriculum-w${lastCompletedWeek}`,
+            priority: "curriculum",
+            title: `Week ${lastCompletedWeek}: ${weekGuide.weekTitle}`,
+            detail: weekGuide.detail,
+            action: weekGuide.action,
+          });
+        }
       }
 
       const positiveSignals: string[] = [];
