@@ -229,6 +229,29 @@ export default function TherapistClient() {
     staleTime: 60000,
   });
 
+  const { data: unreviewedAutopsiesData } = useQuery<{ unreviewedCounts: Record<string, number> }>({
+    queryKey: ["/api/therapist/unreviewed-autopsies"],
+  });
+
+  const { data: unreviewedItemsData } = useQuery<{ unreviewedItemCounts: Record<string, number> }>({
+    queryKey: ["/api/therapist/unreviewed-items"],
+  });
+
+  const { data: pendingReviewsData } = useQuery<{ pendingReviews: Array<{ clientId: string; weekNumber: number }> }>({
+    queryKey: ["/api/therapist/pending-reviews"],
+  });
+
+  const { data: urgentSuggestionData } = useQuery<{ urgentCounts: Record<string, number> }>({
+    queryKey: ["/api/therapist/urgent-suggestion-counts"],
+  });
+
+  const urgentCount = urgentSuggestionData?.urgentCounts?.[clientId as string] ?? 0;
+  const autopsyCount = unreviewedAutopsiesData?.unreviewedCounts?.[clientId as string] || 0;
+  const reviewCount = (unreviewedItemsData?.unreviewedItemCounts?.[clientId as string] || 0) +
+    (pendingReviewsData?.pendingReviews?.filter(r => r.clientId === clientId).length || 0);
+
+  const isNeedsAttention = urgentCount > 0 || autopsyCount > 0 || reviewCount > 0;
+
   const feedbackMutation = useMutation({
     mutationFn: async (data: { feedbackType: string; content: string; weekNumber?: number; checkinDateKey?: string; status?: string; subject?: string }) => {
       const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, data);
