@@ -891,12 +891,45 @@ export class DatabaseStorage implements IStorage {
 
     const results: Array<{therapistId: string; therapistName: string; clientId: string; clientName: string; weekNumber: number; completedAt: Date; hoursPending: number}> = [];
 
+    // Cache per-client data to avoid redundant queries
+    const clientReflectionsCache = new Map<string, Set<number>>();
+    const clientExercisesCache = new Map<string, Set<number>>();
+    const clientItemReviewsCache = new Map<string, Set<string>>();
+
     for (const completion of allCompletions) {
       const key = `${completion.userId}-${completion.weekNumber}`;
-      if (reviewedSet.has(key)) continue; // Already reviewed
+      if (reviewedSet.has(key)) continue; // Already reviewed via weekReviews table
 
       const therapistId = clientToTherapist.get(completion.userId);
       if (!therapistId) continue; // No therapist assigned
+
+      // Check item-level reviews (same logic as getPendingReviewsForTherapist)
+      const cacheKey = `${therapistId}:${completion.userId}`;
+
+      if (!clientReflectionsCache.has(completion.userId)) {
+        const reflections = await db.select({ weekNumber: weekReflections.weekNumber }).from(weekReflections).where(eq(weekReflections.userId, completion.userId));
+        clientReflectionsCache.set(completion.userId, new Set(reflections.map(r => r.weekNumber)));
+      }
+      if (!clientExercisesCache.has(completion.userId)) {
+        const exercises = await db.select({ weekNumber: exerciseAnswers.weekNumber }).from(exerciseAnswers).where(eq(exerciseAnswers.userId, completion.userId));
+        clientExercisesCache.set(completion.userId, new Set(exercises.map(e => e.weekNumber)));
+      }
+      if (!clientItemReviewsCache.has(cacheKey)) {
+        const itemReviews = await this.getItemReviews(therapistId, completion.userId);
+        clientItemReviewsCache.set(cacheKey, new Set(itemReviews.map(ir => `${ir.itemType}:${ir.itemKey}`)));
+      }
+
+      const reflectionWeeks = clientReflectionsCache.get(completion.userId)!;
+      const exerciseWeeks = clientExercisesCache.get(completion.userId)!;
+      const itemReviewTypes = clientItemReviewsCache.get(cacheKey)!;
+
+      const hasReflection = reflectionWeeks.has(completion.weekNumber);
+      const hasExercise = exerciseWeeks.has(completion.weekNumber);
+      const reflectionOk = !hasReflection || itemReviewTypes.has(`reflection:${completion.weekNumber}`);
+      const exerciseOk = !hasExercise || itemReviewTypes.has(`exercise:${completion.weekNumber}`);
+
+      // Skip if all items are individually reviewed (mentor has already actioned this week)
+      if (reflectionOk && exerciseOk) continue;
 
       const client = await this.getUser(completion.userId);
       const therapist = await this.getUser(therapistId);
