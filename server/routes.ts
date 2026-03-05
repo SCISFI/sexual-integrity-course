@@ -1095,7 +1095,7 @@ export async function registerRoutes(
         }
 
         const daysSinceReference = Math.floor((Date.now() - referenceDate.getTime()) / 86400000);
-        const isActuallyBehind = daysSinceReference >= 7 && completedWeeks.length < 16;
+        const isActuallyBehind = daysSinceReference >= 14 && completedWeeks.length < 16;
 
         if (isActuallyBehind) {
           suggestions.push({

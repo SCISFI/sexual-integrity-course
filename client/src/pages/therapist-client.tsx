@@ -411,44 +411,31 @@ export default function TherapistClient() {
     }
   };
 
-  // Auto-open the nudge sheet when navigating here via ?action=nudge from the "Behind Pace" badge.
-  // Must live AFTER openGuidanceSheet is defined. useRef prevents re-triggering on re-renders.
-  const nudgeTriggeredRef = useRef(false);
   useEffect(() => {
     if (nudgeTriggeredRef.current) return;
     if (activeTab === "guidance" && suggestionsData?.suggestions) {
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.get("action") === "nudge") {
-        // Find the "Behind on Curriculum Pace" suggestion.
-        // It might be filtered out of the display suggestions but we want to trigger it anyway.
-        // The backend logic generates it if the client is behind.
         const behindSuggestion = suggestionsData.suggestions.find(s => s.id === "curriculum-behind");
         
+        nudgeTriggeredRef.current = true;
         if (behindSuggestion) {
-          nudgeTriggeredRef.current = true;
           openGuidanceSheet({
             ...behindSuggestion,
             action: "behind-pace-nudge"
           });
-          const newParams = new URLSearchParams(window.location.search);
-          newParams.delete("action");
-          const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
-          window.history.replaceState({}, "", newUrl);
         } else {
-          // If the suggestion wasn't in the list (e.g. if the cache is stale or logic slightly differs),
-          // fallback to a synthetic one so the mentor can still send the nudge.
-          nudgeTriggeredRef.current = true;
           openGuidanceSheet({
             id: "curriculum-behind",
             title: "Behind on Curriculum Pace",
-            detail: "The client is trailing their expected progress based on their start date.",
+            detail: "The client has not completed a module in over 14 days.",
             action: "behind-pace-nudge"
           });
-          const newParams = new URLSearchParams(window.location.search);
-          newParams.delete("action");
-          const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
-          window.history.replaceState({}, "", newUrl);
         }
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.delete("action");
+        const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
+        window.history.replaceState({}, "", newUrl);
       }
     }
   }, [activeTab, suggestionsData, openGuidanceSheet]);

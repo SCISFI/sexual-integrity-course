@@ -191,7 +191,7 @@ export default function TherapistHome() {
     let isActuallyBehind = false;
     if (referenceDate) {
       const daysSinceReference = Math.floor((Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
-      isActuallyBehind = daysSinceReference >= 7 && client.completedWeeks.length < 16;
+      isActuallyBehind = daysSinceReference >= 14 && client.completedWeeks.length < 16;
     }
 
     if (isActuallyBehind) {
