@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, X, PenSquare } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -136,50 +136,17 @@ export default function TherapistClient() {
   const [expandedAutopsy, setExpandedAutopsy] = useState<string | null>(null);
   const [activeFeedbackTarget, setActiveFeedbackTarget] = useState<{ type: string; key: string } | null>(null);
 
-  // Compose panel state
-  const [composingForSuggestionId, setComposingForSuggestionId] = useState<string | null>(() => {
-    return localStorage.getItem(`compose_suggestion_id_${clientId}`) || null;
-  });
-  const [editingDraftId, setEditingDraftId] = useState<string | null>(() => {
-    return localStorage.getItem(`editing_draft_id_${clientId}`) || null;
-  });
-  const [composeSubject, setComposeSubject] = useState(() => {
-    return localStorage.getItem(`compose_subject_${clientId}`) || "";
-  });
-  const [composeMessage, setComposeMessage] = useState(() => {
-    return localStorage.getItem(`compose_message_${clientId}`) || "";
-  });
-
-  // Persist compose state
-  useEffect(() => {
-    if (!clientId) return;
-    if (composingForSuggestionId) localStorage.setItem(`compose_suggestion_id_${clientId}`, composingForSuggestionId);
-    else localStorage.removeItem(`compose_suggestion_id_${clientId}`);
-  }, [composingForSuggestionId, clientId]);
-
-  useEffect(() => {
-    if (!clientId) return;
-    if (editingDraftId) localStorage.setItem(`editing_draft_id_${clientId}`, editingDraftId);
-    else localStorage.removeItem(`editing_draft_id_${clientId}`);
-  }, [editingDraftId, clientId]);
-
-  useEffect(() => {
-    if (clientId) localStorage.setItem(`compose_subject_${clientId}`, composeSubject);
-  }, [composeSubject, clientId]);
-
-  useEffect(() => {
-    if (clientId) localStorage.setItem(`compose_message_${clientId}`, composeMessage);
-  }, [composeMessage, clientId]);
-
-  const [composeLoading, setComposeLoading] = useState(false);
-  const [composeSaving, setComposeSaving] = useState(false);
-  const [composeSending, setComposeSending] = useState(false);
-  const [composeFailed, setComposeFailed] = useState(false);
   const [sentSuggestionIds, setSentSuggestionIds] = useState<Set<string>>(new Set());
   const [draftedSuggestionIds, setDraftedSuggestionIds] = useState<Set<string>>(new Set());
 
-  // Sheet compose panel state (for week/autopsy/general messages)
-  type SheetCtx = { kind: 'week'; weekNumber: number } | { kind: 'autopsy'; autopsyId: string } | { kind: 'general' } | null;
+  // Sheet compose panel state — single compose UI for ALL message contexts
+  type SheetCtx =
+    | { kind: 'week'; weekNumber: number }
+    | { kind: 'autopsy'; autopsyId: string }
+    | { kind: 'general' }
+    | { kind: 'guidance'; suggestion: { id: string; title: string; detail: string; action: string } }
+    | { kind: 'draft'; feedbackId: string }
+    | null;
   const [sheetCtx, setSheetCtx] = useState<SheetCtx>(() => {
     const saved = localStorage.getItem(`sheet_ctx_${clientId}`);
     return saved ? JSON.parse(saved) : null;
@@ -363,114 +330,7 @@ export default function TherapistClient() {
     },
   });
 
-  // Compose panel helpers
-  const openCompose = async (suggestion: { id: string; title: string; detail: string; action: string }) => {
-    setComposingForSuggestionId(suggestion.id);
-    setEditingDraftId(null);
-    setComposeSubject("");
-    setComposeMessage("");
-    setComposeFailed(false);
-    setComposeLoading(true);
-    try {
-      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-guidance-message`, {
-        suggestionId: suggestion.id,
-        suggestionTitle: suggestion.title,
-        suggestionDetail: suggestion.detail,
-        suggestionAction: suggestion.action,
-      });
-      if (!res.ok) throw new Error("Generation failed");
-      const data = await res.json();
-      setComposeSubject(data.subject || "");
-      setComposeMessage(data.draftText || "");
-    } catch {
-      setComposeFailed(true);
-    } finally {
-      setComposeLoading(false);
-    }
-  };
-
-  const openDraftForEditing = (draft: { id: string; subject: string | null; content: string }) => {
-    setEditingDraftId(draft.id);
-    setComposingForSuggestionId("__draft__");
-    setComposeSubject(draft.subject || "");
-    setComposeMessage(draft.content);
-    setComposeFailed(false);
-    setComposeLoading(false);
-  };
-
-  const closeCompose = () => {
-    setComposingForSuggestionId(null);
-    setEditingDraftId(null);
-    setComposeSubject("");
-    setComposeMessage("");
-    setComposeFailed(false);
-  };
-
-  const handleSaveDraft = async () => {
-    if (!composeMessage.trim()) return;
-    setComposeSaving(true);
-    try {
-      if (editingDraftId) {
-        const res = await apiRequest("PUT", `/api/therapist/clients/${clientId}/feedback/${editingDraftId}`, {
-          content: composeMessage, subject: composeSubject, status: "draft",
-        });
-        if (!res.ok) throw new Error("Failed to update draft");
-        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'messages', 'drafts'] });
-      } else {
-        const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
-          feedbackType: "guidance", content: composeMessage, subject: composeSubject, status: "draft",
-        });
-        if (!res.ok) throw new Error("Failed to save draft");
-        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'messages', 'drafts'] });
-      }
-      if (composingForSuggestionId && composingForSuggestionId !== "__draft__") {
-        setDraftedSuggestionIds(prev => new Set(prev).add(composingForSuggestionId as string));
-      }
-      toast({ title: "Draft saved — find it at the top of this tab" });
-      closeCompose();
-    } catch {
-      toast({ title: "Failed to save draft", variant: "destructive" });
-    } finally {
-      setComposeSaving(false);
-    }
-  };
-
-  const handleSendMessage = async (targetSuggestionId?: string) => {
-    if (!composeMessage.trim()) return;
-    setComposeSending(true);
-    try {
-      if (editingDraftId) {
-        const res = await apiRequest("PUT", `/api/therapist/clients/${clientId}/feedback/${editingDraftId}`, {
-          content: composeMessage, subject: composeSubject, status: "sent",
-        });
-        if (!res.ok) throw new Error("Failed to send");
-        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'messages', 'drafts'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
-      } else {
-        const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
-          feedbackType: "guidance", content: composeMessage, subject: composeSubject, status: "sent",
-        });
-        if (!res.ok) throw new Error("Failed to send");
-        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
-      }
-      const sid = targetSuggestionId || (composingForSuggestionId !== "__draft__" ? composingForSuggestionId : null);
-      if (sid) {
-        setSentSuggestionIds(prev => new Set(prev).add(sid));
-        // Persist dismissal so the suggestion doesn't reappear on reload
-        await apiRequest("POST", `/api/therapist/clients/${clientId}/dismiss-suggestion`, { suggestionId: sid });
-        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'suggestions'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/therapist/urgent-suggestion-counts'] });
-      }
-      toast({ title: `Message sent to ${client?.name || "client"}` });
-      closeCompose();
-    } catch {
-      toast({ title: "Failed to send message", variant: "destructive" });
-    } finally {
-      setComposeSending(false);
-    }
-  };
-
-  // ── Sheet compose handlers (week / autopsy / general) ──────────────────
+  // ── Sheet compose handlers (all contexts) ──────────────────────────────
   const closeSheet = () => {
     setSheetCtx(null);
     setSheetSubject("");
@@ -522,31 +382,80 @@ export default function TherapistClient() {
     setSheetLoading(false);
   };
 
+  const openGuidanceSheet = async (suggestion: { id: string; title: string; detail: string; action: string }) => {
+    setSheetCtx({ kind: 'guidance', suggestion });
+    setSheetSubject("");
+    setSheetMessage("");
+    setSheetFailed(false);
+    setSheetLoading(true);
+    try {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-guidance-message`, {
+        suggestionId: suggestion.id,
+        suggestionTitle: suggestion.title,
+        suggestionDetail: suggestion.detail,
+        suggestionAction: suggestion.action,
+      });
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setSheetSubject(data.subject || "");
+      setSheetMessage(data.draftText || "");
+    } catch {
+      setSheetFailed(true);
+    } finally {
+      setSheetLoading(false);
+    }
+  };
+
+  const openDraftSheet = (draft: { id: string; subject: string | null; content: string }) => {
+    setSheetCtx({ kind: 'draft', feedbackId: draft.id });
+    setSheetSubject(draft.subject || "");
+    setSheetMessage(draft.content);
+    setSheetFailed(false);
+    setSheetLoading(false);
+  };
+
   const handleSheetSend = async () => {
     if (!sheetMessage.trim() || !sheetCtx) return;
     setSheetSending(true);
     try {
-      let feedbackType = 'general';
-      let weekNumber: number | undefined;
-      let checkinDateKey: string | undefined;
-      if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
-      else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; checkinDateKey = sheetCtx.autopsyId; }
+      if (sheetCtx.kind === 'draft') {
+        const res = await apiRequest("PUT", `/api/therapist/clients/${clientId}/feedback/${sheetCtx.feedbackId}`, {
+          content: sheetMessage, subject: sheetSubject, status: "sent",
+        });
+        if (!res.ok) throw new Error("Failed to send");
+        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'messages', 'drafts'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      } else {
+        let feedbackType = 'general';
+        let weekNumber: number | undefined;
+        let checkinDateKey: string | undefined;
+        if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
+        else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; checkinDateKey = sheetCtx.autopsyId; }
+        else if (sheetCtx.kind === 'guidance') { feedbackType = 'guidance'; }
 
-      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
-        feedbackType, content: sheetMessage, subject: sheetSubject, status: 'sent',
-        weekNumber, checkinDateKey,
-      });
-      if (!res.ok) throw new Error("Failed to send");
+        const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
+          feedbackType, content: sheetMessage, subject: sheetSubject, status: 'sent',
+          weekNumber, checkinDateKey,
+        });
+        if (!res.ok) throw new Error("Failed to send");
 
-      if (sheetCtx.kind === 'week') {
-        await apiRequest("POST", `/api/therapist/clients/${clientId}/review/${sheetCtx.weekNumber}`, { reviewNotes: "" });
-        setMessagedWeekNums(prev => new Set(prev).add((sheetCtx as { kind: 'week'; weekNumber: number }).weekNumber));
-      } else if (sheetCtx.kind === 'autopsy') {
-        await apiRequest("POST", `/api/therapist/clients/${clientId}/autopsies/${sheetCtx.autopsyId}/review`, {});
-        setMessagedAutopsyIds(prev => new Set(prev).add((sheetCtx as { kind: 'autopsy'; autopsyId: string }).autopsyId));
+        if (sheetCtx.kind === 'week') {
+          await apiRequest("POST", `/api/therapist/clients/${clientId}/review/${sheetCtx.weekNumber}`, { reviewNotes: "" });
+          setMessagedWeekNums(prev => new Set(prev).add((sheetCtx as { kind: 'week'; weekNumber: number }).weekNumber));
+        } else if (sheetCtx.kind === 'autopsy') {
+          await apiRequest("POST", `/api/therapist/clients/${clientId}/autopsies/${sheetCtx.autopsyId}/review`, {});
+          setMessagedAutopsyIds(prev => new Set(prev).add((sheetCtx as { kind: 'autopsy'; autopsyId: string }).autopsyId));
+        } else if (sheetCtx.kind === 'guidance') {
+          const sid = sheetCtx.suggestion.id;
+          setSentSuggestionIds(prev => new Set(prev).add(sid));
+          await apiRequest("POST", `/api/therapist/clients/${clientId}/dismiss-suggestion`, { suggestionId: sid });
+          queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'suggestions'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/therapist/urgent-suggestion-counts'] });
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
       }
 
-      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/pending-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-autopsies'] });
@@ -564,14 +473,26 @@ export default function TherapistClient() {
     if (!sheetMessage.trim() || !sheetCtx) return;
     setSheetSaving(true);
     try {
-      let feedbackType = 'general';
-      let weekNumber: number | undefined;
-      if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
-      else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; }
+      if (sheetCtx.kind === 'draft') {
+        const res = await apiRequest("PUT", `/api/therapist/clients/${clientId}/feedback/${sheetCtx.feedbackId}`, {
+          content: sheetMessage, subject: sheetSubject, status: "draft",
+        });
+        if (!res.ok) throw new Error("Failed to update draft");
+      } else {
+        let feedbackType = 'general';
+        let weekNumber: number | undefined;
+        if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
+        else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; }
+        else if (sheetCtx.kind === 'guidance') { feedbackType = 'guidance'; }
 
-      await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
-        feedbackType, content: sheetMessage, subject: sheetSubject, status: 'draft', weekNumber,
-      });
+        await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
+          feedbackType, content: sheetMessage, subject: sheetSubject, status: 'draft', weekNumber,
+        });
+
+        if (sheetCtx.kind === 'guidance') {
+          setDraftedSuggestionIds(prev => new Set(prev).add(sheetCtx.suggestion.id));
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'messages', 'drafts'] });
       toast({ title: "Draft saved — find it at the top of the Guidance tab" });
       closeSheet();
@@ -597,6 +518,16 @@ export default function TherapistClient() {
         if (!res.ok) throw new Error("Generation failed");
         const data = await res.json();
         setSheetMessage(data.draft || "");
+      } else if (sheetCtx.kind === 'guidance') {
+        const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-guidance-message`, {
+          suggestionId: sheetCtx.suggestion.id,
+          suggestionTitle: sheetCtx.suggestion.title,
+          suggestionDetail: sheetCtx.suggestion.detail,
+          suggestionAction: sheetCtx.suggestion.action,
+        });
+        if (!res.ok) throw new Error("Generation failed");
+        const data = await res.json();
+        setSheetMessage(data.draftText || "");
       }
     } catch {
       setSheetFailed(true);
@@ -1789,7 +1720,7 @@ export default function TherapistClient() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => openDraftForEditing(draft)}
+                            onClick={() => openDraftSheet(draft)}
                             data-testid={`button-edit-draft-${draft.id}`}
                           >
                             Edit &amp; Send
@@ -1797,45 +1728,6 @@ export default function TherapistClient() {
                         </CardContent>
                       </Card>
                     ))}
-                  </div>
-                )}
-
-                {/* Draft compose panel (for editing existing draft from draft inbox) */}
-                {composingForSuggestionId === "__draft__" && (
-                  <div className="rounded-lg border border-border bg-card p-4 space-y-3 shadow-sm" data-testid="compose-panel-draft">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                        <Sparkles className="h-3.5 w-3.5" />
-                        <span>Review and edit before sending</span>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={closeCompose} data-testid="button-close-compose-draft">
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Subject</label>
-                      <Input value={composeSubject} onChange={e => setComposeSubject(e.target.value)} placeholder="Subject" data-testid="input-compose-subject-draft" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Message</label>
-                      <Textarea
-                        value={composeMessage}
-                        onChange={e => setComposeMessage(e.target.value)}
-                        className="min-h-[180px] text-sm"
-                        placeholder="Write your message…"
-                        data-testid="textarea-compose-message-draft"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between pt-1">
-                      <Button variant="outline" size="sm" onClick={handleSaveDraft} disabled={composeSaving || composeSending || !composeMessage.trim()} data-testid="button-save-draft-draft">
-                        {composeSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
-                        Save Draft
-                      </Button>
-                      <Button size="sm" onClick={() => handleSendMessage()} disabled={composeSending || composeSaving || !composeMessage.trim()} data-testid="button-send-message-draft">
-                        {composeSending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Mail className="h-3.5 w-3.5 mr-1.5" />}
-                        Send to {client?.name || "Client"}
-                      </Button>
-                    </div>
                   </div>
                 )}
 
@@ -1883,143 +1775,62 @@ export default function TherapistClient() {
                           {items.map((suggestion) => {
                             const isSent = sentSuggestionIds.has(suggestion.id);
                             const isDrafted = draftedSuggestionIds.has(suggestion.id);
-                            const isComposing = composingForSuggestionId === suggestion.id;
-                            const canDismiss = true;
 
                             return (
-                              <div key={suggestion.id} className="space-y-0">
-                                <Card className={`border-l-4 ${config.color} ${isSent ? "opacity-60" : ""}`} data-testid={`card-suggestion-${suggestion.id}`}>
-                                  <CardHeader className="pb-2 pt-4">
-                                    <div className="flex items-start justify-between gap-2">
-                                      <CardTitle className="text-sm font-semibold leading-snug">{suggestion.title}</CardTitle>
-                                      <div className="flex items-center gap-1.5 shrink-0">
-                                        {isSent && (
-                                          <span className="rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1">
-                                            <CheckCircle2 className="h-3 w-3" /> Sent
-                                          </span>
-                                        )}
-                                        {isDrafted && !isSent && (
-                                          <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[10px] font-semibold">
-                                            Draft saved
-                                          </span>
-                                        )}
-                                        {!isSent && !isDrafted && (
-                                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${config.badge}`}>
-                                            {config.label}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </CardHeader>
-                                  <CardContent className="pb-4 space-y-3">
-                                    <p className="text-sm text-muted-foreground leading-relaxed">{suggestion.detail}</p>
-                                    <div className="rounded-md bg-muted/60 px-3 py-2.5 flex items-start gap-2">
-                                      <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
-                                      <p className="text-xs font-medium leading-relaxed">{suggestion.action}</p>
-                                    </div>
-                                    {!isSent && (
-                                      <div className="flex items-center gap-2 pt-1">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          className="text-xs h-8"
-                                          onClick={() => isComposing ? closeCompose() : openCompose(suggestion)}
-                                          data-testid={`button-write-message-${suggestion.id}`}
-                                        >
-                                          {isComposing ? (
-                                            <><X className="h-3.5 w-3.5 mr-1.5" />Cancel</>
-                                          ) : (
-                                            <><Mail className="h-3.5 w-3.5 mr-1.5" />Write Message</>
-                                          )}
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="text-xs h-8 text-muted-foreground hover:text-foreground"
-                                          onClick={() => dismissSuggestionMutation.mutate(suggestion.id)}
-                                          disabled={dismissSuggestionMutation.isPending}
-                                          data-testid={`button-mark-addressed-${suggestion.id}`}
-                                        >
-                                          Mark Addressed
-                                        </Button>
-                                      </div>
-                                    )}
-                                  </CardContent>
-                                </Card>
-
-                                {/* Inline compose panel */}
-                                {isComposing && (
-                                  <div className="rounded-b-lg border border-t-0 border-border bg-card px-4 pb-4 pt-3 space-y-3 shadow-sm" data-testid={`compose-panel-${suggestion.id}`}>
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                                        <Sparkles className="h-3.5 w-3.5" />
-                                        <span>AI-generated draft — review before sending</span>
-                                      </div>
-                                      {!composeLoading && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="text-xs h-7 px-2 text-muted-foreground"
-                                          onClick={() => openCompose(suggestion)}
-                                          data-testid={`button-regenerate-${suggestion.id}`}
-                                        >
-                                          <RefreshCw className="h-3 w-3 mr-1" />Regenerate
-                                        </Button>
+                              <Card key={suggestion.id} className={`border-l-4 ${config.color} ${isSent ? "opacity-60" : ""}`} data-testid={`card-suggestion-${suggestion.id}`}>
+                                <CardHeader className="pb-2 pt-4">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <CardTitle className="text-sm font-semibold leading-snug">{suggestion.title}</CardTitle>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      {isSent && (
+                                        <span className="rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1">
+                                          <CheckCircle2 className="h-3 w-3" /> Sent
+                                        </span>
+                                      )}
+                                      {isDrafted && !isSent && (
+                                        <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-[10px] font-semibold">
+                                          Draft saved
+                                        </span>
+                                      )}
+                                      {!isSent && !isDrafted && (
+                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${config.badge}`}>
+                                          {config.label}
+                                        </span>
                                       )}
                                     </div>
-                                    {composeLoading ? (
-                                      <div className="space-y-2">
-                                        <Skeleton className="h-9 w-full" />
-                                        <Skeleton className="h-[180px] w-full" />
-                                        <p className="text-xs text-muted-foreground text-center">Generating draft…</p>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        {composeFailed && (
-                                          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded px-3 py-2">
-                                            Generation failed — write your message below, or try regenerating.
-                                          </p>
-                                        )}
-                                        <div className="space-y-1">
-                                          <label className="text-xs font-medium text-muted-foreground">Subject</label>
-                                          <Input value={composeSubject} onChange={e => setComposeSubject(e.target.value)} placeholder="Subject line" data-testid={`input-subject-${suggestion.id}`} />
-                                        </div>
-                                        <div className="space-y-1">
-                                          <label className="text-xs font-medium text-muted-foreground">Message</label>
-                                          <Textarea
-                                            value={composeMessage}
-                                            onChange={e => setComposeMessage(e.target.value)}
-                                            className="min-h-[180px] text-sm"
-                                            placeholder="Write your message to the client…"
-                                            data-testid={`textarea-message-${suggestion.id}`}
-                                          />
-                                        </div>
-                                        <div className="flex items-center justify-between pt-1">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleSaveDraft}
-                                            disabled={composeSaving || composeSending || !composeMessage.trim()}
-                                            data-testid={`button-save-draft-${suggestion.id}`}
-                                          >
-                                            {composeSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
-                                            Save Draft
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            onClick={() => handleSendMessage(suggestion.id)}
-                                            disabled={composeSending || composeSaving || !composeMessage.trim()}
-                                            data-testid={`button-send-message-${suggestion.id}`}
-                                          >
-                                            {composeSending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Mail className="h-3.5 w-3.5 mr-1.5" />}
-                                            Send to {client?.name || "Client"}
-                                          </Button>
-                                        </div>
-                                      </>
-                                    )}
                                   </div>
-                                )}
-                              </div>
+                                </CardHeader>
+                                <CardContent className="pb-4 space-y-3">
+                                  <p className="text-sm text-muted-foreground leading-relaxed">{suggestion.detail}</p>
+                                  <div className="rounded-md bg-muted/60 px-3 py-2.5 flex items-start gap-2">
+                                    <ChevronRight className="h-3.5 w-3.5 text-primary flex-shrink-0 mt-0.5" />
+                                    <p className="text-xs font-medium leading-relaxed">{suggestion.action}</p>
+                                  </div>
+                                  {!isSent && (
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-xs h-8"
+                                        onClick={() => openGuidanceSheet(suggestion)}
+                                        data-testid={`button-write-message-${suggestion.id}`}
+                                      >
+                                        <Mail className="h-3.5 w-3.5 mr-1.5" />Write Message
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs h-8 text-muted-foreground hover:text-foreground"
+                                        onClick={() => dismissSuggestionMutation.mutate(suggestion.id)}
+                                        disabled={dismissSuggestionMutation.isPending}
+                                        data-testid={`button-mark-addressed-${suggestion.id}`}
+                                      >
+                                        Mark Addressed
+                                      </Button>
+                                    </div>
+                                  )}
+                                </CardContent>
+                              </Card>
                             );
                           })}
                         </div>
@@ -2033,7 +1844,7 @@ export default function TherapistClient() {
         )}
       </div>
 
-      {/* ── Compose Sheet (week / autopsy / general) ── */}
+      {/* ── Compose Sheet (all message contexts) ── */}
       <Sheet open={!!sheetCtx} onOpenChange={(open) => { if (!open) closeSheet(); }}>
         <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0">
           <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
@@ -2042,16 +1853,20 @@ export default function TherapistClient() {
               {sheetCtx?.kind === 'week' && `Message for Week ${sheetCtx.weekNumber}`}
               {sheetCtx?.kind === 'autopsy' && "Autopsy Response Message"}
               {sheetCtx?.kind === 'general' && "New Message"}
+              {sheetCtx?.kind === 'guidance' && sheetCtx.suggestion.title}
+              {sheetCtx?.kind === 'draft' && "Edit Draft"}
             </SheetTitle>
             <SheetDescription>
               {sheetCtx?.kind === 'week' && "Required — sending this message will also mark the week as reviewed."}
               {sheetCtx?.kind === 'autopsy' && "Required — sending this message will also mark the autopsy as reviewed."}
               {sheetCtx?.kind === 'general' && `Send an unsolicited message to ${client?.name || "this client"}.`}
+              {sheetCtx?.kind === 'guidance' && "AI-generated draft — review before sending."}
+              {sheetCtx?.kind === 'draft' && `Edit and resend this saved draft to ${client?.name || "this client"}.`}
             </SheetDescription>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-            {sheetCtx?.kind !== 'general' && (
+            {sheetCtx?.kind !== 'general' && sheetCtx?.kind !== 'draft' && (
               <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5" />
