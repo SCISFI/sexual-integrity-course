@@ -3,13 +3,25 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { passport, hashPassword } from "./auth";
 import { getAiClient } from "./aiService";
+import { db } from "./db";
 import {
+  users,
+  weekCompletions,
+  dailyCheckins,
+  weekReflections,
+  homeworkCompletions,
+  therapistClients,
+  therapistFeedback,
+  weekFeeWaivers,
+  passwordResetTokens,
+  dismissedGuidanceSuggestions,
   registerSchema,
   loginSchema,
   registerTherapistSchema,
   registerClientSchema,
   type UserRole,
 } from "@shared/schema";
+import { eq, desc, and, ne, inArray } from "drizzle-orm";
 import { z } from "zod";
 import webpush from "web-push";
 import { generateWeeklySummaryPDF } from "./pdf-service";
@@ -1080,15 +1092,15 @@ export async function registerRoutes(
         });
       }
 
+      // Fetch completion details to get dates
+      const completionsRaw = await db
+        .select({ weekNumber: weekCompletions.weekNumber, completedAt: weekCompletions.completedAt })
+        .from(weekCompletions)
+        .where(eq(weekCompletions.userId, clientId))
+        .orderBy(desc(weekCompletions.completedAt));
+
       // Logic update: Behind Pace is now based on the last time they submitted a week as completed.
       if (client?.startDate) {
-        // Fetch completion details to get dates
-        const completionsRaw = await db
-          .select({ weekNumber: weekCompletions.weekNumber, completedAt: weekCompletions.completedAt })
-          .from(weekCompletions)
-          .where(eq(weekCompletions.userId, clientId))
-          .orderBy(desc(weekCompletions.completedAt));
-
         let referenceDate = new Date(client.startDate);
         if (completionsRaw.length > 0 && completionsRaw[0].completedAt) {
           referenceDate = new Date(completionsRaw[0].completedAt);
@@ -1112,7 +1124,6 @@ export async function registerRoutes(
 
       const activeWeek = Math.min(16, completedWeeks.length + 1);
       
-      // Check if client has finished all work for the active week but hasn't marked it complete
       const [reflection, exercise, homework] = await Promise.all([
         storage.getWeekReflection(clientId, activeWeek),
         storage.getExerciseAnswers(clientId, activeWeek),
@@ -2037,7 +2048,7 @@ export async function registerRoutes(
           clients.map(async (c) => {
             const { password: _, ...safe } = c;
             const completedWeeks = await storage.getCompletedWeeks(c.id);
-            
+
             // Get the date of the most recent week completion
             const completionsRaw = await db
               .select({ completedAt: weekCompletions.completedAt })
@@ -2046,18 +2057,8 @@ export async function registerRoutes(
               .orderBy(desc(weekCompletions.completedAt))
               .limit(1);
 
-            // Calculate current week based on start date
-            let currentWeek = 1;
-            if (c.startDate) {
-              const daysSinceStart = Math.floor(
-                (Date.now() - new Date(c.startDate).getTime()) /
-                  (1000 * 60 * 60 * 24),
-              );
-              currentWeek = Math.min(
-                16,
-                Math.max(1, Math.floor(daysSinceStart / 7) + 1),
-              );
-            }
+            // Calculate current week
+            const currentWeek = Math.min(16, completedWeeks.length + 1);
 
             return {
               ...safe,
