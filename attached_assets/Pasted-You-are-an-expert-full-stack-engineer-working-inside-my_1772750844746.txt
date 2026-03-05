@@ -1,0 +1,162 @@
+You are an expert full-stack engineer working inside my existing Replit project. Your job is to add Cohorts (group users) and Cohort Analytics (group trends) into this app with minimal disruption.
+
+NON-NEGOTIABLES
+- Do NOT rewrite the whole app.
+- First: detect the tech stack, routing, auth, and how the database is configured in Replit.
+- Reuse the existing database and ORM/query pattern already used in the app.
+- Prefer clean, incremental commits/changes. Keep code style consistent.
+
+PHASE 0 — AUDIT (DO THIS FIRST)
+1) Identify stack:
+   - Frontend framework (React/Next/Vue/Svelte/plain)
+   - Backend (Node/Express/Fastify/Next API/Django/Flask/Rails/etc.)
+   - Auth method (sessions/JWT/third-party)
+2) Identify database in Replit:
+   - If Postgres is enabled, use it (preferred).
+   - If the app uses Replit DB (key/value), continue using it BUT propose a migration path to Postgres if analytics queries become heavy.
+3) Identify existing tables/collections for:
+   - users
+   - check-ins
+   - assignments (and completion status)
+   - comments / question threads / “help” items
+4) Output a short plan describing:
+   - what you detected
+   - which files you will change
+   - which new tables/models you will add
+Then implement.
+
+PHASE 1 — COHORTS (CORE FEATURE)
+A) Data Model (create migrations or equivalent)
+Implement:
+- cohorts:
+  - id (uuid or autoincrement), name (required), description (optional), created_at, updated_at
+- cohort_memberships:
+  - id, cohort_id, user_id, role (optional: member/admin), added_by (optional), created_at
+Rules:
+- A user can belong to multiple cohorts.
+- Enforce unique(cohort_id, user_id).
+- Add indexes for cohort_id and user_id.
+
+B) Admin Access Control
+- Only admins can create/edit cohorts and manage membership.
+- If the app already has roles/permissions: reuse them.
+- If not, implement a safe minimal admin gate:
+  - Option A: user.is_admin boolean in users table (default false)
+  - Option B: ADMIN_EMAILS environment variable (comma-separated) checked server-side
+Choose what best matches the app’s current patterns and document it in README.
+
+C) Cohort Management UI (Admin-only)
+Add an admin section with:
+- Cohorts list (search + pagination if the app has a pattern for it)
+- Create cohort
+- Edit cohort
+- Delete cohort (do NOT delete users)
+- Cohort detail page:
+  - list members
+  - add members (search users by email/name/id)
+  - remove members
+Keep UI minimal but functional and consistent with current design system.
+
+PHASE 2 — ANALYTICS DATA (MEASURE “WORK”)
+We want cohort analytics for:
+- check-in rate
+- completed assignments
+- comments / signals of “trouble with questions”
+
+Do this by reusing existing domain tables if they exist. If they don’t exist or are hard to query consistently, implement a lightweight event tracking table and instrument it.
+
+Option 1 (Preferred): Direct Aggregation from Existing Tables
+If tables for checkins/assignments/comments exist:
+- Build analytics queries directly from them.
+- Ensure indexes exist for (user_id, created_at / completed_at).
+
+Option 2: Event Table (Fallback / Supplement)
+If needed, add:
+- events:
+  - id, user_id, event_name, event_ts, metadata_json
+Instrument key actions (at least these 6):
+- checkin_created
+- assignment_completed
+- assignment_started (optional if available)
+- comment_created
+- question_flagged_trouble (or “help_requested”)
+- login_or_session_start (if available)
+
+IMPORTANT: Do not break existing flows. Add event logging as small side-effects where actions already happen.
+
+PHASE 3 — COHORT ANALYTICS (END USER VALUE)
+Create analytics endpoints + UI pages, filterable by cohort + date range.
+
+A) Metrics (per cohort, in date range)
+- total members
+- active members (did any tracked action in range)
+- check-in rate:
+  - definition: (# of members who checked-in at least once per day or per week) / total members
+  - implement daily + weekly views
+- assignments:
+  - completed assignments count
+  - completion rate: completed / assigned (if “assigned” concept exists; otherwise completed per active member)
+- comments / struggle signals:
+  - total comments
+  - “trouble” count if such signal exists (e.g., flagged questions, comments containing “I’m stuck”, help requests)
+  - top 10 questions/topics with most trouble signals (if the app stores question IDs/titles)
+
+B) Trend Charts
+- daily time series:
+  - check-ins per day
+  - assignment completions per day
+  - comments per day
+  - active users per day
+Use an existing chart library if already present; otherwise add a small compatible one (e.g., Chart.js / Recharts / ECharts depending on stack).
+
+C) Compare Cohorts
+Allow selecting up to 3 cohorts to compare:
+- active users per day
+- check-ins per day
+- assignment completions per day
+Return consistent series aligned by date.
+
+D) Performance Requirements
+- Do server-side aggregation (SQL GROUP BY / equivalent).
+- Add indexes:
+  - cohort_memberships(cohort_id, user_id)
+  - checkins(user_id, created_at) OR events(user_id, event_ts)
+  - assignments(user_id, completed_at) as applicable
+  - comments(user_id, created_at)
+- Avoid pulling raw rows to the frontend for aggregation.
+
+PHASE 4 — API ROUTES (IF APP HAS AN API LAYER)
+Create secure endpoints (admin-only):
+- GET /cohorts
+- POST /cohorts
+- GET /cohorts/:id
+- PATCH /cohorts/:id
+- DELETE /cohorts/:id
+- GET /cohorts/:id/members
+- POST /cohorts/:id/members
+- DELETE /cohorts/:id/members/:userId
+- GET /analytics/cohorts/:id?start=YYYY-MM-DD&end=YYYY-MM-DD
+- GET /analytics/compare?cohortIds=a,b,c&start=...&end=...
+
+PHASE 5 — TESTS + DOCS
+- Add basic tests (or follow existing test approach) for:
+  - membership uniqueness
+  - analytics output shape and date range filtering
+- Add README section:
+  - how to enable admin access
+  - how to create cohorts and add members
+  - what analytics mean and how they’re computed
+- Add CHANGELOG.md entry listing changed/added files and migrations.
+
+DELIVERABLES
+1) Cohorts feature working end-to-end in UI.
+2) Analytics pages showing cohort trends and cohort comparison.
+3) Clear documentation + safe admin gating.
+4) App runs successfully after changes.
+
+NOW START
+Step 1: Audit the codebase and tell me exactly what stack + database you detected and where you will implement:
+- DB models/migrations
+- routes/endpoints
+- UI pages/components
+Then implement the feature in the order above.
