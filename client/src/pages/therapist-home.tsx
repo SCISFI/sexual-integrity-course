@@ -56,6 +56,8 @@ type ClientWithProgress = {
   lastCompletionDate: string | null;
   currentWeek: number;
   lastActivity: string | null;
+  isReadyForSubmission?: boolean;
+  activeWeek?: number;
 };
 
 export default function TherapistHome() {
@@ -178,7 +180,7 @@ export default function TherapistHome() {
     const autopsyCount = unreviewedCounts[client.id] || 0;
     const reviewCount = combinedReviewCounts[client.id] || 0;
 
-    if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0) return "Needs Attention";
+    if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0 || client.isReadyForSubmission) return "Needs Attention";
     
     const daysSinceStart = client.startDate ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
     

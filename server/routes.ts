@@ -2057,15 +2057,28 @@ export async function registerRoutes(
               .orderBy(desc(weekCompletions.completedAt))
               .limit(1);
 
-            // Calculate current week
-            const currentWeek = Math.min(16, completedWeeks.length + 1);
+        const activeWeek = Math.min(16, completedWeeks.length + 1);
+        
+        // Check if client has finished all work for the active week but hasn't marked it complete
+        const [reflection, exercise, homework] = await Promise.all([
+          storage.getWeekReflection(c.id, activeWeek),
+          storage.getExerciseAnswers(c.id, activeWeek),
+          storage.getHomeworkCompletion(c.id, activeWeek),
+        ]);
 
-            return {
-              ...safe,
-              completedWeeks,
-              lastCompletionDate: completionsRaw.length > 0 ? completionsRaw[0].completedAt : null,
-              currentWeek,
-            };
+        const hasReflection = !!(reflection?.q1 || reflection?.q2 || reflection?.q3 || reflection?.q4);
+        const hasExercise = !!exercise?.answers && exercise.answers !== "{}";
+        const hasHomework = !!homework?.completedItems && homework.completedItems !== "[]";
+        const isReadyForSubmission = hasReflection && hasExercise && hasHomework && !completedWeeks.includes(activeWeek);
+
+        return {
+          ...safe,
+          completedWeeks,
+          lastCompletionDate: completionsRaw.length > 0 ? completionsRaw[0].completedAt : null,
+          currentWeek,
+          isReadyForSubmission,
+          activeWeek,
+        };
           }),
         );
 
