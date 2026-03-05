@@ -236,6 +236,22 @@ export default function TherapistClient() {
       if (!res.ok) throw new Error("Failed to add message");
       return res.json();
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/therapist/pending-reviews'] });
+      setNewFeedback("");
+      setFeedbackWeek(null);
+      setFeedbackDateKey(null);
+      setFeedbackAutopsyId(null);
+      setFeedbackInsightType(null);
+      setActiveFeedbackTarget(null);
+      toast({ title: "Message sent" });
+    },
+    onError: () => {
+      toast({ title: "Failed to send message", variant: "destructive" });
+    },
+  });
 
     const openGuidanceSheet = async (suggestion: { id: string; title: string; detail: string; action: string }) => {
       setSheetCtx({ kind: 'guidance', suggestion });
@@ -282,43 +298,6 @@ export default function TherapistClient() {
       }
     }, [suggestionsData, openGuidanceSheet]);
   
-
-
-  
-
-
-  
-
-
-  
-
-
-  
-
-
-  
-
-
-  
-
-
-  
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/therapist/pending-reviews'] });
-      setNewFeedback("");
-      setFeedbackWeek(null);
-      setFeedbackDateKey(null);
-      setFeedbackAutopsyId(null);
-      setFeedbackInsightType(null);
-      setActiveFeedbackTarget(null);
-      toast({ title: "Message sent" });
-    },
-    onError: () => {
-      toast({ title: "Failed to send message", variant: "destructive" });
-    },
-  });
 
   const markReviewedMutation = useMutation({
     mutationFn: async (autopsyId: string) => {
@@ -457,31 +436,6 @@ export default function TherapistClient() {
     setSheetMessage("");
     setSheetFailed(false);
     setSheetLoading(false);
-  };
-
-    setSheetCtx({ kind: 'guidance', suggestion });
-
-  
-    setSheetSubject("");
-    setSheetMessage("");
-    setSheetFailed(false);
-    setSheetLoading(true);
-    try {
-      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-guidance-message`, {
-        suggestionId: suggestion.id,
-        suggestionTitle: suggestion.title,
-        suggestionDetail: suggestion.detail,
-        suggestionAction: suggestion.action,
-      });
-      if (!res.ok) throw new Error("Generation failed");
-      const data = await res.json();
-      setSheetSubject(data.subject || "");
-      setSheetMessage(data.draftText || "");
-    } catch {
-      setSheetFailed(true);
-    } finally {
-      setSheetLoading(false);
-    }
   };
 
 

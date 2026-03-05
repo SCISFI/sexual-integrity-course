@@ -183,7 +183,8 @@ export default function TherapistHome() {
     if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0 || client.isReadyForSubmission) return "Needs Attention";
     
     const daysSinceStart = client.startDate ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-    
+    const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
+
     // Logic update: Behind Pace is now based on the last time they submitted a week as completed.
     let referenceDate = client.startDate ? new Date(client.startDate) : null;
     if (client.lastCompletionDate) {
