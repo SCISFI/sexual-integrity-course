@@ -1187,6 +1187,25 @@ export async function registerRoutes(
     }
   });
 
+  // Get all feedback for all clients of a therapist
+  app.get("/api/therapist/all-client-feedback", requireRole("therapist"), async (req, res) => {
+    try {
+      const therapistId = (req.user as any).id;
+      const clients = await storage.getClientsForTherapist(therapistId);
+      const clientIds = clients.map(c => c.id);
+      
+      const allFeedback = await Promise.all(
+        clientIds.map(clientId => storage.getClientFeedback(clientId))
+      );
+      
+      // Flatten and return
+      res.json({ feedback: allFeedback.flat() });
+    } catch (error) {
+      console.error("Get all client feedback error:", error);
+      res.status(500).json({ message: "Failed to get feedback" });
+    }
+  });
+
   // Batch endpoint: urgent suggestion counts for all clients (drives dashboard "Need Attention")
   app.get("/api/therapist/urgent-suggestion-counts", requireRole("therapist"), async (req, res) => {
     try {

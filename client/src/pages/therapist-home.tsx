@@ -165,24 +165,34 @@ export default function TherapistHome() {
     return "progress";
   };
 
+  const { data: clientMessagesData } = useQuery<{ feedback: any[] }>({
+    queryKey: ["/api/therapist/all-client-feedback"],
+    enabled: hasActiveSubscription,
+  });
+  const allClientFeedback = clientMessagesData?.feedback || [];
+
   const getClientStatus = (client: ClientWithProgress) => {
     if (!client.startDate) return "Pending";
-    // Urgent guidance flags are the primary "Needs Attention" signal —
-    // cleared when mentor dismisses / sends a message for each flag.
     const urgentCount = urgentSuggestionCounts[client.id] ?? 0;
     const autopsyCount = unreviewedCounts[client.id] || 0;
     const reviewCount = combinedReviewCounts[client.id] || 0;
 
-    // A client ONLY needs attention if there are active unreviewed items
-    // or urgent suggestions that have NOT been dismissed.
     if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0) return "Needs Attention";
     
     const daysSinceStart = client.startDate ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
     const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
     const isBehind = client.completedWeeks.length < expectedWeek - 1 && client.completedWeeks.length < 16;
 
-    if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0) return "Needs Attention";
-    if (isBehind) return "Behind";
+    if (isBehind) {
+      const hasSentNudge = allClientFeedback.some(f => 
+        f.clientId === client.id && 
+        f.feedbackType === "guidance" && 
+        f.status === "sent" &&
+        (f.subject?.toLowerCase().includes("curriculum") || f.content?.toLowerCase().includes("curriculum"))
+      );
+      return hasSentNudge ? "Behind (Nudged)" : "Behind";
+    }
+    
     if (client.completedWeeks.length >= expectedWeek) return "On Track";
     return "Active";
   };
@@ -433,7 +443,8 @@ export default function TherapistHome() {
                 const completedCount = client.completedWeeks.length;
                 const progressPct = Math.round((completedCount / 16) * 100);
                 const isNeedsAttention = status === "Needs Attention";
-                const isBehind = status === "Behind";
+                const isBehind = status === "Behind" || status === "Behind (Nudged)";
+                const isNudged = status === "Behind (Nudged)";
                 const isOnTrack = status === "On Track";
 
                 return (
@@ -474,16 +485,20 @@ export default function TherapistHome() {
                             )}
                             {isBehind && (
                               <Badge
-                                variant="secondary"
-                                className="text-[10px] px-1.5 py-0 border-slate-300 text-slate-600 dark:text-slate-400 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40"
+                                variant={isNudged ? "outline" : "secondary"}
+                                className={`text-[10px] px-1.5 py-0 cursor-pointer transition-colors ${
+                                  isNudged 
+                                    ? "border-blue-400 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20" 
+                                    : "border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/40"
+                                }`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setLocation(`/therapist/clients/${client.id}?tab=guidance&action=nudge`);
                                 }}
                                 data-testid={`badge-behind-${client.id}`}
                               >
-                                <Clock className="h-2.5 w-2.5 mr-0.5" />
-                                Behind Pace
+                                {isNudged ? <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> : <Clock className="h-2.5 w-2.5 mr-0.5" />}
+                                {isNudged ? "Behind (Nudged)" : "Behind Pace"}
                               </Badge>
                             )}
                             {status !== "Pending" && !isNeedsAttention && !isBehind && (
