@@ -143,6 +143,7 @@ export default function TherapistClient() {
 
   const [sentSuggestionIds, setSentSuggestionIds] = useState<Set<string>>(new Set());
   const [draftedSuggestionIds, setDraftedSuggestionIds] = useState<Set<string>>(new Set());
+  const nudgeTriggeredRef = useRef(false);
 
   // Sheet compose panel state — single compose UI for ALL message contexts
   type SheetCtx =
