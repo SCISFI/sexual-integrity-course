@@ -60,14 +60,20 @@ export default function DailyCheckinPage() {
   const [submitted, setSubmitted] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  const todayDate = new Date();
-  const dateKey = todayDate.toISOString().split('T')[0];
-  
-  const today = todayDate.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+  function getLocalDateKey(): string {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  const dateKey = getLocalDateKey();
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 
   const { data: checkinData, isLoading } = useQuery<{ checkin: any }>({

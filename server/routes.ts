@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { passport, hashPassword } from "./auth";
+import { getAiClient } from "./aiService";
 import {
   registerSchema,
   loginSchema,
@@ -55,14 +56,7 @@ function startNudgeScheduler() {
           : 7;
 
         try {
-          const { GoogleGenAI } = await import("@google/genai");
-          const ai = new GoogleGenAI({
-            apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-            httpOptions: {
-              apiVersion: "",
-              baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-            },
-          });
+          const ai = getAiClient();
 
           const prompt = `Write a short, warm message (2-3 sentences) for someone in The Integrity Protocol recovery program who hasn't checked in for ${daysSince} days. Be supportive, not judgmental. Don't mention specific details about their program. Focus on the value of showing up and the strength it takes to continue. Do not provide medical advice. TONE: Keep language grounded and measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." Simple, honest encouragement only.`;
 
@@ -185,6 +179,13 @@ function requireRole(...roles: UserRole[]) {
     }
     next();
   };
+}
+
+function handleRouteError(res: Response, error: unknown, label: string, status = 500) {
+  console.error(`${label}:`, error);
+  if (!res.headersSent) {
+    res.status(status).json({ message: `Failed to ${label}` });
+  }
 }
 
 export async function registerRoutes(
@@ -1374,26 +1375,35 @@ export async function registerRoutes(
     async (req, res) => {
       try {
         const { therapistId } = req.params;
-        const { allFeesWaived } = req.body;
+        const { allFeesWaived, name, email, newPassword } = req.body;
 
-        const user = await storage.getUser(therapistId);
-        if (!user) {
+        const existingUser = await storage.getUser(therapistId);
+        if (!existingUser) {
           return res.status(404).json({ message: "Therapist not found" });
         }
 
-        if (user.role !== "therapist") {
+        if (existingUser.role !== "therapist") {
           return res.status(400).json({ message: "User is not a therapist" });
         }
 
         if (allFeesWaived !== undefined && typeof allFeesWaived !== "boolean") {
-          return res
-            .status(400)
-            .json({ message: "allFeesWaived must be a boolean" });
+          return res.status(400).json({ message: "allFeesWaived must be a boolean" });
+        }
+
+        if (email && email !== existingUser.email) {
+          const emailTaken = await storage.getUserByEmail(email);
+          if (emailTaken && emailTaken.id !== therapistId) {
+            return res.status(400).json({ message: "Email already in use by another account" });
+          }
         }
 
         const updateData: any = {};
-        if (allFeesWaived !== undefined)
-          updateData.allFeesWaived = allFeesWaived;
+        if (allFeesWaived !== undefined) updateData.allFeesWaived = allFeesWaived;
+        if (name !== undefined && name.trim()) updateData.name = name.trim();
+        if (email !== undefined && email.trim()) updateData.email = email.trim().toLowerCase();
+        if (newPassword && newPassword.length >= 8) {
+          updateData.password = await hashPassword(newPassword);
+        }
 
         if (Object.keys(updateData).length === 0) {
           return res.status(400).json({ message: "No valid fields to update" });
@@ -1401,9 +1411,7 @@ export async function registerRoutes(
 
         const updatedUser = await storage.updateUser(therapistId, updateData);
         if (!updatedUser) {
-          return res
-            .status(500)
-            .json({ message: "Failed to update therapist" });
+          return res.status(500).json({ message: "Failed to update therapist" });
         }
 
         const { password: _, ...safeUser } = updatedUser;
@@ -2247,14 +2255,7 @@ export async function registerRoutes(
           contextInfo += `\nRelapse/Lapse History: ${completedAutopsies.length} total incidents\n`;
         }
 
-        const { GoogleGenAI } = await import("@google/genai");
-        const ai = new GoogleGenAI({
-          apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-          httpOptions: {
-            apiVersion: "",
-            baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-          },
-        });
+        const ai = getAiClient();
 
         const prompt = `You are a professional mentor writing a weekly progress summary report for a client in The Integrity Protocol recovery program. This summary will be included in a formal PDF report.
 
@@ -2838,11 +2839,7 @@ WRITING RULES:
 
 Write only the message body. No salutation, no sign-off, no subject line.`;
 
-        const { GoogleGenAI } = await import("@google/genai");
-        const ai = new GoogleGenAI({
-          apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-          httpOptions: { apiVersion: "", baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL },
-        });
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -2948,14 +2945,7 @@ Write only the message body. No salutation, no sign-off, no subject line.`;
           });
         }
 
-        const { GoogleGenAI } = await import("@google/genai");
-        const ai = new GoogleGenAI({
-          apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-          httpOptions: {
-            apiVersion: "",
-            baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-          },
-        });
+        const ai = getAiClient();
 
         const clientName = clientUser?.name || "the client";
 
@@ -4202,14 +4192,7 @@ ${completedAutopsies
         }
 
         // 3. AI Prompt with pre-computed trend awareness
-        const { GoogleGenAI } = await import("@google/genai");
-        const ai = new GoogleGenAI({
-          apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-          httpOptions: {
-            apiVersion: "",
-            baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-          },
-        });
+        const ai = getAiClient();
 
         const prompt = `
         You are an expert recovery mentor providing feedback for ${user?.name || "the client"}.
@@ -4446,14 +4429,7 @@ ${completedAutopsies
         const autopsyTrendStatsBlock = formatTrendReportForAI(autopsyTrendReport);
         trendAnalysis.push(autopsyTrendStatsBlock);
 
-        const { GoogleGenAI } = await import("@google/genai");
-        const ai = new GoogleGenAI({
-          apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY!,
-          httpOptions: {
-            apiVersion: "",
-            baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-          },
-        });
+        const ai = getAiClient();
 
         const prompt = `You are an expert recovery mentor providing feedback on a relapse autopsy for ${user?.name || "the client"}.
 

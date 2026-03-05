@@ -27,8 +27,10 @@ The application uses a React frontend (Vite, Wouter, TanStack React Query, Tailw
 -   **Database Schema**: Core tables include `users`, `week_completions`, `daily_checkins`, `week_reflections`, `homework_completions`, `therapist_clients`, `therapist_feedback` (extended with `status`, `sent_at`, `subject`), `week_fee_waivers`, `password_reset_tokens`, and `dismissed_guidance_suggestions`.
 -   **Authentication**: Passport.js Local Strategy.
 -   **Email Service**: Gmail integration for notifications (password reset, week completion, feedback).
--   **AI Service**: Replit AI Integrations for personalized encouragement and feedback generation.
+-   **AI Service**: Replit AI Integrations for personalized encouragement and feedback generation. Gemini client is a module-level singleton via `getAiClient()` in `server/aiService.ts` — used by all 6 AI endpoints in `routes.ts`.
 -   **Notifications**: Browser push notification system with service worker and VAPID key authentication for daily check-in reminders and mentor feedback alerts.
+-   **Daily Check-in Date**: Uses local wall-clock date (`getLocalDateKey()`) not UTC, so users in US timezones get the correct date after 8pm.
+-   **Canonical Routes**: `/therapist` is the single canonical mentor dashboard URL. `/daily-checkin` is the single canonical check-in URL. Dead routes (`/checkin`, `/therapist-home`, `/protected`) have been removed.
 
 ### Feature Specifications
 
@@ -37,7 +39,7 @@ The application uses a React frontend (Vite, Wouter, TanStack React Query, Tailw
 -   **Daily Check-ins**: Unified system covering recovery, wellness, relationships, values, integrity, HALT-BS, mood/urge levels, and journal entries.
 -   **Homework & Reflections**: Trackable homework checklists, auto-saving reflection forms, and differentiated reflection questions for specific weeks.
 -   **Mentor Tools**: View client progress, send messages to clients, track overdue reviews, manage clients. **Guidance tab** on each client's detail page surfaces rule-based, prioritized suggestions (urgent / follow-up / curriculum / recognition). Each suggestion has a "Write Message" button that opens an inline compose panel with an AI-generated draft — mentor reviews and edits before saving as a draft or sending. Draft messages persist and surface in a draft inbox on the Guidance tab. Non-urgent suggestions can be dismissed with "Mark Addressed". Relevant endpoints: `/api/therapist/clients/:clientId/suggestions`, `/api/therapist/clients/:clientId/generate-guidance-message`, `/api/therapist/clients/:clientId/messages/drafts`, `/api/therapist/clients/:clientId/dismiss-suggestion`, `/api/therapist/clients/:clientId/feedback` (POST/PUT). **Required messages**: Week completions and Relapse Autopsies require a mentor message before being marked reviewed — "Send Message" button on each item opens a Sheet panel with AI draft; sending also fires the review endpoint. **General unsolicited message**: "New Message" button on the client header card opens the same Sheet compose panel with a blank form (feedbackType='general').
--   **Admin Tools**: User management, fee waivers, client deletion, revenue tracking, and editing of any feedback.
+-   **Admin Tools**: User management (create/edit/delete mentors and clients), fee waivers, client deletion, revenue tracking, editing of any feedback. Admins can edit mentor name, email, and password via the Mentors tab Edit button (PATCH `/api/admin/therapists/:id` accepts `name`, `email`, `newPassword`).
 -   **AI-Powered Features**: Personalized encouragement, technique reminders, and draft feedback generation (including relapse autopsy analysis and trend analysis) with anti-hallucination instructions.
 -   **Client Account Management**: Account deactivation, subscription cancellation, crisis resources, and user manual access.
 -   **Analytics**: Client-specific analytics page for mentors/admins with trend analysis for check-in data.

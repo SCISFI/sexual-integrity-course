@@ -111,6 +111,8 @@ export default function AdminPage() {
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [editingTherapist, setEditingTherapist] = useState<Therapist | null>(null);
+  const [therapistEditForm, setTherapistEditForm] = useState({ name: "", email: "", newPassword: "" });
 
   const [newTherapist, setNewTherapist] = useState({ name: "", email: "", password: "" });
   const [newClient, setNewClient] = useState({ name: "", email: "", password: "", therapistId: "" });
@@ -269,6 +271,26 @@ export default function AdminPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/therapists"] });
+      toast({ title: "Mentor updated successfully" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const editTherapistMutation = useMutation({
+    mutationFn: async ({ therapistId, data }: { therapistId: string; data: { name?: string; email?: string; newPassword?: string } }) => {
+      const res = await apiRequest("PATCH", `/api/admin/therapists/${therapistId}`, data);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update mentor");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/therapists"] });
+      setEditingTherapist(null);
+      setTherapistEditForm({ name: "", email: "", newPassword: "" });
       toast({ title: "Mentor updated successfully" });
     },
     onError: (error: Error) => {
@@ -781,6 +803,18 @@ export default function AdminPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  onClick={() => {
+                                    setEditingTherapist(therapist);
+                                    setTherapistEditForm({ name: therapist.name || "", email: therapist.email, newPassword: "" });
+                                  }}
+                                  data-testid={`button-edit-therapist-${therapist.id}`}
+                                  title="Edit Mentor"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
                                   onClick={() => setResetPasswordUser({ id: therapist.id, name: therapist.name, email: therapist.email })}
                                   data-testid={`button-reset-password-therapist-${therapist.id}`}
                                   title="Reset Password"
@@ -849,7 +883,19 @@ export default function AdminPage() {
                             {new Date(therapist.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        <div className="mt-3 flex gap-2 border-t pt-3">
+                        <div className="mt-3 flex gap-2 border-t pt-3 flex-wrap">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingTherapist(therapist);
+                              setTherapistEditForm({ name: therapist.name || "", email: therapist.email, newPassword: "" });
+                            }}
+                            data-testid={`button-edit-therapist-mobile-${therapist.id}`}
+                          >
+                            <Edit className="h-3.5 w-3.5 mr-1.5" />
+                            Edit
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1286,6 +1332,74 @@ export default function AdminPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={!!editingTherapist} onOpenChange={(open) => { if (!open) { setEditingTherapist(null); setTherapistEditForm({ name: "", email: "", newPassword: "" }); } }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Mentor</DialogTitle>
+              <DialogDescription>
+                Update name, email, or set a new password for {editingTherapist?.name || editingTherapist?.email}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-therapist-name">Name</Label>
+                <Input
+                  id="edit-therapist-name"
+                  value={therapistEditForm.name}
+                  onChange={(e) => setTherapistEditForm({ ...therapistEditForm, name: e.target.value })}
+                  placeholder="Full name"
+                  data-testid="input-edit-therapist-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-therapist-email">Email</Label>
+                <Input
+                  id="edit-therapist-email"
+                  type="email"
+                  value={therapistEditForm.email}
+                  onChange={(e) => setTherapistEditForm({ ...therapistEditForm, email: e.target.value })}
+                  placeholder="email@example.com"
+                  data-testid="input-edit-therapist-email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-therapist-password">New Password <span className="text-muted-foreground text-xs">(optional — leave blank to keep current)</span></Label>
+                <PasswordInput
+                  id="edit-therapist-password"
+                  value={therapistEditForm.newPassword}
+                  onChange={(e) => setTherapistEditForm({ ...therapistEditForm, newPassword: e.target.value })}
+                  placeholder="Min 8 characters"
+                  data-testid="input-edit-therapist-password"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => { setEditingTherapist(null); setTherapistEditForm({ name: "", email: "", newPassword: "" }); }}
+                data-testid="button-cancel-edit-therapist"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!editingTherapist) return;
+                  const data: Record<string, string> = {};
+                  if (therapistEditForm.name.trim()) data.name = therapistEditForm.name.trim();
+                  if (therapistEditForm.email.trim()) data.email = therapistEditForm.email.trim();
+                  if (therapistEditForm.newPassword.trim()) data.newPassword = therapistEditForm.newPassword.trim();
+                  editTherapistMutation.mutate({ therapistId: editingTherapist.id, data });
+                }}
+                disabled={editTherapistMutation.isPending}
+                data-testid="button-submit-edit-therapist"
+              >
+                {editTherapistMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
