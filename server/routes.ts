@@ -1092,7 +1092,7 @@ export async function registerRoutes(
             priority: "followup",
             title: "Behind on Curriculum Pace",
             detail: `Based on start date, client should be approaching Week ${expectedWeek} but has completed ${completedWeeks.length} week${completedWeeks.length !== 1 ? "s" : ""}. Falling behind is often avoidance, not logistics.`,
-            action: "Ask what's blocking them. Is it time, or is it the content? A curriculum week they're avoiding is usually the one they most need to do.",
+            action: "Send a quick nudge message. Ask what's blocking them. Is it time, or is it the content? A curriculum week they're avoiding is usually the one they most need to do.",
           });
         }
       }

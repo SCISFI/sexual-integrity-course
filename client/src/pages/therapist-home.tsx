@@ -177,8 +177,12 @@ export default function TherapistHome() {
     // or urgent suggestions that have NOT been dismissed.
     if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0) return "Needs Attention";
     
-    const daysSinceStart = Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24));
+    const daysSinceStart = client.startDate ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
     const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
+    const isBehind = client.completedWeeks.length < expectedWeek - 1 && client.completedWeeks.length < 16;
+
+    if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0) return "Needs Attention";
+    if (isBehind) return "Behind";
     if (client.completedWeeks.length >= expectedWeek) return "On Track";
     return "Active";
   };
@@ -193,7 +197,13 @@ export default function TherapistHome() {
   const sortedClients = [...clients].sort((a, b) => {
     const statusA = getClientStatus(a);
     const statusB = getClientStatus(b);
-    const priority = (s: string) => s === "Needs Attention" ? 0 : s === "Active" ? 1 : s === "On Track" ? 2 : 3;
+    const priority = (s: string) => {
+      if (s === "Needs Attention") return 0;
+      if (s === "Behind") return 1;
+      if (s === "Active") return 2;
+      if (s === "On Track") return 3;
+      return 4;
+    };
     return priority(statusA) - priority(statusB);
   });
 
@@ -423,12 +433,13 @@ export default function TherapistHome() {
                 const completedCount = client.completedWeeks.length;
                 const progressPct = Math.round((completedCount / 16) * 100);
                 const isNeedsAttention = status === "Needs Attention";
+                const isBehind = status === "Behind";
                 const isOnTrack = status === "On Track";
 
                 return (
                   <div
                     key={client.id}
-                    className={`rounded-xl border bg-card p-4 cursor-pointer hover-elevate transition-all ${isNeedsAttention ? "border-amber-200 dark:border-amber-800" : ""}`}
+                    className={`rounded-xl border bg-card p-4 cursor-pointer hover-elevate transition-all ${isNeedsAttention ? "border-amber-200 dark:border-amber-800" : isBehind ? "border-slate-200 dark:border-slate-800" : ""}`}
                     onClick={() => setLocation(`/therapist/clients/${client.id}`)}
                     data-testid={`row-client-${client.id}`}
                   >
@@ -461,7 +472,21 @@ export default function TherapistHome() {
                                 Needs Attention
                               </Badge>
                             )}
-                            {status !== "Pending" && !isNeedsAttention && (
+                            {isBehind && (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] px-1.5 py-0 border-slate-300 text-slate-600 dark:text-slate-400 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLocation(`/therapist/clients/${client.id}?tab=guidance`);
+                                }}
+                                data-testid={`badge-behind-${client.id}`}
+                              >
+                                <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                Behind Pace
+                              </Badge>
+                            )}
+                            {status !== "Pending" && !isNeedsAttention && !isBehind && (
                               <Badge
                                 variant={isOnTrack ? "outline" : "secondary"}
                                 className={`text-[10px] px-1.5 py-0 ${
@@ -496,7 +521,7 @@ export default function TherapistHome() {
                             </div>
                             <div className="flex-1 max-w-[120px] h-1.5 rounded-full bg-muted overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all ${isNeedsAttention ? "bg-amber-500" : isOnTrack ? "bg-green-500" : "bg-primary"}`}
+                                className={`h-full rounded-full transition-all ${isNeedsAttention ? "bg-amber-500" : isBehind ? "bg-slate-400" : isOnTrack ? "bg-green-500" : "bg-primary"}`}
                                 style={{ width: `${progressPct}%` }}
                               />
                             </div>
