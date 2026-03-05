@@ -419,7 +419,11 @@ export default function TherapistClient() {
     if (activeTab === "guidance" && suggestionsData?.suggestions) {
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.get("action") === "nudge") {
+        // Find the "Behind on Curriculum Pace" suggestion.
+        // It might be filtered out of the display suggestions but we want to trigger it anyway.
+        // The backend logic generates it if the client is behind.
         const behindSuggestion = suggestionsData.suggestions.find(s => s.id === "curriculum-behind");
+        
         if (behindSuggestion) {
           nudgeTriggeredRef.current = true;
           openGuidanceSheet(behindSuggestion);
@@ -427,10 +431,24 @@ export default function TherapistClient() {
           newParams.delete("action");
           const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
           window.history.replaceState({}, "", newUrl);
+        } else {
+          // If the suggestion wasn't in the list (e.g. if the cache is stale or logic slightly differs),
+          // fallback to a synthetic one so the mentor can still send the nudge.
+          nudgeTriggeredRef.current = true;
+          openGuidanceSheet({
+            id: "curriculum-behind",
+            title: "Behind on Curriculum Pace",
+            detail: "The client is trailing their expected progress based on their start date.",
+            action: "Send a quick nudge message to check in on their progress."
+          });
+          const newParams = new URLSearchParams(window.location.search);
+          newParams.delete("action");
+          const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
+          window.history.replaceState({}, "", newUrl);
         }
       }
     }
-  }, [activeTab, suggestionsData]);
+  }, [activeTab, suggestionsData, openGuidanceSheet]);
 
   const openDraftSheet = (draft: { id: string; subject: string | null; content: string }) => {
     setSheetCtx({ kind: 'draft', feedbackId: draft.id });
