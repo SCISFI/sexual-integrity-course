@@ -131,7 +131,12 @@ export default function TherapistClient() {
   const [feedbackAutopsyId, setFeedbackAutopsyId] = useState<string | null>(null);
   const [feedbackInsightType, setFeedbackInsightType] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState("progress");
+  const validTabs = ["analytics", "progress", "checkins", "autopsies", "guidance", "reports"];
+  const initialTab = (() => {
+    const t = new URLSearchParams(window.location.search).get("tab") || "";
+    return validTabs.includes(t) ? t : "progress";
+  })();
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [expandedAutopsy, setExpandedAutopsy] = useState<string | null>(null);
   const [activeFeedbackTarget, setActiveFeedbackTarget] = useState<{ type: string; key: string } | null>(null);

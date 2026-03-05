@@ -158,6 +158,13 @@ export default function TherapistHome() {
 
   const allClients = clientsData?.clients || [];
 
+  const getBestAttentionTab = (clientId: string): string => {
+    if ((unreviewedCounts[clientId] || 0) > 0) return "autopsies";
+    if ((urgentSuggestionCounts[clientId] || 0) > 0) return "guidance";
+    if ((combinedReviewCounts[clientId] || 0) > 0) return "progress";
+    return "progress";
+  };
+
   const getClientStatus = (client: ClientWithProgress) => {
     if (!client.startDate) return "Pending";
     // Urgent guidance flags are the primary "Needs Attention" signal —
@@ -335,12 +342,24 @@ export default function TherapistHome() {
                 <p className="text-xs text-white/50">To Review</p>
               </div>
             </div>
-            <div className="rounded-xl bg-white/10 ring-1 ring-white/20 px-4 py-3 flex items-center gap-3">
+            <div
+              className={`rounded-xl bg-white/10 ring-1 ring-white/20 px-4 py-3 flex items-center gap-3 ${needsAttentionCount > 0 ? "cursor-pointer hover:ring-red-400/50 hover:bg-white/[0.15] transition-all" : ""}`}
+              onClick={() => {
+                if (needsAttentionCount > 0) {
+                  const firstFlagged = sortedClients.find(c => getClientStatus(c) === "Needs Attention");
+                  if (firstFlagged) {
+                    setLocation(`/therapist/clients/${firstFlagged.id}?tab=${getBestAttentionTab(String(firstFlagged.id))}`);
+                  }
+                }
+              }}
+              data-testid="card-needs-attention-summary"
+            >
               <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${needsAttentionCount > 0 ? "text-red-400" : "text-white/30"}`} />
               <div>
                 <p className={`text-2xl font-bold ${needsAttentionCount > 0 ? "text-red-300" : "text-white"}`}>{needsAttentionCount}</p>
                 <p className="text-xs text-white/50">Need Attention</p>
               </div>
+              {needsAttentionCount > 0 && <ChevronRight className="h-4 w-4 text-white/30 ml-auto" />}
             </div>
           </div>
         )}
@@ -425,15 +444,27 @@ export default function TherapistHome() {
                           {/* Name + badges row */}
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-sm">{client.name || client.email}</p>
-                            {status !== "Pending" && (
+                            {isNeedsAttention && (
                               <Badge
-                                variant={isNeedsAttention ? "outline" : isOnTrack ? "outline" : "secondary"}
+                                variant="outline"
+                                className="text-[10px] px-1.5 py-0 border-amber-400 text-amber-700 dark:text-amber-400 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLocation(`/therapist/clients/${client.id}?tab=${getBestAttentionTab(clientId)}`);
+                                }}
+                                data-testid={`badge-needs-attention-${client.id}`}
+                              >
+                                <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                Needs Attention
+                              </Badge>
+                            )}
+                            {status !== "Pending" && !isNeedsAttention && (
+                              <Badge
+                                variant={isOnTrack ? "outline" : "secondary"}
                                 className={`text-[10px] px-1.5 py-0 ${
-                                  isNeedsAttention ? "border-amber-400 text-amber-700 dark:text-amber-400" :
                                   isOnTrack ? "border-green-400 text-green-700 dark:text-green-400" : ""
                                 }`}
                               >
-                                {isNeedsAttention && <Clock className="h-2.5 w-2.5 mr-0.5" />}
                                 {isOnTrack && <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />}
                                 {status}
                               </Badge>
