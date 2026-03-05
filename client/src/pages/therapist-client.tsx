@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,23 +143,6 @@ export default function TherapistClient() {
 
   const [sentSuggestionIds, setSentSuggestionIds] = useState<Set<string>>(new Set());
   const [draftedSuggestionIds, setDraftedSuggestionIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (activeTab === "guidance" && suggestionsData?.suggestions) {
-      const searchParams = new URLSearchParams(window.location.search);
-      if (searchParams.get("action") === "nudge") {
-        const behindSuggestion = suggestionsData.suggestions.find(s => s.id === "curriculum-behind");
-        if (behindSuggestion) {
-          openGuidanceSheet(behindSuggestion);
-          // Remove the action from URL so it doesn't re-open on every tab switch
-          const newParams = new URLSearchParams(window.location.search);
-          newParams.delete("action");
-          const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
-          window.history.replaceState({}, "", newUrl);
-        }
-      }
-    }
-  }, [activeTab, suggestionsData, clientId]);
 
   // Sheet compose panel state — single compose UI for ALL message contexts
   type SheetCtx =
@@ -427,6 +410,27 @@ export default function TherapistClient() {
       setSheetLoading(false);
     }
   };
+
+  // Auto-open the nudge sheet when navigating here via ?action=nudge from the "Behind Pace" badge.
+  // Must live AFTER openGuidanceSheet is defined. useRef prevents re-triggering on re-renders.
+  const nudgeTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (nudgeTriggeredRef.current) return;
+    if (activeTab === "guidance" && suggestionsData?.suggestions) {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("action") === "nudge") {
+        const behindSuggestion = suggestionsData.suggestions.find(s => s.id === "curriculum-behind");
+        if (behindSuggestion) {
+          nudgeTriggeredRef.current = true;
+          openGuidanceSheet(behindSuggestion);
+          const newParams = new URLSearchParams(window.location.search);
+          newParams.delete("action");
+          const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
+          window.history.replaceState({}, "", newUrl);
+        }
+      }
+    }
+  }, [activeTab, suggestionsData]);
 
   const openDraftSheet = (draft: { id: string; subject: string | null; content: string }) => {
     setSheetCtx({ kind: 'draft', feedbackId: draft.id });
