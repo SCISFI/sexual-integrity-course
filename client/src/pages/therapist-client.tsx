@@ -143,7 +143,6 @@ export default function TherapistClient() {
 
   const [sentSuggestionIds, setSentSuggestionIds] = useState<Set<string>>(new Set());
   const [draftedSuggestionIds, setDraftedSuggestionIds] = useState<Set<string>>(new Set());
-  const nudgeTriggeredRef = useRef(false);
 
   // Sheet compose panel state — single compose UI for ALL message contexts
   type SheetCtx =
@@ -226,12 +225,84 @@ export default function TherapistClient() {
 
   const isNeedsAttention = urgentCount > 0 || autopsyCount > 0 || reviewCount > 0;
 
+
+  
+
+
+  
   const feedbackMutation = useMutation({
     mutationFn: async (data: { feedbackType: string; content: string; weekNumber?: number; checkinDateKey?: string; status?: string; subject?: string }) => {
       const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, data);
       if (!res.ok) throw new Error("Failed to add message");
       return res.json();
     },
+
+    const openGuidanceSheet = async (suggestion: { id: string; title: string; detail: string; action: string }) => {
+      setSheetCtx({ kind: 'guidance', suggestion });
+      setSheetSubject("");
+      setSheetMessage("");
+      setSheetLoading(true);
+      setSheetFailed(false);
+      try {
+        const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-guidance-message`, {
+          suggestionId: suggestion.id,
+          suggestionTitle: suggestion.title,
+          suggestionDetail: suggestion.detail
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSheetSubject(data.subject || "");
+          setSheetMessage(data.message || "");
+        } else {
+          setSheetFailed(true);
+        }
+      } catch (err) {
+        setSheetFailed(true);
+      } finally {
+        setSheetLoading(false);
+      }
+    };
+
+    const nudgeTriggeredRef = useRef(false);
+    useEffect(() => {
+      if (nudgeTriggeredRef.current) return;
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab") || "progress";
+      if (tabParam === "guidance" && suggestionsData?.suggestions) {
+        if (params.get("action") === "nudge") {
+          const behindSuggestion = (suggestionsData.suggestions as any[]).find(s => s.id === "curriculum-behind");
+          if (behindSuggestion) {
+            nudgeTriggeredRef.current = true;
+            openGuidanceSheet(behindSuggestion);
+            params.delete("action");
+            const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : "");
+            window.history.replaceState({}, "", newUrl);
+          }
+        }
+      }
+    }, [suggestionsData, openGuidanceSheet]);
+  
+
+
+  
+
+
+  
+
+
+  
+
+
+  
+
+
+  
+
+
+  
+
+
+  
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/clients', clientId, 'progress'] });
       queryClient.invalidateQueries({ queryKey: ['/api/therapist/unreviewed-items'] });
@@ -388,8 +459,9 @@ export default function TherapistClient() {
     setSheetLoading(false);
   };
 
-  const openGuidanceSheet = async (suggestion: { id: string; title: string; detail: string; action: string }) => {
     setSheetCtx({ kind: 'guidance', suggestion });
+
+  
     setSheetSubject("");
     setSheetMessage("");
     setSheetFailed(false);
@@ -412,34 +484,6 @@ export default function TherapistClient() {
     }
   };
 
-  useEffect(() => {
-    if (nudgeTriggeredRef.current) return;
-    if (activeTab === "guidance" && suggestionsData?.suggestions) {
-      const searchParams = new URLSearchParams(window.location.search);
-      if (searchParams.get("action") === "nudge") {
-        const behindSuggestion = suggestionsData.suggestions.find(s => s.id === "curriculum-behind");
-        
-        nudgeTriggeredRef.current = true;
-        if (behindSuggestion) {
-          openGuidanceSheet({
-            ...behindSuggestion,
-            action: "behind-pace-nudge"
-          });
-        } else {
-          openGuidanceSheet({
-            id: "curriculum-behind",
-            title: "Behind on Curriculum Pace",
-            detail: "The client has not completed a module in over 14 days.",
-            action: "behind-pace-nudge"
-          });
-        }
-        const newParams = new URLSearchParams(window.location.search);
-        newParams.delete("action");
-        const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
-        window.history.replaceState({}, "", newUrl);
-      }
-    }
-  }, [activeTab, suggestionsData, openGuidanceSheet]);
 
   const openDraftSheet = (draft: { id: string; subject: string | null; content: string }) => {
     setSheetCtx({ kind: 'draft', feedbackId: draft.id });
@@ -574,6 +618,9 @@ export default function TherapistClient() {
   const { data: summariesData } = useQuery<{ summaries: Array<{ weekNumber: number; createdAt: string | null }> }>({
     queryKey: ['/api/therapist/clients', clientId, 'weekly-summaries'],
     queryFn: async () => {
+
+
+  
       const res = await fetch(`/api/therapist/clients/${clientId}/weekly-summaries`, { credentials: 'include' });
       if (!res.ok) return { summaries: [] };
       return res.json();
