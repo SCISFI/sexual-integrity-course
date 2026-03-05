@@ -452,5 +452,40 @@ export const insertRelapseAutopsySchema = createInsertSchema(relapseAutopsies).o
 export type RelapseAutopsy = typeof relapseAutopsies.$inferSelect;
 export type InsertRelapseAutopsy = z.infer<typeof insertRelapseAutopsySchema>;
 
+// Cohorts — group clients together for batch analytics and management
+export const cohorts = pgTable("cohorts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const cohortMemberships = pgTable("cohort_memberships", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cohortId: varchar("cohort_id").notNull().references(() => cohorts.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  addedBy: varchar("added_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  unique("cohort_memberships_cohort_user_unique").on(table.cohortId, table.userId),
+]);
+
+export const insertCohortSchema = createInsertSchema(cohorts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCohortMembershipSchema = createInsertSchema(cohortMemberships).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Cohort = typeof cohorts.$inferSelect;
+export type InsertCohort = z.infer<typeof insertCohortSchema>;
+export type CohortMembership = typeof cohortMemberships.$inferSelect;
+export type InsertCohortMembership = z.infer<typeof insertCohortMembershipSchema>;
+
 // Export chat models
 export * from "./models/chat";

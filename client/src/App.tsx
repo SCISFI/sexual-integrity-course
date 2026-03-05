@@ -11,6 +11,8 @@ import Register from "@/pages/register";
 import RegisterTherapist from "@/pages/register-therapist";
 import RegisterClient from "@/pages/register-client";
 import AdminPage from "@/pages/admin";
+import AdminCohortPage from "@/pages/admin-cohort";
+import CohortAnalyticsPage from "@/pages/cohort-analytics";
 import Dashboard from "@/pages/dashboard";
 import TherapistClient from "@/pages/therapist-client";
 import TherapistHome from "@/pages/therapist-home";
@@ -40,6 +42,8 @@ function Router() {
       <Route path="/change-password" component={ChangePassword} />
       <Route path="/admin" component={AdminPage} />
       <Route path="/admin/clients/:clientId" component={AdminClientPage} />
+      <Route path="/admin/cohorts/:id/analytics" component={CohortAnalyticsPage} />
+      <Route path="/admin/cohorts/:id" component={AdminCohortPage} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/therapist" component={TherapistHome} />
       <Route path="/week/:weekNumber" component={WeekPage} />

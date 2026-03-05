@@ -48,7 +48,10 @@ import {
   Trash2,
   AlertTriangle,
   UserCircle,
-  ChevronDown
+  ChevronDown,
+  LayoutGrid,
+  BarChart2,
+  Settings
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -103,6 +106,14 @@ interface OverdueReview {
   hoursPending: number;
 }
 
+interface CohortItem {
+  id: string;
+  name: string;
+  description: string | null;
+  memberCount: number;
+  createdAt: string;
+}
+
 export default function AdminPage() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
@@ -122,6 +133,51 @@ export default function AdminPage() {
   const [deletingClient, setDeletingClient] = useState<{ id: string; name: string | null; email: string } | null>(null);
   const [deletingTherapist, setDeletingTherapist] = useState<{ id: string; name: string | null; email: string; clientCount: number } | null>(null);
   const [reassignToTherapistId, setReassignToTherapistId] = useState("");
+
+  const [showCreateCohort, setShowCreateCohort] = useState(false);
+  const [newCohort, setNewCohort] = useState({ name: "", description: "" });
+  const [editingCohort, setEditingCohort] = useState<CohortItem | null>(null);
+  const [editCohortForm, setEditCohortForm] = useState({ name: "", description: "" });
+  const [deletingCohort, setDeletingCohort] = useState<CohortItem | null>(null);
+
+  const { data: cohortsData, isLoading: loadingCohorts } = useQuery<{ cohorts: CohortItem[] }>({
+    queryKey: ["/api/admin/cohorts"],
+    enabled: !!(user && (user as any).role === "admin"),
+  });
+  const cohortsList = cohortsData?.cohorts || [];
+
+  const createCohortMutation = useMutation({
+    mutationFn: (data: { name: string; description: string }) =>
+      apiRequest("POST", "/api/admin/cohorts", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cohorts"] });
+      setShowCreateCohort(false);
+      setNewCohort({ name: "", description: "" });
+      toast({ title: "Cohort created" });
+    },
+    onError: () => toast({ title: "Failed to create cohort", variant: "destructive" }),
+  });
+
+  const updateCohortMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name: string; description: string } }) =>
+      apiRequest("PATCH", `/api/admin/cohorts/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cohorts"] });
+      setEditingCohort(null);
+      toast({ title: "Cohort updated" });
+    },
+    onError: () => toast({ title: "Failed to update cohort", variant: "destructive" }),
+  });
+
+  const deleteCohortMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/admin/cohorts/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cohorts"] });
+      setDeletingCohort(null);
+      toast({ title: "Cohort deleted" });
+    },
+    onError: () => toast({ title: "Failed to delete cohort", variant: "destructive" }),
+  });
 
   const { data: therapistsData, isLoading: loadingTherapists } = useQuery({
     queryKey: ["/api/admin/therapists"],
@@ -411,6 +467,10 @@ export default function AdminPage() {
                     {overdueReviews.length}
                   </Badge>
                 )}
+              </TabsTrigger>
+              <TabsTrigger value="cohorts" data-testid="tab-cohorts">
+                <LayoutGrid className="mr-1.5 h-4 w-4" />
+                <span>Cohorts</span>
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1111,7 +1171,193 @@ export default function AdminPage() {
               </>
             )}
           </TabsContent>
+
+          {/* Cohorts Tab */}
+          <TabsContent value="cohorts" className="space-y-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-xl font-semibold" data-testid="text-cohorts-heading">Cohorts</h2>
+              <Dialog open={showCreateCohort} onOpenChange={setShowCreateCohort}>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto" data-testid="button-create-cohort">
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Cohort
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Cohort</DialogTitle>
+                    <DialogDescription>Group clients together for analytics and management.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-2">
+                    <div className="space-y-1.5">
+                      <Label>Name</Label>
+                      <Input
+                        placeholder="e.g. Spring 2026 Cohort"
+                        value={newCohort.name}
+                        onChange={e => setNewCohort(p => ({ ...p, name: e.target.value }))}
+                        data-testid="input-cohort-name"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Description <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                      <Input
+                        placeholder="Brief description"
+                        value={newCohort.description}
+                        onChange={e => setNewCohort(p => ({ ...p, description: e.target.value }))}
+                        data-testid="input-cohort-description"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowCreateCohort(false)}>Cancel</Button>
+                    <Button
+                      onClick={() => createCohortMutation.mutate(newCohort)}
+                      disabled={!newCohort.name.trim() || createCohortMutation.isPending}
+                      data-testid="button-submit-create-cohort"
+                    >
+                      {createCohortMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Create
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {loadingCohorts ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : cohortsList.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <LayoutGrid className="mx-auto mb-3 h-8 w-8 opacity-40" />
+                  <p>No cohorts yet. Create one to get started.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-center">Members</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cohortsList.map(cohort => (
+                      <TableRow key={cohort.id} data-testid={`row-cohort-${cohort.id}`}>
+                        <TableCell className="font-medium">{cohort.name}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{cohort.description || "—"}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary" data-testid={`badge-cohort-members-${cohort.id}`}>{cohort.memberCount}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setLocation(`/admin/cohorts/${cohort.id}`)}
+                              data-testid={`button-manage-cohort-${cohort.id}`}
+                            >
+                              <Users className="mr-1.5 h-3.5 w-3.5" />
+                              Manage
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setLocation(`/admin/cohorts/${cohort.id}/analytics`)}
+                              data-testid={`button-analytics-cohort-${cohort.id}`}
+                            >
+                              <BarChart2 className="mr-1.5 h-3.5 w-3.5" />
+                              Analytics
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => { setEditingCohort(cohort); setEditCohortForm({ name: cohort.name, description: cohort.description || "" }); }}
+                              data-testid={`button-edit-cohort-${cohort.id}`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeletingCohort(cohort)}
+                              data-testid={`button-delete-cohort-${cohort.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
+
+        {/* Edit Cohort Dialog */}
+        <Dialog open={!!editingCohort} onOpenChange={open => !open && setEditingCohort(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Cohort</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>Name</Label>
+                <Input
+                  value={editCohortForm.name}
+                  onChange={e => setEditCohortForm(p => ({ ...p, name: e.target.value }))}
+                  data-testid="input-edit-cohort-name"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Description</Label>
+                <Input
+                  value={editCohortForm.description}
+                  onChange={e => setEditCohortForm(p => ({ ...p, description: e.target.value }))}
+                  data-testid="input-edit-cohort-description"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingCohort(null)}>Cancel</Button>
+              <Button
+                onClick={() => editingCohort && updateCohortMutation.mutate({ id: editingCohort.id, data: editCohortForm })}
+                disabled={!editCohortForm.name.trim() || updateCohortMutation.isPending}
+                data-testid="button-submit-edit-cohort"
+              >
+                {updateCohortMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Cohort Confirm */}
+        <AlertDialog open={!!deletingCohort} onOpenChange={open => !open && setDeletingCohort(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete "{deletingCohort?.name}"?</AlertDialogTitle>
+              <AlertDialogDescription>This removes the cohort and all its memberships. Clients will not be deleted.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => deletingCohort && deleteCohortMutation.mutate(deletingCohort.id)}
+                data-testid="button-confirm-delete-cohort"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
           <DialogContent>

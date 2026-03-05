@@ -18,6 +18,8 @@ import {
   relapseAutopsies,
   mentorItemReviews,
   weeklySummaries,
+  cohorts,
+  cohortMemberships,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -36,9 +38,11 @@ import {
   type PushSubscription,
   type NotificationPreference,
   type RelapseAutopsy,
+  type Cohort,
+  type InsertCohort,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, lt, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, lt, sql, inArray, gte, lte } from "drizzle-orm";
 import crypto from "crypto";
 
 export interface IStorage {
@@ -176,6 +180,30 @@ export interface IStorage {
 
   // Inactive clients for nudge system
   getInactiveClients(daysSince: number): Promise<Array<{id: string; email: string; firstName: string | null; lastName: string | null; lastCheckinDate: string | null}>>;
+
+  // Cohorts
+  getCohorts(): Promise<Array<Cohort & { memberCount: number }>>;
+  getCohort(id: string): Promise<Cohort | undefined>;
+  createCohort(data: InsertCohort): Promise<Cohort>;
+  updateCohort(id: string, data: Partial<InsertCohort>): Promise<Cohort | undefined>;
+  deleteCohort(id: string): Promise<void>;
+  getCohortMembers(cohortId: string): Promise<Array<User & { addedAt: Date | null }>>;
+  addCohortMember(cohortId: string, userId: string, addedBy: string): Promise<void>;
+  removeCohortMember(cohortId: string, userId: string): Promise<void>;
+  getCohortAnalytics(cohortId: string, startDate: string, endDate: string): Promise<{
+    totalMembers: number;
+    activeMembers: number;
+    checkinRate: number;
+    totalWeekCompletions: number;
+    avgCompletionsPerMember: number;
+    relapseCount: number;
+    dailySeries: Array<{ date: string; checkins: number; completions: number; activeUsers: number; relapses: number }>;
+  }>;
+  compareCohorts(cohortIds: string[], startDate: string, endDate: string): Promise<Array<{
+    cohortId: string;
+    cohortName: string;
+    dailySeries: Array<{ date: string; checkins: number; completions: number; activeUsers: number }>;
+  }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1262,6 +1290,230 @@ export class DatabaseStorage implements IStorage {
     })
       .from(weeklySummaries)
       .where(eq(weeklySummaries.clientId, clientId));
+  }
+
+  // ── Cohorts ──────────────────────────────────────────────────────────────
+
+  async getCohorts(): Promise<Array<Cohort & { memberCount: number }>> {
+    const rows = await db
+      .select({
+        id: cohorts.id,
+        name: cohorts.name,
+        description: cohorts.description,
+        createdAt: cohorts.createdAt,
+        updatedAt: cohorts.updatedAt,
+        memberCount: sql<number>`cast(count(${cohortMemberships.id}) as int)`,
+      })
+      .from(cohorts)
+      .leftJoin(cohortMemberships, eq(cohortMemberships.cohortId, cohorts.id))
+      .groupBy(cohorts.id)
+      .orderBy(desc(cohorts.createdAt));
+    return rows;
+  }
+
+  async getCohort(id: string): Promise<Cohort | undefined> {
+    const [row] = await db.select().from(cohorts).where(eq(cohorts.id, id));
+    return row || undefined;
+  }
+
+  async createCohort(data: InsertCohort): Promise<Cohort> {
+    const [row] = await db.insert(cohorts).values(data).returning();
+    return row;
+  }
+
+  async updateCohort(id: string, data: Partial<InsertCohort>): Promise<Cohort | undefined> {
+    const [row] = await db
+      .update(cohorts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(cohorts.id, id))
+      .returning();
+    return row || undefined;
+  }
+
+  async deleteCohort(id: string): Promise<void> {
+    await db.delete(cohorts).where(eq(cohorts.id, id));
+  }
+
+  async getCohortMembers(cohortId: string): Promise<Array<User & { addedAt: Date | null }>> {
+    const rows = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        password: users.password,
+        name: users.name,
+        role: users.role,
+        startDate: users.startDate,
+        licenseState: users.licenseState,
+        licenseNumber: users.licenseNumber,
+        licenseAttestation: users.licenseAttestation,
+        licenseAttestationDate: users.licenseAttestationDate,
+        termsAccepted: users.termsAccepted,
+        termsAcceptedDate: users.termsAcceptedDate,
+        subscriptionStatus: users.subscriptionStatus,
+        allFeesWaived: users.allFeesWaived,
+        stripeCustomerId: users.stripeCustomerId,
+        stripeSubscriptionId: users.stripeSubscriptionId,
+        createdAt: users.createdAt,
+        addedAt: cohortMemberships.createdAt,
+      })
+      .from(cohortMemberships)
+      .innerJoin(users, eq(users.id, cohortMemberships.userId))
+      .where(eq(cohortMemberships.cohortId, cohortId))
+      .orderBy(cohortMemberships.createdAt);
+    return rows;
+  }
+
+  async addCohortMember(cohortId: string, userId: string, addedBy: string): Promise<void> {
+    await db
+      .insert(cohortMemberships)
+      .values({ cohortId, userId, addedBy })
+      .onConflictDoNothing();
+  }
+
+  async removeCohortMember(cohortId: string, userId: string): Promise<void> {
+    await db
+      .delete(cohortMemberships)
+      .where(and(eq(cohortMemberships.cohortId, cohortId), eq(cohortMemberships.userId, userId)));
+  }
+
+  async getCohortAnalytics(cohortId: string, startDate: string, endDate: string): Promise<{
+    totalMembers: number;
+    activeMembers: number;
+    checkinRate: number;
+    totalWeekCompletions: number;
+    avgCompletionsPerMember: number;
+    relapseCount: number;
+    dailySeries: Array<{ date: string; checkins: number; completions: number; activeUsers: number; relapses: number }>;
+  }> {
+    // Get all member IDs in this cohort
+    const memberRows = await db
+      .select({ userId: cohortMemberships.userId })
+      .from(cohortMemberships)
+      .where(eq(cohortMemberships.cohortId, cohortId));
+    const memberIds = memberRows.map(r => r.userId);
+    const totalMembers = memberIds.length;
+
+    if (totalMembers === 0) {
+      return { totalMembers: 0, activeMembers: 0, checkinRate: 0, totalWeekCompletions: 0, avgCompletionsPerMember: 0, relapseCount: 0, dailySeries: [] };
+    }
+
+    // Active members: those who checked in at least once in range
+    const activeMemberRows = await db
+      .selectDistinct({ userId: dailyCheckins.userId })
+      .from(dailyCheckins)
+      .where(and(
+        inArray(dailyCheckins.userId, memberIds),
+        gte(dailyCheckins.dateKey, startDate),
+        lte(dailyCheckins.dateKey, endDate),
+      ));
+    const activeMembers = activeMemberRows.length;
+    const checkinRate = totalMembers > 0 ? Math.round((activeMembers / totalMembers) * 100) : 0;
+
+    // Total week completions in range
+    const completionRows = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(weekCompletions)
+      .where(and(
+        inArray(weekCompletions.userId, memberIds),
+        gte(weekCompletions.completedAt, new Date(startDate)),
+        lte(weekCompletions.completedAt, new Date(endDate + "T23:59:59Z")),
+      ));
+    const totalWeekCompletions = completionRows[0]?.count ?? 0;
+    const avgCompletionsPerMember = totalMembers > 0 ? Math.round((totalWeekCompletions / totalMembers) * 10) / 10 : 0;
+
+    // Relapse count in range
+    const relapseRows = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(relapseAutopsies)
+      .where(and(
+        inArray(relapseAutopsies.userId, memberIds),
+        gte(relapseAutopsies.date, startDate),
+        lte(relapseAutopsies.date, endDate),
+      ));
+    const relapseCount = relapseRows[0]?.count ?? 0;
+
+    // Daily check-in series
+    const dailyCheckinSeries = await db
+      .select({
+        date: dailyCheckins.dateKey,
+        checkins: sql<number>`cast(count(*) as int)`,
+        activeUsers: sql<number>`cast(count(distinct ${dailyCheckins.userId}) as int)`,
+      })
+      .from(dailyCheckins)
+      .where(and(
+        inArray(dailyCheckins.userId, memberIds),
+        gte(dailyCheckins.dateKey, startDate),
+        lte(dailyCheckins.dateKey, endDate),
+      ))
+      .groupBy(dailyCheckins.dateKey)
+      .orderBy(dailyCheckins.dateKey);
+
+    // Daily completion series
+    const dailyCompletionSeries = await db
+      .select({
+        date: sql<string>`to_char(date_trunc('day', ${weekCompletions.completedAt}), 'YYYY-MM-DD')`,
+        completions: sql<number>`cast(count(*) as int)`,
+      })
+      .from(weekCompletions)
+      .where(and(
+        inArray(weekCompletions.userId, memberIds),
+        gte(weekCompletions.completedAt, new Date(startDate)),
+        lte(weekCompletions.completedAt, new Date(endDate + "T23:59:59Z")),
+      ))
+      .groupBy(sql`date_trunc('day', ${weekCompletions.completedAt})`)
+      .orderBy(sql`date_trunc('day', ${weekCompletions.completedAt})`);
+
+    // Daily relapse series
+    const dailyRelapseSeries = await db
+      .select({
+        date: relapseAutopsies.date,
+        relapses: sql<number>`cast(count(*) as int)`,
+      })
+      .from(relapseAutopsies)
+      .where(and(
+        inArray(relapseAutopsies.userId, memberIds),
+        gte(relapseAutopsies.date, startDate),
+        lte(relapseAutopsies.date, endDate),
+      ))
+      .groupBy(relapseAutopsies.date)
+      .orderBy(relapseAutopsies.date);
+
+    // Merge into unified daily series
+    const completionByDate = new Map(dailyCompletionSeries.map(r => [r.date, r.completions]));
+    const relapseByDate = new Map(dailyRelapseSeries.map(r => [r.date, r.relapses]));
+    const dailySeries = dailyCheckinSeries.map(r => ({
+      date: r.date,
+      checkins: r.checkins,
+      activeUsers: r.activeUsers,
+      completions: completionByDate.get(r.date) ?? 0,
+      relapses: relapseByDate.get(r.date) ?? 0,
+    }));
+
+    return { totalMembers, activeMembers, checkinRate, totalWeekCompletions, avgCompletionsPerMember, relapseCount, dailySeries };
+  }
+
+  async compareCohorts(cohortIds: string[], startDate: string, endDate: string): Promise<Array<{
+    cohortId: string;
+    cohortName: string;
+    dailySeries: Array<{ date: string; checkins: number; completions: number; activeUsers: number }>;
+  }>> {
+    const results = [];
+    for (const cohortId of cohortIds) {
+      const cohort = await this.getCohort(cohortId);
+      if (!cohort) continue;
+      const analytics = await this.getCohortAnalytics(cohortId, startDate, endDate);
+      results.push({
+        cohortId,
+        cohortName: cohort.name,
+        dailySeries: analytics.dailySeries.map(d => ({
+          date: d.date,
+          checkins: d.checkins,
+          completions: d.completions,
+          activeUsers: d.activeUsers,
+        })),
+      });
+    }
+    return results;
   }
 }
 

@@ -4557,5 +4557,127 @@ INSTRUCTIONS:
     },
   );
 
+  // =====================================================
+  // COHORTS — Admin only
+  // =====================================================
+
+  app.get("/api/admin/cohorts", requireRole("admin"), async (req, res) => {
+    try {
+      const result = await storage.getCohorts();
+      res.json({ cohorts: result });
+    } catch (e) {
+      console.error("Get cohorts error:", e);
+      res.status(500).json({ message: "Failed to get cohorts" });
+    }
+  });
+
+  app.post("/api/admin/cohorts", requireRole("admin"), async (req, res) => {
+    try {
+      const { name, description } = req.body;
+      if (!name?.trim()) return res.status(400).json({ message: "Name is required" });
+      const cohort = await storage.createCohort({ name: name.trim(), description: description?.trim() || null });
+      res.status(201).json({ cohort });
+    } catch (e) {
+      console.error("Create cohort error:", e);
+      res.status(500).json({ message: "Failed to create cohort" });
+    }
+  });
+
+  app.get("/api/admin/cohorts/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const cohort = await storage.getCohort(req.params.id);
+      if (!cohort) return res.status(404).json({ message: "Cohort not found" });
+      res.json({ cohort });
+    } catch (e) {
+      console.error("Get cohort error:", e);
+      res.status(500).json({ message: "Failed to get cohort" });
+    }
+  });
+
+  app.patch("/api/admin/cohorts/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const { name, description } = req.body;
+      const updated = await storage.updateCohort(req.params.id, {
+        ...(name?.trim() ? { name: name.trim() } : {}),
+        description: description?.trim() || null,
+      });
+      if (!updated) return res.status(404).json({ message: "Cohort not found" });
+      res.json({ cohort: updated });
+    } catch (e) {
+      console.error("Update cohort error:", e);
+      res.status(500).json({ message: "Failed to update cohort" });
+    }
+  });
+
+  app.delete("/api/admin/cohorts/:id", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.deleteCohort(req.params.id);
+      res.json({ message: "Cohort deleted" });
+    } catch (e) {
+      console.error("Delete cohort error:", e);
+      res.status(500).json({ message: "Failed to delete cohort" });
+    }
+  });
+
+  app.get("/api/admin/cohorts/:id/members", requireRole("admin"), async (req, res) => {
+    try {
+      const members = await storage.getCohortMembers(req.params.id);
+      res.json({ members });
+    } catch (e) {
+      console.error("Get cohort members error:", e);
+      res.status(500).json({ message: "Failed to get members" });
+    }
+  });
+
+  app.post("/api/admin/cohorts/:id/members", requireRole("admin"), async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) return res.status(400).json({ message: "userId is required" });
+      await storage.addCohortMember(req.params.id, userId, (req.user as any).id);
+      res.status(201).json({ message: "Member added" });
+    } catch (e) {
+      console.error("Add cohort member error:", e);
+      res.status(500).json({ message: "Failed to add member" });
+    }
+  });
+
+  app.delete("/api/admin/cohorts/:id/members/:userId", requireRole("admin"), async (req, res) => {
+    try {
+      await storage.removeCohortMember(req.params.id, req.params.userId);
+      res.json({ message: "Member removed" });
+    } catch (e) {
+      console.error("Remove cohort member error:", e);
+      res.status(500).json({ message: "Failed to remove member" });
+    }
+  });
+
+  app.get("/api/admin/analytics/cohorts/:id", requireRole("admin"), async (req, res) => {
+    try {
+      const { start, end } = req.query as { start?: string; end?: string };
+      const endDate = end || new Date().toISOString().slice(0, 10);
+      const startDate = start || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const analytics = await storage.getCohortAnalytics(req.params.id, startDate, endDate);
+      res.json(analytics);
+    } catch (e) {
+      console.error("Cohort analytics error:", e);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
+  app.get("/api/admin/analytics/compare", requireRole("admin"), async (req, res) => {
+    try {
+      const { cohortIds, start, end } = req.query as { cohortIds?: string; start?: string; end?: string };
+      if (!cohortIds) return res.status(400).json({ message: "cohortIds is required" });
+      const ids = cohortIds.split(",").filter(Boolean).slice(0, 3);
+      const endDate = end || new Date().toISOString().slice(0, 10);
+      const startDate = start || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const result = await storage.compareCohorts(ids, startDate, endDate);
+      res.json({ cohorts: result });
+    } catch (e) {
+      console.error("Compare cohorts error:", e);
+      res.status(500).json({ message: "Failed to compare cohorts" });
+    }
+  });
+
   return httpServer;
 }
