@@ -173,7 +173,10 @@ export default function TherapistHome() {
     const autopsyCount = unreviewedCounts[client.id] || 0;
     const reviewCount = combinedReviewCounts[client.id] || 0;
 
+    // A client ONLY needs attention if there are active unreviewed items
+    // or urgent suggestions that haven't been dismissed.
     if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0) return "Needs Attention";
+    
     const daysSinceStart = Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24));
     const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
     if (client.completedWeeks.length >= expectedWeek) return "On Track";

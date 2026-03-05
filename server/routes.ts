@@ -1219,8 +1219,29 @@ export async function registerRoutes(
           if (daysSince >= 3 && !dismissedIds.includes("checkin-gap")) urgentCount++;
         }
 
+        // week-completion-nudge (client has completed all items for a week but hasn't marked it complete)
+        const lastCompletedWeek = completedWeeks.length > 0 ? Math.max(...completedWeeks) : 0;
+        const currentActiveWeek = Math.min(16, lastCompletedWeek + 1);
+        
+        // Skip check if the client is already on track or ahead
+        if (!completedWeeks.includes(currentActiveWeek)) {
+          const [reflection, exercise, homework] = await Promise.all([
+            storage.getWeekReflection(client.id, currentActiveWeek),
+            storage.getExerciseAnswers(client.id, currentActiveWeek),
+            storage.getHomeworkCompletion(client.id, currentActiveWeek),
+          ]);
+          const hasReflection = !!(reflection?.q1 || reflection?.q2 || reflection?.q3 || reflection?.q4);
+          const hasExercise = !!exercise?.answers && exercise.answers !== "{}";
+          const hasHomework = !!homework?.completedItems && homework.completedItems !== "[]";
+          
+          if (hasReflection && hasExercise && hasHomework && !dismissedIds.includes("submit-week-nudge")) {
+            urgentCount++;
+          }
+        }
+
         // curriculum-behind (client is trailing their expected week based on start date)
-        if (client.startDate && completedWeeks.length < 16) {
+        // ONLY count this if they aren't already flagged for something more specific
+        if (urgentCount === 0 && client.startDate && completedWeeks.length < 16) {
           const daysSinceStart = Math.floor(
             (Date.now() - new Date(client.startDate).getTime()) / 86400000,
           );
@@ -1228,22 +1249,6 @@ export async function registerRoutes(
           if (completedWeeks.length < expectedWeek - 1) {
             urgentCount++;
           }
-        }
-
-        // week-completion-nudge (client has completed all items for a week but hasn't marked it complete)
-        const lastCompletedWeek = completedWeeks.length > 0 ? Math.max(...completedWeeks) : 0;
-        const currentActiveWeek = Math.min(16, lastCompletedWeek + 1);
-        const [reflection, exercise, homework] = await Promise.all([
-          storage.getWeekReflection(client.id, currentActiveWeek),
-          storage.getExerciseAnswers(client.id, currentActiveWeek),
-          storage.getHomeworkCompletion(client.id, currentActiveWeek),
-        ]);
-        const hasReflection = !!(reflection?.q1 || reflection?.q2 || reflection?.q3 || reflection?.q4);
-        const hasExercise = !!exercise?.answers && exercise.answers !== "{}";
-        const hasHomework = !!homework?.completedItems && homework.completedItems !== "[]";
-        
-        if (hasReflection && hasExercise && hasHomework && !completedWeeks.includes(currentActiveWeek) && !dismissedIds.includes("submit-week-nudge")) {
-          urgentCount++;
         }
 
         urgentCounts[client.id] = urgentCount;
