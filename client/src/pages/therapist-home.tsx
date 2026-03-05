@@ -48,11 +48,12 @@ import {
 } from "@/components/ui/alert-dialog";
 
 type ClientWithProgress = {
-  id: number;
-  name: string;
+  id: string;
+  name: string | null;
   email: string;
   startDate: string | null;
   completedWeeks: number[];
+  lastCompletionDate: string | null;
   currentWeek: number;
   lastActivity: string | null;
 };
@@ -180,10 +181,20 @@ export default function TherapistHome() {
     if (urgentCount > 0 || autopsyCount > 0 || reviewCount > 0) return "Needs Attention";
     
     const daysSinceStart = client.startDate ? Math.floor((Date.now() - new Date(client.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-    const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
-    const isBehind = client.completedWeeks.length < expectedWeek - 1 && client.completedWeeks.length < 16;
+    
+    // Logic update: Behind Pace is now based on the last time they submitted a week as completed.
+    let referenceDate = client.startDate ? new Date(client.startDate) : null;
+    if (client.lastCompletionDate) {
+      referenceDate = new Date(client.lastCompletionDate);
+    }
 
-    if (isBehind) {
+    let isActuallyBehind = false;
+    if (referenceDate) {
+      const daysSinceReference = Math.floor((Date.now() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+      isActuallyBehind = daysSinceReference >= 7 && client.completedWeeks.length < 16;
+    }
+
+    if (isActuallyBehind) {
       const hasSentNudge = allClientFeedback.some(f => 
         f.clientId === client.id && 
         f.feedbackType === "guidance" && 
@@ -210,9 +221,10 @@ export default function TherapistHome() {
     const priority = (s: string) => {
       if (s === "Needs Attention") return 0;
       if (s === "Behind") return 1;
-      if (s === "Active") return 2;
-      if (s === "On Track") return 3;
-      return 4;
+      if (s === "Behind (Nudged)") return 2;
+      if (s === "Active") return 3;
+      if (s === "On Track") return 4;
+      return 5;
     };
     return priority(statusA) - priority(statusB);
   });

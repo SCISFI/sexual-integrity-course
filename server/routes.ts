@@ -1080,18 +1080,32 @@ export async function registerRoutes(
         });
       }
 
+      // Logic update: Behind Pace is now based on the last time they submitted a week as completed.
       if (client?.startDate) {
-        const daysSinceStart = Math.floor(
-          (Date.now() - new Date(client.startDate).getTime()) / 86400000,
-        );
-        const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
-        if (completedWeeks.length < expectedWeek - 1 && completedWeeks.length < 16) {
+        // Fetch completion details to get dates
+        const completionsRaw = await db
+          .select({ weekNumber: weekCompletions.weekNumber, completedAt: weekCompletions.completedAt })
+          .from(weekCompletions)
+          .where(eq(weekCompletions.userId, clientId))
+          .orderBy(desc(weekCompletions.completedAt));
+
+        let referenceDate = new Date(client.startDate);
+        if (completionsRaw.length > 0 && completionsRaw[0].completedAt) {
+          referenceDate = new Date(completionsRaw[0].completedAt);
+        }
+
+        const daysSinceReference = Math.floor((Date.now() - referenceDate.getTime()) / 86400000);
+        const isActuallyBehind = daysSinceReference >= 7 && completedWeeks.length < 16;
+
+        if (isActuallyBehind) {
           suggestions.push({
             id: "curriculum-behind",
             priority: "followup",
             title: "Behind on Curriculum Pace",
-            detail: `Based on start date, client should be approaching Week ${expectedWeek} but has completed ${completedWeeks.length} week${completedWeeks.length !== 1 ? "s" : ""}. Falling behind is often avoidance, not logistics.`,
-            action: "Send a quick nudge message. Ask what's blocking them. Is it time, or is it the content? A curriculum week they're avoiding is usually the one they most need to do.",
+            detail: completionsRaw.length > 0 
+              ? `It has been ${daysSinceReference} days since the client completed Week ${completionsRaw[0].weekNumber}. They are trailing the expected 1-week-per-module pace.`
+              : `It has been ${daysSinceReference} days since the client started the program, and they have not yet completed Week 1.`,
+            action: "behind-pace-nudge",
           });
         }
       }
@@ -2023,6 +2037,14 @@ export async function registerRoutes(
           clients.map(async (c) => {
             const { password: _, ...safe } = c;
             const completedWeeks = await storage.getCompletedWeeks(c.id);
+            
+            // Get the date of the most recent week completion
+            const completionsRaw = await db
+              .select({ completedAt: weekCompletions.completedAt })
+              .from(weekCompletions)
+              .where(eq(weekCompletions.userId, c.id))
+              .orderBy(desc(weekCompletions.completedAt))
+              .limit(1);
 
             // Calculate current week based on start date
             let currentWeek = 1;
@@ -2040,6 +2062,7 @@ export async function registerRoutes(
             return {
               ...safe,
               completedWeeks,
+              lastCompletionDate: completionsRaw.length > 0 ? completionsRaw[0].completedAt : null,
               currentWeek,
             };
           }),
