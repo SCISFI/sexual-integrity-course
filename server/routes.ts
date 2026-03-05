@@ -2057,28 +2057,36 @@ export async function registerRoutes(
               .orderBy(desc(weekCompletions.completedAt))
               .limit(1);
 
-        const activeWeek = Math.min(16, completedWeeks.length + 1);
-        
-        // Check if client has finished all work for the active week but hasn't marked it complete
-        const [reflection, exercise, homework] = await Promise.all([
-          storage.getWeekReflection(c.id, activeWeek),
-          storage.getExerciseAnswers(c.id, activeWeek),
-          storage.getHomeworkCompletion(c.id, activeWeek),
-        ]);
+            // Calculate current week
+            const currentWeek = Math.min(16, (completedWeeks?.length || 0) + 1);
+            
+            // Check if client has finished all work for the active week but hasn't marked it complete
+            // Wrap in try-catch to prevent one failing client from breaking the entire list
+            let isReadyForSubmission = false;
+            try {
+              // Use the storage methods that are already defined and working
+              const [reflection, exercise, homework] = await Promise.all([
+                storage.getWeekReflection(c.id, currentWeek),
+                storage.getExerciseAnswers(c.id, currentWeek),
+                storage.getHomeworkCompletion(c.id, currentWeek),
+              ]);
 
-        const hasReflection = !!(reflection?.q1 || reflection?.q2 || reflection?.q3 || reflection?.q4);
-        const hasExercise = !!exercise?.answers && exercise.answers !== "{}";
-        const hasHomework = !!homework?.completedItems && homework.completedItems !== "[]";
-        const isReadyForSubmission = hasReflection && hasExercise && hasHomework && !completedWeeks.includes(activeWeek);
+              const hasReflection = !!(reflection?.q1 || reflection?.q2 || reflection?.q3 || reflection?.q4);
+              const hasExercise = !!(exercise?.answers && exercise.answers !== "{}");
+              const hasHomework = !!(homework?.completedItems && (Array.isArray(homework.completedItems) ? homework.completedItems.length > 0 : (typeof homework.completedItems === 'string' && homework.completedItems !== "[]")));
+              isReadyForSubmission = !!(hasReflection && hasExercise && hasHomework && !(completedWeeks || []).includes(currentWeek));
+            } catch (err) {
+              console.error(`Error checking readiness for client ${c.id}:`, err);
+            }
 
-        return {
-          ...safe,
-          completedWeeks,
-          lastCompletionDate: completionsRaw.length > 0 ? completionsRaw[0].completedAt : null,
-          currentWeek,
-          isReadyForSubmission,
-          activeWeek,
-        };
+            return {
+              ...safe,
+              completedWeeks: completedWeeks || [],
+              lastCompletionDate: completionsRaw.length > 0 ? completionsRaw[0].completedAt : null,
+              currentWeek,
+              isReadyForSubmission,
+              activeWeek: currentWeek,
+            };
           }),
         );
 
