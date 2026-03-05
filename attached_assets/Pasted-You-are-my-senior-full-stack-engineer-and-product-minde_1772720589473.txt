@@ -1,0 +1,69 @@
+You are my senior full-stack engineer and product-minded refactor specialist.
+
+TASK:
+Review this entire app codebase from beginning to end (all files: frontend, backend, utilities, services, routes, DB, state management, UI components, hooks/helpers, tests if present). The app was built in phases and may contain duplicated or overlapping functions created at different times. I want you to identify where the app can be streamlined FUNCTIONALLY and where functions and patterns can be made CONSISTENT across the app.
+
+CRITICAL CONSTRAINTS:
+- Do NOT change the educational content at this time. Treat educational text, lesson copy, curriculum content, question wording, and learning materials as frozen. 
+- You may refactor how educational content is loaded, stored, rendered, routed, cached, and reused, but you may not alter its meaning or wording.
+- Preserve existing behavior unless explicitly improving consistency, reducing duplication, fixing clear bugs, or improving UX flow.
+- Avoid large rewrites; prefer incremental refactors with clear steps.
+- If you detect risky changes, propose a safer alternative.
+
+PRIMARY GOALS:
+1) Eliminate redundant code: find duplicate or near-duplicate functions, utilities, validators, formatting helpers, API calls, data mapping functions, state logic, and UI patterns. Prefer reusing existing utilities over creating new ones.
+2) Consistency across the app: standardize naming, folder structure, error handling, loading states, auth checks, API conventions, response shapes, form validation, date/time formatting, and UI components behavior.
+3) Improve user flow: identify friction points in the user journey (navigation, onboarding, lesson flow, quiz flow, progress tracking, settings). Recommend changes that make flow coherent and predictable.
+4) Maintainability: reduce complexity, improve readability, ensure single-responsibility boundaries, and clarify module ownership.
+5) Performance where obvious: reduce unnecessary re-renders, excessive network calls, duplicated fetching logic, and heavy computations; introduce memoization/caching only where it is clearly beneficial.
+
+PROCESS (DO THIS IN ORDER):
+A) Repo map
+- Produce a concise map of the app structure: key directories, main entry points, routing, state management, API/services layer, DB models (if any).
+- Identify the “core flows” and what files implement them.
+
+B) Duplication & overlap audit
+- List duplicated/overlapping functions grouped by category (e.g., API clients, formatting, validation, auth/session, lesson/progress utilities, UI components).
+- For each group: point to file paths and function names, explain overlap, and recommend a single “source of truth” function/module.
+- Note any places where new functions were created but an existing one could be reused.
+
+C) Consistency audit
+- Create a consistency checklist for this app and evaluate it: 
+  - naming conventions
+  - error handling pattern
+  - API call conventions (client, base URL, retries, timeouts)
+  - response typing/shape (if typed)
+  - state management patterns
+  - loading/empty/error UI states
+  - navigation and route naming
+  - component patterns & styling conventions
+- Highlight inconsistencies and propose a standard pattern to apply.
+
+D) User flow improvements (NO content changes)
+- Identify the key user journeys and where they break or feel inconsistent.
+- Recommend changes that improve clarity and reduce steps: navigation labels, page transitions, state persistence, back/forward behavior, resume where left off, progress feedback, and error messages (without changing educational content).
+- If there are multiple implementations of similar UI, recommend consolidating.
+
+E) Refactor plan (incremental)
+- Provide a prioritized refactor plan with:
+  1. Quick wins (low risk)
+  2. Medium effort improvements
+  3. Larger refactors (only if justified)
+- For each item: files to touch, exact change description, expected behavior impact, and risk level.
+- Include a “do first” order that minimizes regressions.
+
+F) Concrete patches
+- For the top 3–7 highest-impact, safe improvements, provide concrete code changes:
+  - Either PR-style diff blocks or step-by-step edits with file paths and code snippets.
+  - Ensure all changes compile/run.
+  - Add or update small tests where available (or add basic sanity checks) to confirm behavior remains correct.
+
+IMPORTANT OUTPUT REQUIREMENTS:
+- Always reference specific file paths and functions/components.
+- Be explicit about what is being replaced and what becomes the new canonical function/module.
+- Do not produce vague advice. Give actionable changes.
+- Re-check that you did not alter educational content (wording/meaning) in any patch.
+
+START NOW:
+1) First output: Repo map + the 3 most critical duplication issues you found.
+2) Then proceed through sections B–F.
