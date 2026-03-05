@@ -1176,7 +1176,12 @@ export async function registerRoutes(
         (s) => !dismissedIds.includes(s.id)
       );
 
-      res.json({ suggestions: filteredSuggestions });
+      // Only include specific priorities in the suggestion list
+      const actionOrientedSuggestions = filteredSuggestions.filter(
+        s => ["urgent", "followup", "curriculum", "recognition"].includes(s.priority)
+      );
+
+      res.json({ suggestions: actionOrientedSuggestions });
     } catch (error) {
       console.error("Get mentor suggestions error:", error);
       res.status(500).json({ message: "Failed to generate suggestions" });
@@ -1240,16 +1245,8 @@ export async function registerRoutes(
         }
 
         // curriculum-behind (client is trailing their expected week based on start date)
-        // ONLY count this if they aren't already flagged for something more specific
-        if (urgentCount === 0 && client.startDate && completedWeeks.length < 16) {
-          const daysSinceStart = Math.floor(
-            (Date.now() - new Date(client.startDate).getTime()) / 86400000,
-          );
-          const expectedWeek = Math.min(16, Math.floor(daysSinceStart / 7) + 1);
-          if (completedWeeks.length < expectedWeek - 1) {
-            urgentCount++;
-          }
-        }
+        // This is a status warning, NOT an "Urgent" attention flag for the Guidance tab.
+        // It has been removed from urgentCount to prevent phantom "Needs Attention" flags.
 
         urgentCounts[client.id] = urgentCount;
       }
