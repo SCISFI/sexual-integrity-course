@@ -666,7 +666,6 @@ export async function registerRoutes(
       res.status(500).json({ message: "Failed to save homework completion" });
     }
   });
-
   // Daily check-ins
   app.get("/api/progress/checkin/:dateKey", requireAuth, async (req, res) => {
     try {
@@ -2818,9 +2817,11 @@ Write the summary now:`;
         const defaultSubject = defaultSubjects[suggestionId]
           || (suggestionId.startsWith("curriculum-w") ? `On Week ${currentWeek}` : "A note on your progress");
 
+        const isBehindPaceNudge = suggestionId === "curriculum-behind";
+
         const prompt = `You are an expert recovery mentor writing directly to a client. Write a personal, direct message to ${client?.name || "them"} (150–220 words).
 
-${trendStatsBlock}
+${isBehindPaceNudge ? "This message should focus EXCLUSIVELY on the fact that the client is falling behind on their 16-week curriculum pace. Do not mention trends, mood, or urge data in this specific message unless they are directly related to the progress delay." : trendStatsBlock}
 
 GUIDANCE SITUATION:
 - Title: ${suggestionTitle}
@@ -2829,7 +2830,7 @@ GUIDANCE SITUATION:
 
 WRITING RULES:
 - Write in second person ("you", "your") — address them directly
-- Reference specific data from the context when available (e.g., their check-in rate, week number, trend direction).
+${isBehindPaceNudge ? "- Primary Goal: Encourage them to get back into the course material. Ask if it's a scheduling issue or if the content itself is feeling heavy." : "- Reference specific data from the context when available (e.g., their check-in rate, week number, trend direction)."}
 - IMPORTANT: Review the VULNERABILITIES section in the statistics above. If there are missing habits (e.g., missing sleep, exercise, or connection) or frequent HALT-BS factors (e.g., frequent stress or loneliness), address these as specific areas for growth or observation.
 - Do NOT invent statistics not shown above.
 - Do NOT use power words: fantastic, amazing, incredible, proud, honored, grateful

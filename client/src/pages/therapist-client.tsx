@@ -426,7 +426,10 @@ export default function TherapistClient() {
         
         if (behindSuggestion) {
           nudgeTriggeredRef.current = true;
-          openGuidanceSheet(behindSuggestion);
+          openGuidanceSheet({
+            ...behindSuggestion,
+            action: "behind-pace-nudge"
+          });
           const newParams = new URLSearchParams(window.location.search);
           newParams.delete("action");
           const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
@@ -439,7 +442,7 @@ export default function TherapistClient() {
             id: "curriculum-behind",
             title: "Behind on Curriculum Pace",
             detail: "The client is trailing their expected progress based on their start date.",
-            action: "Send a quick nudge message to check in on their progress."
+            action: "behind-pace-nudge"
           });
           const newParams = new URLSearchParams(window.location.search);
           newParams.delete("action");
