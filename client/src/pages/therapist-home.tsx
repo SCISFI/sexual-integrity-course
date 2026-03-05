@@ -478,7 +478,7 @@ export default function TherapistHome() {
                                 className="text-[10px] px-1.5 py-0 border-slate-300 text-slate-600 dark:text-slate-400 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setLocation(`/therapist/clients/${client.id}?tab=guidance`);
+                                  setLocation(`/therapist/clients/${client.id}?tab=guidance&action=nudge`);
                                 }}
                                 data-testid={`badge-behind-${client.id}`}
                               >

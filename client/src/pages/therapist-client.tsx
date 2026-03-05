@@ -144,6 +144,23 @@ export default function TherapistClient() {
   const [sentSuggestionIds, setSentSuggestionIds] = useState<Set<string>>(new Set());
   const [draftedSuggestionIds, setDraftedSuggestionIds] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    if (activeTab === "guidance" && suggestionsData?.suggestions) {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("action") === "nudge") {
+        const behindSuggestion = suggestionsData.suggestions.find(s => s.id === "curriculum-behind");
+        if (behindSuggestion) {
+          openGuidanceSheet(behindSuggestion);
+          // Remove the action from URL so it doesn't re-open on every tab switch
+          const newParams = new URLSearchParams(window.location.search);
+          newParams.delete("action");
+          const newUrl = window.location.pathname + (newParams.toString() ? `?${newParams.toString()}` : "");
+          window.history.replaceState({}, "", newUrl);
+        }
+      }
+    }
+  }, [activeTab, suggestionsData, clientId]);
+
   // Sheet compose panel state — single compose UI for ALL message contexts
   type SheetCtx =
     | { kind: 'week'; weekNumber: number }
@@ -879,7 +896,7 @@ export default function TherapistClient() {
                   <TabsTrigger value="guidance" data-testid="tab-guidance" className="relative flex-1 min-w-[80px]">
                     Guidance
                     {(suggestionsData?.suggestions.length ?? 0) > 0 && (
-                      <span className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white ring-2 ring-background ${suggestionsData!.suggestions.some(s => s.priority === "urgent") ? "bg-destructive" : "bg-amber-500"}`}>
+                      <span className={`absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white ring-2 ring-background ${suggestionsData!.suggestions.some(s => s.priority === "urgent") ? "bg-destructive" : "bg-slate-400"}`}>
                         {suggestionsData!.suggestions.length}
                       </span>
                     )}
