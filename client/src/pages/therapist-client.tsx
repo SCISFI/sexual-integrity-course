@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -253,50 +253,52 @@ export default function TherapistClient() {
     },
   });
 
-    const openGuidanceSheet = async (suggestion: { id: string; title: string; detail: string; action: string }) => {
-      setSheetCtx({ kind: 'guidance', suggestion });
-      setSheetSubject("");
-      setSheetMessage("");
-      setSheetLoading(true);
-      setSheetFailed(false);
-      try {
-        const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-guidance-message`, {
-          suggestionId: suggestion.id,
-          suggestionTitle: suggestion.title,
-          suggestionDetail: suggestion.detail
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setSheetSubject(data.subject || "");
-          setSheetMessage(data.message || "");
-        } else {
-          setSheetFailed(true);
-        }
-      } catch (err) {
+  const openGuidanceSheet = useCallback(async (suggestion: { id: string; title: string; detail: string; action: string }) => {
+    setSheetCtx({ kind: 'guidance', suggestion });
+    setSheetSubject("");
+    setSheetMessage("");
+    setSheetLoading(true);
+    setSheetFailed(false);
+    try {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-guidance-message`, {
+        suggestionId: suggestion.id,
+        suggestionTitle: suggestion.title,
+        suggestionDetail: suggestion.detail
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSheetSubject(data.subject || "");
+        setSheetMessage(data.draftText || "");
+      } else {
         setSheetFailed(true);
-      } finally {
-        setSheetLoading(false);
       }
-    };
+    } catch (err) {
+      setSheetFailed(true);
+    } finally {
+      setSheetLoading(false);
+    }
+  }, [clientId]);
 
-    const nudgeTriggeredRef = useRef(false);
-    useEffect(() => {
-      if (nudgeTriggeredRef.current) return;
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get("tab") || "progress";
-      if (tabParam === "guidance" && suggestionsData?.suggestions) {
-        if (params.get("action") === "nudge") {
-          const behindSuggestion = (suggestionsData.suggestions as any[]).find(s => s.id === "curriculum-behind");
-          if (behindSuggestion) {
-            nudgeTriggeredRef.current = true;
-            openGuidanceSheet(behindSuggestion);
-            params.delete("action");
-            const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : "");
-            window.history.replaceState({}, "", newUrl);
-          }
-        }
-      }
-    }, [suggestionsData, openGuidanceSheet]);
+  const nudgeTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (nudgeTriggeredRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") !== "nudge") return;
+    if (params.get("tab") !== "guidance") return;
+    // suggestionsData may still be loading — wait until it's available
+    const fallbackSuggestion = {
+      id: "curriculum-behind",
+      title: "Behind on Curriculum Pace",
+      detail: "Client is behind their expected weekly curriculum pace.",
+      action: "behind-pace-nudge",
+    };
+    const behindSuggestion = suggestionsData?.suggestions?.find((s: any) => s.id === "curriculum-behind") ?? fallbackSuggestion;
+    nudgeTriggeredRef.current = true;
+    openGuidanceSheet(behindSuggestion);
+    params.delete("action");
+    const newUrl = window.location.pathname + (params.toString() ? `?${params.toString()}` : "");
+    window.history.replaceState({}, "", newUrl);
+  }, [suggestionsData, openGuidanceSheet]);
   
 
   const markReviewedMutation = useMutation({
