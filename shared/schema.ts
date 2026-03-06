@@ -197,9 +197,8 @@ export const dailyCheckins = pgTable("daily_checkins", {
   journalEntry: text("journal_entry").default(""),
   
   updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => [
-  unique("daily_checkins_user_date_unique").on(table.userId, table.dateKey),
-]);
+  submittedAt: timestamp("submitted_at").defaultNow(),
+});
 
 // Week completion tracking
 export const weekCompletions = pgTable("week_completions", {

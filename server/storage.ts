@@ -101,6 +101,15 @@ export interface IStorage {
     eveningChecks?: string; 
     journalEntry?: string;
   }): Promise<DailyCheckin>;
+  insertDailyCheckin(userId: string, dateKey: string, data: {
+    morningChecks?: string;
+    haltChecks?: string;
+    urgeLevel?: number;
+    moodLevel?: number;
+    eveningChecks?: string;
+    journalEntry?: string;
+  }): Promise<DailyCheckin>;
+  getCheckinCountForDate(userId: string, dateKey: string): Promise<number>;
   getUserCheckinHistory(userId: string, limit?: number): Promise<DailyCheckin[]>;
 
   // Week completions
@@ -484,8 +493,37 @@ export class DatabaseStorage implements IStorage {
     const [result] = await db
       .select()
       .from(dailyCheckins)
-      .where(and(eq(dailyCheckins.userId, userId), eq(dailyCheckins.dateKey, dateKey)));
+      .where(and(eq(dailyCheckins.userId, userId), eq(dailyCheckins.dateKey, dateKey)))
+      .orderBy(desc(dailyCheckins.submittedAt))
+      .limit(1);
     return result || undefined;
+  }
+
+  async insertDailyCheckin(
+    userId: string,
+    dateKey: string,
+    data: {
+      morningChecks?: string;
+      haltChecks?: string;
+      urgeLevel?: number;
+      moodLevel?: number;
+      eveningChecks?: string;
+      journalEntry?: string;
+    }
+  ): Promise<DailyCheckin> {
+    const [created] = await db
+      .insert(dailyCheckins)
+      .values({ userId, dateKey, ...data, submittedAt: new Date(), updatedAt: new Date() })
+      .returning();
+    return created;
+  }
+
+  async getCheckinCountForDate(userId: string, dateKey: string): Promise<number> {
+    const results = await db
+      .select({ id: dailyCheckins.id })
+      .from(dailyCheckins)
+      .where(and(eq(dailyCheckins.userId, userId), eq(dailyCheckins.dateKey, dateKey)));
+    return results.length;
   }
 
   async upsertDailyCheckin(

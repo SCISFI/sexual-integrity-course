@@ -696,6 +696,44 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/progress/checkin/:dateKey", requireAuth, async (req, res) => {
+    try {
+      const { dateKey } = req.params;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+        return res.status(400).json({ message: "Invalid date format (use YYYY-MM-DD)" });
+      }
+      const userId = (req.user as any).id;
+      const { morningChecks, haltChecks, urgeLevel, moodLevel, eveningChecks, journalEntry } = req.body;
+      const checkin = await storage.insertDailyCheckin(userId, dateKey, {
+        morningChecks: morningChecks !== undefined ? JSON.stringify(morningChecks) : undefined,
+        haltChecks: haltChecks !== undefined ? JSON.stringify(haltChecks) : undefined,
+        urgeLevel: urgeLevel !== undefined ? parseInt(urgeLevel, 10) : undefined,
+        moodLevel: moodLevel !== undefined ? parseInt(moodLevel, 10) : undefined,
+        eveningChecks: eveningChecks !== undefined ? JSON.stringify(eveningChecks) : undefined,
+        journalEntry,
+      });
+      res.json({ checkin });
+    } catch (error) {
+      console.error("Insert checkin error:", error);
+      res.status(500).json({ message: "Failed to submit check-in" });
+    }
+  });
+
+  app.get("/api/progress/checkin/:dateKey/count", requireAuth, async (req, res) => {
+    try {
+      const { dateKey } = req.params;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+        return res.status(400).json({ message: "Invalid date format (use YYYY-MM-DD)" });
+      }
+      const userId = (req.user as any).id;
+      const count = await storage.getCheckinCountForDate(userId, dateKey);
+      res.json({ count });
+    } catch (error) {
+      console.error("Get checkin count error:", error);
+      res.status(500).json({ message: "Failed to get check-in count" });
+    }
+  });
+
   app.put("/api/progress/checkin/:dateKey", requireAuth, async (req, res) => {
     try {
       const { dateKey } = req.params;
