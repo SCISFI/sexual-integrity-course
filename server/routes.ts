@@ -3187,12 +3187,10 @@ Write the feedback message now:`;
             .json({ message: "Not authorized to review this client" });
         }
 
-        // Check if already reviewed
+        // Check if already reviewed — return existing review (idempotent)
         const existingReview = await storage.getWeekReview(clientId, weekNum);
         if (existingReview) {
-          return res
-            .status(400)
-            .json({ message: "This week has already been reviewed" });
+          return res.status(200).json({ review: existingReview });
         }
 
         const review = await storage.createWeekReview(
