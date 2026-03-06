@@ -85,6 +85,9 @@ export default function CohortAnalyticsPage() {
   const [, setLocation] = useLocation();
   const { user, logout } = useAuth();
 
+  const isAdmin = (user as any)?.role === "admin";
+  const backLabel = isAdmin ? "Admin" : "Dashboard";
+
   const today = new Date().toISOString().slice(0, 10);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 

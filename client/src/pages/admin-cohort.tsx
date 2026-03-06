@@ -65,6 +65,11 @@ export default function AdminCohortPage() {
   const [showAddMember, setShowAddMember] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
 
+  const isAdmin = (user as any)?.role === "admin";
+  const backPath = isAdmin ? "/admin" : "/therapist";
+  const backLabel = isAdmin ? "Admin" : "Dashboard";
+  const clientsApiKey = isAdmin ? "/api/admin/clients" : "/api/therapist/clients";
+
   const { data: cohortData, isLoading: loadingCohort } = useQuery<{ cohort: CohortDetail }>({
     queryKey: ["/api/admin/cohorts", id],
     queryFn: () => fetch(`/api/admin/cohorts/${id}`, { credentials: "include" }).then(r => r.json()),
@@ -78,7 +83,7 @@ export default function AdminCohortPage() {
   });
 
   const { data: allClientsData } = useQuery<{ clients: UserSearchResult[] }>({
-    queryKey: ["/api/admin/clients"],
+    queryKey: [clientsApiKey],
     enabled: showAddMember,
   });
 
@@ -86,7 +91,7 @@ export default function AdminCohortPage() {
   const members = membersData?.members || [];
   const memberIds = new Set(members.map(m => m.id));
 
-  const filteredClients = (allClientsData?.clients || []).filter(c => {
+  const filteredClients = ((allClientsData as any)?.clients || (allClientsData as any)?.data || []).filter((c: UserSearchResult) => {
     if (memberIds.has(c.id)) return false;
     if (!memberSearch.trim()) return true;
     const q = memberSearch.toLowerCase();
@@ -109,7 +114,7 @@ export default function AdminCohortPage() {
     mutationFn: () => apiRequest("DELETE", `/api/admin/cohorts/${id}`),
     onSuccess: () => {
       toast({ title: "Cohort deleted" });
-      setLocation("/admin");
+      setLocation(backPath);
     },
     onError: () => toast({ title: "Failed to delete cohort", variant: "destructive" }),
   });
@@ -148,7 +153,7 @@ export default function AdminCohortPage() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Cohort not found.</p>
-          <Button variant="outline" onClick={() => setLocation("/admin")}>Back to Admin</Button>
+          <Button variant="outline" onClick={() => setLocation(backPath)}>Back to {backLabel}</Button>
         </div>
       </div>
     );
@@ -160,9 +165,9 @@ export default function AdminCohortPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} data-testid="button-back-admin">
+              <Button variant="ghost" size="sm" onClick={() => setLocation(backPath)} data-testid="button-back-admin">
                 <ArrowLeft className="mr-1.5 h-4 w-4" />
-                Admin
+                {backLabel}
               </Button>
               <div className="flex items-center gap-2">
                 <Shield className="h-5 w-5 text-primary" />

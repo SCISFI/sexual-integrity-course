@@ -862,7 +862,17 @@ export async function registerRoutes(
       };
     }
 
-    const sortedDates = checkins.map((c) => c.dateKey).sort().reverse();
+    // Deduplicate by dateKey — multiple submissions per day count as one check-in day
+    const seenDates = new Set<string>();
+    const uniqueCheckins: Array<{ dateKey: string; moodLevel: number | null; urgeLevel: number | null }> = [];
+    for (const c of checkins) {
+      if (!seenDates.has(c.dateKey)) {
+        seenDates.add(c.dateKey);
+        uniqueCheckins.push(c);
+      }
+    }
+
+    const sortedDates = uniqueCheckins.map((c) => c.dateKey).sort().reverse();
     let currentStreak = 0;
     let longestStreak = 0;
     let tempStreak = 1;
@@ -887,25 +897,26 @@ export async function registerRoutes(
     }
     longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
 
+    // Use all check-in records (including multiple per day) for mood/urge averages
     const moodValues = checkins.filter((c) => c.moodLevel !== null).map((c) => c.moodLevel!);
     const urgeValues = checkins.filter((c) => c.urgeLevel !== null).map((c) => c.urgeLevel!);
     const averageMood = moodValues.length > 0 ? Math.round((moodValues.reduce((a, b) => a + b, 0) / moodValues.length) * 10) / 10 : 0;
     const averageUrge = urgeValues.length > 0 ? Math.round((urgeValues.reduce((a, b) => a + b, 0) / urgeValues.length) * 10) / 10 : 0;
 
     const nowDate = new Date();
-    const oldestCheckinDate = checkins[0]?.dateKey ? new Date(checkins[0].dateKey) : nowDate;
+    const oldestCheckinDate = uniqueCheckins[0]?.dateKey ? new Date(uniqueCheckins[0].dateKey) : nowDate;
     const daysSinceStart = Math.max(1, Math.ceil((nowDate.getTime() - oldestCheckinDate.getTime()) / 86400000) + 1);
     const windowSize = Math.min(14, daysSinceStart);
 
     const windowStart = new Date();
     windowStart.setDate(windowStart.getDate() - windowSize + 1);
     windowStart.setUTCHours(0, 0, 0, 0);
-    const recentDates = new Set(checkins.filter((c) => new Date(c.dateKey) >= windowStart).map((c) => c.dateKey));
+    const recentDates = new Set(uniqueCheckins.filter((c) => new Date(c.dateKey) >= windowStart).map((c) => c.dateKey));
     const dailyCompletionRate = Math.round((recentDates.size / windowSize) * 100);
 
-    const recentCheckins = checkins.slice(-14).map((c) => ({ date: c.dateKey, mood: c.moodLevel, urge: c.urgeLevel }));
+    const recentCheckins = uniqueCheckins.slice(-14).map((c) => ({ date: c.dateKey, mood: c.moodLevel, urge: c.urgeLevel }));
 
-    return { totalCheckins: checkins.length, currentStreak, longestStreak, averageMood, averageUrge, dailyCompletionRate, recentCheckins, windowSize };
+    return { totalCheckins: uniqueCheckins.length, currentStreak, longestStreak, averageMood, averageUrge, dailyCompletionRate, recentCheckins, windowSize };
   }
 
   app.get("/api/progress/checkin-stats", requireAuth, async (req, res) => {
@@ -4596,10 +4607,10 @@ INSTRUCTIONS:
   );
 
   // =====================================================
-  // COHORTS — Admin only
+  // COHORTS — Admin and Mentor
   // =====================================================
 
-  app.get("/api/admin/cohorts", requireRole("admin"), async (req, res) => {
+  app.get("/api/admin/cohorts", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const result = await storage.getCohorts();
       res.json({ cohorts: result });
@@ -4609,7 +4620,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.post("/api/admin/cohorts", requireRole("admin"), async (req, res) => {
+  app.post("/api/admin/cohorts", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const { name, description } = req.body;
       if (!name?.trim()) return res.status(400).json({ message: "Name is required" });
@@ -4621,7 +4632,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.get("/api/admin/cohorts/:id", requireRole("admin"), async (req, res) => {
+  app.get("/api/admin/cohorts/:id", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const cohort = await storage.getCohort(req.params.id);
       if (!cohort) return res.status(404).json({ message: "Cohort not found" });
@@ -4632,7 +4643,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.patch("/api/admin/cohorts/:id", requireRole("admin"), async (req, res) => {
+  app.patch("/api/admin/cohorts/:id", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const { name, description } = req.body;
       const updated = await storage.updateCohort(req.params.id, {
@@ -4647,7 +4658,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.delete("/api/admin/cohorts/:id", requireRole("admin"), async (req, res) => {
+  app.delete("/api/admin/cohorts/:id", requireRole("admin", "therapist"), async (req, res) => {
     try {
       await storage.deleteCohort(req.params.id);
       res.json({ message: "Cohort deleted" });
@@ -4657,7 +4668,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.get("/api/admin/cohorts/:id/members", requireRole("admin"), async (req, res) => {
+  app.get("/api/admin/cohorts/:id/members", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const members = await storage.getCohortMembers(req.params.id);
       res.json({ members });
@@ -4667,7 +4678,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.post("/api/admin/cohorts/:id/members", requireRole("admin"), async (req, res) => {
+  app.post("/api/admin/cohorts/:id/members", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const { userId } = req.body;
       if (!userId) return res.status(400).json({ message: "userId is required" });
@@ -4679,7 +4690,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.delete("/api/admin/cohorts/:id/members/:userId", requireRole("admin"), async (req, res) => {
+  app.delete("/api/admin/cohorts/:id/members/:userId", requireRole("admin", "therapist"), async (req, res) => {
     try {
       await storage.removeCohortMember(req.params.id, req.params.userId);
       res.json({ message: "Member removed" });
@@ -4689,7 +4700,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.get("/api/admin/analytics/cohorts/:id", requireRole("admin"), async (req, res) => {
+  app.get("/api/admin/analytics/cohorts/:id", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const { start, end } = req.query as { start?: string; end?: string };
       const endDate = end || new Date().toISOString().slice(0, 10);
@@ -4702,7 +4713,7 @@ INSTRUCTIONS:
     }
   });
 
-  app.get("/api/admin/analytics/compare", requireRole("admin"), async (req, res) => {
+  app.get("/api/admin/analytics/compare", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const { cohortIds, start, end } = req.query as { cohortIds?: string; start?: string; end?: string };
       if (!cohortIds) return res.status(400).json({ message: "cohortIds is required" });

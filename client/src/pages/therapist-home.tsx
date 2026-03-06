@@ -23,7 +23,20 @@ import {
   Bell,
   BookOpen,
   Activity,
+  Layers,
+  Plus,
+  BarChart2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,10 +73,20 @@ type ClientWithProgress = {
   activeWeek?: number;
 };
 
+interface CohortItem {
+  id: string;
+  name: string;
+  description: string | null;
+  memberCount: number;
+}
+
 export default function TherapistHome() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showCreateCohort, setShowCreateCohort] = useState(false);
+  const [newCohortName, setNewCohortName] = useState("");
+  const [newCohortDescription, setNewCohortDescription] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
   const subscriptionConfirmedRef = useRef(false);
@@ -124,6 +147,27 @@ export default function TherapistHome() {
   const { data: clientsData, isLoading } = useQuery<{ clients: ClientWithProgress[] }>({
     queryKey: ["/api/therapist/clients"],
     enabled: hasActiveSubscription,
+  });
+
+  const { data: cohortsData } = useQuery<{ cohorts: CohortItem[] }>({
+    queryKey: ["/api/admin/cohorts"],
+    enabled: hasActiveSubscription,
+  });
+  const cohortsList = cohortsData?.cohorts || [];
+
+  const createCohortMutation = useMutation({
+    mutationFn: async (data: { name: string; description: string }) => {
+      const res = await apiRequest("POST", "/api/admin/cohorts", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/cohorts"] });
+      setShowCreateCohort(false);
+      setNewCohortName("");
+      setNewCohortDescription("");
+      toast({ title: "Cohort created" });
+    },
+    onError: () => toast({ title: "Failed to create cohort", variant: "destructive" }),
   });
 
   const { data: unreviewedAutopsiesData } = useQuery<{ unreviewedCounts: Record<string, number> }>({
@@ -574,7 +618,104 @@ export default function TherapistHome() {
             </div>
           )}
         </div>
+
+        {/* Cohorts Section */}
+        <div>
+          <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Layers className="h-5 w-5 text-muted-foreground" />
+              Cohorts
+              {cohortsList.length > 0 && (
+                <span className="text-sm font-normal text-muted-foreground">({cohortsList.length})</span>
+              )}
+            </h2>
+            <Button size="sm" onClick={() => setShowCreateCohort(true)} data-testid="button-create-cohort-mentor">
+              <Plus className="h-4 w-4 mr-1.5" />
+              New Cohort
+            </Button>
+          </div>
+
+          {cohortsList.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                <Layers className="h-8 w-8 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">No cohorts yet. Create one to group clients together.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {cohortsList.map((cohort) => (
+                <Card key={cohort.id} className="hover-elevate cursor-pointer" data-testid={`card-cohort-${cohort.id}`}>
+                  <CardContent className="p-4 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm truncate">{cohort.name}</p>
+                      {cohort.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{cohort.description}</p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">{cohort.memberCount} member{cohort.memberCount !== 1 ? "s" : ""}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setLocation(`/admin/cohorts/${cohort.id}`)} data-testid={`button-manage-cohort-${cohort.id}`}>
+                        Manage
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setLocation(`/admin/cohorts/${cohort.id}/analytics`)} data-testid={`button-analytics-cohort-${cohort.id}`}>
+                        <BarChart2 className="h-3 w-3 mr-1" />
+                        Analytics
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
+
+      {/* Create Cohort Dialog */}
+      <Dialog open={showCreateCohort} onOpenChange={setShowCreateCohort}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Cohort</DialogTitle>
+            <DialogDescription>Group clients together for tracking and comparison.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="cohort-name">Name</Label>
+              <Input
+                id="cohort-name"
+                placeholder="e.g., Spring 2026 Group"
+                value={newCohortName}
+                onChange={(e) => setNewCohortName(e.target.value)}
+                data-testid="input-cohort-name-mentor"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cohort-description">Description (optional)</Label>
+              <Textarea
+                id="cohort-description"
+                placeholder="Brief description of this cohort..."
+                value={newCohortDescription}
+                onChange={(e) => setNewCohortDescription(e.target.value)}
+                className="min-h-[80px]"
+                data-testid="input-cohort-description-mentor"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateCohort(false)}>Cancel</Button>
+            <Button
+              onClick={() => createCohortMutation.mutate({ name: newCohortName, description: newCohortDescription })}
+              disabled={!newCohortName.trim() || createCohortMutation.isPending}
+              data-testid="button-submit-create-cohort-mentor"
+            >
+              {createCohortMutation.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : "Create Cohort"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
