@@ -23,11 +23,13 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   ArrowLeft, Users, Loader2, Trash2, Plus, BarChart2,
   UserCircle, ChevronDown, LogOut, Shield, Edit, Search,
+  Mail, Sparkles, Send,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -64,6 +66,57 @@ export default function AdminCohortPage() {
   const [removingMember, setRemovingMember] = useState<CohortMember | null>(null);
   const [showAddMember, setShowAddMember] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
+
+  // Broadcast message state
+  const [showBroadcast, setShowBroadcast] = useState(false);
+  const [broadcastStep, setBroadcastStep] = useState<"topic" | "draft">("topic");
+  const [broadcastTopic, setBroadcastTopic] = useState("");
+  const [broadcastSubject, setBroadcastSubject] = useState("");
+  const [broadcastDraft, setBroadcastDraft] = useState("");
+  const [broadcastGenerating, setBroadcastGenerating] = useState(false);
+  const [broadcastSending, setBroadcastSending] = useState(false);
+
+  const openBroadcast = () => {
+    setBroadcastStep("topic");
+    setBroadcastTopic("");
+    setBroadcastSubject("");
+    setBroadcastDraft("");
+    setShowBroadcast(true);
+  };
+
+  const generateBroadcastDraft = async () => {
+    if (!broadcastTopic.trim()) return;
+    setBroadcastGenerating(true);
+    try {
+      const res = await apiRequest("POST", `/api/admin/cohorts/${id}/generate-message`, { topic: broadcastTopic });
+      const data = await res.json();
+      setBroadcastSubject(data.subject || "");
+      setBroadcastDraft(data.draftText || "");
+      setBroadcastStep("draft");
+    } catch {
+      toast({ title: "Failed to generate draft", variant: "destructive" });
+    } finally {
+      setBroadcastGenerating(false);
+    }
+  };
+
+  const sendBroadcast = async () => {
+    if (!broadcastSubject.trim() || !broadcastDraft.trim()) return;
+    setBroadcastSending(true);
+    try {
+      const res = await apiRequest("POST", `/api/admin/cohorts/${id}/broadcast`, {
+        subject: broadcastSubject,
+        content: broadcastDraft,
+      });
+      const data = await res.json();
+      setShowBroadcast(false);
+      toast({ title: `Sent to ${data.sent} member${data.sent !== 1 ? "s" : ""}${data.failed > 0 ? ` (${data.failed} failed)` : ""}` });
+    } catch {
+      toast({ title: "Failed to send messages", variant: "destructive" });
+    } finally {
+      setBroadcastSending(false);
+    }
+  };
 
   const isAdmin = (user as any)?.role === "admin";
   const backPath = isAdmin ? "/admin" : "/therapist";
@@ -221,6 +274,16 @@ export default function AdminCohortPage() {
                 >
                   <BarChart2 className="mr-1.5 h-4 w-4" />
                   Analytics
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={openBroadcast}
+                  disabled={members.filter(m => m.role === "client").length === 0}
+                  data-testid="button-message-group"
+                >
+                  <Mail className="mr-1.5 h-4 w-4" />
+                  Message Group
                 </Button>
                 <Button
                   variant="outline"
@@ -442,6 +505,98 @@ export default function AdminCohortPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setShowAddMember(false); setMemberSearch(""); }}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Broadcast Message Dialog */}
+      <Dialog open={showBroadcast} onOpenChange={open => { if (!broadcastSending && !broadcastGenerating) setShowBroadcast(open); }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Message Group — {cohort.name}
+            </DialogTitle>
+            <DialogDescription>
+              {broadcastStep === "topic"
+                ? "Describe what you want to say. AI will write a draft for you to edit before sending."
+                : `Review and edit the draft. It will be sent individually to ${members.filter(m => m.role === "client").length} member${members.filter(m => m.role === "client").length !== 1 ? "s" : ""}.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {broadcastStep === "topic" ? (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>Your topic or statement</Label>
+                <Textarea
+                  placeholder="e.g. Encourage the group after the first two weeks — they've been showing up consistently and I want them to keep going..."
+                  value={broadcastTopic}
+                  onChange={e => setBroadcastTopic(e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                  data-testid="textarea-broadcast-topic"
+                />
+                <p className="text-xs text-muted-foreground">Describe the message in your own words. AI will turn it into a polished draft.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>Subject</Label>
+                <Input
+                  value={broadcastSubject}
+                  onChange={e => setBroadcastSubject(e.target.value)}
+                  data-testid="input-broadcast-subject"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Message</Label>
+                <Textarea
+                  value={broadcastDraft}
+                  onChange={e => setBroadcastDraft(e.target.value)}
+                  rows={9}
+                  className="resize-none text-sm leading-relaxed"
+                  data-testid="textarea-broadcast-draft"
+                />
+              </div>
+              <button
+                onClick={() => setBroadcastStep("topic")}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+                data-testid="button-regenerate-draft"
+              >
+                ← Back to topic
+              </button>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowBroadcast(false)} disabled={broadcastSending || broadcastGenerating}>
+              Cancel
+            </Button>
+            {broadcastStep === "topic" ? (
+              <Button
+                onClick={generateBroadcastDraft}
+                disabled={!broadcastTopic.trim() || broadcastGenerating}
+                data-testid="button-generate-draft"
+              >
+                {broadcastGenerating ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generating...</>
+                ) : (
+                  <><Sparkles className="mr-2 h-4 w-4" />Generate Draft</>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={sendBroadcast}
+                disabled={!broadcastSubject.trim() || !broadcastDraft.trim() || broadcastSending}
+                data-testid="button-send-broadcast"
+              >
+                {broadcastSending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending...</>
+                ) : (
+                  <><Send className="mr-2 h-4 w-4" />Send to {members.filter(m => m.role === "client").length} Members</>
+                )}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

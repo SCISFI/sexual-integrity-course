@@ -4698,6 +4698,128 @@ INSTRUCTIONS:
     }
   });
 
+  // Generate AI draft message for a cohort broadcast
+  app.post("/api/admin/cohorts/:id/generate-message", requireRole("admin", "therapist"), async (req, res) => {
+    try {
+      const { topic } = req.body;
+      if (!topic?.trim()) {
+        return res.status(400).json({ message: "Topic is required" });
+      }
+
+      const cohort = await storage.getCohort(req.params.id);
+      if (!cohort) return res.status(404).json({ message: "Cohort not found" });
+
+      const members = await storage.getCohortMembers(req.params.id);
+      const clientCount = members.filter(m => m.role === "client").length;
+
+      const prompt = `You are an expert recovery mentor writing a group message to a cohort of ${clientCount} men in a 16-week sexual integrity recovery program called The Integrity Protocol.
+
+COHORT: "${cohort.name}"${cohort.description ? `\nDESCRIPTION: ${cohort.description}` : ""}
+
+MENTOR'S TOPIC / STATEMENT:
+${topic}
+
+Write a message body (150–220 words) suitable for all members of this group. The message will be sent to each person individually, not as a group email.
+
+WRITING RULES:
+- Write in second person ("you", "your") — address each person directly
+- This is a recovery context: maintain a tone that is direct, warm, grounded, and honest
+- Reference the cohort or their shared experience naturally where appropriate
+- Short paragraphs (2–3 sentences max). No bullet points. No headers.
+- Do NOT invent individual statistics — this is a general group message
+- Do NOT use power words: fantastic, amazing, incredible, proud, honored, grateful
+- Do NOT give medical advice or diagnoses
+- Do NOT include any questions — clients cannot reply
+- End with a concrete next step or an encouraging closing statement
+
+Also suggest a concise subject line (5–8 words) for this message.
+
+Respond in this exact format:
+SUBJECT: <subject here>
+MESSAGE:
+<message body here>`;
+
+      const ai = getAiClient();
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+      });
+
+      const raw = (response.text || "").trim();
+      const subjectMatch = raw.match(/^SUBJECT:\s*(.+)/m);
+      const messageMatch = raw.match(/MESSAGE:\s*\n([\s\S]+)$/m);
+
+      const subject = subjectMatch ? subjectMatch[1].trim() : "A message from your mentor";
+      const draftText = messageMatch ? messageMatch[1].trim() : raw;
+
+      res.json({ subject, draftText });
+    } catch (e) {
+      console.error("Generate cohort message error:", e);
+      res.status(500).json({ message: "Failed to generate message" });
+    }
+  });
+
+  // Broadcast a message to all members of a cohort
+  app.post("/api/admin/cohorts/:id/broadcast", requireRole("admin", "therapist"), async (req, res) => {
+    try {
+      const senderId = (req.user as any).id;
+      const senderData = req.user as any;
+      const { subject, content } = req.body;
+
+      if (!subject?.trim() || !content?.trim()) {
+        return res.status(400).json({ message: "Subject and content are required" });
+      }
+
+      const cohort = await storage.getCohort(req.params.id);
+      if (!cohort) return res.status(404).json({ message: "Cohort not found" });
+
+      const members = await storage.getCohortMembers(req.params.id);
+      const clients = members.filter(m => m.role === "client");
+
+      if (clients.length === 0) {
+        return res.status(400).json({ message: "No client members in this cohort" });
+      }
+
+      const loginUrl = `${req.protocol}://${req.get("host")}/dashboard`;
+      const mentorName = senderData.name || "Your mentor";
+      const { sendMentorMessage } = await import("./emailService");
+
+      let sent = 0;
+      let failed = 0;
+
+      for (const member of clients) {
+        try {
+          // Save a feedback record for each client
+          await storage.addTherapistFeedback(
+            senderId,
+            member.id,
+            "general",
+            content,
+            undefined,
+            undefined,
+            "sent",
+            subject,
+          );
+
+          // Send the email
+          const fullMember = await storage.getUser(member.id);
+          if (fullMember?.email) {
+            await sendMentorMessage(fullMember.email, fullMember.name || undefined, mentorName, subject, content, loginUrl);
+          }
+          sent++;
+        } catch (err) {
+          console.error(`Broadcast failed for member ${member.id}:`, err);
+          failed++;
+        }
+      }
+
+      res.json({ sent, failed, total: clients.length });
+    } catch (e) {
+      console.error("Cohort broadcast error:", e);
+      res.status(500).json({ message: "Failed to send broadcast" });
+    }
+  });
+
   app.get("/api/admin/analytics/cohorts/:id", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const { start, end } = req.query as { start?: string; end?: string };
