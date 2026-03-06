@@ -27,9 +27,11 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Map, Brain, Anchor, Sunset, Heart, MessageCircle, Shield, Leaf, Feather, Compass, Droplets, Footprints, Circle, ShieldCheck, Sunrise, RefreshCw, Lightbulb, Waves, Users, Wind, Star, Mountain, Target, BookOpen, Infinity } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, type Exercise } from "@/data/curriculum";
+import { WEEK_PODCASTS } from "@/data/podcasts";
 import { useToast } from "@/hooks/use-toast";
 import { CrisisResources } from "@/components/CrisisResources";
 import { TextToSpeech } from "@/components/TextToSpeech";
+import { DeepDivePlayer } from "@/components/DeepDivePlayer";
 import { MilestoneDialog, isMilestoneWeek } from "@/components/MilestoneDialog";
 
 function safeNumber(v: unknown, fallback: number) {
@@ -787,6 +789,15 @@ export default function WeekPage() {
 
         {!isTimeLocked && !needsPayment && (
           <div className="space-y-6">
+            {/* Deep Dive Podcast Player */}
+            {WEEK_PODCASTS[weekNumber] && (
+              <DeepDivePlayer
+                title={WEEK_PODCASTS[weekNumber].title}
+                src={WEEK_PODCASTS[weekNumber].file}
+                description={WEEK_PODCASTS[weekNumber].description}
+              />
+            )}
+
             {weekContent ? (
               <>
                 {/* Progress Tracker */}
