@@ -136,10 +136,10 @@ export default function CohortAnalyticsPage() {
   };
 
   const chartConfig = {
-    checkins: { label: "Check-ins", color: "#3b82f6" },
-    completions: { label: "Week Completions", color: "#10b981" },
-    activeUsers: { label: "Active Users", color: "#8b5cf6" },
-    relapses: { label: "Relapse Reports", color: "#ef4444" },
+    checkins: { label: "Check-ins", color: "#38bdf8" }, // Sky 400
+    activeUsers: { label: "Active Users", color: "#8b5cf6" }, // Violet 500
+    completions: { label: "Week Completions", color: "#10b981" }, // Emerald 500
+    relapses: { label: "Relapse Reports", color: "#ef4444" }, // Red 500
   };
 
   return (
@@ -223,7 +223,7 @@ export default function CohortAnalyticsPage() {
         ) : analytics ? (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               <StatCard icon={Users} label="Total Members" value={analytics.totalMembers} />
               <StatCard icon={Activity} label="Active Members" value={analytics.activeMembers} sub="checked in during range" />
               <StatCard
@@ -232,7 +232,6 @@ export default function CohortAnalyticsPage() {
                 value={`${analytics.checkinRate}%`}
                 color={analytics.checkinRate >= 70 ? "text-emerald-600" : analytics.checkinRate >= 40 ? "text-amber-600" : "text-red-600"}
               />
-              <StatCard icon={CheckSquare} label="Week Completions" value={analytics.totalWeekCompletions} />
               <StatCard
                 icon={CheckSquare}
                 label="Avg per Member"
