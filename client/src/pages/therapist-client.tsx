@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare, X } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -140,6 +140,7 @@ export default function TherapistClient() {
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false);
   const [expandedAutopsy, setExpandedAutopsy] = useState<string | null>(null);
   const [activeFeedbackTarget, setActiveFeedbackTarget] = useState<{ type: string; key: string } | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   const [sentSuggestionIds, setSentSuggestionIds] = useState<Set<string>>(new Set());
   const [draftedSuggestionIds, setDraftedSuggestionIds] = useState<Set<string>>(new Set());
@@ -680,6 +681,20 @@ export default function TherapistClient() {
     return "locked";
   };
 
+  const getCheckinWeekNum = (dateKey: string, startDate: string): number => {
+    const daysSinceStart = Math.floor((new Date(dateKey).getTime() - new Date(startDate).getTime()) / 86400000);
+    return Math.max(1, Math.floor(daysSinceStart / 7) + 1);
+  };
+
+  const weekHasActivity = (weekNum: number): boolean => {
+    if (completedWeeks.includes(weekNum)) return true;
+    if (reflections.some(r => r.weekNumber === weekNum)) return true;
+    if (exerciseAnswers.some(e => e.weekNumber === weekNum)) return true;
+    if (homeworkCompletions.some(h => h.weekNumber === weekNum)) return true;
+    if (client?.startDate && checkins.some(c => getCheckinWeekNum(c.dateKey, client.startDate!) === weekNum)) return true;
+    return false;
+  };
+
   const handleSubmitFeedback = () => {
     if (!newFeedback.trim()) return;
     let feedbackType = 'general';
@@ -1123,17 +1138,22 @@ export default function TherapistClient() {
                             const totalItems = weekContent?.homeworkChecklist?.length || 0;
                             const completedItems = hw ? (Array.isArray(hw.completedItems) ? hw.completedItems.length : JSON.parse(hw.completedItems as any || '[]').length) : 0;
                             const needsReview = status === "completed" && !isWeekFullyReviewed(weekNum);
+                            const isSelected = selectedWeek === weekNum;
+                            const hasActivity = weekHasActivity(weekNum);
                             return (
                               <div
                                 key={weekNum}
-                                className={`flex flex-col items-center justify-center rounded-md border p-2.5 ${
-                                  needsReview
-                                    ? "border-amber-300 dark:border-amber-700"
-                                    : status === "completed"
-                                      ? "border-green-200 dark:border-green-800"
-                                      : status === "available"
-                                        ? "border-border"
-                                        : "border-muted"
+                                onClick={() => setSelectedWeek(isSelected ? null : weekNum)}
+                                className={`flex flex-col items-center justify-center rounded-md border p-2.5 cursor-pointer transition-all ${
+                                  isSelected
+                                    ? "ring-2 ring-primary border-primary"
+                                    : needsReview
+                                      ? "border-amber-300 dark:border-amber-700 hover:ring-1 hover:ring-amber-300"
+                                      : status === "completed"
+                                        ? "border-green-200 dark:border-green-800 hover:ring-1 hover:ring-green-300"
+                                        : hasActivity
+                                          ? "border-border hover:ring-1 hover:ring-border"
+                                          : "border-muted opacity-50"
                                 }`}
                                 data-testid={`week-status-${weekNum}`}
                               >
@@ -1182,25 +1202,7 @@ export default function TherapistClient() {
                                         <Button
                                           variant="outline"
                                           size="sm"
-                                          onClick={() => {
-                                            const el = document.getElementById(`reflection-week-${weekNum}`);
-                                            if (el) {
-                                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                              el.style.outline = '2px solid #f59e0b';
-                                              el.style.outlineOffset = '3px';
-                                              el.style.borderRadius = '8px';
-                                              setTimeout(() => {
-                                                el.style.transition = 'outline-color 0.8s ease';
-                                                el.style.outline = '2px solid transparent';
-                                                setTimeout(() => {
-                                                  el.style.outline = '';
-                                                  el.style.outlineOffset = '';
-                                                  el.style.borderRadius = '';
-                                                  el.style.transition = '';
-                                                }, 800);
-                                              }, 1500);
-                                            }
-                                          }}
+                                          onClick={() => setSelectedWeek(weekNum)}
                                           data-testid={`button-view-week-${weekNum}`}
                                         >
                                           <FileText className="mr-1 h-3.5 w-3.5" /> View
@@ -1231,156 +1233,328 @@ export default function TherapistClient() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Reflections & Exercises</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {reflections.length === 0 && exerciseAnswers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4">No reflections or exercises recorded yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {[...reflections].sort((a, b) => b.weekNumber - a.weekNumber).map((reflection) => {
-                          const weekFeedback = feedback.filter(f => f.feedbackType === 'week' && f.weekNumber === reflection.weekNumber);
-                          const reviewed = isItemReviewed('reflection', String(reflection.weekNumber));
-                          const weekExercise = exerciseAnswers.find(e => e.weekNumber === reflection.weekNumber);
-                          const exerciseReviewed = isItemReviewed('exercise', String(reflection.weekNumber));
-                          let parsedAnswers: Record<string, string> = {};
-                          try { parsedAnswers = weekExercise ? JSON.parse(weekExercise.answers) : {}; } catch {}
-                          const answerEntries = Object.entries(parsedAnswers).filter(([, v]) => v && String(v).trim());
+                {selectedWeek !== null && (() => {
+                  const wkCheckins = client?.startDate
+                    ? [...checkins].filter(c => getCheckinWeekNum(c.dateKey, client.startDate!) === selectedWeek).sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+                    : [];
+                  const wkReflection = reflections.find(r => r.weekNumber === selectedWeek);
+                  const wkExercise = exerciseAnswers.find(e => e.weekNumber === selectedWeek);
+                  const wkHomework = homeworkCompletions.find(h => h.weekNumber === selectedWeek);
+                  const wkFeedback = feedback.filter(f => f.feedbackType === 'week' && f.weekNumber === selectedWeek);
+                  const hasAnyWork = wkCheckins.length > 0 || !!wkReflection || !!wkExercise || !!wkHomework;
+                  const reflectionReviewed = isItemReviewed('reflection', String(selectedWeek));
+                  const exerciseReviewed = isItemReviewed('exercise', String(selectedWeek));
+                  const weekData = WEEK_CONTENT[selectedWeek];
+                  let parsedExerciseAnswers: Record<string, string> = {};
+                  try { parsedExerciseAnswers = wkExercise ? JSON.parse(wkExercise.answers) : {}; } catch {}
+                  const exerciseAnswerEntries = Object.entries(parsedExerciseAnswers).filter(([, v]) => v && String(v).trim());
+                  const wkHwItems = wkHomework
+                    ? (Array.isArray(wkHomework.completedItems) ? wkHomework.completedItems : (() => { try { return JSON.parse(wkHomework.completedItems as any || '[]'); } catch { return []; } })())
+                    : [];
+                  const totalHwItems = weekData?.homeworkChecklist?.length || 0;
 
-                          return (
-                            <div
-                              key={reflection.weekNumber}
-                              id={`reflection-week-${reflection.weekNumber}`}
-                              className="rounded-lg border p-4"
-                              data-testid={`reflection-week-${reflection.weekNumber}`}
-                            >
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <h4 className="font-medium">Week {reflection.weekNumber}</h4>
-                                  {reviewed ? (
-                                    <Badge variant="outline" className="text-[10px]">
-                                      <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="secondary" className="text-[10px]">
-                                      Needs Review
-                                    </Badge>
-                                  )}
-                                  {weekFeedback.length > 0 && (
-                                    <Badge variant="outline" className="text-[10px]">
-                                      <MessageSquare className="h-3 w-3 mr-0.5" /> {weekFeedback.length}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex gap-2 flex-wrap">
-                                  {!reviewed && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => markItemReviewedMutation.mutate({ itemType: 'reflection', itemKey: String(reflection.weekNumber) })}
-                                      disabled={markItemReviewedMutation.isPending}
-                                      data-testid={`button-review-reflection-${reflection.weekNumber}`}
-                                    >
-                                      <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Mark Reviewed
-                                    </Button>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleAddFeedbackForWeek(reflection.weekNumber)}
-                                    data-testid={`button-add-feedback-week-${reflection.weekNumber}`}
-                                  >
-                                    <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="space-y-3">
-                                {(() => {
-                                  const weekData = WEEK_CONTENT[reflection.weekNumber];
-                                  const rqs = weekData?.reflectionQuestions || [];
-                                  const defaultLabels = ["Key insight from this week", "What went well", "Challenges faced", "Goals for next week"];
-                                  return [reflection.q1, reflection.q2, reflection.q3, reflection.q4].map((answer, idx) => {
-                                    if (!answer) return null;
-                                    const label = rqs[idx]?.question || defaultLabels[idx];
+                  return (
+                    <Card className="border-primary/30" data-testid={`week-detail-panel-${selectedWeek}`}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base">
+                            Week {selectedWeek}{weekData?.title ? ` — ${weekData.title}` : ""}
+                          </CardTitle>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSelectedWeek(null)}
+                            data-testid="button-close-week-detail"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {!hasAnyWork ? (
+                          <p className="text-sm text-muted-foreground py-6 text-center">No work recorded for Week {selectedWeek} yet.</p>
+                        ) : (
+                          <>
+                            {wkCheckins.length > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                                  Daily Check-ins ({wkCheckins.length})
+                                </p>
+                                <div className="space-y-4">
+                                  {wkCheckins.map((checkin) => {
+                                    const existingFeedback = feedback.filter(f => f.checkinDateKey === checkin.dateKey);
+                                    const reviewed = isItemReviewed('checkin', checkin.dateKey);
                                     return (
-                                      <div key={idx}>
-                                        <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                                        <p className="text-sm bg-muted/40 p-2.5 rounded-md">{answer}</p>
+                                      <div key={checkin.id} className="rounded-lg border p-4" data-testid={`wk-detail-checkin-${checkin.dateKey}`}>
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-medium">{checkin.dateKey}</span>
+                                            {reviewed ? (
+                                              <Badge variant="outline" className="text-[10px]">
+                                                <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
+                                              </Badge>
+                                            ) : (
+                                              <Badge variant="secondary" className="text-[10px]">Needs Review</Badge>
+                                            )}
+                                            {existingFeedback.length > 0 && (
+                                              <Badge variant="outline" className="text-[10px]">
+                                                <MessageSquare className="h-3 w-3 mr-0.5" /> {existingFeedback.length}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <div className="flex gap-2 flex-wrap">
+                                            {!reviewed && (
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => markItemReviewedMutation.mutate({ itemType: 'checkin', itemKey: checkin.dateKey })}
+                                                disabled={markItemReviewedMutation.isPending}
+                                                data-testid={`button-review-checkin-wk-${checkin.dateKey}`}
+                                              >
+                                                <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Reviewed
+                                              </Button>
+                                            )}
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleAddFeedbackForDate(checkin.dateKey)}
+                                              data-testid={`button-feedback-checkin-wk-${checkin.dateKey}`}
+                                            >
+                                              <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
+                                            </Button>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => handleGenerateAIDraft(checkin.dateKey)}
+                                              disabled={isGeneratingDraft}
+                                              data-testid={`button-ai-checkin-wk-${checkin.dateKey}`}
+                                            >
+                                              {isGeneratingDraft ? (
+                                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                              ) : (
+                                                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                                              )}
+                                              AI Insight
+                                            </Button>
+                                          </div>
+                                        </div>
+                                        <div className="flex gap-3 mb-3 flex-wrap">
+                                          {checkin.moodLevel !== null && (
+                                            <span className="text-sm text-muted-foreground">Mood: <span className="font-medium text-foreground">{checkin.moodLevel}/10</span></span>
+                                          )}
+                                          {checkin.urgeLevel !== null && (
+                                            <span className="text-sm text-muted-foreground">Urge: <span className={`font-medium ${Number(checkin.urgeLevel) > 6 ? 'text-destructive' : 'text-foreground'}`}>{checkin.urgeLevel}/10</span></span>
+                                          )}
+                                        </div>
+                                        {checkin.eveningChecks && (
+                                          <div className="mt-2">
+                                            <p className="text-xs text-muted-foreground mb-1.5">Daily Items</p>
+                                            <div className="space-y-1.5">
+                                              {formatEveningChecks(checkin.eveningChecks).map((id) => (
+                                                <div key={id} className="flex items-center gap-2 text-sm">
+                                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                                  <span>{DAILY_CHECK_LABELS[id] || id}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {checkin.journalEntry && (
+                                          <div className="mt-3 p-3 bg-muted/30 rounded-md">
+                                            <p className="text-xs text-muted-foreground mb-1">
+                                              Journal: <em>{getPromptForDate(checkin.dateKey)}</em>
+                                            </p>
+                                            <p className="text-sm italic">"{checkin.journalEntry}"</p>
+                                          </div>
+                                        )}
+                                        {existingFeedback.length > 0 && (
+                                          <div className="mt-4 pt-3 border-t">
+                                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
+                                              <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response
+                                            </p>
+                                            {existingFeedback.map(f => (
+                                              <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
+                                                <p>{f.content}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {renderInlineFeedback('checkin', checkin.dateKey, checkin.dateKey)}
                                       </div>
                                     );
-                                  });
-                                })()}
+                                  })}
+                                </div>
                               </div>
+                            )}
 
-                              {answerEntries.length > 0 && (
-                                <div className="mt-4 pt-4 border-t">
-                                  <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Exercise Answers</p>
-                                    {!exerciseReviewed ? (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => markItemReviewedMutation.mutate({ itemType: 'exercise', itemKey: String(reflection.weekNumber) })}
-                                        disabled={markItemReviewedMutation.isPending}
-                                        data-testid={`button-review-exercise-${reflection.weekNumber}`}
-                                      >
-                                        <CheckSquare className="mr-1 h-3 w-3" /> Mark Exercises Reviewed
-                                      </Button>
-                                    ) : (
-                                      <Badge variant="outline" className="text-[10px]">
-                                        <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
-                                      </Badge>
-                                    )}
+                            {(wkReflection || wkExercise) && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                                  Weekly Work
+                                </p>
+                                <div className="rounded-lg border p-4" id={`reflection-week-${selectedWeek}`} data-testid={`reflection-week-${selectedWeek}`}>
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className="font-medium">Week {selectedWeek} Reflection</h4>
+                                      {reflectionReviewed ? (
+                                        <Badge variant="outline" className="text-[10px]">
+                                          <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
+                                        </Badge>
+                                      ) : wkReflection ? (
+                                        <Badge variant="secondary" className="text-[10px]">Needs Review</Badge>
+                                      ) : null}
+                                      {wkFeedback.length > 0 && (
+                                        <Badge variant="outline" className="text-[10px]">
+                                          <MessageSquare className="h-3 w-3 mr-0.5" /> {wkFeedback.length}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-2 flex-wrap">
+                                      {wkReflection && !reflectionReviewed && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => markItemReviewedMutation.mutate({ itemType: 'reflection', itemKey: String(selectedWeek) })}
+                                          disabled={markItemReviewedMutation.isPending}
+                                          data-testid={`button-review-reflection-${selectedWeek}`}
+                                        >
+                                          <CheckSquare className="mr-1.5 h-3.5 w-3.5" /> Mark Reviewed
+                                        </Button>
+                                      )}
+                                      {messagedWeekNums.has(selectedWeek) ? (
+                                        <Badge variant="outline" className="text-green-600 border-green-300 text-xs">
+                                          <CheckCircle2 className="h-3 w-3 mr-1" /> Messaged
+                                        </Badge>
+                                      ) : (
+                                        <Button
+                                          size="sm"
+                                          onClick={() => openWeekSheet(selectedWeek)}
+                                          data-testid={`button-message-week-${selectedWeek}`}
+                                        >
+                                          <Mail className="mr-1 h-3.5 w-3.5" /> Send Message
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="space-y-3">
-                                    {answerEntries.map(([key, value]) => {
-                                      const weekData = WEEK_CONTENT[reflection.weekNumber];
-                                      let fieldLabel = key.replace(/-/g, ' ');
-                                      if (weekData?.exercises) {
-                                        for (const ex of weekData.exercises) {
-                                          if (!ex) continue;
-                                          for (const f of ex.fields) {
-                                            if (`${ex.id}-${f.id}` === key) {
-                                              fieldLabel = f.label;
-                                              break;
+
+                                  {wkReflection && (
+                                    <div className="space-y-3">
+                                      {(() => {
+                                        const rqs = weekData?.reflectionQuestions || [];
+                                        const defaultLabels = ["Key insight from this week", "What went well", "Challenges faced", "Goals for next week"];
+                                        return [wkReflection.q1, wkReflection.q2, wkReflection.q3, wkReflection.q4].map((answer, idx) => {
+                                          if (!answer) return null;
+                                          const label = rqs[idx]?.question || defaultLabels[idx];
+                                          return (
+                                            <div key={idx}>
+                                              <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                                              <p className="text-sm bg-muted/40 p-2.5 rounded-md">{answer}</p>
+                                            </div>
+                                          );
+                                        });
+                                      })()}
+                                    </div>
+                                  )}
+
+                                  {exerciseAnswerEntries.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t">
+                                      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Exercise Answers</p>
+                                        {!exerciseReviewed ? (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => markItemReviewedMutation.mutate({ itemType: 'exercise', itemKey: String(selectedWeek) })}
+                                            disabled={markItemReviewedMutation.isPending}
+                                            data-testid={`button-review-exercise-${selectedWeek}`}
+                                          >
+                                            <CheckSquare className="mr-1 h-3 w-3" /> Mark Exercises Reviewed
+                                          </Button>
+                                        ) : (
+                                          <Badge variant="outline" className="text-[10px]">
+                                            <CheckCircle2 className="h-3 w-3 mr-0.5" /> Reviewed
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="space-y-3">
+                                        {exerciseAnswerEntries.map(([key, value]) => {
+                                          let fieldLabel = key.replace(/-/g, ' ');
+                                          if (weekData?.exercises) {
+                                            for (const ex of weekData.exercises) {
+                                              if (!ex) continue;
+                                              for (const f of ex.fields) {
+                                                if (`${ex.id}-${f.id}` === key) {
+                                                  fieldLabel = f.label;
+                                                  break;
+                                                }
+                                              }
                                             }
                                           }
-                                        }
-                                      }
-                                      return (
-                                        <div key={key}>
-                                          <p className="text-xs text-muted-foreground mb-1">{fieldLabel}</p>
-                                          <p className="text-sm bg-muted/40 p-2.5 rounded-md">{value}</p>
+                                          return (
+                                            <div key={key}>
+                                              <p className="text-xs text-muted-foreground mb-1">{fieldLabel}</p>
+                                              <p className="text-sm bg-muted/40 p-2.5 rounded-md">{value}</p>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {wkFeedback.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t">
+                                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
+                                        <MessageSquare className="h-3 w-3 mr-1" /> Mentor Responses
+                                      </p>
+                                      {wkFeedback.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(f => (
+                                        <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
+                                          <p>{f.content}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
                                         </div>
-                                      );
-                                    })}
+                                      ))}
+                                    </div>
+                                  )}
+                                  {renderInlineFeedback('week', String(selectedWeek))}
+                                </div>
+                              </div>
+                            )}
+
+                            {wkHomework && totalHwItems > 0 && (
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                                  Homework
+                                </p>
+                                <div className="rounded-lg border p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <p className="text-sm font-medium">
+                                      {wkHwItems.length}/{totalHwItems} items completed
+                                    </p>
+                                    <Badge variant={wkHwItems.length === totalHwItems ? "outline" : "secondary"} className={wkHwItems.length === totalHwItems ? "text-green-600 border-green-300 text-xs" : "text-xs"}>
+                                      {wkHwItems.length === totalHwItems ? "All done" : "In progress"}
+                                    </Badge>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    {weekData?.homeworkChecklist?.map((item: string, idx: number) => (
+                                      <div key={idx} className="flex items-center gap-2 text-sm">
+                                        {wkHwItems.includes(idx) ? (
+                                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                        ) : (
+                                          <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40 flex-shrink-0" />
+                                        )}
+                                        <span className={wkHwItems.includes(idx) ? "" : "text-muted-foreground"}>{item}</span>
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
-                              )}
-
-                              {weekFeedback.length > 0 && (
-                                <div className="mt-4 pt-4 border-t">
-                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
-                                    <MessageSquare className="h-3 w-3 mr-1" /> Mentor Response
-                                  </p>
-                                  {weekFeedback.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(f => (
-                                    <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
-                                      <p>{f.content}</p>
-                                      <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                              {renderInlineFeedback('week', String(reflection.weekNumber))}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
               </TabsContent>
 
               <TabsContent value="checkins" className="space-y-6 mt-6">
