@@ -8,9 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -29,7 +26,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   ArrowLeft, Users, Loader2, Trash2, Plus, BarChart2,
   UserCircle, ChevronDown, LogOut, Shield, Edit, Search,
-  Mail, Sparkles, Send,
+  Mail, Sparkles, Send, X, CheckCircle2, Clock, ExternalLink,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -40,6 +37,8 @@ interface CohortMember {
   role: string;
   startDate: string | null;
   addedAt: string | null;
+  completedWeeks: number[];
+  lastCheckinDate: string | null;
 }
 
 interface CohortDetail {
@@ -66,6 +65,7 @@ export default function AdminCohortPage() {
   const [removingMember, setRemovingMember] = useState<CohortMember | null>(null);
   const [showAddMember, setShowAddMember] = useState(false);
   const [memberSearch, setMemberSearch] = useState("");
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   // Broadcast message state
   const [showBroadcast, setShowBroadcast] = useState(false);
@@ -323,7 +323,7 @@ export default function AdminCohortPage() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             {loadingMembers ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -334,44 +334,229 @@ export default function AdminCohortPage() {
                 <p>No members yet. Add clients to this cohort.</p>
               </div>
             ) : (
-              <div className="rounded-md border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>Added</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {members.map(member => (
-                      <TableRow key={member.id} data-testid={`row-member-${member.id}`}>
-                        <TableCell className="font-medium">{member.name || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{member.email}</TableCell>
-                        <TableCell className="text-sm">
-                          {member.startDate ? new Date(member.startDate).toLocaleDateString() : "—"}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {member.addedAt ? new Date(member.addedAt).toLocaleDateString() : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
+              <>
+                {/* Member card grid */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {members.map(member => {
+                    const isClient = member.role === "client";
+                    const isSelected = selectedMemberId === member.id;
+                    const weeksCompleted = member.completedWeeks?.length ?? 0;
+                    const currentWeek = Math.min(16, weeksCompleted + 1);
+                    const progressPct = Math.round((weeksCompleted / 16) * 100);
+
+                    let statusLabel = "Not Started";
+                    let statusClass = "bg-muted text-muted-foreground";
+                    if (!isClient) {
+                      statusLabel = "Mentor";
+                      statusClass = "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+                    } else if (!member.startDate) {
+                      statusLabel = "Not Started";
+                      statusClass = "bg-muted text-muted-foreground";
+                    } else if (member.lastCheckinDate) {
+                      const daysSince = Math.floor((Date.now() - new Date(member.lastCheckinDate).getTime()) / 86400000);
+                      if (daysSince <= 7) {
+                        statusLabel = "Active";
+                        statusClass = "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+                      } else if (daysSince <= 21) {
+                        statusLabel = "Inactive";
+                        statusClass = "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+                      } else {
+                        statusLabel = "Disengaged";
+                        statusClass = "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+                      }
+                    } else if (member.startDate) {
+                      statusLabel = "In Progress";
+                      statusClass = "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400";
+                    }
+
+                    return (
+                      <div
+                        key={member.id}
+                        onClick={() => isClient && setSelectedMemberId(isSelected ? null : member.id)}
+                        className={`rounded-lg border p-4 transition-all ${
+                          isClient ? "cursor-pointer" : "opacity-70"
+                        } ${
+                          isSelected
+                            ? "ring-2 ring-primary border-primary"
+                            : isClient
+                              ? "hover:ring-1 hover:ring-border"
+                              : ""
+                        }`}
+                        data-testid={`card-member-${member.id}`}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold truncate">{member.name || "—"}</p>
+                            <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                          </div>
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${statusClass}`}>
+                            {statusLabel}
+                          </span>
+                        </div>
+
+                        {isClient && member.startDate ? (
+                          <>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+                              <span>Week {currentWeek} / 16</span>
+                              <span>{weeksCompleted} completed</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-primary transition-all"
+                                style={{ width: `${progressPct}%` }}
+                              />
+                            </div>
+                            {member.lastCheckinDate && (
+                              <p className="text-[10px] text-muted-foreground mt-2">
+                                Last check-in: {(() => {
+                                  const days = Math.floor((Date.now() - new Date(member.lastCheckinDate).getTime()) / 86400000);
+                                  return days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`;
+                                })()}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {isClient ? "Not yet started" : "Group facilitator"}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Selected member detail panel */}
+                {selectedMemberId && (() => {
+                  const member = members.find(m => m.id === selectedMemberId);
+                  if (!member) return null;
+                  const weeksCompleted = member.completedWeeks ?? [];
+                  const currentWeek = Math.min(16, weeksCompleted.length + 1);
+
+                  const getMemberWeekStatus = (weekNum: number) => {
+                    if (weeksCompleted.includes(weekNum)) return "completed";
+                    if (member.startDate) {
+                      const daysSinceStart = Math.floor((Date.now() - new Date(member.startDate).getTime()) / 86400000);
+                      if (daysSinceStart >= (weekNum - 1) * 7) return "available";
+                    }
+                    return "locked";
+                  };
+
+                  return (
+                    <Card className="border-primary/30" data-testid={`member-detail-panel-${selectedMemberId}`}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-base">{member.name || member.email}</CardTitle>
+                            <p className="text-xs text-muted-foreground mt-0.5">{member.email}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSelectedMemberId(null)}
+                            data-testid="button-close-member-detail"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-5">
+                        {/* Stats row */}
+                        <div className="flex flex-wrap gap-4 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Weeks Completed</p>
+                            <p className="font-semibold">{weeksCompleted.length} / 16</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Current Week</p>
+                            <p className="font-semibold">Week {currentWeek}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Start Date</p>
+                            <p className="font-semibold">
+                              {member.startDate ? new Date(member.startDate).toLocaleDateString() : "—"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Last Check-in</p>
+                            <p className="font-semibold">
+                              {member.lastCheckinDate
+                                ? (() => {
+                                    const days = Math.floor((Date.now() - new Date(member.lastCheckinDate).getTime()) / 86400000);
+                                    return days === 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`;
+                                  })()
+                                : "None yet"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* 16-week progress grid */}
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                            Program Progress
+                          </p>
+                          <div className="grid grid-cols-8 gap-1.5">
+                            {Array.from({ length: 16 }, (_, i) => i + 1).map(weekNum => {
+                              const status = getMemberWeekStatus(weekNum);
+                              return (
+                                <div
+                                  key={weekNum}
+                                  className={`flex flex-col items-center justify-center rounded border p-1.5 ${
+                                    status === "completed"
+                                      ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30"
+                                      : status === "available"
+                                        ? "border-border"
+                                        : "border-muted opacity-40"
+                                  }`}
+                                  data-testid={`member-week-${weekNum}`}
+                                >
+                                  <span className="text-[9px] text-muted-foreground leading-none">Wk</span>
+                                  <span className="text-[11px] font-bold leading-none mt-0.5">{weekNum}</span>
+                                  {status === "completed" ? (
+                                    <CheckCircle2 className="h-2.5 w-2.5 text-green-600 dark:text-green-400 mt-0.5" />
+                                  ) : status === "available" ? (
+                                    <Clock className="h-2.5 w-2.5 text-muted-foreground mt-0.5" />
+                                  ) : null}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex flex-wrap gap-2 pt-1 border-t">
                           <Button
                             size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive"
+                            onClick={() => setLocation(`/therapist/clients/${member.id}`)}
+                            data-testid={`button-view-profile-${member.id}`}
+                          >
+                            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                            View Full Profile
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setLocation(`/therapist/clients/${member.id}?tab=guidance`)}
+                            data-testid={`button-message-member-${member.id}`}
+                          >
+                            <Mail className="mr-1.5 h-3.5 w-3.5" />
+                            Message
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive border-destructive/30 ml-auto"
                             onClick={() => setRemovingMember(member)}
                             data-testid={`button-remove-member-${member.id}`}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            Remove from Cohort
                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+              </>
             )}
           </CardContent>
         </Card>

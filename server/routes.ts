@@ -21,7 +21,7 @@ import {
   registerClientSchema,
   type UserRole,
 } from "@shared/schema";
-import { eq, desc, and, ne, inArray } from "drizzle-orm";
+import { eq, desc, and, ne, inArray, max } from "drizzle-orm";
 import { z } from "zod";
 import webpush from "web-push";
 import { generateWeeklySummaryPDF } from "./pdf-service";
@@ -4669,7 +4669,25 @@ INSTRUCTIONS:
   app.get("/api/admin/cohorts/:id/members", requireRole("admin", "therapist"), async (req, res) => {
     try {
       const members = await storage.getCohortMembers(req.params.id);
-      res.json({ members });
+      const enriched = await Promise.all(members.map(async (member) => {
+        const [completedWeeks, lastCheckinRow] = await Promise.all([
+          storage.getCompletedWeeks(member.id),
+          db.select({ lastDate: max(dailyCheckins.dateKey) })
+            .from(dailyCheckins)
+            .where(eq(dailyCheckins.userId, member.id)),
+        ]);
+        return {
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          role: member.role,
+          startDate: member.startDate,
+          addedAt: member.addedAt,
+          completedWeeks,
+          lastCheckinDate: lastCheckinRow[0]?.lastDate ?? null,
+        };
+      }));
+      res.json({ members: enriched });
     } catch (e) {
       console.error("Get cohort members error:", e);
       res.status(500).json({ message: "Failed to get members" });
