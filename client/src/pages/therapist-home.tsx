@@ -424,25 +424,25 @@ export default function TherapistHome() {
                 <p className="text-xs text-white/50">To Review</p>
               </div>
             </div>
-            <div
-              className={`rounded-xl bg-white/10 ring-1 ring-white/20 px-4 py-3 flex items-center gap-3 ${needsAttentionCount > 0 ? "cursor-pointer hover:ring-red-400/50 hover:bg-white/[0.15] transition-all" : ""}`}
-              onClick={() => {
-                if (needsAttentionCount > 0) {
+            {needsAttentionCount > 0 && (
+              <div
+                className="rounded-xl bg-white/10 ring-1 ring-white/20 px-4 py-3 flex items-center gap-3 cursor-pointer hover:ring-red-400/50 hover:bg-white/[0.15] transition-all"
+                onClick={() => {
                   const firstFlagged = sortedClients.find(c => getClientStatus(c) === "Needs Attention");
                   if (firstFlagged) {
                     setLocation(`/therapist/clients/${firstFlagged.id}?tab=${getBestAttentionTab(String(firstFlagged.id))}`);
                   }
-                }
-              }}
-              data-testid="card-needs-attention-summary"
-            >
-              <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${needsAttentionCount > 0 ? "text-red-400" : "text-white/30"}`} />
-              <div>
-                <p className={`text-2xl font-bold ${needsAttentionCount > 0 ? "text-red-300" : "text-white"}`}>{needsAttentionCount}</p>
-                <p className="text-xs text-white/50">Need Attention</p>
+                }}
+                data-testid="card-needs-attention-summary"
+              >
+                <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-400" />
+                <div>
+                  <p className="text-2xl font-bold text-red-300">{needsAttentionCount}</p>
+                  <p className="text-xs text-white/50">Need Attention</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-white/30 ml-auto" />
               </div>
-              {needsAttentionCount > 0 && <ChevronRight className="h-4 w-4 text-white/30 ml-auto" />}
-            </div>
+            )}
           </div>
         )}
       </div>
