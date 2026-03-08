@@ -1411,8 +1411,11 @@ export async function registerRoutes(
       const safeClients = await Promise.all(
         clients.map(async (c) => {
           const { password: _, ...safe } = c;
-          const therapists = await storage.getTherapistsForClient(c.id);
-          const waivedWeeks = await storage.getWaivedWeeks(c.id);
+          const [therapists, waivedWeeks, completedWeeks] = await Promise.all([
+            storage.getTherapistsForClient(c.id),
+            storage.getWaivedWeeks(c.id),
+            storage.getCompletedWeeks(c.id),
+          ]);
           return {
             ...safe,
             therapists: therapists.map((t) => ({
@@ -1421,6 +1424,7 @@ export async function registerRoutes(
               email: t.email,
             })),
             waivedWeeks,
+            completedWeeks,
           };
         }),
       );

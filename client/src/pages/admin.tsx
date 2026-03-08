@@ -94,6 +94,7 @@ interface Client {
   createdAt: string;
   therapists: { id: string; name: string | null; email: string }[];
   waivedWeeks: number[];
+  completedWeeks: number[];
 }
 
 interface OverdueReview {
@@ -593,6 +594,7 @@ export default function AdminPage() {
                           <TableHead>Email</TableHead>
                           <TableHead>Start Date</TableHead>
                           <TableHead>Mentor(s)</TableHead>
+                          <TableHead>Progress</TableHead>
                           <TableHead>Fees Waived</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
@@ -607,6 +609,11 @@ export default function AdminPage() {
                               {client.therapists.length > 0
                                 ? client.therapists.map((t) => t.name || t.email).join(", ")
                                 : <span className="text-muted-foreground">None</span>}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" data-testid={`badge-progress-${client.id}`}>
+                                {(client.completedWeeks || []).length} / 16
+                              </Badge>
                             </TableCell>
                             <TableCell>
                               {client.allFeesWaived ? (
@@ -708,6 +715,9 @@ export default function AdminPage() {
                               {client.startDate}
                             </span>
                           )}
+                          <Badge variant="outline" className="text-xs" data-testid={`badge-progress-mobile-${client.id}`}>
+                            Week {(client.completedWeeks || []).length} / 16
+                          </Badge>
                           {client.therapists.length > 0 ? (
                             <Badge variant="outline" className="text-xs">
                               {client.therapists.map((t) => t.name || t.email).join(", ")}
