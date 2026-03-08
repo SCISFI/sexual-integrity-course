@@ -207,6 +207,7 @@ export interface IStorage {
     avgCompletionsPerMember: number;
     relapseCount: number;
     dailySeries: Array<{ date: string; checkins: number; completions: number; activeUsers: number; relapses: number }>;
+    memberBreakdown: Array<{ id: string; name: string | null; email: string; isActive: boolean; weekCompletions: number; relapseCount: number }>;
   }>;
   compareCohorts(cohortIds: string[], startDate: string, endDate: string): Promise<Array<{
     cohortId: string;
@@ -1422,6 +1423,7 @@ export class DatabaseStorage implements IStorage {
     avgCompletionsPerMember: number;
     relapseCount: number;
     dailySeries: Array<{ date: string; checkins: number; completions: number; activeUsers: number; relapses: number }>;
+    memberBreakdown: Array<{ id: string; name: string | null; email: string; isActive: boolean; weekCompletions: number; relapseCount: number }>;
   }> {
     // Get all member IDs in this cohort
     const memberRows = await db
@@ -1432,43 +1434,90 @@ export class DatabaseStorage implements IStorage {
     const totalMembers = memberIds.length;
 
     if (totalMembers === 0) {
-      return { totalMembers: 0, activeMembers: 0, checkinRate: 0, totalWeekCompletions: 0, avgCompletionsPerMember: 0, relapseCount: 0, dailySeries: [] };
+      return { totalMembers: 0, activeMembers: 0, checkinRate: 0, totalWeekCompletions: 0, avgCompletionsPerMember: 0, relapseCount: 0, dailySeries: [], memberBreakdown: [] };
     }
 
-    // Active members: those who checked in at least once in range
-    const activeMemberRows = await db
-      .selectDistinct({ userId: dailyCheckins.userId })
-      .from(dailyCheckins)
-      .where(and(
-        inArray(dailyCheckins.userId, memberIds),
-        gte(dailyCheckins.dateKey, startDate),
-        lte(dailyCheckins.dateKey, endDate),
-      ));
+    // Run aggregate + per-member queries in parallel
+    const [
+      activeMemberRows,
+      completionRows,
+      relapseRows,
+      memberUserRows,
+      perMemberCompletions,
+      perMemberRelapses,
+    ] = await Promise.all([
+      // Active members (distinct) who checked in during range
+      db.selectDistinct({ userId: dailyCheckins.userId })
+        .from(dailyCheckins)
+        .where(and(
+          inArray(dailyCheckins.userId, memberIds),
+          gte(dailyCheckins.dateKey, startDate),
+          lte(dailyCheckins.dateKey, endDate),
+        )),
+      // Total week completions in range (aggregate)
+      db.select({ count: sql<number>`cast(count(*) as int)` })
+        .from(weekCompletions)
+        .where(and(
+          inArray(weekCompletions.userId, memberIds),
+          gte(weekCompletions.completedAt, new Date(startDate)),
+          lte(weekCompletions.completedAt, new Date(endDate + "T23:59:59Z")),
+        )),
+      // Relapse count in range (aggregate)
+      db.select({ count: sql<number>`cast(count(*) as int)` })
+        .from(relapseAutopsies)
+        .where(and(
+          inArray(relapseAutopsies.userId, memberIds),
+          gte(relapseAutopsies.date, startDate),
+          lte(relapseAutopsies.date, endDate),
+        )),
+      // Member user info
+      db.select({ id: users.id, name: users.name, email: users.email })
+        .from(users)
+        .where(inArray(users.id, memberIds)),
+      // Per-member week completions in range
+      db.select({
+          userId: weekCompletions.userId,
+          cnt: sql<number>`cast(count(*) as int)`,
+        })
+        .from(weekCompletions)
+        .where(and(
+          inArray(weekCompletions.userId, memberIds),
+          gte(weekCompletions.completedAt, new Date(startDate)),
+          lte(weekCompletions.completedAt, new Date(endDate + "T23:59:59Z")),
+        ))
+        .groupBy(weekCompletions.userId),
+      // Per-member relapse count in range
+      db.select({
+          userId: relapseAutopsies.userId,
+          cnt: sql<number>`cast(count(*) as int)`,
+        })
+        .from(relapseAutopsies)
+        .where(and(
+          inArray(relapseAutopsies.userId, memberIds),
+          gte(relapseAutopsies.date, startDate),
+          lte(relapseAutopsies.date, endDate),
+        ))
+        .groupBy(relapseAutopsies.userId),
+    ]);
+
     const activeMembers = activeMemberRows.length;
     const checkinRate = totalMembers > 0 ? Math.round((activeMembers / totalMembers) * 100) : 0;
-
-    // Total week completions in range
-    const completionRows = await db
-      .select({ count: sql<number>`cast(count(*) as int)` })
-      .from(weekCompletions)
-      .where(and(
-        inArray(weekCompletions.userId, memberIds),
-        gte(weekCompletions.completedAt, new Date(startDate)),
-        lte(weekCompletions.completedAt, new Date(endDate + "T23:59:59Z")),
-      ));
     const totalWeekCompletions = completionRows[0]?.count ?? 0;
     const avgCompletionsPerMember = totalMembers > 0 ? Math.round((totalWeekCompletions / totalMembers) * 10) / 10 : 0;
-
-    // Relapse count in range
-    const relapseRows = await db
-      .select({ count: sql<number>`cast(count(*) as int)` })
-      .from(relapseAutopsies)
-      .where(and(
-        inArray(relapseAutopsies.userId, memberIds),
-        gte(relapseAutopsies.date, startDate),
-        lte(relapseAutopsies.date, endDate),
-      ));
     const relapseCount = relapseRows[0]?.count ?? 0;
+
+    // Build per-member breakdown (reuse activeMemberRows for the active set)
+    const activeSet = new Set(activeMemberRows.map(r => r.userId));
+    const completionsByMember = new Map(perMemberCompletions.map(r => [r.userId, r.cnt]));
+    const relapsesByMember = new Map(perMemberRelapses.map(r => [r.userId, r.cnt]));
+    const memberBreakdown = memberUserRows.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      isActive: activeSet.has(u.id),
+      weekCompletions: completionsByMember.get(u.id) ?? 0,
+      relapseCount: relapsesByMember.get(u.id) ?? 0,
+    }));
 
     // Daily check-in series
     const dailyCheckinSeries = await db
@@ -1527,7 +1576,7 @@ export class DatabaseStorage implements IStorage {
       relapses: relapseByDate.get(r.date) ?? 0,
     }));
 
-    return { totalMembers, activeMembers, checkinRate, totalWeekCompletions, avgCompletionsPerMember, relapseCount, dailySeries };
+    return { totalMembers, activeMembers, checkinRate, totalWeekCompletions, avgCompletionsPerMember, relapseCount, dailySeries, memberBreakdown };
   }
 
   async compareCohorts(cohortIds: string[], startDate: string, endDate: string): Promise<Array<{

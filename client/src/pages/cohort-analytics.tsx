@@ -4,7 +4,6 @@ import { useParams, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -20,6 +19,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   ArrowLeft, Shield, UserCircle, ChevronDown, LogOut,
   Loader2, Users, Activity, TrendingUp, AlertTriangle, CheckSquare,
+  X, ExternalLink, CheckCircle2,
 } from "lucide-react";
 
 interface DailyPoint {
@@ -30,6 +30,15 @@ interface DailyPoint {
   relapses: number;
 }
 
+interface MemberBreakdown {
+  id: string;
+  name: string | null;
+  email: string;
+  isActive: boolean;
+  weekCompletions: number;
+  relapseCount: number;
+}
+
 interface CohortAnalytics {
   totalMembers: number;
   activeMembers: number;
@@ -38,6 +47,7 @@ interface CohortAnalytics {
   avgCompletionsPerMember: number;
   relapseCount: number;
   dailySeries: DailyPoint[];
+  memberBreakdown: MemberBreakdown[];
 }
 
 interface CompareCohort {
@@ -53,17 +63,33 @@ interface CohortItem {
   memberCount: number;
 }
 
+type StatKey = "total" | "active" | "rate" | "avg" | "relapse";
+
 const COMPARE_COLORS = ["#3b82f6", "#10b981", "#f59e0b"] as const;
 
 function formatDate(d: string) {
   return new Date(d + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function StatCard({ icon: Icon, label, value, sub, color }: {
-  icon: React.ElementType; label: string; value: string | number; sub?: string; color?: string;
+function ClickableStatCard({ icon: Icon, label, value, sub, color, statKey, selectedStat, onClick }: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  sub?: string;
+  color?: string;
+  statKey: StatKey;
+  selectedStat: StatKey | null;
+  onClick: (key: StatKey) => void;
 }) {
+  const isSelected = selectedStat === statKey;
   return (
-    <Card>
+    <Card
+      className={`cursor-pointer transition-all hover:shadow-md ${
+        isSelected ? "ring-2 ring-primary border-primary" : "hover:ring-1 hover:ring-border"
+      }`}
+      onClick={() => onClick(statKey)}
+      data-testid={`stat-card-${statKey}`}
+    >
       <CardContent className="pt-5">
         <div className="flex items-start justify-between">
           <div>
@@ -71,12 +97,34 @@ function StatCard({ icon: Icon, label, value, sub, color }: {
             <p className={`mt-1 text-2xl font-bold ${color || ""}`} data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>{value}</p>
             {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
           </div>
-          <div className="rounded-full bg-muted p-2">
-            <Icon className="h-4 w-4 text-muted-foreground" />
+          <div className={`rounded-full p-2 transition-colors ${isSelected ? "bg-primary/10" : "bg-muted"}`}>
+            <Icon className={`h-4 w-4 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
           </div>
         </div>
+        <p className={`text-[10px] mt-2 transition-colors ${isSelected ? "text-primary" : "text-muted-foreground/60"}`}>
+          {isSelected ? "Click to close" : "Click to see who"}
+        </p>
       </CardContent>
     </Card>
+  );
+}
+
+function MemberRow({ member, onNavigate }: { member: MemberBreakdown; onNavigate: (id: string) => void }) {
+  return (
+    <div className="flex items-center justify-between py-2 px-1 rounded hover:bg-muted/40 group" data-testid={`member-row-${member.id}`}>
+      <div className="min-w-0">
+        <p className="text-sm font-medium truncate">{member.name || member.email}</p>
+        {member.name && <p className="text-xs text-muted-foreground truncate">{member.email}</p>}
+      </div>
+      <button
+        onClick={() => onNavigate(member.id)}
+        className="ml-3 shrink-0 text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+        title="View profile"
+        data-testid={`button-view-profile-${member.id}`}
+      >
+        <ExternalLink className="h-3.5 w-3.5" />
+      </button>
+    </div>
   );
 }
 
@@ -86,7 +134,6 @@ export default function CohortAnalyticsPage() {
   const { user, logout } = useAuth();
 
   const isAdmin = (user as any)?.role === "admin";
-  const backLabel = isAdmin ? "Admin" : "Dashboard";
 
   const today = new Date().toISOString().slice(0, 10);
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -94,6 +141,7 @@ export default function CohortAnalyticsPage() {
   const [startDate, setStartDate] = useState(thirtyDaysAgo);
   const [endDate, setEndDate] = useState(today);
   const [selectedCompareIds, setSelectedCompareIds] = useState<string[]>([]);
+  const [selectedStat, setSelectedStat] = useState<StatKey | null>(null);
 
   const { data: cohortData } = useQuery<{ cohort: { id: string; name: string; description: string | null } }>({
     queryKey: ["/api/admin/cohorts", id],
@@ -135,11 +183,200 @@ export default function CohortAnalyticsPage() {
     );
   };
 
+  const handleStatClick = (key: StatKey) => {
+    setSelectedStat(prev => prev === key ? null : key);
+  };
+
   const chartConfig = {
-    checkins: { label: "Check-ins", color: "#38bdf8" }, // Sky 400
-    activeUsers: { label: "Active Users", color: "#8b5cf6" }, // Violet 500
-    completions: { label: "Week Completions", color: "#10b981" }, // Emerald 500
-    relapses: { label: "Relapse Reports", color: "#ef4444" }, // Red 500
+    checkins: { label: "Check-ins", color: "#38bdf8" },
+    activeUsers: { label: "Active Users", color: "#8b5cf6" },
+    completions: { label: "Week Completions", color: "#10b981" },
+    relapses: { label: "Relapse Reports", color: "#ef4444" },
+  };
+
+  const breakdown = analytics?.memberBreakdown ?? [];
+
+  const renderBreakdownPanel = () => {
+    if (!selectedStat || breakdown.length === 0) return null;
+
+    const navigate = (memberId: string) => setLocation(`/therapist/clients/${memberId}`);
+
+    let panelTitle = "";
+    let content: React.ReactNode = null;
+
+    if (selectedStat === "total") {
+      panelTitle = `All Members (${breakdown.length})`;
+      const sorted = [...breakdown].sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+      content = (
+        <div className="divide-y">
+          {sorted.map(m => (
+            <div key={m.id} className="flex items-center justify-between py-2 px-1 rounded hover:bg-muted/40 group" data-testid={`member-row-${m.id}`}>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`h-2 w-2 rounded-full shrink-0 ${m.isActive ? "bg-green-500" : "bg-muted-foreground/40"}`} />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{m.name || m.email}</p>
+                  {m.name && <p className="text-xs text-muted-foreground truncate">{m.email}</p>}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 ml-3">
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                  m.isActive
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-muted text-muted-foreground"
+                }`}>
+                  {m.isActive ? "Active" : "Inactive"}
+                </span>
+                <button
+                  onClick={() => navigate(m.id)}
+                  className="text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                  data-testid={`button-view-profile-${m.id}`}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (selectedStat === "active" || selectedStat === "rate") {
+      const active = breakdown.filter(m => m.isActive).sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+      const inactive = breakdown.filter(m => !m.isActive).sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+      panelTitle = `Active vs Inactive Members`;
+      content = (
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Checked In ({active.length})
+            </p>
+            {active.length === 0 ? (
+              <p className="text-sm text-muted-foreground pl-1">No one checked in during this period.</p>
+            ) : (
+              <div className="divide-y">
+                {active.map(m => <MemberRow key={m.id} member={m} onNavigate={navigate} />)}
+              </div>
+            )}
+          </div>
+          {inactive.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                No Check-ins ({inactive.length})
+              </p>
+              <div className="divide-y">
+                {inactive.map(m => <MemberRow key={m.id} member={m} onNavigate={navigate} />)}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (selectedStat === "avg") {
+      const sorted = [...breakdown].sort((a, b) => b.weekCompletions - a.weekCompletions);
+      panelTitle = `Week Completions per Member`;
+      content = (
+        <div className="divide-y">
+          {sorted.map(m => (
+            <div key={m.id} className="flex items-center justify-between py-2 px-1 rounded hover:bg-muted/40 group" data-testid={`member-row-${m.id}`}>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{m.name || m.email}</p>
+                {m.name && <p className="text-xs text-muted-foreground truncate">{m.email}</p>}
+              </div>
+              <div className="flex items-center gap-3 shrink-0 ml-3">
+                <span className={`text-sm font-bold ${m.weekCompletions > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                  {m.weekCompletions} <span className="text-xs font-normal text-muted-foreground">wks</span>
+                </span>
+                <button
+                  onClick={() => navigate(m.id)}
+                  className="text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                  data-testid={`button-view-profile-${m.id}`}
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (selectedStat === "relapse") {
+      const withRelapses = breakdown.filter(m => m.relapseCount > 0).sort((a, b) => b.relapseCount - a.relapseCount);
+      const clean = breakdown.filter(m => m.relapseCount === 0).sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+      panelTitle = `Relapse Reports`;
+      content = (
+        <div className="space-y-4">
+          {withRelapses.length === 0 ? (
+            <div className="flex items-center gap-2 py-2 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <p className="text-sm font-medium">No relapse reports in this period.</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Reports Filed ({withRelapses.length})
+              </p>
+              <div className="divide-y">
+                {withRelapses.map(m => (
+                  <div key={m.id} className="flex items-center justify-between py-2 px-1 rounded hover:bg-muted/40 group" data-testid={`member-row-${m.id}`}>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{m.name || m.email}</p>
+                      {m.name && <p className="text-xs text-muted-foreground truncate">{m.email}</p>}
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-3">
+                      <span className="text-sm font-bold text-red-600 dark:text-red-400">
+                        {m.relapseCount} <span className="text-xs font-normal text-muted-foreground">report{m.relapseCount !== 1 ? "s" : ""}</span>
+                      </span>
+                      <button
+                        onClick={() => navigate(m.id)}
+                        className="text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+                        data-testid={`button-view-profile-${m.id}`}
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {clean.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                No Reports ({clean.length})
+              </p>
+              <div className="divide-y">
+                {clean.map(m => <MemberRow key={m.id} member={m} onNavigate={navigate} />)}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Card className="border-primary/30" data-testid="stat-breakdown-panel">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">{panelTitle}</CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSelectedStat(null)}
+              data-testid="button-close-breakdown"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="max-h-80 overflow-y-auto">
+          {content}
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -168,7 +405,7 @@ export default function CohortAnalyticsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
+                  <DropdownMenuLabel>{isAdmin ? "Admin Account" : "Mentor Account"}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logout()} data-testid="button-logout">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -198,7 +435,7 @@ export default function CohortAnalyticsPage() {
               <Input
                 type="date"
                 value={startDate}
-                onChange={e => setStartDate(e.target.value)}
+                onChange={e => { setStartDate(e.target.value); setSelectedStat(null); }}
                 className="h-8 w-36 text-sm"
                 data-testid="input-start-date"
               />
@@ -208,7 +445,7 @@ export default function CohortAnalyticsPage() {
               <Input
                 type="date"
                 value={endDate}
-                onChange={e => setEndDate(e.target.value)}
+                onChange={e => { setEndDate(e.target.value); setSelectedStat(null); }}
                 className="h-8 w-36 text-sm"
                 data-testid="input-end-date"
               />
@@ -224,27 +461,54 @@ export default function CohortAnalyticsPage() {
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              <StatCard icon={Users} label="Total Members" value={analytics.totalMembers} />
-              <StatCard icon={Activity} label="Active Members" value={analytics.activeMembers} sub="checked in during range" />
-              <StatCard
+              <ClickableStatCard
+                icon={Users}
+                label="Total Members"
+                value={analytics.totalMembers}
+                statKey="total"
+                selectedStat={selectedStat}
+                onClick={handleStatClick}
+              />
+              <ClickableStatCard
+                icon={Activity}
+                label="Active Members"
+                value={analytics.activeMembers}
+                sub="checked in during range"
+                statKey="active"
+                selectedStat={selectedStat}
+                onClick={handleStatClick}
+              />
+              <ClickableStatCard
                 icon={TrendingUp}
                 label="Check-in Rate"
                 value={`${analytics.checkinRate}%`}
                 color={analytics.checkinRate >= 70 ? "text-emerald-600" : analytics.checkinRate >= 40 ? "text-amber-600" : "text-red-600"}
+                statKey="rate"
+                selectedStat={selectedStat}
+                onClick={handleStatClick}
               />
-              <StatCard
+              <ClickableStatCard
                 icon={CheckSquare}
                 label="Avg per Member"
                 value={analytics.avgCompletionsPerMember}
                 sub="week completions"
+                statKey="avg"
+                selectedStat={selectedStat}
+                onClick={handleStatClick}
               />
-              <StatCard
+              <ClickableStatCard
                 icon={AlertTriangle}
                 label="Relapse Reports"
                 value={analytics.relapseCount}
                 color={analytics.relapseCount > 0 ? "text-red-600" : ""}
+                statKey="relapse"
+                selectedStat={selectedStat}
+                onClick={handleStatClick}
               />
             </div>
+
+            {/* Breakdown panel */}
+            {renderBreakdownPanel()}
 
             {/* Daily Trend Chart */}
             {analytics.dailySeries.length > 0 ? (
@@ -326,7 +590,6 @@ export default function CohortAnalyticsPage() {
                       </div>
                     ) : compareData && compareData.cohorts.length > 0 ? (
                       <div className="space-y-6">
-                        {/* Active Users Comparison */}
                         <div>
                           <p className="text-sm font-medium mb-2 text-muted-foreground">Active Users per Day</p>
                           <ResponsiveContainer width="100%" height={200}>
@@ -357,8 +620,6 @@ export default function CohortAnalyticsPage() {
                             </LineChart>
                           </ResponsiveContainer>
                         </div>
-
-                        {/* Check-ins Comparison */}
                         <div>
                           <p className="text-sm font-medium mb-2 text-muted-foreground">Daily Check-ins</p>
                           <ResponsiveContainer width="100%" height={200}>
