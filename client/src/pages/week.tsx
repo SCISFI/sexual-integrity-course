@@ -194,6 +194,11 @@ interface WeekHero {
   tagline: string;
 }
 
+const WEEK_INFOGRAPHICS: Record<number, string> = {
+  1: "/infographics/week-1.jpg",
+  2: "/infographics/week-2.jpg",
+};
+
 const WEEK_HERO: Record<number, WeekHero> = {
   1:  { icon: Eye,          accent: BookOpen,     gradient: "from-slate-900 to-cyan-900",    tagline: "Face what you've been hiding" },
   2:  { icon: Map,          accent: RefreshCw,    gradient: "from-slate-900 to-indigo-900",  tagline: "Every trigger. Every ritual. Every exit ramp." },
@@ -646,36 +651,41 @@ export default function WeekPage() {
       <main className="mx-auto max-w-3xl px-4 py-6 md:py-8 space-y-6 md:space-y-8">
         {/* Hero Section */}
         <Card className="overflow-hidden" data-testid="section-hero">
-          {/* Themed Hero Graphic */}
-          {(() => {
-            const hero = WEEK_HERO[weekNumber];
-            if (!hero) return null;
-            const PrimaryIcon = hero.icon;
-            const AccentIcon = hero.accent;
-            return (
-              <div className={`relative flex flex-col items-center justify-center bg-gradient-to-br ${hero.gradient} h-44 md:h-52 overflow-hidden px-6`}>
-                {/* Decorative large faint background icons */}
-                <PrimaryIcon className="absolute left-4 top-4 h-28 w-28 text-white opacity-5 rotate-12" />
-                <AccentIcon className="absolute right-4 bottom-4 h-24 w-24 text-white opacity-5 -rotate-12" />
-                {/* Central icon cluster */}
-                <div className="relative flex items-center justify-center gap-4 mb-3">
-                  <AccentIcon className="h-7 w-7 text-white/40" />
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-2 ring-white/20">
-                    <PrimaryIcon className="h-8 w-8 text-white" />
+          {/* Infographic image (weeks with custom artwork) or themed gradient hero */}
+          {WEEK_INFOGRAPHICS[weekNumber] ? (
+            <img
+              src={WEEK_INFOGRAPHICS[weekNumber]}
+              alt={`Week ${weekNumber} infographic`}
+              className="w-full object-cover max-h-72 md:max-h-96"
+              data-testid="img-week-infographic"
+            />
+          ) : (
+            (() => {
+              const hero = WEEK_HERO[weekNumber];
+              if (!hero) return null;
+              const PrimaryIcon = hero.icon;
+              const AccentIcon = hero.accent;
+              return (
+                <div className={`relative flex flex-col items-center justify-center bg-gradient-to-br ${hero.gradient} h-44 md:h-52 overflow-hidden px-6`}>
+                  <PrimaryIcon className="absolute left-4 top-4 h-28 w-28 text-white opacity-5 rotate-12" />
+                  <AccentIcon className="absolute right-4 bottom-4 h-24 w-24 text-white opacity-5 -rotate-12" />
+                  <div className="relative flex items-center justify-center gap-4 mb-3">
+                    <AccentIcon className="h-7 w-7 text-white/40" />
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/10 ring-2 ring-white/20">
+                      <PrimaryIcon className="h-8 w-8 text-white" />
+                    </div>
+                    <AccentIcon className="h-7 w-7 text-white/40" />
                   </div>
-                  <AccentIcon className="h-7 w-7 text-white/40" />
+                  <p className="text-white/90 text-sm md:text-base font-medium tracking-wide text-center max-w-xs">
+                    {hero.tagline}
+                  </p>
+                  <span className="absolute top-3 right-3 rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/70 font-medium">
+                    Week {weekNumber} of 16
+                  </span>
                 </div>
-                {/* Tagline */}
-                <p className="text-white/90 text-sm md:text-base font-medium tracking-wide text-center max-w-xs">
-                  {hero.tagline}
-                </p>
-                {/* Week badge */}
-                <span className="absolute top-3 right-3 rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-white/70 font-medium">
-                  Week {weekNumber} of 16
-                </span>
-              </div>
-            );
-          })()}
+              );
+            })()
+          )}
 
           <CardContent className="p-6 md:p-8 space-y-4">
             <div className="flex items-center gap-3 flex-wrap">
