@@ -1,3 +1,4 @@
 attached_assets/Deconstructing_the_Cycle_1772825108107.mp4 filter=lfs diff=lfs merge=lfs -text
 client/public/podcasts/week-1.mp4 filter=lfs diff=lfs merge=lfs -text
 attached_assets/Week_2_–_Nothing_About_This_Is_Random_1772981653589.mp4 filter=lfs diff=lfs merge=lfs -text
+client/public/podcasts/week-2.mp4 filter=lfs diff=lfs merge=lfs -text

@@ -10,4 +10,9 @@ export const WEEK_PODCASTS: Record<number, PodcastEpisode> = {
     file: "/podcasts/week-1.mp4",
     description: "A visual breakdown of the core concepts in this week's lesson.",
   },
+  2: {
+    title: "Nothing About This Is Random",
+    file: "/podcasts/week-2.mp4",
+    description: "A visual breakdown of the core concepts in this week's lesson.",
+  },
 };
