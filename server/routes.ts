@@ -4431,7 +4431,7 @@ ${completedAutopsies
         const [autopsy, allAutopsies, checkins, user] = await Promise.all([
           storage.getRelapseAutopsy(autopsyId),
           storage.getRelapseAutopsies(clientId),
-          storage.getUserCheckinHistory(clientId, 60),
+          storage.getUserCheckinHistory(clientId, 14),
           storage.getUser(clientId),
         ]);
 

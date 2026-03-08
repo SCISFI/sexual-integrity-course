@@ -139,8 +139,10 @@ function analyzeMetric(name: string, values: number[]): MetricTrendAnalysis {
   };
 }
 
+const MAX_STAT_WINDOW_DAYS = 14;
+
 export function analyzeTrends(
-  checkins: Array<{ 
+  rawCheckins: Array<{ 
     moodLevel: number | null; 
     urgeLevel: number | null; 
     dateKey: string;
@@ -148,15 +150,26 @@ export function analyzeTrends(
     haltChecks?: string | null;
   }>,
 ): TrendReport {
+  // Limit all statistics to the last 14 days from the most recent check-in date
+  let checkins = rawCheckins;
+  if (rawCheckins.length > 0) {
+    const latestDate = [...rawCheckins].sort((a, b) => b.dateKey.localeCompare(a.dateKey))[0].dateKey;
+    const cutoff = new Date(new Date(latestDate + "T12:00:00Z").getTime() - (MAX_STAT_WINDOW_DAYS - 1) * 86400000)
+      .toISOString().slice(0, 10);
+    checkins = rawCheckins.filter(c => c.dateKey >= cutoff);
+  }
+
   const sorted = [...checkins].sort((a, b) => a.dateKey.localeCompare(b.dateKey));
   const moodValues = sorted.filter(c => c.moodLevel !== null).map(c => c.moodLevel!);
   const urgeValues = sorted.filter(c => c.urgeLevel !== null).map(c => c.urgeLevel!);
 
   const uniqueDates = new Set(checkins.map(c => c.dateKey));
+  // daysCovered is always the fixed 14-day window (or days since start if fewer than 14 days of data)
   const sortedDates = [...uniqueDates].sort();
-  const daysCovered = sortedDates.length > 1
+  const actualSpan = sortedDates.length > 1
     ? Math.ceil((new Date(sortedDates[sortedDates.length - 1]).getTime() - new Date(sortedDates[0]).getTime()) / 86400000) + 1
     : sortedDates.length;
+  const daysCovered = Math.min(MAX_STAT_WINDOW_DAYS, Math.max(actualSpan, uniqueDates.size));
   const rate = daysCovered > 0 ? Math.round((uniqueDates.size / daysCovered) * 100) : 0;
 
   // Analyze vulnerabilities (unchecked positives, checked negatives)
@@ -196,13 +209,13 @@ export function analyzeTrends(
 
   let consistencySummary: string;
   if (uniqueDates.size === 0) {
-    consistencySummary = "No check-ins recorded.";
+    consistencySummary = "No check-ins recorded in the last 14 days.";
   } else if (rate >= 80) {
-    consistencySummary = `Excellent consistency: ${uniqueDates.size} check-ins over ${daysCovered} days (${rate}% completion rate).`;
+    consistencySummary = `Excellent consistency: ${uniqueDates.size} check-ins in the last ${daysCovered} days (${rate}% completion rate).`;
   } else if (rate >= 50) {
-    consistencySummary = `Moderate consistency: ${uniqueDates.size} check-ins over ${daysCovered} days (${rate}% completion rate).`;
+    consistencySummary = `Moderate consistency: ${uniqueDates.size} check-ins in the last ${daysCovered} days (${rate}% completion rate).`;
   } else {
-    consistencySummary = `Low consistency: ${uniqueDates.size} check-ins over ${daysCovered} days (${rate}% completion rate).`;
+    consistencySummary = `Low consistency: ${uniqueDates.size} check-ins in the last ${daysCovered} days (${rate}% completion rate).`;
   }
 
   return {
