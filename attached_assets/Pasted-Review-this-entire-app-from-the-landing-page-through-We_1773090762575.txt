@@ -1,0 +1,176 @@
+Review this entire app from the landing page through Week 16 as a full product, codebase, and curriculum audit.
+
+I do NOT want you to start making broad changes immediately. First, I want a thorough review with recommendations that I can choose from.
+
+Your job:
+Audit the app end-to-end for anything that would make it better from the user’s perspective, the mentor/admin perspective, the educational perspective, and the technical/code perspective.
+
+Scope of review:
+1. Landing page and marketing flow
+2. Registration and login flow
+3. Client onboarding flow
+4. Client dashboard and navigation
+5. Daily check-in flow
+6. Weekly lesson flow from Week 1 through Week 16
+7. Homework, reflections, exercises, and completion flow
+8. Mentor dashboard and mentor client review flow
+9. Admin dashboard and admin controls
+10. Notifications, email flow, reminders, and review flow
+11. Stripe/payment flow
+12. Database/schema consistency
+13. Routing, auth guards, role permissions, and error handling
+14. Frontend UI consistency and UX friction
+15. Backend logic, duplicated code, dead code, and maintainability
+16. Educational content quality, consistency, pacing, clarity, redundancy, contradictions, and anything that feels weak, confusing, repetitive, or unnecessary
+
+Important instructions:
+- Do a true end-to-end review, not just a lint/code review.
+- Review both FUNCTION and CONTENT.
+- Include educational content in the audit, including lesson structure, wording, duplication, flow between weeks, progression across the 16 weeks, reflection questions, exercises, homework, and whether the content matches the purpose of each week.
+- Look for anything that is:
+  a. broken
+  b. not functioning correctly
+  c. inconsistent
+  d. redundant
+  e. no longer needed
+  f. confusing
+  g. duplicated in code or UX
+  h. technically risky
+  i. poor UX
+  j. unnecessarily complex
+  k. likely to cause user drop-off
+  l. weak educationally
+  m. out of sequence educationally
+  n. repetitive in a way that hurts learning
+  o. missing where users would reasonably expect something
+
+Clinical / product guardrails:
+- This app is a structured educational accountability tool for men working on problematic sexual behavior.
+- It must NOT become a surveillance tool, punishment tool, relapse prediction system, risk scoring system, streak/shame system, or automated confrontation system.
+- Favor clarity, restraint, accountability, user agency, and human review over clever automation.
+- Do not recommend manipulative engagement tactics.
+- Do not recommend features that undermine client agency or turn the app into a probation-style system.
+- If you see existing features that violate those principles, flag them clearly.
+
+Technical review expectations:
+- Identify broken routes, mismatched naming, dead components, unused files, duplicate logic, redundant endpoints, repeated UI patterns that should be standardized, fragile code, bad assumptions, weak validation, role leakage risks, auth problems, poor loading/error states, and anything that could create bugs or confusion.
+- Identify features that appear partially built, obsolete, or no longer justified.
+- Identify places where one shared function/component/service should replace repeated implementations.
+- Identify database/schema fields, tables, or relationships that appear redundant, confusing, or out of sync with the current product.
+- Identify UI text that is inconsistent across pages.
+- Identify technical debt that affects user experience or maintainability.
+
+Content review expectations:
+- Evaluate every week’s educational content for:
+  1. clarity
+  2. tone consistency
+  3. progression from one week to the next
+  4. duplication
+  5. unnecessary filler
+  6. contradictions
+  7. weak or vague teaching
+  8. poor exercise design
+  9. repetitive reflection questions
+  10. mismatches between teaching, exercises, and homework
+  11. whether the curriculum builds in a coherent and compelling sequence
+- Point out exactly where content could be tightened, merged, removed, clarified, or strengthened.
+- Do not rewrite the full curriculum unless I ask later. For now, diagnose and recommend.
+
+How to perform the review:
+1. Map the app structure first.
+2. Trace the real user journey for:
+   - new visitor
+   - new client
+   - active client
+   - mentor
+   - admin
+3. Review routes, components, pages, server logic, schema, and content source files.
+4. Identify actual issues and probable issues.
+5. Separate must-fix issues from optional enhancements.
+6. Do NOT bury important problems in a giant list. Prioritize them.
+
+Output format:
+Return your findings in these sections:
+
+SECTION 1 — Executive Summary
+- Biggest strengths of the app
+- Biggest weaknesses of the app
+- Top 10 highest-value improvements
+
+SECTION 2 — Broken / Not Functioning Properly
+For each issue include:
+- issue title
+- where it is
+- why it is a problem
+- severity: critical / high / medium / low
+- recommended fix
+
+SECTION 3 — Redundant / Duplicated / No Longer Needed
+For each item include:
+- what is redundant
+- where it appears
+- whether it should be merged, removed, or simplified
+- what should replace it if applicable
+
+SECTION 4 — UX / Flow Improvements
+Break this down by:
+- landing page
+- onboarding
+- client dashboard
+- daily check-in
+- weekly lessons
+- mentor flow
+- admin flow
+- payments
+- notifications
+
+SECTION 5 — Educational Content Review
+Break this down by:
+- overall curriculum sequence
+- week-by-week issues
+- duplicated concepts
+- weak lessons
+- overly dense lessons
+- missing transitions
+- weak exercises
+- weak reflection questions
+- homework issues
+- recommendations to strengthen learning without bloating content
+
+SECTION 6 — Code Quality / Architecture Review
+Include:
+- frontend structure
+- backend structure
+- schema/data concerns
+- auth/permissions concerns
+- naming inconsistencies
+- reusable abstractions that should exist
+- dead code / obsolete code
+- maintainability concerns
+
+SECTION 7 — Quick Wins
+List changes that would provide strong improvement with relatively low effort.
+
+SECTION 8 — Bigger Strategic Improvements
+List larger improvements worth considering later, but keep them separate from must-fix items.
+
+SECTION 9 — Recommended Action Plan
+Give me a phased recommendation:
+- Phase 1: must fix now
+- Phase 2: should improve soon
+- Phase 3: optional upgrades later
+
+Very important:
+- Be candid and direct.
+- Do not flatter the app.
+- Do not give vague “looks good overall” feedback.
+- Point to specific files, routes, components, and flows.
+- If you are unsure about something, say that clearly.
+- If you find a problem, explain the user impact.
+- Make recommendations that I can review and choose from.
+- Do NOT implement anything yet unless I explicitly approve it after the review.
+
+After the review, end with:
+1. the 5 changes you most strongly recommend
+2. the 5 things you would remove, merge, or simplify first
+3. the 5 educational content improvements with the highest impact
