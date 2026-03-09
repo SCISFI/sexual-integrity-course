@@ -199,6 +199,7 @@ export interface IStorage {
   getCohortMembers(cohortId: string): Promise<Array<User & { addedAt: Date | null }>>;
   addCohortMember(cohortId: string, userId: string, addedBy: string): Promise<void>;
   removeCohortMember(cohortId: string, userId: string): Promise<void>;
+  isUserInAnyCohort(userId: string): Promise<boolean>;
   getCohortAnalytics(cohortId: string, startDate: string, endDate: string): Promise<{
     totalMembers: number;
     activeMembers: number;
@@ -1413,6 +1414,15 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(cohortMemberships)
       .where(and(eq(cohortMemberships.cohortId, cohortId), eq(cohortMemberships.userId, userId)));
+  }
+
+  async isUserInAnyCohort(userId: string): Promise<boolean> {
+    const rows = await db
+      .select({ id: cohortMemberships.id })
+      .from(cohortMemberships)
+      .where(eq(cohortMemberships.userId, userId))
+      .limit(1);
+    return rows.length > 0;
   }
 
   async getCohortAnalytics(cohortId: string, startDate: string, endDate: string): Promise<{

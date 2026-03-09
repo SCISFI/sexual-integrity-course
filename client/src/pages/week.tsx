@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Map, Brain, Anchor, Sunset, Heart, MessageCircle, Shield, Leaf, Feather, Compass, Droplets, Footprints, Circle, ShieldCheck, Sunrise, RefreshCw, Lightbulb, Waves, Users, Wind, Star, Mountain, Target, BookOpen, Infinity } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Map, Brain, Anchor, Sunset, Heart, MessageCircle, Shield, Leaf, Feather, Compass, Droplets, Footprints, Circle, ShieldCheck, Sunrise, RefreshCw, Lightbulb, Waves, Users, Wind, Star, Mountain, Target, BookOpen, Infinity, AlertTriangle } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, type Exercise } from "@/data/curriculum";
 import { WEEK_PODCASTS } from "@/data/podcasts";
 import { useToast } from "@/hooks/use-toast";
@@ -289,7 +289,7 @@ export default function WeekPage() {
   });
 
   // Fetch unlocked weeks based on start date
-  const { data: unlockedWeeksData } = useQuery<{ unlockedWeeks: number[] }>({
+  const { data: unlockedWeeksData } = useQuery<{ unlockedWeeks: number[]; isInCohort: boolean; completedWeeks: number[] }>({
     queryKey: ['/api/progress/unlocked-weeks'],
   });
 
@@ -349,6 +349,11 @@ export default function WeekPage() {
 
   // Check if next week is unlocked
   const nextWeekUnlocked = weekNumber < 16 && unlockedWeeks.includes(weekNumber + 1);
+
+  // Cohort-aware incomplete-prior-week warning
+  const isInCohort = unlockedWeeksData?.isInCohort ?? false;
+  const unlockedCompletedWeeks = unlockedWeeksData?.completedWeeks || [];
+  const hasPriorIncompleteWeek = isInCohort && weekNumber > 1 && !unlockedCompletedWeeks.includes(weekNumber - 1);
 
   // Sync isWeekCompleted with weekIsLocked on initial load
   useEffect(() => {
@@ -715,6 +720,32 @@ export default function WeekPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Cohort prior-week incomplete warning */}
+        {hasPriorIncompleteWeek && !weekIsLocked && (
+          <Card className="border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30" data-testid="banner-prior-week-incomplete">
+            <CardContent className="flex items-start gap-3 py-4">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                  Week {weekNumber - 1} hasn't been marked complete yet.
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                  Finish that material when you can to stay prepared for your group.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation(`/week/${weekNumber - 1}`)}
+                className="flex-shrink-0 text-xs border-amber-400 dark:border-amber-600 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                data-testid="button-go-prior-week"
+              >
+                Go to Week {weekNumber - 1}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Review Mode Banner - show for completed weeks */}
         {weekIsLocked && (

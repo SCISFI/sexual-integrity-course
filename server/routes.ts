@@ -3368,12 +3368,14 @@ Write the feedback message now:`;
           unlockedWeeks: [
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
           ],
+          isInCohort: false,
+          completedWeeks: [],
         });
       }
 
       if (!user.startDate) {
         // No start date set, only week 1 available
-        return res.json({ unlockedWeeks: [1] });
+        return res.json({ unlockedWeeks: [1], isInCohort: false, completedWeeks: [] });
       }
 
       const startDate = new Date(user.startDate);
@@ -3382,16 +3384,37 @@ Write the feedback message now:`;
         (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
       );
 
-      // Calculate which weeks are unlocked (week N unlocks after (N-1) * 7 days)
+      const [completedWeeks, isInCohort] = await Promise.all([
+        storage.getCompletedWeeks(user.id),
+        storage.isUserInAnyCohort(user.id),
+      ]);
+
       const unlockedWeeks: number[] = [];
-      for (let week = 1; week <= 16; week++) {
-        const daysRequired = (week - 1) * 7;
-        if (daysSinceStart >= daysRequired) {
-          unlockedWeeks.push(week);
+
+      if (isInCohort) {
+        // Cohort clients: pure time-based unlock so they can always read the
+        // group's current week regardless of prior completion status.
+        for (let week = 1; week <= 16; week++) {
+          const daysRequired = (week - 1) * 7;
+          if (daysSinceStart >= daysRequired) {
+            unlockedWeeks.push(week);
+          }
+        }
+      } else {
+        // Solo clients: time-based unlock gated by prior week completion.
+        // Week 1 is always available. Week N (N > 1) unlocks only when
+        // the time has elapsed AND week N-1 has been marked complete.
+        for (let week = 1; week <= 16; week++) {
+          const daysRequired = (week - 1) * 7;
+          const timeEligible = daysSinceStart >= daysRequired;
+          const priorComplete = week === 1 || completedWeeks.includes(week - 1);
+          if (timeEligible && priorComplete) {
+            unlockedWeeks.push(week);
+          }
         }
       }
 
-      res.json({ unlockedWeeks });
+      res.json({ unlockedWeeks, isInCohort, completedWeeks });
     } catch (error) {
       console.error("Get unlocked weeks error:", error);
       res.status(500).json({ message: "Failed to get unlocked weeks" });
