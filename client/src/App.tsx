@@ -10,6 +10,9 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import RegisterTherapist from "@/pages/register-therapist";
 import RegisterClient from "@/pages/register-client";
+import RegisterAdolescent from "@/pages/register-adolescent";
+import ParentConsent from "@/pages/parent-consent";
+import ParentDashboard from "@/pages/parent-dashboard";
 import AdminPage from "@/pages/admin";
 import AdminCohortPage from "@/pages/admin-cohort";
 import CohortAnalyticsPage from "@/pages/cohort-analytics";
@@ -37,6 +40,9 @@ function Router() {
       <Route path="/register" component={Register} />
       <Route path="/register/therapist" component={RegisterTherapist} />
       <Route path="/register/client" component={RegisterClient} />
+      <Route path="/register/adolescent" component={RegisterAdolescent} />
+      <Route path="/parent-consent/:token" component={ParentConsent} />
+      <Route path="/parent-dashboard" component={ParentDashboard} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/change-password" component={ChangePassword} />

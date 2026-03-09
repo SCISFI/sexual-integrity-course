@@ -37,6 +37,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
+import { ADOLESCENT_WEEK_TITLES } from "@/data/adolescent-curriculum";
 import { Badge } from "@/components/ui/badge";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
@@ -47,13 +48,15 @@ type WeekItem = {
   title: string;
 };
 
-const WEEKS: WeekItem[] = Array.from({ length: 16 }, (_, i) => ({
-  week: i + 1,
-  title: WEEK_TITLES[i + 1] || `Week ${i + 1}`,
-}));
-
 export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
+  const isAdolescent = (user as any)?.programType === "adolescent";
+  const WEEKS: WeekItem[] = Array.from({ length: 16 }, (_, i) => ({
+    week: i + 1,
+    title: isAdolescent
+      ? (ADOLESCENT_WEEK_TITLES[i + 1] || `Week ${i + 1}`)
+      : (WEEK_TITLES[i + 1] || `Week ${i + 1}`),
+  }));
   const [, setLocation] = useLocation();
 
   const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({

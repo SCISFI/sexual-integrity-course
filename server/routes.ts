@@ -19,6 +19,7 @@ import {
   loginSchema,
   registerTherapistSchema,
   registerClientSchema,
+  registerAdolescentSchema,
   type UserRole,
 } from "@shared/schema";
 import { eq, desc, and, ne, inArray, max } from "drizzle-orm";
@@ -384,6 +385,343 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Client registration error:", error);
       res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  // Register as adolescent client (under-18 / still in high school)
+  app.post("/api/auth/register/adolescent", async (req, res) => {
+    try {
+      const parsed = registerAdolescentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: parsed.error.errors[0]?.message || "Invalid input" });
+      }
+      const { name, email, password, dateOfBirth, isHighSchool, therapistId, parentEmail, parentName } = parsed.data;
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) return res.status(400).json({ message: "Email already registered" });
+
+      if (parentEmail) {
+        const parentExists = await storage.getUserByEmail(parentEmail);
+        if (parentExists && parentExists.role === "client") {
+          return res.status(400).json({ message: "Parent email is already registered as a client account" });
+        }
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const crypto = await import("crypto");
+      const userId = crypto.randomUUID();
+
+      const [newUser] = await db.insert(users).values({
+        id: userId,
+        name,
+        email,
+        password: hashedPassword,
+        role: "client" as UserRole,
+        programType: "adolescent",
+        dateOfBirth: dateOfBirth || null,
+        parentEmail,
+        parentName,
+        subscriptionStatus: "pending_consent",
+        stripeCustomerId: null,
+        currentWeek: 1,
+      }).returning();
+
+      if (therapistId) {
+        const therapist = await storage.getUser(therapistId);
+        if (therapist && (therapist.role === "therapist" || therapist.role === "admin")) {
+          await storage.assignTherapistToClient(therapistId, newUser.id);
+        }
+      }
+
+      const token = crypto.randomUUID();
+      await storage.createParentConsentToken(newUser.id, token, parentEmail, parentName);
+
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const consentLink = `${baseUrl}/parent-consent/${token}`;
+
+      const { sendParentalConsentEmail } = await import("./emailService");
+      await sendParentalConsentEmail(parentEmail, parentName, name, consentLink);
+
+      res.status(201).json({ status: "pending_consent" });
+    } catch (error) {
+      console.error("Adolescent registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  // ── Parent consent endpoints (public) ─────────────────────────────────────
+
+  app.get("/api/parent-consent/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const record = await storage.getParentConsentToken(token);
+      if (!record) return res.status(404).json({ message: "Consent link not found" });
+      if (record.status === "approved") return res.json({ status: "approved", alreadyApproved: true });
+      if (record.status === "denied") return res.json({ status: "denied" });
+      if (new Date() > new Date(record.expiresAt)) return res.status(410).json({ message: "This link has expired" });
+
+      const teen = await storage.getUser(record.clientId);
+      if (!teen) return res.status(404).json({ message: "Account not found" });
+
+      res.json({
+        status: "pending",
+        token: record.id,
+        tokenId: record.id,
+        parentEmail: record.parentEmail,
+        parentName: record.parentName,
+        teenName: teen.name,
+        teenEmail: teen.email,
+      });
+    } catch (error) {
+      console.error("Get consent token error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/parent-consent/:token/approve", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const record = await storage.getParentConsentToken(token);
+      if (!record) return res.status(404).json({ message: "Consent link not found" });
+      if (record.status === "approved") return res.status(400).json({ message: "Already approved" });
+      if (record.status === "denied") return res.status(400).json({ message: "This request was denied" });
+      if (new Date() > new Date(record.expiresAt)) return res.status(410).json({ message: "This link has expired" });
+
+      const teen = await storage.getUser(record.clientId);
+      if (!teen) return res.status(404).json({ message: "Teen account not found" });
+
+      const crypto = await import("crypto");
+      const { name: parentName, email: parentEmail, password: parentPassword } = req.body;
+
+      if (!parentName || !parentEmail || !parentPassword) {
+        return res.status(400).json({ message: "Name, email, and password are required" });
+      }
+
+      let parentUser = await storage.getUserByEmail(parentEmail);
+      if (!parentUser) {
+        const hashedPassword = await hashPassword(parentPassword);
+        const parentId = crypto.randomUUID();
+        const [created] = await db.insert(users).values({
+          id: parentId,
+          name: parentName,
+          email: parentEmail,
+          password: hashedPassword,
+          role: "parent" as UserRole,
+          programType: "adolescent",
+          subscriptionStatus: "active",
+        }).returning();
+        parentUser = created;
+      }
+
+      await storage.createParentClientRelationship(parentUser.id, teen.id);
+      await storage.updateParentConsentTokenStatus(record.id, "approved");
+
+      await db.update(users).set({ subscriptionStatus: "active" }).where(eq(users.id, teen.id));
+
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const { sendParentalConsentApprovedEmail } = await import("./emailService");
+      await sendParentalConsentApprovedEmail(teen.email!, teen.name!, parentName, `${baseUrl}/login`);
+
+      req.login(parentUser, (err) => {
+        if (err) return res.status(500).json({ message: "Login failed after approval" });
+        res.json({ status: "approved", redirectTo: "/parent-dashboard" });
+      });
+    } catch (error) {
+      console.error("Consent approve error:", error);
+      res.status(500).json({ message: "Approval failed" });
+    }
+  });
+
+  app.post("/api/parent-consent/:token/deny", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const record = await storage.getParentConsentToken(token);
+      if (!record) return res.status(404).json({ message: "Consent link not found" });
+      if (record.status !== "pending") return res.status(400).json({ message: "Consent request already resolved" });
+
+      await storage.updateParentConsentTokenStatus(record.id, "denied");
+      res.json({ status: "denied" });
+    } catch (error) {
+      console.error("Consent deny error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // ── Parent portal endpoints (require parent role) ──────────────────────────
+
+  app.get("/api/parent/children", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any).role !== "parent") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const parentId = (req.user as any).id;
+    try {
+      const children = await storage.getClientsByParentId(parentId);
+      const results = await Promise.all(children.map(async (child) => {
+        const completions = await storage.getWeekCompletions(child.id);
+        const checkins = await storage.getDailyCheckins(child.id);
+        const lastCheckin = checkins.length > 0 ? checkins[checkins.length - 1].checkinDate : null;
+
+        let streak = 0;
+        const today = new Date();
+        for (let i = 0; i < 30; i++) {
+          const d = new Date(today);
+          d.setDate(d.getDate() - i);
+          const key = d.toISOString().split("T")[0];
+          if (checkins.some((c) => c.checkinDate === key)) streak++;
+          else if (i > 0) break;
+        }
+
+        return {
+          id: child.id,
+          name: child.name,
+          email: child.email,
+          subscriptionStatus: child.subscriptionStatus,
+          weeksCompleted: completions.length,
+          lastActive: lastCheckin,
+          checkinStreak: streak,
+        };
+      }));
+      res.json(results);
+    } catch (error) {
+      console.error("Get children error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/parent/messages/:clientId", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any).role !== "parent") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const parentId = (req.user as any).id;
+    const { clientId } = req.params;
+    try {
+      const rels = await storage.getClientsByParentId(parentId);
+      if (!rels.some((c) => c.id === clientId)) return res.status(403).json({ message: "Not authorized" });
+      const msgs = await storage.getParentMessages(clientId);
+      res.json(msgs);
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/parent/messages/:clientId", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any).role !== "parent") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const parentId = (req.user as any).id;
+    const { clientId } = req.params;
+    const { content } = req.body;
+    if (!content?.trim()) return res.status(400).json({ message: "Message content required" });
+    try {
+      const rels = await storage.getClientsByParentId(parentId);
+      if (!rels.some((c) => c.id === clientId)) return res.status(403).json({ message: "Not authorized" });
+
+      const teen = await storage.getUser(clientId);
+      const therapistRels = await storage.getTherapistsForClient(clientId);
+      const mentorId = therapistRels[0]?.id || "";
+      const mentor = mentorId ? await storage.getUser(mentorId) : undefined;
+      const parent = req.user as any;
+
+      const msg = await storage.createParentMessage({
+        parentId,
+        mentorId: mentorId || parentId,
+        clientId,
+        content: content.trim(),
+        sentBy: "parent",
+      });
+
+      if (mentor?.email) {
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        const { sendParentMentorMessageEmail } = await import("./emailService");
+        await sendParentMentorMessageEmail(
+          mentor.email,
+          mentor.name || undefined,
+          parent.name || "Parent",
+          teen?.name || "Teen",
+          content.trim(),
+          `${baseUrl}/therapist`
+        );
+      }
+
+      res.json(msg);
+    } catch (error) {
+      console.error("Parent send message error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/parent/revoke/:clientId", async (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any).role !== "parent") {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const parentId = (req.user as any).id;
+    const { clientId } = req.params;
+    try {
+      const rels = await storage.getClientsByParentId(parentId);
+      if (!rels.some((c) => c.id === clientId)) return res.status(403).json({ message: "Not authorized" });
+      await db.update(users).set({ subscriptionStatus: "suspended" }).where(eq(users.id, clientId));
+      res.json({ status: "revoked" });
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // ── Mentor → Parent message endpoint ──────────────────────────────────────
+
+  app.post("/api/therapist/clients/:clientId/parent-message", async (req, res) => {
+    if (!req.isAuthenticated() || !["therapist", "admin"].includes((req.user as any).role)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const mentor = req.user as any;
+    const { clientId } = req.params;
+    const { content } = req.body;
+    if (!content?.trim()) return res.status(400).json({ message: "Message content required" });
+    try {
+      const teen = await storage.getUser(clientId);
+      if (!teen) return res.status(404).json({ message: "Client not found" });
+
+      const parent = await storage.getParentByClientId(clientId);
+      if (!parent) return res.status(404).json({ message: "No parent linked to this client" });
+
+      const msg = await storage.createParentMessage({
+        parentId: parent.id,
+        mentorId: mentor.id,
+        clientId,
+        content: content.trim(),
+        sentBy: "mentor",
+      });
+
+      if (parent.email) {
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        const { sendParentMentorMessageEmail } = await import("./emailService");
+        await sendParentMentorMessageEmail(
+          parent.email,
+          parent.name || undefined,
+          mentor.name || "Your mentor",
+          teen.name || "Teen",
+          content.trim(),
+          `${baseUrl}/parent-dashboard`
+        );
+      }
+
+      res.json(msg);
+    } catch (error) {
+      console.error("Mentor send parent message error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/therapist/clients/:clientId/parent-info", async (req, res) => {
+    if (!req.isAuthenticated() || !["therapist", "admin"].includes((req.user as any).role)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const { clientId } = req.params;
+    try {
+      const parent = await storage.getParentByClientId(clientId);
+      const messages = await storage.getParentMessages(clientId);
+      res.json({ parent: parent || null, messages });
+    } catch (error) {
+      res.status(500).json({ message: "Server error" });
     }
   });
 
@@ -1562,12 +1900,14 @@ export async function registerRoutes(
   // Create client (admin can create client accounts)
   app.post("/api/admin/clients", requireRole("admin"), async (req, res) => {
     try {
-      const { email, password, name, startDate, therapistId } = req.body;
+      const { email, password, name, startDate, therapistId, programType, parentEmail, parentName } = req.body;
       if (!email || !password || !name) {
         return res
           .status(400)
           .json({ message: "Email, password, and name are required" });
       }
+
+      const isAdolescentClient = programType === "adolescent";
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
@@ -1577,13 +1917,20 @@ export async function registerRoutes(
       const hashedPassword = await hashPassword(password);
       const clientStartDate =
         startDate || new Date().toISOString().split("T")[0];
-      const user = await storage.createUser({
+      const crypto = await import("crypto");
+      const userId = crypto.randomUUID();
+      const [newUser] = await db.insert(users).values({
+        id: userId,
         email,
         password: hashedPassword,
         name,
-        role: "client",
+        role: "client" as UserRole,
+        programType: isAdolescentClient ? "adolescent" : "adult",
+        parentEmail: isAdolescentClient ? (parentEmail || null) : null,
+        parentName: isAdolescentClient ? (parentName || null) : null,
         startDate: clientStartDate,
-      });
+        subscriptionStatus: isAdolescentClient && parentEmail ? "pending_consent" : "active",
+      }).returning();
 
       // Assign therapist if provided and valid
       if (therapistId && therapistId !== "" && therapistId !== "none") {
@@ -1595,13 +1942,22 @@ export async function registerRoutes(
           console.error(
             `Invalid therapist ID provided for client creation: ${therapistId}`,
           );
-          // Don't fail the whole operation, just skip assignment
         } else {
-          await storage.assignTherapistToClient(therapistId, user.id);
+          await storage.assignTherapistToClient(therapistId, newUser.id);
         }
       }
 
-      const { password: _, ...safeUser } = user;
+      // For adolescent clients with parent email, send consent email
+      if (isAdolescentClient && parentEmail && parentName) {
+        const token = crypto.randomUUID();
+        await storage.createParentConsentToken(newUser.id, token, parentEmail, parentName);
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        const consentLink = `${baseUrl}/parent-consent/${token}`;
+        const { sendParentalConsentEmail } = await import("./emailService");
+        await sendParentalConsentEmail(parentEmail, parentName, name, consentLink);
+      }
+
+      const { password: _, ...safeUser } = newUser;
       res.status(201).json({ client: safeUser });
     } catch (error) {
       console.error("Create client error:", error);

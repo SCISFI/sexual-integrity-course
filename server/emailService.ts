@@ -463,6 +463,189 @@ export async function sendNudgeEmail(
   }
 }
 
+export async function sendParentalConsentEmail(
+  parentEmail: string,
+  parentName: string,
+  teenName: string,
+  consentLink: string
+): Promise<boolean> {
+  try {
+    const gmail = await getUncachableGmailClient();
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f1f5f9; color: #1e293b; }
+    .wrapper { background-color: #f1f5f9; padding: 32px 16px; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .header { background-color: #0f172a; padding: 28px 32px 24px; }
+    .header-wordmark { color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin: 0 0 6px; }
+    .header-title { color: #38bdf8; font-size: 20px; font-weight: 600; margin: 0; }
+    .body-outer { padding: 28px 32px 24px; }
+    .body-outer p { font-size: 15px; line-height: 1.7; color: #1e293b; margin: 0 0 14px; }
+    .info-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 18px 20px; margin: 20px 0; }
+    .info-box p { margin: 0 0 8px; font-size: 14px; color: #0c4a6e; }
+    .info-box p:last-child { margin-bottom: 0; }
+    .cta-block { text-align: center; padding: 24px 32px; }
+    .cta-button { display: inline-block; background-color: #0891b2; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 7px; font-size: 15px; font-weight: 600; }
+    .footer-block { padding: 16px 32px 28px; text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.6; border-top: 1px solid #f1f5f9; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <p class="header-wordmark">The Integrity Protocol</p>
+        <p class="header-title">Your approval is needed</p>
+      </div>
+      <div class="body-outer">
+        <p>Hello ${parentName},</p>
+        <p><strong>${teenName}</strong> has registered for <em>The Integrity Protocol</em> — a 16-week structured educational and personal growth program — and listed you as their parent or guardian.</p>
+        <p>Before ${teenName} can access the program, we need your written approval.</p>
+        <div class="info-box">
+          <p><strong>What this program is:</strong> A structured 16-week mentor program for building integrity and healthy choices. It is educational and personal growth focused — <strong>not therapy or counseling</strong>.</p>
+          <p><strong>What you will be able to see:</strong> As a parent, you can view your teen's weekly progress (weeks completed, check-in frequency, last active date). You will not see the content of their reflections or journal entries.</p>
+          <p><strong>Communication:</strong> You will have a direct message channel with your teen's assigned mentor.</p>
+          <p><strong>This link expires in 30 days.</strong></p>
+        </div>
+        <p>If you did not expect this email, you can safely ignore it. ${teenName}'s account will not be activated without your approval.</p>
+      </div>
+      <div class="cta-block">
+        <a href="${consentLink}" class="cta-button">Review &amp; Give Approval</a>
+      </div>
+      <div class="footer-block">
+        <p>The Integrity Protocol &mdash; an educational mentor program, not therapy.</p>
+        <p>If you have questions, reply to this email or contact your teen's assigned mentor after approving.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const rawMessage = createEmailMessage(
+      parentEmail,
+      `${teenName} has enrolled — your approval is needed`,
+      htmlContent
+    );
+
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: { raw: rawMessage }
+    });
+
+    console.log(`Parental consent email sent to ${parentEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send parental consent email:', error);
+    return false;
+  }
+}
+
+export async function sendParentalConsentApprovedEmail(
+  teenEmail: string,
+  teenName: string,
+  parentName: string,
+  loginUrl: string
+): Promise<boolean> {
+  try {
+    const gmail = await getUncachableGmailClient();
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #0f172a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+    .button { display: inline-block; background-color: #0891b2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><h1>You're approved to start</h1></div>
+    <div class="content">
+      <p>Hi ${teenName},</p>
+      <p>Your parent/guardian <strong>${parentName}</strong> has approved your enrollment in The Integrity Protocol. Your account is now active.</p>
+      <p style="text-align:center"><a href="${loginUrl}" class="button">Log In and Get Started</a></p>
+      <p>Week 1 is ready and waiting for you.</p>
+    </div>
+    <div class="footer">
+      <p>The Integrity Protocol — an educational mentor program, not therapy.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    const rawMessage = createEmailMessage(teenEmail, 'Your enrollment has been approved — you can now log in', htmlContent);
+    await gmail.users.messages.send({ userId: 'me', requestBody: { raw: rawMessage } });
+    console.log(`Consent approved email sent to ${teenEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send consent approved email:', error);
+    return false;
+  }
+}
+
+export async function sendParentMentorMessageEmail(
+  recipientEmail: string,
+  recipientName: string | undefined,
+  senderName: string,
+  teenName: string,
+  content: string,
+  loginUrl: string
+): Promise<boolean> {
+  try {
+    const gmail = await getUncachableGmailClient();
+    const escaped = content
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .split('\n').map(l => l.trim() === '' ? '<br/>' : `<p style="margin:0 0 12px 0">${l}</p>`).join('');
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #0f172a; color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9fafb; padding: 24px; border: 1px solid #e5e7eb; }
+    .msg { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; font-size: 15px; }
+    .cta { text-align:center; margin-top:20px; }
+    .button { display: inline-block; background-color: #0891b2; color: white; padding: 11px 24px; text-decoration: none; border-radius: 6px; font-size:14px; }
+    .footer { text-align: center; padding: 16px; color: #6b7280; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#94a3b8">The Integrity Protocol</p>
+      <p style="margin:4px 0 0;font-size:17px;font-weight:600;color:#38bdf8">Message regarding ${teenName}</p>
+    </div>
+    <div class="content">
+      <p>Hello${recipientName ? ' ' + recipientName : ''},</p>
+      <p><strong>${senderName}</strong> sent you a message regarding <strong>${teenName}</strong>:</p>
+      <div class="msg">${escaped}</div>
+      <div class="cta"><a href="${loginUrl}" class="button">View in Portal</a></div>
+    </div>
+    <div class="footer">The Integrity Protocol — an educational mentor program, not therapy.</div>
+  </div>
+</body>
+</html>`;
+
+    const rawMessage = createEmailMessage(recipientEmail, `Message about ${teenName} — The Integrity Protocol`, htmlContent);
+    await gmail.users.messages.send({ userId: 'me', requestBody: { raw: rawMessage } });
+    return true;
+  } catch (error) {
+    console.error('Failed to send parent-mentor message email:', error);
+    return false;
+  }
+}
+
 export async function sendMentorMessage(
   clientEmail: string,
   clientName: string | undefined,

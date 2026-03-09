@@ -20,6 +20,9 @@ import {
   weeklySummaries,
   cohorts,
   cohortMemberships,
+  parentConsentTokens,
+  parentClientRelationships,
+  parentMessages,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -40,6 +43,9 @@ import {
   type RelapseAutopsy,
   type Cohort,
   type InsertCohort,
+  type ParentConsentToken,
+  type ParentClientRelationship,
+  type ParentMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, inArray, gte, lte } from "drizzle-orm";
@@ -215,6 +221,21 @@ export interface IStorage {
     cohortName: string;
     dailySeries: Array<{ date: string; checkins: number; completions: number; activeUsers: number }>;
   }>>;
+
+  // Parent consent tokens
+  createParentConsentToken(clientId: string, token: string, parentEmail: string, parentName: string): Promise<ParentConsentToken>;
+  getParentConsentToken(token: string): Promise<ParentConsentToken | undefined>;
+  updateParentConsentTokenStatus(id: string, status: string): Promise<void>;
+
+  // Parent-Client relationships
+  createParentClientRelationship(parentId: string, clientId: string): Promise<ParentClientRelationship>;
+  getParentByClientId(clientId: string): Promise<User | undefined>;
+  getClientsByParentId(parentId: string): Promise<User[]>;
+
+  // Parent messages
+  createParentMessage(data: { parentId: string; mentorId: string; clientId: string; content: string; sentBy: string }): Promise<ParentMessage>;
+  getParentMessages(clientId: string): Promise<ParentMessage[]>;
+  markParentMessagesRead(clientId: string, sentBy: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1611,6 +1632,93 @@ export class DatabaseStorage implements IStorage {
       });
     }
     return results;
+  }
+
+  // ── Parent consent tokens ──────────────────────────────────────────────────
+
+  async createParentConsentToken(clientId: string, token: string, parentEmail: string, parentName: string): Promise<ParentConsentToken> {
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const [row] = await db
+      .insert(parentConsentTokens)
+      .values({ clientId, token, parentEmail, parentName, expiresAt })
+      .returning();
+    return row;
+  }
+
+  async getParentConsentToken(token: string): Promise<ParentConsentToken | undefined> {
+    const [row] = await db
+      .select()
+      .from(parentConsentTokens)
+      .where(eq(parentConsentTokens.token, token));
+    return row || undefined;
+  }
+
+  async updateParentConsentTokenStatus(id: string, status: string): Promise<void> {
+    await db
+      .update(parentConsentTokens)
+      .set({ status })
+      .where(eq(parentConsentTokens.id, id));
+  }
+
+  // ── Parent-Client relationships ────────────────────────────────────────────
+
+  async createParentClientRelationship(parentId: string, clientId: string): Promise<ParentClientRelationship> {
+    const [row] = await db
+      .insert(parentClientRelationships)
+      .values({ parentId, clientId })
+      .onConflictDoNothing()
+      .returning();
+    return row;
+  }
+
+  async getParentByClientId(clientId: string): Promise<User | undefined> {
+    const [rel] = await db
+      .select()
+      .from(parentClientRelationships)
+      .where(eq(parentClientRelationships.clientId, clientId));
+    if (!rel) return undefined;
+    return this.getUser(rel.parentId);
+  }
+
+  async getClientsByParentId(parentId: string): Promise<User[]> {
+    const rels = await db
+      .select()
+      .from(parentClientRelationships)
+      .where(eq(parentClientRelationships.parentId, parentId));
+    if (rels.length === 0) return [];
+    const clientIds = rels.map(r => r.clientId);
+    return await db.select().from(users).where(inArray(users.id, clientIds));
+  }
+
+  // ── Parent messages ────────────────────────────────────────────────────────
+
+  async createParentMessage(data: { parentId: string; mentorId: string; clientId: string; content: string; sentBy: string }): Promise<ParentMessage> {
+    const [row] = await db
+      .insert(parentMessages)
+      .values(data)
+      .returning();
+    return row;
+  }
+
+  async getParentMessages(clientId: string): Promise<ParentMessage[]> {
+    return await db
+      .select()
+      .from(parentMessages)
+      .where(eq(parentMessages.clientId, clientId))
+      .orderBy(parentMessages.createdAt);
+  }
+
+  async markParentMessagesRead(clientId: string, sentBy: string): Promise<void> {
+    await db
+      .update(parentMessages)
+      .set({ readAt: new Date() })
+      .where(
+        and(
+          eq(parentMessages.clientId, clientId),
+          eq(parentMessages.sentBy, sentBy),
+          sql`${parentMessages.readAt} IS NULL`
+        )
+      );
   }
 }
 

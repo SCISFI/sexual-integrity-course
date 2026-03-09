@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // User roles enum
-export const userRoles = ["admin", "therapist", "client"] as const;
+export const userRoles = ["admin", "therapist", "client", "parent"] as const;
 export type UserRole = typeof userRoles[number];
 
 export const users = pgTable("users", {
@@ -12,27 +12,35 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name"),
-  role: text("role").notNull().default("client"), // admin, therapist, client
-  
+  role: text("role").notNull().default("client"), // admin, therapist, client, parent
+
+  // Program type: 'adult' (default) or 'adolescent'
+  programType: text("program_type").default("adult"),
+
   // Client-specific fields
   startDate: date("start_date"), // When client's 16-week program starts
-  
+
+  // Adolescent-specific fields
+  dateOfBirth: date("date_of_birth"), // Used for age verification on adolescent accounts
+  parentEmail: text("parent_email"),   // Parent email recorded at adolescent registration
+  parentName: text("parent_name"),     // Parent name recorded at adolescent registration
+
   // Therapist licensing fields
-  licenseState: text("license_state"), // State where license is held
-  licenseNumber: text("license_number"), // License number
-  licenseAttestation: boolean("license_attestation").default(false), // Attested that license is in good standing
-  licenseAttestationDate: timestamp("license_attestation_date"), // When they attested
-  termsAccepted: boolean("terms_accepted").default(false), // Accepted terms and conditions (50% revenue share)
-  termsAcceptedDate: timestamp("terms_accepted_date"), // When they accepted terms
-  
+  licenseState: text("license_state"),
+  licenseNumber: text("license_number"),
+  licenseAttestation: boolean("license_attestation").default(false),
+  licenseAttestationDate: timestamp("license_attestation_date"),
+  termsAccepted: boolean("terms_accepted").default(false),
+  termsAcceptedDate: timestamp("terms_accepted_date"),
+
   // Subscription/payment status
-  subscriptionStatus: text("subscription_status").default("active"), // active, paused, cancelled
-  allFeesWaived: boolean("all_fees_waived").default(false), // Admin can waive all fees
-  
+  subscriptionStatus: text("subscription_status").default("active"), // active, paused, cancelled, pending_consent, suspended
+  allFeesWaived: boolean("all_fees_waived").default(false),
+
   // Stripe integration
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
-  
+
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -55,7 +63,7 @@ export const payments = pgTable("payments", {
   amount: integer("amount").notNull(), // In cents
   status: text("status").notNull().default("pending"), // pending, completed, waived, failed
   stripePaymentId: text("stripe_payment_id"),
-  assignedTherapistId: varchar("assigned_therapist_id").references(() => users.id), // Therapist assigned at time of payment (for revenue tracking)
+  assignedTherapistId: varchar("assigned_therapist_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -65,7 +73,7 @@ export const weekFeeWaivers = pgTable("week_fee_waivers", {
   clientId: varchar("client_id").notNull().references(() => users.id),
   weekNumber: integer("week_number").notNull(),
   waivedAt: timestamp("waived_at").defaultNow(),
-  waivedBy: varchar("waived_by").references(() => users.id), // Admin who waived
+  waivedBy: varchar("waived_by").references(() => users.id),
 }, (table) => [
   unique("week_waiver_unique").on(table.clientId, table.weekNumber),
 ]);
@@ -75,6 +83,46 @@ export const sessions = pgTable("sessions", {
   sess: text("sess").notNull(),
   expire: timestamp("expire").notNull(),
 });
+
+// Parental consent tokens — sent via email to parent when adolescent registers
+export const parentConsentTokens = pgTable("parent_consent_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  parentEmail: text("parent_email").notNull(),
+  parentName: text("parent_name").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, denied, revoked
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export type ParentConsentToken = typeof parentConsentTokens.$inferSelect;
+
+// Parent-Client relationships — created when parent approves consent
+export const parentClientRelationships = pgTable("parent_client_relationships", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  parentId: varchar("parent_id").notNull().references(() => users.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  approvedAt: timestamp("approved_at").defaultNow(),
+}, (table) => [
+  unique("parent_client_unique").on(table.parentId, table.clientId),
+]);
+
+export type ParentClientRelationship = typeof parentClientRelationships.$inferSelect;
+
+// Parent-Mentor messages (threaded per teen)
+export const parentMessages = pgTable("parent_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  parentId: varchar("parent_id").notNull().references(() => users.id),
+  mentorId: varchar("mentor_id").notNull().references(() => users.id),
+  clientId: varchar("client_id").notNull().references(() => users.id), // the teen
+  content: text("content").notNull(),
+  sentBy: text("sent_by").notNull(), // 'parent' or 'mentor'
+  createdAt: timestamp("created_at").defaultNow(),
+  readAt: timestamp("read_at"),
+});
+
+export type ParentMessage = typeof parentMessages.$inferSelect;
 
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
@@ -112,8 +160,21 @@ export const registerClientSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(1, "Name is required"),
-  therapistId: z.string().optional(), // Optional - defaults to primary therapist if not selected
+  therapistId: z.string().optional(),
 });
+
+export const registerAdolescentSchema = z.object({
+  email: z.string().email("Please enter a valid email"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(1, "Name is required"),
+  therapistId: z.string().min(1, "Please select a mentor"),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  stillInHighSchool: z.boolean().optional(),
+  parentName: z.string().min(1, "Parent/guardian full name is required"),
+  parentEmail: z.string().email("Please enter a valid parent email"),
+});
+
+export type RegisterAdolescentInput = z.infer<typeof registerAdolescentSchema>;
 
 // Insert schemas for new tables
 export const insertTherapistClientSchema = createInsertSchema(therapistClients).omit({
@@ -180,23 +241,23 @@ export const dailyCheckins = pgTable("daily_checkins", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   dateKey: varchar("date_key", { length: 10 }).notNull(), // YYYY-MM-DD
-  
+
   // Morning check-in items (JSON array of checked item IDs)
   morningChecks: text("morning_checks").default("[]"),
-  
+
   // HALT check items (JSON array of checked item IDs)
   haltChecks: text("halt_checks").default("[]"),
-  
+
   // Current state levels
   urgeLevel: integer("urge_level").default(0), // 0-10
   moodLevel: integer("mood_level").default(0), // 0-10
-  
+
   // Evening reflection items (JSON array of checked item IDs)
   eveningChecks: text("evening_checks").default("[]"),
-  
+
   // Journal entry
   journalEntry: text("journal_entry").default(""),
-  
+
   updatedAt: timestamp("updated_at").defaultNow(),
   submittedAt: timestamp("submitted_at").defaultNow(),
 });
@@ -332,7 +393,7 @@ export const weekReviews = pgTable("week_reviews", {
   therapistId: varchar("therapist_id").notNull().references(() => users.id),
   clientId: varchar("client_id").notNull().references(() => users.id),
   weekNumber: integer("week_number").notNull(),
-  reviewNotes: text("review_notes").default(""), // Therapist notes on the review
+  reviewNotes: text("review_notes").default(""),
   reviewedAt: timestamp("reviewed_at").defaultNow(),
 }, (table) => [
   unique("week_reviews_client_week_unique").on(table.clientId, table.weekNumber),
@@ -403,8 +464,8 @@ export const mentorItemReviews = pgTable("mentor_item_reviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   therapistId: varchar("therapist_id").notNull().references(() => users.id),
   clientId: varchar("client_id").notNull().references(() => users.id),
-  itemType: varchar("item_type", { length: 30 }).notNull(), // 'checkin', 'reflection', 'exercise'
-  itemKey: varchar("item_key", { length: 50 }).notNull(), // dateKey for checkins, weekNumber for reflections/exercises
+  itemType: varchar("item_type", { length: 30 }).notNull(),
+  itemKey: varchar("item_key", { length: 50 }).notNull(),
   reviewedAt: timestamp("reviewed_at").defaultNow(),
 }, (table) => [
   unique("mentor_item_reviews_unique").on(table.therapistId, table.clientId, table.itemType, table.itemKey),

@@ -40,6 +40,8 @@ export default function Login() {
         setLocation("/admin");
       } else if (role === "therapist") {
         setLocation("/therapist");
+      } else if (role === "parent") {
+        setLocation("/parent-dashboard");
       } else {
         setLocation("/dashboard");
       }

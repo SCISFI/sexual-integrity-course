@@ -121,6 +121,119 @@ type ClientInfo = {
   currentWeek: number;
 };
 
+type ParentInfoData = {
+  parent: { id: string; name: string | null; email: string } | null;
+  messages: Array<{ id: string; content: string; sentBy: string; createdAt: string; readAt: string | null }>;
+} | undefined;
+
+function ParentSection({ clientId, parentData, onMessageSent }: { clientId: string; parentData: ParentInfoData; onMessageSent: () => void }) {
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const { toast } = useToast();
+
+  if (!parentData) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <User className="h-4 w-4 text-amber-500" />
+            Parent / Guardian
+            <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">Teen</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No parent account linked yet. The consent email may still be pending.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  async function sendMessage() {
+    if (!draft.trim()) return;
+    setSending(true);
+    try {
+      await apiRequest("POST", `/api/therapist/clients/${clientId}/parent-message`, { content: draft.trim() });
+      setDraft("");
+      onMessageSent();
+      toast({ title: "Message sent to parent" });
+    } catch {
+      toast({ title: "Failed to send message", variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <User className="h-4 w-4 text-amber-500" />
+          Parent / Guardian
+          <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">Teen Program</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {parentData.parent ? (
+          <div className="flex items-center gap-3 rounded-lg bg-muted/40 border px-3 py-2.5">
+            <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-sm font-bold text-amber-700 dark:text-amber-300">
+              {(parentData.parent.name || parentData.parent.email).charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-sm font-medium">{parentData.parent.name || "(No name)"}</p>
+              <p className="text-xs text-muted-foreground">{parentData.parent.email}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Consent approved but parent account not yet fully set up.</p>
+        )}
+
+        {parentData.messages.length > 0 && (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {parentData.messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`rounded-lg px-3 py-2 text-sm ${
+                  msg.sentBy === "mentor"
+                    ? "bg-primary/10 border ml-4"
+                    : "bg-muted/50 border mr-4"
+                }`}
+                data-testid={`parent-msg-${msg.id}`}
+              >
+                <p className="text-xs font-medium text-muted-foreground mb-1">
+                  {msg.sentBy === "mentor" ? "You" : "Parent"}
+                </p>
+                <p>{msg.content}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {new Date(msg.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Send a message to the parent…"
+            className="flex-1 min-h-[70px] resize-none text-sm"
+            data-testid="input-parent-message"
+          />
+          <Button
+            size="sm"
+            className="self-end"
+            disabled={!draft.trim() || sending}
+            onClick={sendMessage}
+            data-testid="button-send-parent-message"
+          >
+            {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function TherapistClient() {
   const [, setLocation] = useLocation();
   const { id: clientId } = useParams<{ id: string }>();
@@ -188,6 +301,19 @@ export default function TherapistClient() {
 
   const { data: clientsData } = useQuery<{ clients: ClientInfo[] }>({
     queryKey: ['/api/therapist/clients'],
+  });
+
+  const clientMeta = clientsData?.clients.find(c => c.id === clientId);
+  const isAdolescent = (clientMeta as any)?.programType === "adolescent";
+
+  type ParentInfo = {
+    parent: { id: string; name: string | null; email: string } | null;
+    messages: Array<{ id: string; content: string; sentBy: string; createdAt: string; readAt: string | null }>;
+  };
+  const { data: parentData, refetch: refetchParent } = useQuery<ParentInfo>({
+    queryKey: ['/api/therapist/clients', clientId, 'parent-info'],
+    queryFn: () => apiRequest("GET", `/api/therapist/clients/${clientId}/parent-info`) as any,
+    enabled: !!clientId && isAdolescent,
   });
 
   const { data: progressData, isLoading: loadingProgress } = useQuery<ClientProgress>({
@@ -869,8 +995,13 @@ export default function TherapistClient() {
                     <User className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-lg font-semibold truncate">{client.name}</h2>
+                      {isAdolescent && (
+                        <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">
+                          Teen
+                        </Badge>
+                      )}
                       {isNeedsAttention && (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-400 text-amber-700 dark:text-amber-400">
                           <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
@@ -895,6 +1026,15 @@ export default function TherapistClient() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Parent section for adolescent clients */}
+            {isAdolescent && (
+              <ParentSection
+                clientId={clientId!}
+                parentData={parentData}
+                onMessageSent={() => refetchParent()}
+              />
+            )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">

@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Shield, User, Stethoscope, ArrowRight } from "lucide-react";
+import { Shield, User, Stethoscope, ArrowRight, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Register() {
@@ -55,6 +55,23 @@ export default function Register() {
                     <h3 className="font-semibold" data-testid="text-client-option">Client</h3>
                     <p className="text-sm text-muted-foreground">
                       Begin your 16-week Integrity Protocol journey
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </Link>
+
+            <Link href="/register/adolescent">
+              <Card className="cursor-pointer transition-colors hover-elevate border-amber-200 dark:border-amber-800/50">
+                <CardContent className="flex items-center gap-4 p-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+                    <GraduationCap className="h-6 w-6 text-amber-700 dark:text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold" data-testid="text-teen-option">Teen Program (Ages 13–17)</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Requires parent or guardian approval
                     </p>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground" />

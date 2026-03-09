@@ -71,6 +71,7 @@ type ClientWithProgress = {
   lastActivity: string | null;
   isReadyForSubmission?: boolean;
   activeWeek?: number;
+  programType?: string;
 };
 
 interface CohortItem {
@@ -83,6 +84,7 @@ interface CohortItem {
 export default function TherapistHome() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [programFilter, setProgramFilter] = useState<"all" | "adult" | "adolescent">("all");
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showCreateCohort, setShowCreateCohort] = useState(false);
   const [newCohortName, setNewCohortName] = useState("");
@@ -255,12 +257,14 @@ export default function TherapistHome() {
     return "Active";
   };
 
-  const clients = searchQuery.trim()
-    ? allClients.filter(c =>
-        c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : allClients;
+  const clients = allClients.filter(c => {
+    const matchesSearch = !searchQuery.trim() ||
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = programFilter === "all" ||
+      (programFilter === "adolescent" ? c.programType === "adolescent" : c.programType !== "adolescent");
+    return matchesSearch && matchesFilter;
+  });
 
   const sortedClients = [...clients].sort((a, b) => {
     const statusA = getClientStatus(a);
@@ -465,15 +469,29 @@ export default function TherapistHome() {
               )}
             </h2>
             {allClients.length > 0 && (
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search clients..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-full sm:w-64"
-                  data-testid="input-client-search"
-                />
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search clients..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 w-full sm:w-56"
+                    data-testid="input-client-search"
+                  />
+                </div>
+                <div className="flex rounded-md border border-input overflow-hidden text-xs">
+                  {(["all", "adult", "adolescent"] as const).map((f) => (
+                    <button
+                      key={f}
+                      onClick={() => setProgramFilter(f)}
+                      className={`px-3 py-1.5 capitalize transition-colors ${programFilter === f ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-accent"}`}
+                      data-testid={`filter-${f}`}
+                    >
+                      {f === "adolescent" ? "Teen" : f === "adult" ? "Adult" : "All"}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -528,6 +546,11 @@ export default function TherapistHome() {
                           {/* Name + badges row */}
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-sm">{client.name || client.email}</p>
+                            {client.programType === "adolescent" && (
+                              <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" data-testid={`badge-teen-${client.id}`}>
+                                Teen
+                              </Badge>
+                            )}
                             {isNeedsAttention && (
                               <Badge
                                 variant="outline"

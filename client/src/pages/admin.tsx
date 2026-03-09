@@ -95,6 +95,7 @@ interface Client {
   therapists: { id: string; name: string | null; email: string }[];
   waivedWeeks: number[];
   completedWeeks: number[];
+  programType?: string;
 }
 
 interface OverdueReview {
@@ -123,11 +124,12 @@ export default function AdminPage() {
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [clientProgramFilter, setClientProgramFilter] = useState<"all" | "adult" | "adolescent">("all");
   const [editingTherapist, setEditingTherapist] = useState<Therapist | null>(null);
   const [therapistEditForm, setTherapistEditForm] = useState({ name: "", email: "", newPassword: "" });
 
   const [newTherapist, setNewTherapist] = useState({ name: "", email: "", password: "" });
-  const [newClient, setNewClient] = useState({ name: "", email: "", password: "", therapistId: "" });
+  const [newClient, setNewClient] = useState({ name: "", email: "", password: "", therapistId: "", programType: "adult", parentEmail: "", parentName: "" });
   const [editForm, setEditForm] = useState({ startDate: "", allFeesWaived: false, therapistId: "" });
   const [resetPasswordUser, setResetPasswordUser] = useState<{ id: string; name: string | null; email: string } | null>(null);
   const [newPassword, setNewPassword] = useState("");
@@ -223,7 +225,7 @@ export default function AdminPage() {
   });
 
   const createClientMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string; therapistId?: string }) => {
+    mutationFn: async (data: { name: string; email: string; password: string; therapistId?: string; programType?: string; parentEmail?: string; parentName?: string }) => {
       const res = await apiRequest("POST", "/api/admin/clients", data);
       if (!res.ok) {
         const error = await res.json();
@@ -234,7 +236,7 @@ export default function AdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
       setShowCreateClient(false);
-      setNewClient({ name: "", email: "", password: "", therapistId: "" });
+      setNewClient({ name: "", email: "", password: "", therapistId: "", programType: "adult", parentEmail: "", parentName: "" });
       toast({ title: "Client created successfully" });
     },
     onError: (error: Error) => {
@@ -389,12 +391,14 @@ export default function AdminPage() {
   const therapists: Therapist[] = (therapistsData as any)?.therapists || [];
   const allClients: Client[] = (clientsData as any)?.clients || [];
   
-  const clients = clientSearchQuery.trim()
-    ? allClients.filter(c => 
-        (c.name?.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
-         c.email.toLowerCase().includes(clientSearchQuery.toLowerCase()))
-      )
-    : allClients;
+  const clients = allClients.filter(c => {
+    const matchesSearch = !clientSearchQuery.trim() ||
+      c.name?.toLowerCase().includes(clientSearchQuery.toLowerCase()) ||
+      c.email.toLowerCase().includes(clientSearchQuery.toLowerCase());
+    const matchesProgram = clientProgramFilter === "all" ||
+      (clientProgramFilter === "adolescent" ? c.programType === "adolescent" : c.programType !== "adolescent");
+    return matchesSearch && matchesProgram;
+  });
 
   if (user && (user as any).role !== "admin") {
     setLocation("/dashboard");
@@ -524,6 +528,48 @@ export default function AdminPage() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="client-program">Program</Label>
+                      <Select
+                        value={newClient.programType}
+                        onValueChange={(value) => setNewClient({ ...newClient, programType: value })}
+                      >
+                        <SelectTrigger id="client-program" data-testid="select-program-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="adult">Adult (18+)</SelectItem>
+                          <SelectItem value="adolescent">Teen (13–17)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {newClient.programType === "adolescent" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="client-parent-name">Parent/Guardian Name</Label>
+                          <Input
+                            id="client-parent-name"
+                            value={newClient.parentName}
+                            onChange={(e) => setNewClient({ ...newClient, parentName: e.target.value })}
+                            placeholder="Parent's full name"
+                            data-testid="input-admin-parent-name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="client-parent-email">Parent/Guardian Email</Label>
+                          <Input
+                            id="client-parent-email"
+                            type="email"
+                            value={newClient.parentEmail}
+                            onChange={(e) => setNewClient({ ...newClient, parentEmail: e.target.value })}
+                            placeholder="parent@email.com"
+                            data-testid="input-admin-parent-email"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="space-y-2">
                       <Label htmlFor="client-therapist">Assign Mentor (optional)</Label>
                       <Select
                         value={newClient.therapistId || "none"}
@@ -558,7 +604,7 @@ export default function AdminPage() {
               </Dialog>
             </div>
             
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 flex-wrap">
               <Input
                 placeholder="Search clients by name or email..."
                 value={clientSearchQuery}
@@ -566,6 +612,18 @@ export default function AdminPage() {
                 className="sm:max-w-xs"
                 data-testid="input-client-search"
               />
+              <div className="flex rounded-md border border-input overflow-hidden text-xs">
+                {(["all", "adult", "adolescent"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setClientProgramFilter(f)}
+                    className={`px-3 py-1.5 capitalize transition-colors ${clientProgramFilter === f ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-accent"}`}
+                    data-testid={`admin-filter-${f}`}
+                  >
+                    {f === "adolescent" ? "Teen" : f === "adult" ? "Adult" : "All"}
+                  </button>
+                ))}
+              </div>
               {allClients.filter(c => c.therapists.length === 0).length > 0 && (
                 <Badge variant="destructive" data-testid="badge-unassigned-count">
                   {allClients.filter(c => c.therapists.length === 0).length} unassigned
@@ -602,7 +660,16 @@ export default function AdminPage() {
                       <TableBody>
                         {clients.map((client) => (
                           <TableRow key={client.id} data-testid={`row-client-${client.id}`}>
-                            <TableCell className="font-medium">{client.name || "—"}</TableCell>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                {client.name || "—"}
+                                {client.programType === "adolescent" && (
+                                  <Badge className="text-[10px] px-1.5 py-0 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" data-testid={`badge-teen-${client.id}`}>
+                                    Teen
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell className="text-muted-foreground">{client.email}</TableCell>
                             <TableCell>{client.startDate || "Not set"}</TableCell>
                             <TableCell>
