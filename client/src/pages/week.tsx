@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Map, Brain, Anchor, Sunset, Heart, MessageCircle, Shield, Leaf, Feather, Compass, Droplets, Footprints, Circle, ShieldCheck, Sunrise, RefreshCw, Lightbulb, Waves, Users, Wind, Star, Mountain, Target, BookOpen, Infinity, AlertTriangle, ChevronDown } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, type Exercise } from "@/data/curriculum";
-import { ADOLESCENT_CURRICULUM, ADOLESCENT_WEEK_TITLES } from "@/data/adolescent-curriculum";
+import { ADOLESCENT_CURRICULUM, ADOLESCENT_WEEK_TITLES, ADOLESCENT_BIBLICAL_REFLECTIONS } from "@/data/adolescent-curriculum";
 import { useAuth } from "@/lib/auth";
 import { WEEK_PODCASTS } from "@/data/podcasts";
 import { BIBLICAL_REFLECTIONS } from "@/data/biblical-reflections";
@@ -1077,8 +1077,8 @@ export default function WeekPage() {
                 )}
 
                 {/* A Story Worth Knowing */}
-                {BIBLICAL_REFLECTIONS[weekNumber] && (() => {
-                  const reflection = BIBLICAL_REFLECTIONS[weekNumber];
+                {(isAdolescent ? ADOLESCENT_BIBLICAL_REFLECTIONS : BIBLICAL_REFLECTIONS)[weekNumber] && (() => {
+                  const reflection = (isAdolescent ? ADOLESCENT_BIBLICAL_REFLECTIONS : BIBLICAL_REFLECTIONS)[weekNumber];
                   return (
                     <Collapsible open={storyOpen} onOpenChange={setStoryOpen} data-testid="section-biblical-reflection">
                       <Card className="border-slate-200 dark:border-slate-700">
