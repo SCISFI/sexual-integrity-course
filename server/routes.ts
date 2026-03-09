@@ -204,47 +204,6 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express,
 ): Promise<Server> {
-  // Legacy register endpoint (defaults to client)
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const parsed = registerSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({
-          message: parsed.error.errors[0]?.message || "Invalid input",
-        });
-      }
-
-      const { email, password, name } = parsed.data;
-
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "Email already registered" });
-      }
-
-      const hashedPassword = await hashPassword(password);
-      const today = new Date().toISOString().split("T")[0];
-      const user = await storage.createUser({
-        email,
-        password: hashedPassword,
-        name,
-        role: "client",
-        startDate: today,
-      });
-
-      req.login(user, (err) => {
-        if (err) {
-          return res
-            .status(500)
-            .json({ message: "Login failed after registration" });
-        }
-        const { password: _, ...safeUser } = user;
-        return res.status(201).json({ user: safeUser });
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Registration failed" });
-    }
-  });
   // =====================================================
   // Staff-only AI Draft Assistant (v2 Hybrid)
   // =====================================================

@@ -97,10 +97,10 @@ export default function TherapistHome() {
     if (paymentStatus === "success" && !subscriptionConfirmedRef.current) {
       subscriptionConfirmedRef.current = true;
       toast({ title: "Subscription Activated", description: "Welcome! Your mentor subscription is now active." });
-      window.history.replaceState({}, "", "/therapist-home");
+      window.history.replaceState({}, "", "/therapist");
       queryClient.invalidateQueries({ queryKey: ["/api/payments/subscription"] });
     } else if (paymentStatus === "cancelled") {
-      window.history.replaceState({}, "", "/therapist-home");
+      window.history.replaceState({}, "", "/therapist");
     }
   }, [toast]);
 

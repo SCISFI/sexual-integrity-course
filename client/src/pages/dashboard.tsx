@@ -41,7 +41,6 @@ import { Badge } from "@/components/ui/badge";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
-import { apiRequest } from "@/lib/queryClient";
 
 type WeekItem = {
   week: number;
@@ -56,18 +55,6 @@ const WEEKS: WeekItem[] = Array.from({ length: 16 }, (_, i) => ({
 export default function Dashboard() {
   const { user, isLoading, isAuthenticating, logout } = useAuth();
   const [, setLocation] = useLocation();
-  const isStaff = user?.role === "admin" || user?.role === "therapist";
-
-  const [draftClientId, setDraftClientId] = useState("");
-  const [draftFocus, setDraftFocus] = useState("");
-  const [draftTone, setDraftTone] = useState<"neutral" | "direct" | "warm">(
-    "neutral",
-  );
-  const [draftConstraints, setDraftConstraints] = useState(
-    "Avoid shame language. No diagnosis. No risk scoring.",
-  );
-  const [draftText, setDraftText] = useState("");
-  const [draftLoading, setDraftLoading] = useState(false);
 
   const { data: completionsData } = useQuery<{ completedWeeks: number[] }>({
     queryKey: ["/api/progress/completions"],
@@ -139,26 +126,6 @@ export default function Dashboard() {
     return completedWeeks.length > 0 ? Math.max(...completedWeeks) : 1;
   }, [unlockedWeeks, completedWeeks]);
 
-  const generateStaffDraft = async () => {
-    if (!draftClientId || !draftFocus) return;
-    setDraftLoading(true);
-    setDraftText("");
-    try {
-      const res = await apiRequest("POST", "/api/ai/staff-draft", {
-        clientId: draftClientId,
-        focus: draftFocus,
-        tone: draftTone,
-        constraints: draftConstraints,
-      });
-      const data = await res.json();
-      setDraftText(data.draft || "No draft generated.");
-    } catch (err) {
-      setDraftText("Failed to generate draft. Please try again.");
-    } finally {
-      setDraftLoading(false);
-    }
-  };
-
   const resumeCurrentWeek = () => {
     setLocation(`/week/${nextAvailableWeek}`);
   };
@@ -201,67 +168,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {isStaff && (
-        <Card className="mb-8">
-          <CardHeader className="gap-1">
-            <CardTitle>Mentor Draft Assistant (Private)</CardTitle>
-            <CardDescription>
-              Staff-only drafts. Not client-visible. Review and edit before use.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Client ID</div>
-              <input
-                className="w-full rounded-md border px-3 py-2 text-sm"
-                value={draftClientId}
-                onChange={(e) => setDraftClientId(e.target.value)}
-                placeholder="Paste the client ID here"
-              />
-            </div>
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Focus</div>
-              <input
-                className="w-full rounded-md border px-3 py-2 text-sm"
-                value={draftFocus}
-                onChange={(e) => setDraftFocus(e.target.value)}
-                placeholder="Session opener, accountability questions, follow-up email..."
-              />
-            </div>
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Tone</div>
-              <select
-                className="w-full rounded-md border px-3 py-2 text-sm"
-                value={draftTone}
-                onChange={(e) => setDraftTone(e.target.value as any)}
-              >
-                <option value="neutral">Neutral</option>
-                <option value="direct">Direct</option>
-                <option value="warm">Warm</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <div className="text-sm font-medium">Constraints</div>
-              <input
-                className="w-full rounded-md border px-3 py-2 text-sm"
-                value={draftConstraints}
-                onChange={(e) => setDraftConstraints(e.target.value)}
-              />
-            </div>
-            <Button onClick={generateStaffDraft} disabled={draftLoading}>
-              {draftLoading ? "Generating..." : "Generate Draft"}
-            </Button>
-            {draftText && (
-              <textarea
-                className="w-full min-h-[200px] rounded-md border px-3 py-2 text-sm"
-                value={draftText}
-                readOnly
-              />
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       <OnboardingModal
         open={showOnboarding}
         onComplete={handleOnboardingComplete}
@@ -593,92 +499,16 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <IntegrityCoach />
+        <div className="text-center text-xs text-muted-foreground py-4 border-t">
+          <p>
+            The Integrity Protocol is an educational and personal growth program.{" "}
+            <strong>It is not therapy or mental health treatment.</strong>
+          </p>
+          <p className="mt-1">
+            If you are in crisis, call or text <strong>988</strong> (Suicide & Crisis Lifeline) or text HOME to <strong>741741</strong>.
+          </p>
+        </div>
       </main>
-    </div>
-  );
-}
-
-export function IntegrityCoach() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [chat, setChat] = useState([
-    { role: "bot", content: "Hello! How can I support your journey today?" },
-  ]);
-
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMsg = { role: "user", content: input };
-    setChat((prev) => [...prev, userMsg]);
-    setInput("");
-
-    try {
-      const response = await fetch("/api/ai/coach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input, weekNumber: 1 }),
-      });
-
-      const data = await response.json();
-      setChat((prev) => [...prev, { role: "bot", content: data.reply }]);
-    } catch (error) {
-      setChat((prev) => [
-        ...prev,
-        { role: "bot", content: "Sorry, I'm having trouble connecting." },
-      ]);
-    }
-  };
-
-  return (
-    <div className="fixed bottom-5 right-5 z-50">
-      <Button
-        size="icon"
-        onClick={() => setIsOpen(!isOpen)}
-        className="h-12 w-12 rounded-full shadow-lg"
-        data-testid="button-coach-toggle"
-      >
-        <MessageSquare className="h-5 w-5" />
-      </Button>
-
-      {isOpen && (
-        <Card className="absolute bottom-16 right-0 w-[320px] sm:w-[360px] flex flex-col overflow-hidden" style={{ height: "420px" }}>
-          <CardHeader className="gap-1 py-3 border-b">
-            <CardTitle className="text-sm">Integrity Coach</CardTitle>
-          </CardHeader>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {chat.map((msg, i) => (
-              <div
-                key={i}
-                className={`text-sm rounded-md px-3 py-2 max-w-[85%] ${
-                  msg.role === "user"
-                    ? "ml-auto bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
-                data-testid={`chat-message-${i}`}
-              >
-                {msg.content}
-              </div>
-            ))}
-          </div>
-          <div className="border-t p-3 flex gap-2">
-            <input
-              className="flex-1 rounded-md border px-3 py-2 text-sm bg-background"
-              placeholder="Type a message..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              data-testid="input-coach-message"
-            />
-            <Button
-              size="sm"
-              onClick={sendMessage}
-              data-testid="button-coach-send"
-            >
-              Send
-            </Button>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

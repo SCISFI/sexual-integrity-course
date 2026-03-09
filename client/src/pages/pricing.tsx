@@ -68,7 +68,7 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
-                  <span>Unique access code for client registration</span>
+                  <span>Clients register and select you as their mentor</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
@@ -177,8 +177,8 @@ export default function PricingPage() {
             <div>
               <h3 className="font-semibold mb-2">Do I need a mentor to participate?</h3>
               <p className="text-muted-foreground">
-                Yes, clients register using an access code provided by their mentor. This ensures 
-                you have dedicated support throughout your journey.
+                Yes. When you register as a client, you select your assigned mentor from the available list.
+                Your mentor guides your progress and provides feedback throughout the program.
               </p>
             </div>
             <div>

@@ -51,7 +51,7 @@ const steps = [
     tagline: "One week at a time. No skipping ahead.",
     title: "Weekly Lessons",
     bullets: [
-      "New lessons unlock every 7 days — you cannot rush the timeline",
+      "New lessons unlock 7 days after the previous week becomes available — and after you complete the prior week",
       "Each week includes reading, reflection questions, and homework",
       "Your answers auto-save as you type. Stop and return anytime.",
       "Week 1 is already waiting for you",
