@@ -85,7 +85,7 @@ export interface IStorage {
   // Week reflections
   getWeekReflection(userId: string, weekNumber: number): Promise<WeekReflection | undefined>;
   getAllWeekReflections(userId: string): Promise<WeekReflection[]>;
-  upsertWeekReflection(userId: string, weekNumber: number, data: { q1?: string; q2?: string; q3?: string; q4?: string; q5?: string; q6?: string }): Promise<WeekReflection>;
+  upsertWeekReflection(userId: string, weekNumber: number, data: { q1?: string; q2?: string; q3?: string; q4?: string; q5?: string; q6?: string; qBiblical?: string }): Promise<WeekReflection>;
 
   // Commitments
   getCommitment(userId: string, weekNumber: number): Promise<Commitment | undefined>;
@@ -444,7 +444,7 @@ export class DatabaseStorage implements IStorage {
   async upsertWeekReflection(
     userId: string,
     weekNumber: number,
-    data: { q1?: string; q2?: string; q3?: string; q4?: string; q5?: string; q6?: string }
+    data: { q1?: string; q2?: string; q3?: string; q4?: string; q5?: string; q6?: string; qBiblical?: string }
   ): Promise<WeekReflection> {
     const existing = await this.getWeekReflection(userId, weekNumber);
     if (existing) {

@@ -394,6 +394,7 @@ export default function WeekPage() {
         q4: r.q4 || "",
         q5: r.q5 || "",
         q6: r.q6 || "",
+        qBiblical: r.qBiblical || "",
       };
       setReflectionAnswers(loaded);
       reflectionAnswersRef.current = loaded;
@@ -414,7 +415,7 @@ export default function WeekPage() {
 
   // Mutation to save reflections
   const saveReflectionMutation = useMutation({
-    mutationFn: async (data: { q1?: string; q2?: string; q3?: string; q4?: string; q5?: string; q6?: string }) => {
+    mutationFn: async (data: { q1?: string; q2?: string; q3?: string; q4?: string; q5?: string; q6?: string; qBiblical?: string }) => {
       const res = await apiRequest("PUT", `/api/progress/reflection/${weekNumber}`, data);
       return res.json();
     },
@@ -513,6 +514,7 @@ export default function WeekPage() {
         q4: answers.q4 ?? "",
         q5: answers.q5 ?? "",
         q6: answers.q6 ?? "",
+        qBiblical: answers.qBiblical ?? "",
       });
     }, 1000); // Save after 1 second of inactivity
   }, [weekNumber, weekIsLocked, loadingReflections]);
@@ -561,6 +563,7 @@ export default function WeekPage() {
             q4: answers.q4 ?? "",
             q5: answers.q5 ?? "",
             q6: answers.q6 ?? "",
+            qBiblical: answers.qBiblical ?? "",
           }),
           keepalive: true,
         }).catch(() => {});
@@ -587,6 +590,7 @@ export default function WeekPage() {
         q2: reflectionAnswers.q2 ?? "",
         q3: reflectionAnswers.q3 ?? "",
         q4: reflectionAnswers.q4 ?? "",
+        qBiblical: reflectionAnswers.qBiblical ?? "",
       });
       // Then mark the week complete
       markCompleteMutation.mutate();
@@ -1103,6 +1107,20 @@ export default function WeekPage() {
                               <p className="text-sm italic text-muted-foreground border-l-2 border-slate-300 dark:border-slate-600 pl-3">
                                 <span className="not-italic font-medium text-slate-600 dark:text-slate-400">Optional Reflection:</span> {reflection.reflection}
                               </p>
+                              {!weekIsLocked && (
+                                <Textarea
+                                  placeholder="Write your response here..."
+                                  value={reflectionAnswers.qBiblical || ""}
+                                  onChange={(e) => handleReflectionChange("qBiblical", e.target.value)}
+                                  className="mt-1 min-h-[100px] text-sm resize-none"
+                                  data-testid="input-biblical-reflection"
+                                />
+                              )}
+                              {weekIsLocked && reflectionAnswers.qBiblical && (
+                                <p className="text-sm italic text-muted-foreground bg-slate-50 dark:bg-slate-900 rounded-md px-3 py-2 border border-slate-100 dark:border-slate-800">
+                                  "{reflectionAnswers.qBiblical}"
+                                </p>
+                              )}
                             </div>
                           </CardContent>
                         </CollapsibleContent>

@@ -538,11 +538,11 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid week number" });
       }
       const userId = (req.user as any).id;
-      const { q1, q2, q3, q4, q5, q6 } = req.body;
+      const { q1, q2, q3, q4, q5, q6, qBiblical } = req.body;
       const reflection = await storage.upsertWeekReflection(
         userId,
         weekNumber,
-        { q1, q2, q3, q4, q5, q6 },
+        { q1, q2, q3, q4, q5, q6, qBiblical },
       );
       res.json({ reflection });
     } catch (error) {

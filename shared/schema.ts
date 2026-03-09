@@ -158,6 +158,7 @@ export const weekReflections = pgTable("week_reflections", {
   q4: text("q4").default(""),
   q5: text("q5").default(""),
   q6: text("q6").default(""),
+  qBiblical: text("q_biblical").default(""),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   unique("week_reflections_user_week_unique").on(table.userId, table.weekNumber),
