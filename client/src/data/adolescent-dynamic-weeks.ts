@@ -1,0 +1,331 @@
+export interface AdolescentLessonScreen {
+  id: string;
+  type:
+    | "hook"
+    | "micro-teaching"
+    | "check-in"
+    | "scenario"
+    | "mission"
+    | "reflection"
+    | "scripture"
+    | "commitment"
+    | "completion";
+  title: string;
+  body: string[];
+  responseMode?: "none" | "buttons" | "text" | "textarea";
+  responseOptions?: string[];
+  placeholder?: string;
+  saveResponseAs?: string;
+}
+
+export interface AdolescentDynamicWeek {
+  weekNumber: number;
+  title: string;
+  phase: 1 | 2;
+  phaseName: string;
+  missionTitle: string;
+  missionSummary: string;
+  screens: AdolescentLessonScreen[];
+}
+
+export const ADOLESCENT_DYNAMIC_WEEKS: Record<number, AdolescentDynamicWeek> = {
+  1: {
+    weekNumber: 1,
+    title: "The Moment You Stop Hiding",
+    phase: 1,
+    phaseName: "Foundation & Stabilization",
+    missionTitle: "Week 1 Mission: Catch the Moment You Start Hiding",
+    missionSummary:
+      "This week is about noticing when you start lying to yourself, drifting into secrecy, or pretending the pattern is not real.",
+    screens: [
+      {
+        id: "w1-hook-1",
+        type: "hook",
+        title: "Week 1",
+        body: [
+          "You do not have to tell everyone everything.",
+          "But you do have to stop lying to yourself.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["Start Week 1"],
+        saveResponseAs: "week1_started",
+      },
+      {
+        id: "w1-hook-2",
+        type: "micro-teaching",
+        title: "Something feels off",
+        body: [
+          "Most guys do not start a program like this because everything is going great.",
+          "Usually something happened.",
+          "Maybe you got caught. Maybe you scared yourself. Maybe you are just tired of feeling split in two.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["That fits", "Maybe", "Not really"],
+        saveResponseAs: "something_feels_off",
+      },
+      {
+        id: "w1-checkin-1",
+        type: "check-in",
+        title: "Quick check",
+        body: [
+          "Have you ever thought:",
+          '"It is not a big deal."',
+          '"I can stop whenever I want."',
+          '"Nobody knows, so it is fine."',
+        ],
+        responseMode: "buttons",
+        responseOptions: ["Yes", "Sometimes", "No"],
+        saveResponseAs: "minimizing_pattern",
+      },
+      {
+        id: "w1-teach-1",
+        type: "micro-teaching",
+        title: "If it keeps pulling you back, it matters",
+        body: [
+          "If a pattern keeps pulling you back, keeps growing in secrecy, or keeps making you feel divided inside, it deserves attention.",
+          "Not panic.",
+          "Not shame.",
+          "Attention.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["Got it"],
+        saveResponseAs: "attention_not_shame",
+      },
+      {
+        id: "w1-teach-2",
+        type: "micro-teaching",
+        title: "There is a pattern",
+        body: [
+          "Most unhealthy behavior does not happen out of nowhere.",
+          "It follows a cycle.",
+          "If you can see the pattern, you can start interrupting it.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["Keep going"],
+        saveResponseAs: "there_is_a_pattern",
+      },
+      {
+        id: "w1-teach-3",
+        type: "micro-teaching",
+        title: "The cycle",
+        body: [
+          "BUILD-UP: something shifts inside you.",
+          "DRIFT: you start moving toward the pattern.",
+          "ACTION: you do the thing.",
+          "CRASH: regret, shame, numbness, or promises to stop.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["I see that", "Not sure yet"],
+        saveResponseAs: "cycle_recognition",
+      },
+      {
+        id: "w1-checkin-2",
+        type: "check-in",
+        title: "Where do you notice it most?",
+        body: ["Which part of the cycle do you usually notice first?"],
+        responseMode: "buttons",
+        responseOptions: ["Build-Up", "Drift", "Action", "Crash"],
+        saveResponseAs: "first_noticed_cycle_stage",
+      },
+      {
+        id: "w1-scenario-1",
+        type: "scenario",
+        title: "A real-life example",
+        body: [
+          "You feel stressed or bored.",
+          "You pick up your phone.",
+          "You start scrolling.",
+          "You already know where your mind is starting to go.",
+        ],
+        responseMode: "buttons",
+        responseOptions: [
+          "That is usually how it starts",
+          "Sometimes",
+          "Not my pattern",
+        ],
+        saveResponseAs: "phone_scroll_trigger",
+      },
+      {
+        id: "w1-teach-4",
+        type: "micro-teaching",
+        title: "The danger is usually earlier than you think",
+        body: [
+          "A lot of people only notice the crash after the choice.",
+          "But the real turn usually started earlier.",
+          "You often lose ground in the drift, not just in the action.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["That makes sense"],
+        saveResponseAs: "danger_in_drift",
+      },
+      {
+        id: "w1-teach-5",
+        type: "micro-teaching",
+        title: "Secrecy makes it stronger",
+        body: [
+          "Most destructive patterns grow best in hiding.",
+          "The more secret something becomes, the more power it usually gains.",
+          "Life starts splitting into two versions: what people think is going on, and what is really going on.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["That fits", "Maybe", "Not really"],
+        saveResponseAs: "secrecy_strengthens_pattern",
+      },
+      {
+        id: "w1-checkin-3",
+        type: "check-in",
+        title: "Be honest",
+        body: ["Does secrecy make the pattern stronger for you?"],
+        responseMode: "buttons",
+        responseOptions: ["Yes", "Sometimes", "No"],
+        saveResponseAs: "secrecy_checkin",
+      },
+      {
+        id: "w1-teach-6",
+        type: "micro-teaching",
+        title: "This is not about being gross",
+        body: [
+          "Two bad responses are common.",
+          '"I am disgusting."',
+          'Or: "This is normal, so who cares."',
+          "Neither one helps.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["I do one of those", "Not really"],
+        saveResponseAs: "extreme_reaction_pattern",
+      },
+      {
+        id: "w1-teach-7",
+        type: "micro-teaching",
+        title: "The better question",
+        body: [
+          "Is this pattern helping me become the kind of person I want to be?",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["No", "Not sure", "Sometimes it feels like it does"],
+        saveResponseAs: "identity_question",
+      },
+      {
+        id: "w1-teach-8",
+        type: "micro-teaching",
+        title: "Why 'just stop' usually fails",
+        body: [
+          "If 'just stop' worked, you probably would have already done it.",
+          "Strong habits connect to emotion, routine, relief, and repetition.",
+          "That means change takes more than promises.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["True", "I hate that this is true"],
+        saveResponseAs: "just_stop_fails",
+      },
+      {
+        id: "w1-teach-9",
+        type: "micro-teaching",
+        title: "Responsibility is stronger than shame",
+        body: [
+          "Shame says: 'There is something wrong with me.'",
+          "Responsibility says: 'Something I am doing needs to change.'",
+          "Shame hides. Responsibility owns it.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["I get that", "Still hard to believe"],
+        saveResponseAs: "responsibility_vs_shame",
+      },
+      {
+        id: "w1-mission",
+        type: "mission",
+        title: "Week 1 Mission",
+        body: [
+          "Catch the moment you start hiding.",
+          "Notice when you start lying to yourself.",
+          "Notice what feeling shows up first.",
+          "Write down one honest thing before the day ends.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["I can do that", "I will try"],
+        saveResponseAs: "week1_mission_accept",
+      },
+      {
+        id: "w1-reflection-1",
+        type: "reflection",
+        title: "What made this feel real?",
+        body: [
+          "Name the moment, event, or realization that made you stop brushing this off.",
+        ],
+        responseMode: "textarea",
+        placeholder: "What made this feel real enough to face?",
+        saveResponseAs: "what_made_this_real",
+      },
+      {
+        id: "w1-reflection-2",
+        type: "reflection",
+        title: "What usually comes first?",
+        body: ["What do you usually feel right before you start drifting?"],
+        responseMode: "textarea",
+        placeholder: "Bored, lonely, stressed, rejected, angry, numb, curious...",
+        saveResponseAs: "what_comes_first",
+      },
+      {
+        id: "w1-reflection-3",
+        type: "reflection",
+        title: "What is this costing you?",
+        body: [
+          "Think mood, focus, relationships, faith, confidence, or self-respect.",
+        ],
+        responseMode: "textarea",
+        placeholder: "What has this been costing you?",
+        saveResponseAs: "cost_of_pattern",
+      },
+      {
+        id: "w1-scripture",
+        type: "scripture",
+        title: "David and the man who told him the truth",
+        body: [
+          "David tried to control the story and hide what was real.",
+          "Then Nathan told the truth.",
+          "That was the turning point.",
+          "Change often begins when pretending stops.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["That hits", "Keep going"],
+        saveResponseAs: "david_reflection_seen",
+      },
+      {
+        id: "w1-scripture-reflection",
+        type: "reflection",
+        title: "Think about this",
+        body: [
+          "Where are you still trying to manage how things look instead of telling the truth about what is real?",
+        ],
+        responseMode: "textarea",
+        placeholder: "Write your answer here...",
+        saveResponseAs: "scripture_reflection",
+      },
+      {
+        id: "w1-commitment",
+        type: "commitment",
+        title: "Your Week 1 commitment",
+        body: [
+          'Finish this sentence:',
+          '"This week, one honest step I will take is..."',
+        ],
+        responseMode: "textarea",
+        placeholder: "This week, one honest step I will take is...",
+        saveResponseAs: "week1_commitment",
+      },
+      {
+        id: "w1-complete",
+        type: "completion",
+        title: "Week 1 Complete",
+        body: [
+          "You do not need to be perfect to start.",
+          "You do need to be honest.",
+          "That is what this week was about.",
+        ],
+        responseMode: "buttons",
+        responseOptions: ["Finish Week 1"],
+        saveResponseAs: "week1_completed",
+      },
+    ],
+  },
+};

@@ -28,6 +28,8 @@ import {
 import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Map, Brain, Anchor, Sunset, Heart, MessageCircle, Shield, Leaf, Feather, Compass, Droplets, Footprints, Circle, ShieldCheck, Sunrise, RefreshCw, Lightbulb, Waves, Users, Wind, Star, Mountain, Target, BookOpen, Infinity, AlertTriangle, ChevronDown } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, type Exercise } from "@/data/curriculum";
 import { ADOLESCENT_CURRICULUM, ADOLESCENT_WEEK_TITLES, ADOLESCENT_BIBLICAL_REFLECTIONS } from "@/data/adolescent-curriculum";
+import { ADOLESCENT_DYNAMIC_WEEKS } from "@/data/adolescent-dynamic-weeks";
+import AdolescentLessonPlayer from "@/components/adolescent-lesson-player";
 import { useAuth } from "@/lib/auth";
 import { WEEK_PODCASTS } from "@/data/podcasts";
 import { BIBLICAL_REFLECTIONS } from "@/data/biblical-reflections";
@@ -248,6 +250,7 @@ export default function WeekPage() {
 
   const { user } = useAuth();
   const isAdolescent = (user as any)?.programType === "adolescent";
+  const dynamicWeek = isAdolescent ? ADOLESCENT_DYNAMIC_WEEKS[weekNumber] : undefined;
   const weekContent = isAdolescent ? ADOLESCENT_CURRICULUM[weekNumber] : WEEK_CONTENT[weekNumber];
   const title = isAdolescent
     ? (ADOLESCENT_WEEK_TITLES[weekNumber] ?? `Week ${weekNumber}`)
@@ -684,6 +687,17 @@ export default function WeekPage() {
         </div>
       </header>
 
+      {/* Dynamic adolescent lesson player — replaces the standard week layout */}
+      {dynamicWeek && !isTimeLocked && (
+        <AdolescentLessonPlayer
+          weekNumber={weekNumber}
+          dynamicWeek={dynamicWeek}
+          isCompleted={weekIsLocked}
+        />
+      )}
+
+      {/* Standard week layout — adult users and placeholder adolescent weeks */}
+      {(!dynamicWeek || isTimeLocked) && (
       <main className="mx-auto max-w-3xl px-4 py-6 md:py-8 space-y-6 md:space-y-8">
         {/* Hero Section */}
         <Card className="overflow-hidden" data-testid="section-hero">
@@ -1226,6 +1240,7 @@ export default function WeekPage() {
           </div>
         )}
       </main>
+      )}
 
       {/* Completion Dialog */}
       <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
