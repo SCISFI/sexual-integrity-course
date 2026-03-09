@@ -195,8 +195,22 @@ interface WeekHero {
 }
 
 const WEEK_INFOGRAPHICS: Record<number, string> = {
-  1: "/infographics/week-1.jpg",
-  2: "/infographics/week-2.jpg",
+  1:  "/infographics/week-1.jpg",
+  2:  "/infographics/week-2.jpg",
+  3:  "/infographics/week-3.jpg",
+  4:  "/infographics/week-4.jpg",
+  5:  "/infographics/week-5.jpg",
+  6:  "/infographics/week-6.jpg",
+  7:  "/infographics/week-7.jpg",
+  8:  "/infographics/week-8.jpg",
+  9:  "/infographics/week-9.jpg",
+  10: "/infographics/week-10.jpg",
+  11: "/infographics/week-11.jpg",
+  12: "/infographics/week-12.jpg",
+  13: "/infographics/week-13.jpg",
+  14: "/infographics/week-14.jpg",
+  15: "/infographics/week-15.jpg",
+  16: "/infographics/week-16.jpg",
 };
 
 const WEEK_HERO: Record<number, WeekHero> = {
