@@ -25,9 +25,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Map, Brain, Anchor, Sunset, Heart, MessageCircle, Shield, Leaf, Feather, Compass, Droplets, Footprints, Circle, ShieldCheck, Sunrise, RefreshCw, Lightbulb, Waves, Users, Wind, Star, Mountain, Target, BookOpen, Infinity, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ClipboardList, PartyPopper, ArrowRight, Loader2, Lock, Eye, CreditCard, Cloud, BarChart3, PenLine, Map, Brain, Anchor, Sunset, Heart, MessageCircle, Shield, Leaf, Feather, Compass, Droplets, Footprints, Circle, ShieldCheck, Sunrise, RefreshCw, Lightbulb, Waves, Users, Wind, Star, Mountain, Target, BookOpen, Infinity, AlertTriangle, ChevronDown } from "lucide-react";
 import { WEEK_CONTENT, WEEK_TITLES, type Exercise } from "@/data/curriculum";
 import { WEEK_PODCASTS } from "@/data/podcasts";
+import { BIBLICAL_REFLECTIONS } from "@/data/biblical-reflections";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { CrisisResources } from "@/components/CrisisResources";
 import { TextToSpeech } from "@/components/TextToSpeech";
@@ -253,6 +259,7 @@ export default function WeekPage() {
   const [exerciseAnswers, setExerciseAnswers] = useState<Record<string, string>>({});
   const [exercisesLoaded, setExercisesLoaded] = useState(false);
   const [exerciseSaveStatus, setExerciseSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [storyOpen, setStoryOpen] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reflectionAnswersRef = useRef<Record<string, string>>({});
@@ -1058,6 +1065,51 @@ export default function WeekPage() {
                     </div>
                   </div>
                 )}
+
+                {/* A Story Worth Knowing */}
+                {BIBLICAL_REFLECTIONS[weekNumber] && (() => {
+                  const reflection = BIBLICAL_REFLECTIONS[weekNumber];
+                  return (
+                    <Collapsible open={storyOpen} onOpenChange={setStoryOpen} data-testid="section-biblical-reflection">
+                      <Card className="border-slate-200 dark:border-slate-700">
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full text-left">
+                            <CardContent className="flex items-center justify-between py-4 px-6">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                                  <BookOpen className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">A Story Worth Knowing</p>
+                                  <p className="text-xs text-muted-foreground">{reflection.character}</p>
+                                </div>
+                              </div>
+                              <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${storyOpen ? "rotate-180" : ""}`} />
+                            </CardContent>
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <CardContent className="px-6 pb-6 pt-0 space-y-4 border-t border-slate-100 dark:border-slate-800">
+                            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 pt-4">{reflection.title}</h3>
+                            <div className="space-y-3">
+                              {reflection.story.map((paragraph, idx) => (
+                                <p key={idx} className="text-sm leading-relaxed text-muted-foreground">{paragraph}</p>
+                              ))}
+                            </div>
+                            <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3">
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <span className="font-semibold">Takeaway:</span> {reflection.takeaway}
+                              </p>
+                              <p className="text-sm italic text-muted-foreground border-l-2 border-slate-300 dark:border-slate-600 pl-3">
+                                <span className="not-italic font-medium text-slate-600 dark:text-slate-400">Optional Reflection:</span> {reflection.reflection}
+                              </p>
+                            </div>
+                          </CardContent>
+                        </CollapsibleContent>
+                      </Card>
+                    </Collapsible>
+                  );
+                })()}
 
                 {/* Week Completion */}
                 {weekIsLocked ? (
