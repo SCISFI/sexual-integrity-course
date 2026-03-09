@@ -187,9 +187,9 @@ function ParentSection({ clientId, parentData, onMessageSent }: { clientId: stri
           <p className="text-sm text-muted-foreground">Consent approved but parent account not yet fully set up.</p>
         )}
 
-        {parentData.messages.length > 0 && (
+        {(parentData.messages?.length ?? 0) > 0 && (
           <div className="space-y-2 max-h-48 overflow-y-auto">
-            {parentData.messages.map((msg) => (
+            {(parentData.messages ?? []).map((msg) => (
               <div
                 key={msg.id}
                 className={`rounded-lg px-3 py-2 text-sm ${
@@ -312,7 +312,6 @@ export default function TherapistClient() {
   };
   const { data: parentData, refetch: refetchParent } = useQuery<ParentInfo>({
     queryKey: ['/api/therapist/clients', clientId, 'parent-info'],
-    queryFn: () => apiRequest("GET", `/api/therapist/clients/${clientId}/parent-info`) as any,
     enabled: !!clientId && isAdolescent,
   });
 
