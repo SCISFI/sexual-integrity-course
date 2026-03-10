@@ -6,7 +6,7 @@ export interface PodcastEpisode {
 
 export const WEEK_PODCASTS: Record<number, PodcastEpisode> = {
   1: {
-    title: "Deconstructing the Cycle",
+    title: "The Moment You Stop Pretending",
     file: "/podcasts/week-1.mp4",
     description: "A visual breakdown of the core concepts in this week's lesson.",
   },
