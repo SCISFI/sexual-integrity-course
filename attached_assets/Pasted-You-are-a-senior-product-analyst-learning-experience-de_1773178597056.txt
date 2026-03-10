@@ -1,0 +1,147 @@
+You are a senior product analyst, learning experience designer, behavioral insight researcher, and UX auditor.
+
+I am evaluating Week 1 of my app, Integrity Protocol, and I need a rigorous product improvement report based on real user data.
+
+Context:
+- Audience: men who struggle with problematic sexual behavior
+- Week 1 title: "The Moment You Stop Pretending"
+- Week 1 goal: help users practice honesty, name what brought them here, understand the behavioral cycle that has been running them, and decide whether they are willing to do something different
+- My goal: determine how successful Week 1 is, how well the app is drawing out meaningful user insight, where the experience is working, where it is failing, and what to improve immediately
+
+I will provide:
+- Week 1 lesson content and instructional copy if available
+- Reflection prompts
+- Exercise prompts
+- User responses
+- Completion/progress data
+- Any related mentor or therapist feedback
+- Any metadata on skipped answers, timestamps, drop-off, or partial completion
+
+Your job:
+Analyze all Week 1 user data across users and produce a critical, evidence-based product improvement report.
+
+Do not flatter the product.
+Do not assume the content is effective.
+Do not merely summarize.
+Diagnose what is actually happening.
+
+Evaluate the data in these categories:
+
+1. USER RESPONSE QUALITY
+Assess the quality of reflection and exercise responses across users:
+- depth vs superficiality
+- specificity vs vagueness
+- honesty vs performative answering
+- signs of confusion, avoidance, minimization, defensiveness, or disengagement
+- whether users actually understood the core Week 1 concepts
+- whether responses show genuine self-confrontation or just task completion
+
+2. CROSS-USER PATTERNS
+Compare users and identify:
+- recurring emotional themes
+- repeated misunderstandings
+- recurring weak-response patterns
+- prompts that consistently generate useful insight
+- prompts that consistently generate shallow or low-signal answers
+- where users appear most engaged
+- where users lose momentum, clarity, or willingness
+
+3. CONTENT EFFECTIVENESS
+Evaluate whether the Week 1 educational content is doing its job:
+- Is the framing clear?
+- Is the sequence effective?
+- Is the content too abstract, too moralizing, too obvious, too dense, or too leading?
+- Does it create psychological safety for honesty?
+- Does it help users identify their behavioral cycle?
+- Does it invite insight, or just compliance?
+- Are users being asked the right questions at the right time?
+
+4. INTERACTION AND UX QUALITY
+Evaluate the app experience itself:
+- friction points
+- prompt fatigue
+- repetitive or poorly sequenced interactions
+- places where the interface may encourage low-effort answers
+- whether users likely needed examples, scaffolding, or adaptive follow-up prompts
+- whether the experience feels static when it should feel responsive
+- missed opportunities for branching, follow-up, or deeper inquiry
+
+5. VULNERABILITIES AND MISSED MARKS
+Identify vulnerabilities in the product and learning design:
+- ambiguous wording
+- prompts that invite socially desirable answers
+- insufficient emotional containment or safety
+- weak onboarding into reflection
+- assumptions users may not share
+- places where shame, resistance, or defensiveness may block insight
+- places where the app collects text but fails to generate meaningful self-awareness
+- any safety, trust, retention, or interpretation risks visible in the current design
+
+6. ROOT CAUSE ANALYSIS
+For each major weakness, identify the most likely root cause:
+- weak prompt design
+- weak lesson framing
+- poor sequence
+- lack of context
+- poor emotional timing
+- insufficient examples
+- cognitive overload
+- lack of adaptive follow-up
+- interface constraints
+- motivation mismatch
+- other structural issues
+
+7. RECOMMENDATIONS
+Give practical recommendations in priority order:
+A. Immediate fixes
+B. Prompt rewrites
+C. Content improvements
+D. UX/app flow improvements
+E. Better data collection
+F. Experiments to run before or during Week 2
+
+Additional instructions:
+- Base every major conclusion on patterns in the supplied data
+- Quote or paraphrase representative examples when helpful
+- Distinguish clearly between evidence and inference
+- Separate isolated issues from repeated patterns
+- If key data is missing, state exactly what is missing and how it affects confidence
+- Pay special attention to whether the app is successfully drawing out honesty rather than performative compliance
+- Pay special attention to whether the content is helping users name their cycle in a concrete way
+- Flag any signs that the app may unintentionally encourage shame, vagueness, or surface-level engagement instead of insight
+
+Score these from 1–10 with explanation:
+- engagement quality
+- reflection depth
+- exercise effectiveness
+- clarity of educational content
+- prompt design quality
+- emotional safety
+- honesty elicitation
+- insight generation
+- overall Week 1 effectiveness
+
+Return the report in this format:
+
+1. Executive Summary
+2. What Week 1 Is Doing Well
+3. Where Week 1 Is Underperforming
+4. Cross-User Patterns
+5. Strong Prompts and Why They Worked
+6. Weak Prompts and Why They Failed
+7. UX and Interaction Problems
+8. Vulnerabilities and Missed Opportunities
+9. Root Cause Analysis
+10. Prioritized Product Improvements
+11. Suggested Rewrites for Weak Prompts
+12. Experiments to Improve Week 2
+13. Scorecard
+14. Confidence Level and Data Gaps
+
+At the end, include:
+- the 5 highest-impact changes to make before Week 2
+- 3 rewritten examples of weak reflection/exercise prompts
+- 3 product experiments to improve insight quality, completion quality, and user honesty
+
+Here is the data:
+[PASTE THE EXPORTED WEEK 1 DATA HERE]
