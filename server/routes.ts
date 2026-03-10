@@ -3262,8 +3262,9 @@ GUIDANCE SITUATION:
 
 WRITING RULES:
 - Write in second person ("you", "your") — address them directly
-${isBehindPaceNudge ? "- Primary Goal: Encourage them to get back into the course material. Ask if it's a scheduling issue or if the content itself is feeling heavy." : "- Reference specific data from the context when available (e.g., their check-in rate, week number, trend direction)."}
+${isBehindPaceNudge ? "- Primary Goal: Encourage them to get back into the course material. Ask if it's a scheduling issue or if the content itself is feeling heavy." : "- Draw on the statistics as a mentor would — let them shape your observations, but never quote them directly. Say what you notice about the person, not what the numbers say."}
 - IMPORTANT: Review the VULNERABILITIES section in the statistics above. If there are missing habits (e.g., missing sleep, exercise, or connection) or frequent HALT-BS factors (e.g., frequent stress or loneliness), address these as specific areas for growth or observation.
+- When addressing negative patterns (missed habits, elevated urges, declining mood), lead with empathy for what that feels like — then name the pattern. Never open with the data point itself.
 - Do NOT invent statistics not shown above.
 - Do NOT use power words: fantastic, amazing, incredible, proud, honored, grateful
 - Do NOT give medical advice or diagnoses
@@ -3433,9 +3434,10 @@ ${contextInfo}
 Guidelines:
 - Speak directly to the client using "you" language
 - Be direct yet encouraging and supportive
-- Reference specific details from their reflections or journal entries when available
-- Acknowledge their progress and effort based ONLY on the pre-computed statistics provided above
-- CRITICAL: Do NOT contradict the statistics. If mood/urge is described as "stable" or "consistently at X", do NOT describe it as improving or declining. If data is "insufficient", say more data is needed.
+- When journal entries or reflections are available, respond to what they actually wrote — this is richer than any stat. Show them you read it.
+- Let the statistics inform what you notice about them — but speak like a mentor, not a report. Never quote figures or averages directly.
+- For any negative data point (low mood, high urge, missed check-ins), acknowledge the human reality of that before you address it. A sentence of recognition first, observation second.
+- CRITICAL: Do NOT contradict the statistics. If mood/urge is described as "stable" or "consistently at X", do NOT describe it as improving or declining. If data is "insufficient", express natural curiosity rather than a clinical disclaimer.
 - If there is relapse history, sensitively reference patterns and how the client's current progress relates to their recovery journey
 - Offer gentle guidance or suggestions based on their challenges
 - Keep the message focused and under 250 words
@@ -4709,10 +4711,10 @@ ${completedAutopsies
 
         INSTRUCTIONS:
         1. Write a 2-3 sentence encouraging comment.
-        2. Reference how today's mood or urge compares to the pre-computed statistics above.
-        3. CRITICAL: Do NOT contradict the statistics. If a metric is described as "stable" or "consistently at X", do NOT say it is improving or declining. If data is "insufficient", state that more data is needed.
+        2. If there's a meaningful pattern in mood or urge, name what you notice as a human observation — not a comparison to statistics. Say "I notice your mood has been more steady" not "your mood average is 6.2/10."
+        3. CRITICAL: Do NOT contradict the statistics. If a metric is described as "stable" or "consistently at X", do NOT say it is improving or declining. If data is "insufficient", express natural curiosity rather than a clinical disclaimer.
         4. If there is relapse history, sensitively reference patterns and how today's check-in relates to known triggers or risk factors.
-        5. Mention check-in consistency if notably high or low.
+        5. If check-in consistency is notably high or low, acknowledge the behavior — "Showing up every day takes real discipline" or "I notice some gaps lately" — not the percentage.
         6. End with a specific, supportive statement or encouragement. Do NOT include any questions — clients cannot reply to these messages.
         7. TONE: Be warm but measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible," "outstanding," "extraordinary," "wonderful," or "remarkable." Keep language grounded and steady. Acknowledge effort simply.
       `;
@@ -4963,19 +4965,24 @@ ${
     .join("\n") || "None"
 }
 
+CONTEXT YOU MUST HOLD: The person reading this has just had a slip or relapse and completed a painful autopsy. They are almost certainly carrying shame right now. Your role is NOT to analyze the failure or pile on with more data about what went wrong — they already know what happened. Your role is to be a steady, warm presence that:
+- Leads with EMPATHY (not sympathy): acknowledge where they are emotionally without making them feel pitied or fragile. "I see you" not "I'm sorry this happened."
+- Provides POSITIVE REINFORCEMENT: the most important thing they did was face this honestly and complete the autopsy. Reinforce that choice and that strength — not the relapse itself.
+- Is FORWARD-LOOKING and HOPEFUL: pivot quickly toward what comes next. The relapse is the past. The autopsy is the turn. What matters now is the next step.
+- Is EMPATHIC, NOT SYMPATHETIC: empathy stands with them; sympathy implies they are victims. They are capable men working through a hard process.
+
 INSTRUCTIONS:
-1. Acknowledge the courage it takes to complete a relapse autopsy honestly.
-2. Specifically reference patterns or recurring triggers from past incidents if any exist.
-3. If frequency is increasing, address this directly but compassionately.
+1. Open by acknowledging the specific act of completing this autopsy as a demonstration of real self-honesty and courage. This is positive reinforcement — not of the relapse, but of the choice to face it. Make it specific and genuine, not a formula.
+2. Specifically reference patterns or recurring triggers from past incidents if any exist — but frame them as information to use going forward, not as evidence of failure.
+3. If frequency is increasing, acknowledge this as something worth paying attention to together — not as an indictment. Stay hopeful.
 4. Validate their identified warning signs and suggest additions based on patterns you see.
 5. Affirm their action plan and add specific, practical suggestions.
-6. Reference their mood/urge trends from check-in data if relevant.
+6. If mood/urge trends are relevant, weave them in mid-message or later as forward-looking observations — never in the opening, and never as raw data.
 7. CRITICAL: Do NOT contradict the pre-computed statistics in the TREND ANALYSIS section. If a metric is described as "stable" or "consistently at X", do NOT say it is improving or declining.
-8. Keep the tone urgent but supportive — this needs immediate, caring attention.
-9. Under 300 words. Speak directly to the client using "you" language.
-10. Do not provide medical advice or crisis intervention.
-11. TONE: Be warm but measured. Do NOT use power words like "fantastic," "excellent," "amazing," "incredible." Keep language grounded and honest. This is a relapse autopsy — be compassionate without being patronizing.
-12. End with an encouraging statement or a concrete next step. Do NOT include any questions anywhere in the message — clients cannot reply, so questions only create frustration.`;
+8. Under 300 words. Speak directly to the client using "you" language.
+9. Do not provide medical advice or crisis intervention.
+10. TONE: Shame-aware, empathic (not sympathetic), and forward-looking. You are neither surprised nor disappointed — you are steady and hopeful. The message should leave the person feeling seen and capable, not analyzed or judged.
+11. End with an encouraging, forward-looking statement that reinforces their capacity to keep going.`;
 
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
