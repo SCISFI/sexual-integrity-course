@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare, X, Wand2 } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, XCircle, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare, X, Wand2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -26,9 +26,26 @@ const DAILY_CHECK_LABELS: Record<string, string> = {
   "honest": "Was honest in my interactions today",
 };
 
-function formatEveningChecks(raw: string): string[] {
+const HALTBS_ITEMS = [
+  { id: "hungry",  label: "Hungry",   description: "Neglecting physical needs" },
+  { id: "angry",   label: "Angry",    description: "Holding resentment or frustration" },
+  { id: "lonely",  label: "Lonely",   description: "Feeling isolated or disconnected" },
+  { id: "tired",   label: "Tired",    description: "Physically or emotionally exhausted" },
+  { id: "bored",   label: "Bored",    description: "Lacking purpose or stimulation" },
+  { id: "stressed",label: "Stressed", description: "Feeling overwhelmed or anxious" },
+];
+
+function formatEveningChecks(raw: string | null | undefined): string[] {
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(raw ?? "");
+    if (Array.isArray(parsed)) return parsed;
+  } catch {}
+  return [];
+}
+
+function formatHaltChecks(raw: string | null | undefined): string[] {
+  try {
+    const parsed = JSON.parse(raw ?? "");
     if (Array.isArray(parsed)) return parsed;
   } catch {}
   return [];
@@ -1516,15 +1533,31 @@ export default function TherapistClient() {
                                             <span className="text-sm text-muted-foreground">Urge: <span className={`font-medium ${Number(checkin.urgeLevel) > 6 ? 'text-destructive' : 'text-foreground'}`}>{checkin.urgeLevel}/10</span></span>
                                           )}
                                         </div>
-                                        {checkin.eveningChecks && (
-                                          <div className="mt-2">
-                                            <p className="text-xs text-muted-foreground mb-1.5">Daily Items</p>
-                                            <div className="space-y-1.5">
-                                              {formatEveningChecks(checkin.eveningChecks).map((id) => (
-                                                <div key={id} className="flex items-center gap-2 text-sm">
-                                                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                                                  <span>{DAILY_CHECK_LABELS[id] || id}</span>
+                                        <div className="mt-2">
+                                          <p className="text-xs text-muted-foreground mb-1.5">Daily Items</p>
+                                          <div className="space-y-1.5">
+                                            {Object.entries(DAILY_CHECK_LABELS).map(([id, label]) => {
+                                              const checked = formatEveningChecks(checkin.eveningChecks).includes(id);
+                                              return (
+                                                <div key={id} className={`flex items-center gap-2 text-sm ${checked ? "" : "text-muted-foreground"}`} data-testid={checked ? `checkin-item-checked-${id}` : `checkin-item-unchecked-${id}`}>
+                                                  {checked
+                                                    ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                                    : <XCircle className="h-3.5 w-3.5 text-muted-foreground/50 flex-shrink-0" />
+                                                  }
+                                                  <span className={checked ? "" : "opacity-60"}>{label}</span>
                                                 </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                        {formatHaltChecks(checkin.haltChecks).length > 0 && (
+                                          <div className="mt-2">
+                                            <p className="text-xs text-muted-foreground mb-1.5">HALT-BS Vulnerabilities</p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                              {HALTBS_ITEMS.filter(item => formatHaltChecks(checkin.haltChecks).includes(item.id)).map(item => (
+                                                <span key={item.id} className="inline-flex items-center gap-1 text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-full px-2 py-0.5" data-testid={`checkin-halt-${item.id}`}>
+                                                  <AlertTriangle className="h-3 w-3" /> {item.label}
+                                                </span>
                                               ))}
                                             </div>
                                           </div>
@@ -1808,15 +1841,31 @@ export default function TherapistClient() {
                                   <span className="text-sm text-muted-foreground">Urge: <span className={`font-medium ${Number(checkin.urgeLevel) > 6 ? 'text-destructive' : 'text-foreground'}`}>{checkin.urgeLevel}/10</span></span>
                                 )}
                               </div>
-                              {checkin.eveningChecks && (
-                                <div className="mt-2">
-                                  <p className="text-xs text-muted-foreground mb-1.5">Daily Items</p>
-                                  <div className="space-y-1.5">
-                                    {formatEveningChecks(checkin.eveningChecks).map((id) => (
-                                      <div key={id} className="flex items-center gap-2 text-sm" data-testid={`checkin-item-${id}`}>
-                                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                                        <span>{DAILY_CHECK_LABELS[id] || id}</span>
+                              <div className="mt-2">
+                                <p className="text-xs text-muted-foreground mb-1.5">Daily Items</p>
+                                <div className="space-y-1.5">
+                                  {Object.entries(DAILY_CHECK_LABELS).map(([id, label]) => {
+                                    const checked = formatEveningChecks(checkin.eveningChecks).includes(id);
+                                    return (
+                                      <div key={id} className={`flex items-center gap-2 text-sm ${checked ? "" : "text-muted-foreground"}`} data-testid={checked ? `checkin-item-checked-${id}` : `checkin-item-unchecked-${id}`}>
+                                        {checked
+                                          ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                          : <XCircle className="h-3.5 w-3.5 text-muted-foreground/50 flex-shrink-0" />
+                                        }
+                                        <span className={checked ? "" : "opacity-60"}>{label}</span>
                                       </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                              {formatHaltChecks(checkin.haltChecks).length > 0 && (
+                                <div className="mt-2">
+                                  <p className="text-xs text-muted-foreground mb-1.5">HALT-BS Vulnerabilities</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {HALTBS_ITEMS.filter(item => formatHaltChecks(checkin.haltChecks).includes(item.id)).map(item => (
+                                      <span key={item.id} className="inline-flex items-center gap-1 text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-full px-2 py-0.5" data-testid={`checkin-halt-${item.id}`}>
+                                        <AlertTriangle className="h-3 w-3" /> {item.label}
+                                      </span>
                                     ))}
                                   </div>
                                 </div>
