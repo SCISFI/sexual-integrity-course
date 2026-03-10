@@ -15,4 +15,9 @@ export const WEEK_PODCASTS: Record<number, PodcastEpisode> = {
     file: "/podcasts/week-2.mp4",
     description: "A visual breakdown of the core concepts in this week's lesson.",
   },
+  4: {
+    title: "Willpower Isn't Enough",
+    file: "/podcasts/week-4.mp4",
+    description: "A visual breakdown of the core concepts in this week's lesson.",
+  },
 };
