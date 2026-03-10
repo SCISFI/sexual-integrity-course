@@ -3465,6 +3465,52 @@ Write the feedback message now:`;
     },
   );
 
+  // Rewrite an existing draft message with mentor's additional notes
+  app.post(
+    "/api/therapist/clients/:clientId/rewrite-message",
+    requireRole("therapist"),
+    async (req, res) => {
+      try {
+        const therapistId = (req.user as any).id;
+        const { clientId } = req.params;
+        const { existingDraft, mentorNotes } = req.body;
+
+        if (!existingDraft && !mentorNotes) {
+          return res.status(400).json({ message: "existingDraft or mentorNotes required" });
+        }
+
+        const clients = await storage.getClientsForTherapist(therapistId);
+        if (!clients.some((c) => c.id === clientId)) {
+          return res.status(403).json({ message: "Not authorized for this client" });
+        }
+
+        const clientUser = await storage.getUser(clientId);
+
+        const prompt = `You are a recovery mentor writing a personal message to ${clientUser?.name || "a client"} in a 16-week sexual integrity program.
+
+EXISTING DRAFT:
+${existingDraft || "(no existing draft)"}
+
+MENTOR'S ADDITIONAL NOTES TO INCORPORATE:
+${mentorNotes || "(none)"}
+
+TASK: Rewrite the above into a single, cohesive, warm, and direct mentor message (150–220 words). Incorporate ALL of the mentor's additional notes naturally into the message. Preserve the supportive, professional tone of the program. Do NOT invent any data, statistics, or facts not present in either the existing draft or the mentor's notes. Write in second person ("you", "your"), addressed directly to the client. Output only the final message text — no subject line, no greeting label, no explanatory notes.`;
+
+        const ai = getAiClient();
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        });
+
+        const draft = response.text || "Unable to rewrite message. Please edit manually.";
+        res.json({ draft });
+      } catch (error) {
+        console.error("Rewrite message error:", error);
+        res.status(500).json({ message: "Failed to rewrite message" });
+      }
+    },
+  );
+
   // Get pending reviews for therapist (week completions awaiting review)
   app.get(
     "/api/therapist/pending-reviews",

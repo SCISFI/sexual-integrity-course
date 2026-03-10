@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare, X } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare, X, Wand2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -276,6 +276,7 @@ export default function TherapistClient() {
   const [sheetMessage, setSheetMessage] = useState(() => {
     return localStorage.getItem(`sheet_message_${clientId}`) || "";
   });
+  const sheetTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Persist sheet state
   useEffect(() => {
@@ -292,10 +293,18 @@ export default function TherapistClient() {
     if (clientId) localStorage.setItem(`sheet_message_${clientId}`, sheetMessage);
   }, [sheetMessage, clientId]);
 
+  useEffect(() => {
+    const el = sheetTextareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  }, [sheetMessage]);
+
   const [sheetLoading, setSheetLoading] = useState(false);
   const [sheetSending, setSheetSending] = useState(false);
   const [sheetSaving, setSheetSaving] = useState(false);
   const [sheetFailed, setSheetFailed] = useState(false);
+  const [mentorNotes, setMentorNotes] = useState("");
   const [messagedWeekNums, setMessagedWeekNums] = useState<Set<number>>(new Set());
   const [messagedAutopsyIds, setMessagedAutopsyIds] = useState<Set<string>>(new Set());
 
@@ -520,6 +529,7 @@ export default function TherapistClient() {
     setSheetSubject("");
     setSheetMessage("");
     setSheetFailed(false);
+    setMentorNotes("");
   };
 
   const openWeekSheet = async (weekNumber: number) => {
@@ -692,6 +702,27 @@ export default function TherapistClient() {
       }
     } catch {
       setSheetFailed(true);
+    } finally {
+      setSheetLoading(false);
+    }
+  };
+
+  const handleRewriteWithNotes = async () => {
+    if (!sheetCtx || (!sheetMessage.trim() && !mentorNotes.trim())) return;
+    setSheetLoading(true);
+    setSheetFailed(false);
+    try {
+      const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/rewrite-message`, {
+        existingDraft: sheetMessage,
+        mentorNotes: mentorNotes,
+      });
+      if (!res.ok) throw new Error("Rewrite failed");
+      const data = await res.json();
+      setSheetMessage(data.draft || "");
+      setMentorNotes("");
+    } catch {
+      setSheetFailed(true);
+      toast({ title: "Rewrite failed — please try again", variant: "destructive" });
     } finally {
       setSheetLoading(false);
     }
@@ -1041,7 +1072,7 @@ export default function TherapistClient() {
                   <TabsTrigger value="analytics" data-testid="tab-analytics" className="flex-1 min-w-[80px]">Analytics</TabsTrigger>
                   <TabsTrigger value="progress" data-testid="tab-progress" className="relative flex-1 min-w-[80px]">
                     Progress
-                    {reviewCount > 0 && (
+                    {(pendingWeekReviewCountLocal + getUnreviewedReflectionCount()) > 0 && (
                       <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white ring-2 ring-background" data-testid="badge-pending-week-reviews">
                         {pendingWeekReviewCountLocal + getUnreviewedReflectionCount()}
                       </span>
@@ -2224,9 +2255,11 @@ export default function TherapistClient() {
                   <span>AI-generated draft — review before sending</span>
                 </div>
                 {!sheetLoading && (
-                  <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={handleSheetRegenerateDraft} disabled={sheetLoading} data-testid="button-sheet-regenerate">
-                    <RefreshCw className="h-3 w-3 mr-1" /> Regenerate
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-6 text-xs px-2" onClick={handleSheetRegenerateDraft} disabled={sheetLoading} data-testid="button-sheet-regenerate">
+                      <RefreshCw className="h-3 w-3 mr-1" /> Regenerate fresh
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
@@ -2255,13 +2288,37 @@ export default function TherapistClient() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">Message</label>
                   <Textarea
+                    ref={sheetTextareaRef as any}
                     value={sheetMessage}
                     onChange={e => setSheetMessage(e.target.value)}
                     placeholder="Write your message…"
-                    className="min-h-[200px] resize-none"
+                    className="min-h-[140px] resize-none overflow-hidden"
                     data-testid="input-sheet-message"
                   />
                 </div>
+                {sheetCtx?.kind !== 'general' && sheetCtx?.kind !== 'draft' && (
+                  <div className="space-y-2 pt-1">
+                    <label className="text-xs font-medium text-muted-foreground">Your additions (for AI rewrite)</label>
+                    <Textarea
+                      value={mentorNotes}
+                      onChange={e => setMentorNotes(e.target.value)}
+                      placeholder="Add any new information or thoughts for the AI to incorporate…"
+                      className="min-h-[60px] resize-none text-sm"
+                      data-testid="input-mentor-notes"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full h-8 text-xs"
+                      onClick={handleRewriteWithNotes}
+                      disabled={sheetLoading || (!mentorNotes.trim())}
+                      data-testid="button-rewrite-with-notes"
+                    >
+                      {sheetLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <Wand2 className="h-3 w-3 mr-1.5" />}
+                      Rewrite with my notes
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>
