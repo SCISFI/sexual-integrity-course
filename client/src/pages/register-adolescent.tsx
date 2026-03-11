@@ -257,7 +257,7 @@ export default function RegisterAdolescent() {
                             <SelectContent className="bg-slate-800 border-slate-600">
                               {therapists.map((t) => (
                                 <SelectItem key={t.id} value={t.id} className="text-white focus:bg-slate-700">
-                                  {t.name}{t.isAdmin ? " (Program Admin)" : ""}
+                                  {t.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>

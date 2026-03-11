@@ -729,22 +729,14 @@ export async function registerRoutes(
   app.get("/api/therapists/available", async (req, res) => {
     try {
       const therapists = await storage.getUsersByRole("therapist");
-      // Also include admins as they can act as therapists
-      const admins = await storage.getUsersByRole("admin");
 
-      // Return id, name, and credentials for selection
-      const availableTherapists = [...therapists, ...admins]
-        .filter(
-          (t) =>
-            t.subscriptionStatus === "active" ||
-            t.role === "admin" ||
-            t.allFeesWaived,
-        )
+      const availableTherapists = therapists
+        .filter((t) => t.subscriptionStatus === "active" || t.allFeesWaived)
         .map((t) => ({
           id: t.id,
           name: t.name || t.email.split("@")[0],
           licenseState: t.licenseState || null,
-          isAdmin: t.role === "admin",
+          isAdmin: false,
         }));
 
       res.json({ therapists: availableTherapists });

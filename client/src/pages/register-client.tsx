@@ -290,7 +290,6 @@ export default function RegisterClient() {
                                 <SelectItem key={therapist.id} value={therapist.id}>
                                   {therapist.name}
                                   {therapist.licenseState && ` (${therapist.licenseState})`}
-                                  {therapist.isAdmin && " — Program Director"}
                                 </SelectItem>
                               ))}
                             </SelectContent>
