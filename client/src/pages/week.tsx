@@ -873,17 +873,16 @@ export default function WeekPage() {
           </Card>
         )}
 
+        {WEEK_PODCASTS[weekNumber] && (
+          <DeepDivePlayer
+            title={WEEK_PODCASTS[weekNumber].title}
+            src={WEEK_PODCASTS[weekNumber].file}
+            description={WEEK_PODCASTS[weekNumber].description}
+          />
+        )}
+
         {!isTimeLocked && !needsPayment && (
           <div className="space-y-6">
-            {/* Deep Dive Podcast Player */}
-            {WEEK_PODCASTS[weekNumber] && (
-              <DeepDivePlayer
-                title={WEEK_PODCASTS[weekNumber].title}
-                src={WEEK_PODCASTS[weekNumber].file}
-                description={WEEK_PODCASTS[weekNumber].description}
-              />
-            )}
-
             {weekContent ? (
               <>
                 {/* Progress Tracker */}
@@ -1114,7 +1113,13 @@ export default function WeekPage() {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <CardContent className="px-6 pb-6 pt-0 space-y-4 border-t border-slate-100 dark:border-slate-800">
-                            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 pt-4">{reflection.title}</h3>
+                            <div className="flex items-center justify-between gap-2 pt-4">
+                              <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 min-w-0">{reflection.title}</h3>
+                              <TextToSpeech
+                                text={[reflection.title, ...reflection.story, `Takeaway: ${reflection.takeaway}`].join('. ')}
+                                label="Listen to this story"
+                              />
+                            </div>
                             <div className="space-y-3">
                               {reflection.story.map((paragraph, idx) => (
                                 <p key={idx} className="text-sm leading-relaxed text-muted-foreground">{paragraph}</p>
