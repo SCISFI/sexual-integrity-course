@@ -849,8 +849,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(userId: string): Promise<void> {
-    // Delete all related data for the user
-    // Order matters due to foreign key constraints
+    // Delete all related data for the user — order matters for foreign key constraints
+    await db.delete(relapseAutopsies).where(eq(relapseAutopsies.userId, userId));
+    await db.delete(mentorItemReviews).where(eq(mentorItemReviews.clientId, userId));
+    await db.delete(weeklySummaries).where(eq(weeklySummaries.clientId, userId));
+    await db.delete(dismissedGuidanceSuggestions).where(eq(dismissedGuidanceSuggestions.clientId, userId));
+    await db.delete(parentMessages).where(eq(parentMessages.clientId, userId));
+    await db.delete(parentClientRelationships).where(eq(parentClientRelationships.clientId, userId));
+    await db.delete(parentConsentTokens).where(eq(parentConsentTokens.clientId, userId));
+    await db.delete(cohortMemberships).where(eq(cohortMemberships.userId, userId));
+    await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+    await db.delete(notificationPreferences).where(eq(notificationPreferences.userId, userId));
+    await db.delete(commitments).where(eq(commitments.userId, userId));
     await db.delete(exerciseAnswers).where(eq(exerciseAnswers.userId, userId));
     await db.delete(homeworkCompletions).where(eq(homeworkCompletions.userId, userId));
     await db.delete(weekReflections).where(eq(weekReflections.userId, userId));
