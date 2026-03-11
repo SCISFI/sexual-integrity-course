@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Calendar, CheckCircle2, XCircle, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare, X, Wand2 } from "lucide-react";
+import { ArrowLeft, User, Calendar, CheckCircle2, XCircle, Clock, FileText, MessageSquare, Send, BarChart3, Flame, TrendingDown, TrendingUp, Target, Sparkles, Loader2, AlertTriangle, ShieldAlert, Eye, CheckSquare, Download, FileBarChart, Lightbulb, ChevronRight, Mail, RefreshCw, PenSquare, X, Wand2, Reply } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -34,6 +34,52 @@ const HALTBS_ITEMS = [
   { id: "bored",   label: "Bored",    description: "Lacking purpose or stimulation" },
   { id: "stressed",label: "Stressed", description: "Feeling overwhelmed or anxious" },
 ];
+
+function FeedbackRepliesViewer({ feedbackId, unreadCount, clientName }: { feedbackId: string; unreadCount: number; clientName: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const { data: repliesData, isLoading } = useQuery<{ replies: Array<{ id: string; content: string; createdAt: string; mentorReadAt: string | null }> }>({
+    queryKey: ["/api/messages", feedbackId, "replies"],
+    enabled: expanded,
+  });
+
+  const replies = repliesData?.replies || [];
+
+  if (unreadCount === 0 && !expanded) return null;
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        data-testid={`button-view-replies-${feedbackId}`}
+      >
+        <Reply className="h-3.5 w-3.5" />
+        {expanded ? "Hide replies" : `View ${unreadCount > 0 ? unreadCount + ' unread ' : ''}${unreadCount === 1 ? 'reply' : 'replies'}`}
+      </button>
+      {expanded && (
+        <div className="mt-2 space-y-2">
+          {isLoading && <p className="text-xs text-muted-foreground">Loading...</p>}
+          {replies.length === 0 && !isLoading && (
+            <p className="text-xs text-muted-foreground">No replies yet.</p>
+          )}
+          {replies.map((r) => (
+            <div key={r.id} className="rounded-md bg-blue-50 dark:bg-blue-950/30 border px-3 py-2" data-testid={`mentor-reply-item-${r.id}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-medium">{clientName}</span>
+                {!r.mentorReadAt && <Badge variant="destructive" className="text-[9px] px-1 py-0">New</Badge>}
+              </div>
+              <p className="text-sm whitespace-pre-wrap">{r.content}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function formatEveningChecks(raw: string | null | undefined): string[] {
   try {
@@ -367,6 +413,10 @@ export default function TherapistClient() {
 
   const { data: urgentSuggestionData } = useQuery<{ urgentCounts: Record<string, number> }>({
     queryKey: ["/api/therapist/urgent-suggestion-counts"],
+  });
+
+  const { data: unreadRepliesData } = useQuery<{ unreadReplyCounts: Record<string, number> }>({
+    queryKey: ["/api/therapist/unread-replies"],
   });
 
   const urgentCount = urgentSuggestionData?.urgentCounts?.[clientId as string] ?? 0;
@@ -796,6 +846,7 @@ export default function TherapistClient() {
   const reflections = progressData?.reflections || [];
   const homeworkCompletions = progressData?.homeworkCompletions || [];
   const feedback = progressData?.feedback || [];
+  const unreadReplyCounts = unreadRepliesData?.unreadReplyCounts || {};
   const exerciseAnswers = progressData?.exerciseAnswers || [];
   const relapseAutopsies = progressData?.relapseAutopsies || [];
   const itemReviews = progressData?.itemReviews || [];
@@ -1577,8 +1628,16 @@ export default function TherapistClient() {
                                             </p>
                                             {existingFeedback.map(f => (
                                               <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
-                                                <p>{f.content}</p>
+                                                <div className="flex items-center justify-between gap-2">
+                                                  <p>{f.content}</p>
+                                                  {(unreadReplyCounts[f.id] || 0) > 0 && (
+                                                    <Badge variant="destructive" className="text-[10px] shrink-0" data-testid={`badge-unread-replies-${f.id}`}>
+                                                      {unreadReplyCounts[f.id]} {unreadReplyCounts[f.id] === 1 ? 'reply' : 'replies'}
+                                                    </Badge>
+                                                  )}
+                                                </div>
                                                 <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                                <FeedbackRepliesViewer feedbackId={f.id} unreadCount={unreadReplyCounts[f.id] || 0} clientName={client?.name || 'Client'} />
                                               </div>
                                             ))}
                                           </div>
@@ -1712,8 +1771,16 @@ export default function TherapistClient() {
                                       </p>
                                       {wkFeedback.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(f => (
                                         <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
-                                          <p>{f.content}</p>
+                                          <div className="flex items-center justify-between gap-2">
+                                            <p>{f.content}</p>
+                                            {(unreadReplyCounts[f.id] || 0) > 0 && (
+                                              <Badge variant="destructive" className="text-[10px] shrink-0" data-testid={`badge-unread-replies-${f.id}`}>
+                                                {unreadReplyCounts[f.id]} {unreadReplyCounts[f.id] === 1 ? 'reply' : 'replies'}
+                                              </Badge>
+                                            )}
+                                          </div>
                                           <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                          <FeedbackRepliesViewer feedbackId={f.id} unreadCount={unreadReplyCounts[f.id] || 0} clientName={client?.name || 'Client'} />
                                         </div>
                                       ))}
                                     </div>
@@ -1885,8 +1952,16 @@ export default function TherapistClient() {
                                   </p>
                                   {existingFeedback.map(f => (
                                     <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
-                                      <p>{f.content}</p>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <p>{f.content}</p>
+                                        {(unreadReplyCounts[f.id] || 0) > 0 && (
+                                          <Badge variant="destructive" className="text-[10px] shrink-0" data-testid={`badge-unread-replies-${f.id}`}>
+                                            {unreadReplyCounts[f.id]} {unreadReplyCounts[f.id] === 1 ? 'reply' : 'replies'}
+                                          </Badge>
+                                        )}
+                                      </div>
                                       <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                      <FeedbackRepliesViewer feedbackId={f.id} unreadCount={unreadReplyCounts[f.id] || 0} clientName={client?.name || 'Client'} />
                                     </div>
                                   ))}
                                 </div>
@@ -2036,8 +2111,16 @@ export default function TherapistClient() {
                                     </p>
                                     {autopsyFeedback.map(f => (
                                       <div key={f.id} className="text-sm bg-muted/40 p-2.5 rounded-md mb-1.5">
-                                        <p>{f.content}</p>
+                                        <div className="flex items-center justify-between gap-2">
+                                          <p>{f.content}</p>
+                                          {(unreadReplyCounts[f.id] || 0) > 0 && (
+                                            <Badge variant="destructive" className="text-[10px] shrink-0" data-testid={`badge-unread-replies-${f.id}`}>
+                                              {unreadReplyCounts[f.id]} {unreadReplyCounts[f.id] === 1 ? 'reply' : 'replies'}
+                                            </Badge>
+                                          )}
+                                        </div>
                                         <p className="text-xs text-muted-foreground mt-1">{new Date(f.createdAt).toLocaleDateString()}</p>
+                                        <FeedbackRepliesViewer feedbackId={f.id} unreadCount={unreadReplyCounts[f.id] || 0} clientName={client?.name || 'Client'} />
                                       </div>
                                     ))}
                                   </div>

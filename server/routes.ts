@@ -1674,6 +1674,53 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/messages/:feedbackId/reply", requireRole("client"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { feedbackId } = req.params;
+      const { content } = req.body;
+      if (!content || typeof content !== "string" || !content.trim()) {
+        return res.status(400).json({ message: "Reply content is required" });
+      }
+      const feedback = await storage.getFeedbackById(feedbackId);
+      if (!feedback) return res.status(404).json({ message: "Message not found" });
+      if (feedback.clientId !== userId) return res.status(403).json({ message: "Not your message" });
+      if (feedback.status !== "sent") return res.status(400).json({ message: "Cannot reply to draft messages" });
+      const reply = await storage.insertFeedbackReply(feedbackId, userId, content.trim());
+      res.status(201).json({ reply });
+    } catch (error) {
+      handleRouteError(res, error, "submit reply");
+    }
+  });
+
+  app.get("/api/messages/:feedbackId/replies", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { feedbackId } = req.params;
+      const feedback = await storage.getFeedbackById(feedbackId);
+      if (!feedback) return res.status(404).json({ message: "Message not found" });
+      if (user.role === "client" && feedback.clientId !== user.id) return res.status(403).json({ message: "Not your message" });
+      if (user.role === "therapist" && feedback.therapistId !== user.id) return res.status(403).json({ message: "Not your message" });
+      const replies = await storage.getFeedbackReplies(feedbackId);
+      if (user.role === "therapist" || user.role === "admin") {
+        await storage.markRepliesRead(feedbackId);
+      }
+      res.json({ replies });
+    } catch (error) {
+      handleRouteError(res, error, "fetch replies");
+    }
+  });
+
+  app.get("/api/therapist/unread-replies", requireRole("admin", "therapist"), async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const counts = await storage.getUnreadReplyCountsByFeedback(userId);
+      res.json({ unreadReplyCounts: counts });
+    } catch (error) {
+      handleRouteError(res, error, "fetch unread reply counts");
+    }
+  });
+
   // =======================================
   // Admin API endpoints
   // =======================================

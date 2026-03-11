@@ -1,8 +1,9 @@
 import { Link, useLocation } from "wouter";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -27,6 +28,8 @@ import {
   ChevronRight,
   UserCircle,
   UserCog,
+  Send,
+  Reply,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -42,6 +45,141 @@ import { Badge } from "@/components/ui/badge";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+type FeedbackItem = {
+  id: string;
+  feedbackType: string;
+  content: string;
+  weekNumber: number | null;
+  checkinDateKey: string | null;
+  createdAt: string;
+  editedAt: string | null;
+  editedBy: string | null;
+  subject?: string | null;
+};
+
+type ReplyItem = {
+  id: string;
+  feedbackId: string;
+  clientId: string;
+  content: string;
+  createdAt: string;
+  mentorReadAt: string | null;
+};
+
+function MessageCard({ fb }: { fb: FeedbackItem }) {
+  const [expanded, setExpanded] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const { toast } = useToast();
+
+  const { data: repliesData, isLoading: loadingReplies } = useQuery<{ replies: ReplyItem[] }>({
+    queryKey: ["/api/messages", fb.id, "replies"],
+    enabled: expanded,
+  });
+
+  const replyMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const res = await apiRequest("POST", `/api/messages/${fb.id}/reply`, { content });
+      if (!res.ok) throw new Error("Failed to send reply");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/messages", fb.id, "replies"] });
+      setReplyText("");
+      toast({ title: "Reply sent" });
+    },
+    onError: () => {
+      toast({ title: "Failed to send reply", variant: "destructive" });
+    },
+  });
+
+  const replies = repliesData?.replies || [];
+
+  return (
+    <div className="rounded-md border" data-testid={`feedback-item-${fb.id}`}>
+      <div className="p-4">
+        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+          <Badge variant="secondary">
+            {fb.feedbackType === "week" && fb.weekNumber
+              ? `Week ${fb.weekNumber}`
+              : fb.feedbackType === "checkin" && fb.checkinDateKey
+                ? `Check-in: ${fb.checkinDateKey}`
+                : fb.feedbackType === "checkin"
+                  ? "Check-in"
+                  : fb.feedbackType === "guidance"
+                    ? "Message"
+                    : "General"}
+          </Badge>
+          <div className="flex items-center gap-2 flex-wrap">
+            {fb.editedAt && (
+              <span className="text-[10px] text-muted-foreground italic">
+                Edited &middot; {new Date(fb.editedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {new Date(fb.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+            </span>
+          </div>
+        </div>
+        {fb.subject && (
+          <p className="text-sm font-medium mb-1">{fb.subject}</p>
+        )}
+        <p className="text-sm whitespace-pre-wrap leading-relaxed">{fb.content}</p>
+      </div>
+
+      <div className="border-t px-4 py-2">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          data-testid={`button-toggle-replies-${fb.id}`}
+        >
+          <Reply className="h-3.5 w-3.5" />
+          {expanded ? "Hide replies" : "Reply"}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="border-t px-4 py-3 space-y-3 bg-muted/20">
+          {loadingReplies && (
+            <p className="text-xs text-muted-foreground">Loading replies...</p>
+          )}
+          {replies.length > 0 && (
+            <div className="space-y-2">
+              {replies.map((r) => (
+                <div key={r.id} className="rounded-md bg-primary/5 border px-3 py-2" data-testid={`reply-item-${r.id}`}>
+                  <p className="text-sm whitespace-pre-wrap">{r.content}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You &middot; {new Date(r.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              placeholder="Write a reply to your mentor..."
+              className="flex-1 min-h-[60px] resize-none text-sm"
+              data-testid={`input-reply-${fb.id}`}
+            />
+            <Button
+              size="sm"
+              className="self-end"
+              disabled={!replyText.trim() || replyMutation.isPending}
+              onClick={() => replyMutation.mutate(replyText.trim())}
+              data-testid={`button-send-reply-${fb.id}`}
+            >
+              {replyMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type WeekItem = {
   week: number;
@@ -447,7 +585,7 @@ export default function Dashboard() {
               </p>
             ) : (
               <div
-                className="space-y-3 max-h-96 overflow-y-auto"
+                className="space-y-3 max-h-[600px] overflow-y-auto"
                 data-testid="section-mentor-messages"
               >
                 {[...feedbackData.feedback]
@@ -457,45 +595,7 @@ export default function Dashboard() {
                       new Date(a.createdAt).getTime(),
                   )
                   .map((fb) => (
-                    <div
-                      key={fb.id}
-                      className="rounded-md border p-4"
-                      data-testid={`feedback-item-${fb.id}`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                        <Badge variant="secondary">
-                          {fb.feedbackType === "week" && fb.weekNumber
-                            ? `Week ${fb.weekNumber}`
-                            : fb.feedbackType === "checkin" && fb.checkinDateKey
-                              ? `Check-in: ${fb.checkinDateKey}`
-                              : fb.feedbackType === "checkin"
-                                ? "Check-in"
-                                : fb.feedbackType === "guidance"
-                                  ? "Message"
-                                  : "General"}
-                        </Badge>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {fb.editedAt && (
-                            <span className="text-[10px] text-muted-foreground italic">
-                              Edited &middot; {new Date(fb.editedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
-                            </span>
-                          )}
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(fb.createdAt).toLocaleDateString(
-                              undefined,
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                        {fb.content}
-                      </p>
-                    </div>
+                    <MessageCard key={fb.id} fb={fb} />
                   ))}
               </div>
             )}

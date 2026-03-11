@@ -23,6 +23,7 @@ import {
   parentConsentTokens,
   parentClientRelationships,
   parentMessages,
+  feedbackReplies,
   type User,
   type InsertUser,
   type WeekReflection,
@@ -46,6 +47,7 @@ import {
   type ParentConsentToken,
   type ParentClientRelationship,
   type ParentMessage,
+  type FeedbackReply,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, lt, sql, inArray, gte, lte } from "drizzle-orm";
@@ -236,6 +238,12 @@ export interface IStorage {
   createParentMessage(data: { parentId: string; mentorId: string; clientId: string; content: string; sentBy: string }): Promise<ParentMessage>;
   getParentMessages(clientId: string): Promise<ParentMessage[]>;
   markParentMessagesRead(clientId: string, sentBy: string): Promise<void>;
+
+  // Feedback replies (client replies to mentor messages)
+  insertFeedbackReply(feedbackId: string, clientId: string, content: string): Promise<FeedbackReply>;
+  getFeedbackReplies(feedbackId: string): Promise<FeedbackReply[]>;
+  markRepliesRead(feedbackId: string): Promise<void>;
+  getUnreadReplyCountsByFeedback(therapistId: string): Promise<Record<string, number>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -850,6 +858,10 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(userId: string): Promise<void> {
     // Delete all related data for the user — order matters for foreign key constraints
+    const userFeedback = await db.select({ id: therapistFeedback.id }).from(therapistFeedback).where(eq(therapistFeedback.clientId, userId));
+    if (userFeedback.length > 0) {
+      await db.delete(feedbackReplies).where(inArray(feedbackReplies.feedbackId, userFeedback.map(f => f.id)));
+    }
     await db.delete(relapseAutopsies).where(eq(relapseAutopsies.userId, userId));
     await db.delete(mentorItemReviews).where(eq(mentorItemReviews.clientId, userId));
     await db.delete(weeklySummaries).where(eq(weeklySummaries.clientId, userId));
@@ -1729,6 +1741,56 @@ export class DatabaseStorage implements IStorage {
           sql`${parentMessages.readAt} IS NULL`
         )
       );
+  }
+
+  async insertFeedbackReply(feedbackId: string, clientId: string, content: string): Promise<FeedbackReply> {
+    const [reply] = await db
+      .insert(feedbackReplies)
+      .values({ feedbackId, clientId, content })
+      .returning();
+    return reply;
+  }
+
+  async getFeedbackReplies(feedbackId: string): Promise<FeedbackReply[]> {
+    return await db
+      .select()
+      .from(feedbackReplies)
+      .where(eq(feedbackReplies.feedbackId, feedbackId))
+      .orderBy(feedbackReplies.createdAt);
+  }
+
+  async markRepliesRead(feedbackId: string): Promise<void> {
+    await db
+      .update(feedbackReplies)
+      .set({ mentorReadAt: new Date() })
+      .where(
+        and(
+          eq(feedbackReplies.feedbackId, feedbackId),
+          sql`${feedbackReplies.mentorReadAt} IS NULL`
+        )
+      );
+  }
+
+  async getUnreadReplyCountsByFeedback(therapistId: string): Promise<Record<string, number>> {
+    const rows = await db
+      .select({
+        feedbackId: feedbackReplies.feedbackId,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(feedbackReplies)
+      .innerJoin(therapistFeedback, eq(feedbackReplies.feedbackId, therapistFeedback.id))
+      .where(
+        and(
+          eq(therapistFeedback.therapistId, therapistId),
+          sql`${feedbackReplies.mentorReadAt} IS NULL`
+        )
+      )
+      .groupBy(feedbackReplies.feedbackId);
+    const result: Record<string, number> = {};
+    for (const r of rows) {
+      result[r.feedbackId] = Number(r.count);
+    }
+    return result;
   }
 }
 

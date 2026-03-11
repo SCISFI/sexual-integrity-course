@@ -548,5 +548,24 @@ export type InsertCohort = z.infer<typeof insertCohortSchema>;
 export type CohortMembership = typeof cohortMemberships.$inferSelect;
 export type InsertCohortMembership = z.infer<typeof insertCohortMembershipSchema>;
 
+// Client replies to mentor messages
+export const feedbackReplies = pgTable("feedback_replies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  feedbackId: varchar("feedback_id").notNull().references(() => therapistFeedback.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  mentorReadAt: timestamp("mentor_read_at"),
+});
+
+export const insertFeedbackReplySchema = createInsertSchema(feedbackReplies).omit({
+  id: true,
+  createdAt: true,
+  mentorReadAt: true,
+});
+
+export type FeedbackReply = typeof feedbackReplies.$inferSelect;
+export type InsertFeedbackReply = z.infer<typeof insertFeedbackReplySchema>;
+
 // Export chat models
 export * from "./models/chat";
