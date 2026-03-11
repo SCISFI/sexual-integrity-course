@@ -766,6 +766,14 @@ export default function WeekPage() {
           </CardContent>
         </Card>
 
+        {WEEK_PODCASTS[weekNumber] && (
+          <DeepDivePlayer
+            title={WEEK_PODCASTS[weekNumber].title}
+            src={WEEK_PODCASTS[weekNumber].file}
+            description={WEEK_PODCASTS[weekNumber].description}
+          />
+        )}
+
         {/* Cohort prior-week incomplete warning */}
         {hasPriorIncompleteWeek && !weekIsLocked && (
           <Card className="border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30" data-testid="banner-prior-week-incomplete">
@@ -871,14 +879,6 @@ export default function WeekPage() {
               </div>
             </CardContent>
           </Card>
-        )}
-
-        {WEEK_PODCASTS[weekNumber] && (
-          <DeepDivePlayer
-            title={WEEK_PODCASTS[weekNumber].title}
-            src={WEEK_PODCASTS[weekNumber].file}
-            description={WEEK_PODCASTS[weekNumber].description}
-          />
         )}
 
         {!isTimeLocked && !needsPayment && (
