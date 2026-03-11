@@ -1,10 +1,12 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { Loader2 } from "lucide-react";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -32,9 +34,33 @@ import UserManualPage from "@/pages/user-manual";
 import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, isLoading, isAuthenticating } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticating && !user) {
+      navigate("/login");
+    }
+  }, [user, isLoading, isAuthenticating, navigate]);
+
+  if (isLoading || isAuthenticating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
+      {/* Public routes — no auth required */}
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
@@ -42,25 +68,60 @@ function Router() {
       <Route path="/register/client" component={RegisterClient} />
       <Route path="/register/adolescent" component={RegisterAdolescent} />
       <Route path="/parent-consent/:token" component={ParentConsent} />
-      <Route path="/parent-dashboard" component={ParentDashboard} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/change-password" component={ChangePassword} />
-      <Route path="/admin" component={AdminPage} />
-      <Route path="/admin/clients/:clientId" component={AdminClientPage} />
-      <Route path="/admin/cohorts/:id/analytics" component={CohortAnalyticsPage} />
-      <Route path="/admin/cohorts/:id" component={AdminCohortPage} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/therapist" component={TherapistHome} />
-      <Route path="/week/:weekNumber" component={WeekPage} />
-      <Route path="/daily-checkin" component={DailyCheckinPage} />
-      <Route path="/analytics" component={AnalyticsPage} />
-      <Route path="/analytics/:clientId" component={AnalyticsPage} />
-      <Route path="/user-manual" component={UserManualPage} />
-      <Route path="/therapist/clients/:id" component={TherapistClient} />
-      <Route path="/relapse-autopsy" component={RelapseAutopsyPage} />
       <Route path="/pricing" component={PricingPage} />
-      <Route path="/profile" component={ProfilePage} />
+
+      {/* Protected routes — redirect to /login if not authenticated */}
+      <Route path="/parent-dashboard">
+        {() => <ProtectedRoute component={ParentDashboard} />}
+      </Route>
+      <Route path="/change-password">
+        {() => <ProtectedRoute component={ChangePassword} />}
+      </Route>
+      <Route path="/admin">
+        {() => <ProtectedRoute component={AdminPage} />}
+      </Route>
+      <Route path="/admin/clients/:clientId">
+        {() => <ProtectedRoute component={AdminClientPage} />}
+      </Route>
+      <Route path="/admin/cohorts/:id/analytics">
+        {() => <ProtectedRoute component={CohortAnalyticsPage} />}
+      </Route>
+      <Route path="/admin/cohorts/:id">
+        {() => <ProtectedRoute component={AdminCohortPage} />}
+      </Route>
+      <Route path="/dashboard">
+        {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/therapist">
+        {() => <ProtectedRoute component={TherapistHome} />}
+      </Route>
+      <Route path="/therapist/clients/:id">
+        {() => <ProtectedRoute component={TherapistClient} />}
+      </Route>
+      <Route path="/week/:weekNumber">
+        {() => <ProtectedRoute component={WeekPage} />}
+      </Route>
+      <Route path="/daily-checkin">
+        {() => <ProtectedRoute component={DailyCheckinPage} />}
+      </Route>
+      <Route path="/analytics/:clientId">
+        {() => <ProtectedRoute component={AnalyticsPage} />}
+      </Route>
+      <Route path="/analytics">
+        {() => <ProtectedRoute component={AnalyticsPage} />}
+      </Route>
+      <Route path="/user-manual">
+        {() => <ProtectedRoute component={UserManualPage} />}
+      </Route>
+      <Route path="/relapse-autopsy">
+        {() => <ProtectedRoute component={RelapseAutopsyPage} />}
+      </Route>
+      <Route path="/profile">
+        {() => <ProtectedRoute component={ProfilePage} />}
+      </Route>
+
       <Route component={NotFound} />
     </Switch>
   );
