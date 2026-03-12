@@ -1198,7 +1198,7 @@ export default function WeekPage() {
                       <div className="flex flex-col gap-3">
                         <Button
                           onClick={markWeekComplete}
-                          disabled={isWeekCompleted || !affirmComplete || markCompleteMutation.isPending}
+                          disabled={isWeekCompleted || !affirmComplete || markCompleteMutation.isPending || completedReflections < totalReflections}
                           className="w-full gap-2"
                           data-testid="button-mark-complete"
                         >
