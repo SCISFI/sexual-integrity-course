@@ -1225,8 +1225,8 @@ export default function WeekPage() {
                               ? "Congratulations! You have completed the program!"
                               : `Week ${weekNumber} completed! Week ${weekNumber + 1} is now unlocked.`
                             : weekNumber === 16
-                              ? "Complete all exercises to finish the program."
-                              : `Complete all exercises to unlock Week ${weekNumber + 1}.`}
+                              ? "Complete all reflections and exercises to finish the program."
+                              : `Complete all reflections and exercises to unlock Week ${weekNumber + 1}.`}
                         </p>
                       </div>
                     </CardContent>
