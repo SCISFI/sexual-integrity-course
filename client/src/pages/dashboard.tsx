@@ -42,6 +42,7 @@ import {
 import { WEEK_TITLES, PHASE_INFO } from "@/data/curriculum";
 import { ADOLESCENT_WEEK_TITLES } from "@/data/adolescent-curriculum";
 import { Badge } from "@/components/ui/badge";
+import { CrisisResources } from "@/components/CrisisResources";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { CheckinProgressDashboard } from "@/components/CheckinProgressDashboard";
 import { UrgeSurfingTool } from "@/components/UrgeSurfingTool";
@@ -333,7 +334,8 @@ export default function Dashboard() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+<CrisisResources />
+          <ThemeToggle />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
