@@ -113,7 +113,7 @@ export function CrisisResources() {
               <li>• Urges are temporary - they will pass</li>
               <li>• A lapse does not equal failure</li>
               <li>• Reaching out is strength, not weakness</li>
-              <li>• Your mentor is here to support you</li>
+              <li>• In a crisis, please use these resources. Your mentor is not a crisis counselor.</li>
             </ul>
           </div>
         </div>
