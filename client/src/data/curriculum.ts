@@ -121,15 +121,15 @@ export const WEEK_CONTENT: Record<number, WeekContent> = {
       },
       {
         id: "q2",
-        question: "Which stage of the cycle do you most recognize in yourself? Describe your personal version of each stage."
+        question: "Think about the last time — or a recent time — the cycle ran. Walk back 24 hours before it happened. What were you feeling? What did you do? What did you tell yourself? Describe your version of preoccupation, ritualization, and despair in your own words, from a real incident — not the definitions."
       },
       {
         id: "q3",
-        question: "What part of you benefits from staying the same? What does isolation protect you from?"
+        question: "Part of most men wants change — and part of them wants to keep the pattern, because it protects something. What does staying hidden protect you from? If you were fully honest with your wife, your mentor, or someone who matters to you — what's the real risk you're afraid of? Name it specifically, not just 'losing everything.'"
       },
       {
         id: "q4",
-        question: "What has this pattern cost you — and the people closest to you? Be specific about the relational damage, not just the personal cost."
+        question: "Name one relationship this has damaged. Not in general — one person, one specific moment or pattern. What do you imagine they're carrying right now that they haven't said to you? What is the cost to them that you've been able to avoid looking at directly?"
       },
       {
         id: "q5",
