@@ -66,12 +66,12 @@ export default function Home() {
                   The Integrity Protocol
                 </h1>
                 
-                <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+                <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
                   A difficult program for a difficult problem.
-                </h1>
+                </h2>
 
                 <p className="text-lg text-muted-foreground">
-                  If you struggle with problematic sexual behavior (PSB), you
+                  If you struggle with problematic sexual behavior, you
                   don’t need motivation. You need structure. This 16-week
                   program is built around evidence-informed recovery principles:
                   tracking, trigger control, planning, and repetition.
