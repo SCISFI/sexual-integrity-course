@@ -166,7 +166,7 @@ export default function Home() {
 
                 <div className="overflow-hidden rounded-3xl border bg-card shadow-sm">
                   <img
-                    src="/images/hero-1.jpg"
+                    src="/images/hero-1.webp"
                     alt="Man alone in early morning light"
                     className="h-[440px] w-full object-cover grayscale-[15%] contrast-110"
                     loading="eager"
