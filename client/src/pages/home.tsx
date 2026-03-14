@@ -271,7 +271,7 @@ export default function Home() {
           <div className="mx-auto max-w-7xl px-4 py-12">
             <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
               <img
-                src="/images/break-1.jpg"
+                src="/images/break-1.WebP"
                 alt="Quiet moment of reflection"
                 className="h-[280px] w-full object-cover grayscale-[20%]"
                 loading="lazy"
