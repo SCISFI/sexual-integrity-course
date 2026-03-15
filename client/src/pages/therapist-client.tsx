@@ -2424,7 +2424,7 @@ export default function TherapistClient() {
                     value={sheetMessage}
                     onChange={e => setSheetMessage(e.target.value)}
                     placeholder="Write your message…"
-                    className="min-h-[140px] resize-none overflow-hidden"
+                    className="min-h-[200px] max-h-[500px] resize-y overflow-y-auto"
                     data-testid="input-sheet-message"
                   />
                 </div>
