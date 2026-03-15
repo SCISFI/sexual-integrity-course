@@ -618,7 +618,7 @@ export default function TherapistClient() {
     }
   };
 const openCheckinSheet = async (dateKey: string) => {
-  setSheetCtx({ kind: 'checkin', dateKey } as any);
+  setSheetCtx({ kind: 'checkin', dateKey });
   setSheetSubject(`Check-in — ${dateKey}`);
   setSheetMessage("");
   setSheetFailed(false);
@@ -684,8 +684,10 @@ const openCheckinSheet = async (dateKey: string) => {
         let feedbackType = 'general';
         let weekNumber: number | undefined;
         let checkinDateKey: string | undefined;
+        let checkinDateKey: string | undefined;
         if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
         else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; checkinDateKey = sheetCtx.autopsyId; }
+        else if (sheetCtx.kind === 'checkin') { feedbackType = 'checkin'; checkinDateKey = sheetCtx.dateKey; }
         else if (sheetCtx.kind === 'guidance') { feedbackType = 'guidance'; }
 
         const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
@@ -738,11 +740,12 @@ const openCheckinSheet = async (dateKey: string) => {
         let weekNumber: number | undefined;
         if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
         else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; }
+        else if (sheetCtx.kind === 'checkin') { feedbackType = 'checkin'; checkinDateKey = sheetCtx.dateKey; }
         else if (sheetCtx.kind === 'guidance') { feedbackType = 'guidance'; }
 
         await apiRequest("POST", `/api/therapist/clients/${clientId}/feedback`, {
-          feedbackType, content: sheetMessage, subject: sheetSubject, status: 'draft', weekNumber,
-        });
+  feedbackType, content: sheetMessage, subject: sheetSubject, status: 'draft', weekNumber, checkinDateKey,
+});
 
         if (sheetCtx.kind === 'guidance') {
           setDraftedSuggestionIds(prev => new Set(prev).add(sheetCtx.suggestion.id));
@@ -773,6 +776,12 @@ const openCheckinSheet = async (dateKey: string) => {
         if (!res.ok) throw new Error("Generation failed");
         const data = await res.json();
         setSheetMessage(data.draft || "");
+      } else if (sheetCtx.kind === 'checkin') {
+        const res = await apiRequest("POST", `/api/therapist/generate-checkin-feedback`, { clientId, dateKey: sheetCtx.dateKey });
+        if (!res.ok) throw new Error("Generation failed");
+        const data = await res.json();
+        setSheetMessage(data.draft || "");
+      }
       } else if (sheetCtx.kind === 'guidance') {
         const res = await apiRequest("POST", `/api/therapist/clients/${clientId}/generate-guidance-message`, {
           suggestionId: sheetCtx.suggestion.id,
