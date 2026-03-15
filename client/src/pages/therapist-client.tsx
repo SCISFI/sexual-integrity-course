@@ -617,7 +617,7 @@ export default function TherapistClient() {
     }
   };
 const openCheckinSheet = async (dateKey: string) => {
-  setSheetCtx({ kind: 'general' });
+  setSheetCtx({ kind: 'checkin', dateKey } as any);
   setSheetSubject(`Check-in — ${dateKey}`);
   setSheetMessage("");
   setSheetFailed(false);
@@ -1895,7 +1895,7 @@ const openCheckinSheet = async (dateKey: string) => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleAddFeedbackForDate(checkin.dateKey)}
+                                    onClick={() => openCheckinSheet(checkin.dateKey)}
                                     data-testid={`button-feedback-checkin-${checkin.dateKey}`}
                                   >
                                     <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
@@ -1903,7 +1903,7 @@ const openCheckinSheet = async (dateKey: string) => {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => handleGenerateAIDraft(checkin.dateKey)}
+                                    onClick={() => openCheckinSheet(checkin.dateKey)}
                                     disabled={isGeneratingDraft}
                                     data-testid={`button-ai-checkin-${checkin.dateKey}`}
                                   >
