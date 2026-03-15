@@ -2086,7 +2086,7 @@ export default function TherapistClient() {
                                       { label: "Warning signs missed", value: autopsy.warningSigns },
                                       { label: "Decision points", value: autopsy.decisionPoints },
                                       { label: "Immediate actions planned", value: autopsy.immediateActions },
-                                      { label: "Rule changes", value: autopsy.ruleChanges },
+                                      { label: "Gap in prevention plan", value: autopsy.ruleChanges },
                                       { label: "Environment changes", value: autopsy.environmentChanges },
                                       { label: "Support plan", value: autopsy.supportPlan },
                                       { label: "Next 24 hours plan", value: autopsy.next24HoursPlan },
@@ -2125,7 +2125,6 @@ export default function TherapistClient() {
                                     ))}
                                   </div>
                                 )}
-                                {renderInlineFeedback('autopsy', autopsy.id)}
                               </div>
                             );
                           })}
