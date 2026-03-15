@@ -305,7 +305,6 @@ export default function TherapistClient() {
   const [feedbackWeek, setFeedbackWeek] = useState<number | null>(null);
   const [feedbackDateKey, setFeedbackDateKey] = useState<string | null>(null);
   const [feedbackAutopsyId, setFeedbackAutopsyId] = useState<string | null>(null);
-  const [feedbackInsightType, setFeedbackInsightType] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState<number | null>(null);
   const validTabs = ["analytics", "progress", "checkins", "autopsies", "guidance", "reports"];
   const initialTab = (() => {
@@ -327,6 +326,7 @@ export default function TherapistClient() {
     | { kind: 'autopsy'; autopsyId: string }
     | { kind: 'general' }
     | { kind: 'guidance'; suggestion: { id: string; title: string; detail: string; action: string } }
+    | { kind: 'insight'; insightType: string }
     | { kind: 'checkin'; dateKey: string }
     | { kind: 'draft'; feedbackId: string }
     | null;
@@ -447,7 +447,6 @@ export default function TherapistClient() {
       setFeedbackWeek(null);
       setFeedbackDateKey(null);
       setFeedbackAutopsyId(null);
-      setFeedbackInsightType(null);
       setActiveFeedbackTarget(null);
       toast({ title: "Message sent" });
     },
@@ -739,7 +738,7 @@ const openCheckinSheet = async (dateKey: string) => {
         let weekNumber: number | undefined;
         let checkinDateKey: string | undefined;
         if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
-        else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; }
+        else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; checkinDateKey = sheetCtx.autopsyId; }
         else if (sheetCtx.kind === 'checkin') { feedbackType = 'checkin'; checkinDateKey = sheetCtx.dateKey; }
         else if (sheetCtx.kind === 'guidance') { feedbackType = 'guidance'; }
 
@@ -951,9 +950,6 @@ const openCheckinSheet = async (dateKey: string) => {
     if (feedbackAutopsyId) {
       feedbackType = 'autopsy';
       checkinDateKeyValue = feedbackAutopsyId;
-    } else if (feedbackInsightType) {
-      feedbackType = 'general';
-      checkinDateKeyValue = `insight-${feedbackInsightType}`;
     } else if (feedbackDateKey) {
       feedbackType = 'checkin';
       checkinDateKeyValue = feedbackDateKey;
@@ -1012,7 +1008,6 @@ const openCheckinSheet = async (dateKey: string) => {
     setFeedbackWeek(weekNumber);
     setFeedbackDateKey(null);
     setFeedbackAutopsyId(null);
-    setFeedbackInsightType(null);
     setNewFeedback("");
     setActiveFeedbackTarget({ type: 'week', key: String(weekNumber) });
   };
@@ -1021,7 +1016,6 @@ const openCheckinSheet = async (dateKey: string) => {
     setFeedbackDateKey(dateKey);
     setFeedbackWeek(null);
     setFeedbackAutopsyId(null);
-    setFeedbackInsightType(null);
     setNewFeedback("");
     setActiveFeedbackTarget({ type: 'checkin', key: dateKey });
   };
@@ -1030,21 +1024,11 @@ const openCheckinSheet = async (dateKey: string) => {
     setFeedbackAutopsyId(autopsyId);
     setFeedbackWeek(null);
     setFeedbackDateKey(null);
-    setFeedbackInsightType(null);
     setNewFeedback("");
     setActiveFeedbackTarget({ type: 'autopsy', key: autopsyId });
   };
 
-  const handleAddFeedbackForInsight = (insightType: string) => {
-    setFeedbackInsightType(insightType);
-    setFeedbackWeek(null);
-    setFeedbackDateKey(null);
-    setFeedbackAutopsyId(null);
-    setNewFeedback("");
-    setActiveFeedbackTarget({ type: 'insight', key: insightType });
-  };
-
-  const renderInlineFeedback = (targetType: string, targetKey: string, dateKeyForAI?: string) => {
+ const renderInlineFeedback = (targetType: string, targetKey: string, dateKeyForAI?: string) => {
     if (activeFeedbackTarget?.type !== targetType || activeFeedbackTarget.key !== targetKey) return null;
     return (
       <div className="mt-4 p-4 rounded-lg border bg-card space-y-3" data-testid={`inline-feedback-${targetType}-${targetKey}`}>
@@ -1336,7 +1320,7 @@ const openCheckinSheet = async (dateKey: string) => {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => handleAddFeedbackForInsight(insight.type)}
+                                        onClick={() => openGeneralSheet()}
                                         data-testid={`button-feedback-insight-${insight.type}`}
                                       >
                                         <MessageSquare className="h-3.5 w-3.5 mr-1" /> Respond
@@ -1354,7 +1338,6 @@ const openCheckinSheet = async (dateKey: string) => {
                                     ))}
                                   </div>
                                 )}
-                                {renderInlineFeedback('insight', insight.type)}
                               </div>
                             );
                           })}
