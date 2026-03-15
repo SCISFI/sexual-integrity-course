@@ -684,7 +684,6 @@ const openCheckinSheet = async (dateKey: string) => {
         let feedbackType = 'general';
         let weekNumber: number | undefined;
         let checkinDateKey: string | undefined;
-        let checkinDateKey: string | undefined;
         if (sheetCtx.kind === 'week') { feedbackType = 'week'; weekNumber = sheetCtx.weekNumber; }
         else if (sheetCtx.kind === 'autopsy') { feedbackType = 'autopsy'; checkinDateKey = sheetCtx.autopsyId; }
         else if (sheetCtx.kind === 'checkin') { feedbackType = 'checkin'; checkinDateKey = sheetCtx.dateKey; }
