@@ -327,6 +327,7 @@ export default function TherapistClient() {
     | { kind: 'autopsy'; autopsyId: string }
     | { kind: 'general' }
     | { kind: 'guidance'; suggestion: { id: string; title: string; detail: string; action: string } }
+    | { kind: 'checkin'; dateKey: string }
     | { kind: 'draft'; feedbackId: string }
     | null;
   const [sheetCtx, setSheetCtx] = useState<SheetCtx>(() => {
@@ -2383,13 +2384,15 @@ const openCheckinSheet = async (dateKey: string) => {
               {sheetCtx?.kind === 'autopsy' && "Autopsy Response Message"}
               {sheetCtx?.kind === 'general' && "New Message"}
               {sheetCtx?.kind === 'guidance' && sheetCtx.suggestion.title}
-              {sheetCtx?.kind === 'draft' && "Edit Draft"}
+              {(sheetCtx as any)?.kind === 'checkin' && `Check-in Feedback`}
+                            {sheetCtx?.kind === 'draft' && "Edit Draft"}
             </SheetTitle>
             <SheetDescription>
               {sheetCtx?.kind === 'week' && "Required — sending this message will also mark the week as reviewed."}
               {sheetCtx?.kind === 'autopsy' && "Required — sending this message will also mark the autopsy as reviewed."}
               {sheetCtx?.kind === 'general' && `Send an unsolicited message to ${client?.name || "this client"}.`}
               {sheetCtx?.kind === 'guidance' && "AI-generated draft — review before sending."}
+              {(sheetCtx as any)?.kind === 'checkin' && "AI-generated draft — review before sending."}
               {sheetCtx?.kind === 'draft' && `Edit and resend this saved draft to ${client?.name || "this client"}.`}
             </SheetDescription>
           </SheetHeader>
