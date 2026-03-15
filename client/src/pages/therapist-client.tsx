@@ -616,7 +616,23 @@ export default function TherapistClient() {
       setSheetLoading(false);
     }
   };
-
+const openCheckinSheet = async (dateKey: string) => {
+  setSheetCtx({ kind: 'general' });
+  setSheetSubject(`Check-in — ${dateKey}`);
+  setSheetMessage("");
+  setSheetFailed(false);
+  setSheetLoading(true);
+  try {
+    const res = await apiRequest("POST", `/api/therapist/generate-checkin-feedback`, { clientId, dateKey });
+    if (!res.ok) throw new Error("Generation failed");
+    const data = await res.json();
+    setSheetMessage(data.draft || "");
+  } catch {
+    setSheetFailed(true);
+  } finally {
+    setSheetLoading(false);
+  }
+};
   const openAutopsySheet = async (autopsyId: string) => {
     setSheetCtx({ kind: 'autopsy', autopsyId });
     setSheetSubject("Your Relapse Report — A Personal Note");
@@ -1555,7 +1571,7 @@ export default function TherapistClient() {
                                             <Button
                                               variant="outline"
                                               size="sm"
-                                              onClick={() => handleAddFeedbackForDate(checkin.dateKey)}
+                                              onClick={() => openCheckinSheet(checkin.dateKey)}
                                               data-testid={`button-feedback-checkin-wk-${checkin.dateKey}`}
                                             >
                                               <MessageSquare className="mr-1.5 h-3.5 w-3.5" /> Feedback
@@ -1563,7 +1579,7 @@ export default function TherapistClient() {
                                             <Button
                                               variant="outline"
                                               size="sm"
-                                              onClick={() => handleGenerateAIDraft(checkin.dateKey)}
+                                              onClick={() => openCheckinSheet(checkin.dateKey)}
                                               disabled={isGeneratingDraft}
                                               data-testid={`button-ai-checkin-wk-${checkin.dateKey}`}
                                             >
