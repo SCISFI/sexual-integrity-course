@@ -315,18 +315,18 @@ export default function Dashboard() {
         onComplete={handleOnboardingComplete}
       />
 
-      <header className="border-b bg-card">
-        <div className="mx-auto max-w-4xl px-4 py-3 flex items-center justify-between gap-3">
+      <header className="bg-gradient-to-br from-slate-900 to-blue-900">
+        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between gap-3">
           <Link href="/">
             <div className="flex items-center gap-3 cursor-pointer">
-              <div className="h-9 w-9 rounded-md bg-primary flex items-center justify-center">
-                <span className="text-sm font-bold text-primary-foreground">SI</span>
+              <div className="h-9 w-9 rounded-md bg-white/10 flex items-center justify-center">
+                <span className="text-sm font-bold text-white">SI</span>
               </div>
               <div className="hidden sm:block">
-                <div className="font-semibold leading-tight text-sm">
+                <div className="font-semibold leading-tight text-sm text-white">
                   The Integrity Protocol
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-white/50">
                   Member Dashboard
                 </div>
               </div>
@@ -334,12 +334,12 @@ export default function Dashboard() {
           </Link>
 
           <div className="flex items-center gap-2">
-<CrisisResources />
-          <ThemeToggle />
+            <CrisisResources />
+            <ThemeToggle />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" data-testid="button-profile-menu">
+                <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10" data-testid="button-profile-menu">
                   <UserCircle className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline text-sm">
                     {(user as any)?.name || "Account"}
@@ -399,6 +399,40 @@ export default function Dashboard() {
             </DropdownMenu>
           </div>
         </div>
+
+        <div className="mx-auto max-w-4xl px-4 pb-8 mt-2">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-1">
+                Member
+              </p>
+              <h1 className="text-3xl font-bold text-white tracking-tight">
+                {(user as any)?.name || "Welcome back"}
+              </h1>
+              <p className="mt-1.5 text-white/60 text-sm">
+                {completionCount === 0
+                  ? "Your program starts now."
+                  : completionCount === 16
+                  ? "You've completed the program."
+                  : `Week ${completionCount + 1} of 16 — keep going.`}
+              </p>
+            </div>
+            {completionCount > 0 && (
+              <div className="text-right flex-shrink-0">
+                <p className="text-2xl font-bold text-white">{progressPercent}%</p>
+                <p className="text-xs text-white/50">Complete</p>
+              </div>
+            )}
+          </div>
+          {completionCount > 0 && (
+            <div className="mt-4 h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-white/60 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-8">
@@ -414,7 +448,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
+              <Button
                 onClick={() => setLocation(`/week/${nextAvailableWeek}`)}
                 className="bg-orange-600 hover:bg-orange-700 text-white border-none"
               >
@@ -423,25 +457,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between" data-testid="text-welcome-greeting">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Welcome back, {(user as any)?.name || 'there'}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Your program progress and daily tools.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => setLocation("/analytics")}
-            data-testid="button-analytics-top"
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            My Analytics
-          </Button>
-        </div>
 
         <Card>
           <CardHeader className="gap-1">
